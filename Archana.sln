@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.Api", "src\Archu.Api\Archu.Api.csproj", "{C991C546-8B87-D5F9-FFF1-47FEA4405376}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.Application", "src\Archu.Application\Archu.Application.csproj", "{E9D66948-2FA8-0D42-745A-7CD2E4BE7D14}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.Domain", "src\Archu.Domain\Archu.Domain.csproj", "{F3B2AAA5-81A2-F435-B838-7EC5DE56F3CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.Infrastructure", "src\Archu.Infrastructure\Archu.Infrastructure.csproj", "{7923445C-756C-1564-0D60-9600D8334FDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.AppHost", "src\Archu.AppHost\Archu.AppHost.csproj", "{55E634B1-DE13-EEFF-7E6E-80288C72DCDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.ServiceDefaults", "src\Archu.ServiceDefaults\Archu.ServiceDefaults.csproj", "{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C991C546-8B87-D5F9-FFF1-47FEA4405376}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C991C546-8B87-D5F9-FFF1-47FEA4405376}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C991C546-8B87-D5F9-FFF1-47FEA4405376}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C991C546-8B87-D5F9-FFF1-47FEA4405376}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9D66948-2FA8-0D42-745A-7CD2E4BE7D14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9D66948-2FA8-0D42-745A-7CD2E4BE7D14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9D66948-2FA8-0D42-745A-7CD2E4BE7D14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9D66948-2FA8-0D42-745A-7CD2E4BE7D14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3B2AAA5-81A2-F435-B838-7EC5DE56F3CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3B2AAA5-81A2-F435-B838-7EC5DE56F3CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3B2AAA5-81A2-F435-B838-7EC5DE56F3CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3B2AAA5-81A2-F435-B838-7EC5DE56F3CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7923445C-756C-1564-0D60-9600D8334FDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7923445C-756C-1564-0D60-9600D8334FDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7923445C-756C-1564-0D60-9600D8334FDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7923445C-756C-1564-0D60-9600D8334FDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55E634B1-DE13-EEFF-7E6E-80288C72DCDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55E634B1-DE13-EEFF-7E6E-80288C72DCDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55E634B1-DE13-EEFF-7E6E-80288C72DCDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55E634B1-DE13-EEFF-7E6E-80288C72DCDC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A3586187-7247-4299-87BE-2DBE3F9207AF}
+	EndGlobalSection
+EndGlobal
