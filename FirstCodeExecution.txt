@@ -1,0 +1,179 @@
+Commands to execute at the beginning of this project code first approach
+
+Alright, Cheth. Here’s **exactly** where to run the EF Core code-first commands in a Clean Architecture setup (DbContext + Migrations in **Infrastructure**, web host in **API**), including Aspire notes. Do it like this, step by step.
+
+---
+
+## 0) One-time setup
+
+1. From the **solution root**, install the EF tool (global or local):
+
+```bash
+dotnet tool install --global dotnet-ef
+# or (local manifest)
+dotnet new tool-manifest
+dotnet tool install dotnet-ef
+```
+
+EF CLI docs: target & startup projects can be specified with `--project` and `--startup-project`. ([Microsoft Learn][1])
+
+2. Make sure you can **build**:
+
+```bash
+dotnet build
+```
+
+(If build fails, migrations won’t run.)
+
+---
+
+## 1) Pick the projects (assumed names)
+
+* **DbContext & migrations live in:** `src/Archu.Infrastructure`
+* **Startup (web) project is:** `src/Archu.Api`
+
+This is the standard split; tools need an executable **startup project** to resolve config/DI, while the **target project** is where migration files are created. ([Microsoft Learn][1])
+
+---
+
+## 2) Initial migration — run from solution root
+
+Create a folder for migrations and add your first migration:
+
+```bash
+dotnet ef migrations add InitialCreate \
+  --project src/Archu.Infrastructure \
+  --startup-project src/Archu.Api \
+  --output-dir Persistence/Migrations \
+  --context ApplicationDbContext
+```
+
+* `--project` = where migrations are **generated** (Infrastructure)
+* `--startup-project` = which app EF Tools **runs** to discover config/connection (API)
+* `--output-dir` = keep migrations tidy under `Infrastructure/Persistence/Migrations`
+  Details on target vs startup projects are in the EF Tools doc. ([Microsoft Learn][1])
+
+---
+
+## 3) Apply to your local dev database
+
+Still from the **solution root**:
+
+```bash
+dotnet ef database update \
+  --project src/Archu.Infrastructure \
+  --startup-project src/Archu.Api \
+  --context ApplicationDbContext
+```
+
+That updates SQL Server using the connection the startup project resolves (e.g., `appsettings.Development.json`). This is the standard “apply migrations” flow. ([Microsoft Learn][2])
+
+> Using Visual Studio instead? Set **Archu.Api** as Startup Project, set **Default project** in PMC to **Archu.Infrastructure**, then run `Add-Migration` / `Update-Database`. Same idea, GUI sugar on top. ([JetBrains][3])
+
+---
+
+## 4) Aspire specifics (if you’re running SQL via AppHost)
+
+* In **AppHost**, you host SQL (`AddSqlServer().AddDatabase("appdb")`) and **in the API** you can use Aspire’s client integration (`builder.AddSqlServerDbContext<ApplicationDbContext>("appdb");`).
+* EF Tools do **not** run via the AppHost; they run against your **startup project** (API). Ensure the API can resolve a connection **at design time**:
+
+  * Easiest: keep a dev connection in `Archu.Api/appsettings.Development.json` (e.g., to your local SQL/SSMS).
+  * Or set an env var before the command:
+
+    * Windows PowerShell:
+
+      ```powershell
+      $env:ConnectionStrings__appdb="Server=localhost,1433;User Id=sa;Password=Pass#;TrustServerCertificate=True;"
+      ```
+    * Bash:
+
+      ```bash
+      export ConnectionStrings__appdb="Server=localhost,1433;User Id=sa;Password=Pass#;TrustServerCertificate=True;"
+      ```
+
+Docs: Aspire SQL Server integration + EF Core integration + applying migrations with Aspire. ([Microsoft Learn][4])
+
+---
+
+## 5) Future changes — add more migrations
+
+Whenever you change entities, repeat (from solution root):
+
+```bash
+dotnet ef migrations add AddProductsIndex \
+  --project src/Archu.Infrastructure \
+  --startup-project src/Archu.Api \
+  --output-dir Persistence/Migrations \
+  --context ApplicationDbContext
+
+dotnet ef database update \
+  --project src/Archu.Infrastructure \
+  --startup-project src/Archu.Api \
+  --context ApplicationDbContext
+```
+
+That’s the normal incremental cycle. ([Microsoft Learn][5])
+
+---
+
+## 6) Shipping to Azure — generate an idempotent script
+
+For CI/CD or DBA review, spit out a single script:
+
+```bash
+dotnet ef migrations script \
+  --project src/Archu.Infrastructure \
+  --startup-project src/Archu.Api \
+  --idempotent \
+  -o artifacts/migrations.sql \
+  --context ApplicationDbContext
+```
+
+Idempotent scripts can be applied safely across environments. EF docs cover the flow. ([Microsoft Learn][2])
+
+---
+
+## 7) If your design-time context can’t be created
+
+Implement `IDesignTimeDbContextFactory<ApplicationDbContext>` (you already started this). EF Tools will **auto-discover** it in the same assembly as the DbContext or the startup assembly; it’s the canonical fix when tools can’t resolve DI or need different config at design time. ([Microsoft Learn][6])
+
+---
+
+## 8) Quick troubleshoot hits
+
+* **“Build failed”** → `dotnet build` first; migrations won’t run otherwise.
+* **“Couldn’t find DbContext” / multiple contexts** → add `--context ApplicationDbContext`. ([Microsoft Learn][1])
+* **Migrations in a different project?** → Supported (even a dedicated migrations project). Follow the doc if you split further. ([Microsoft Learn][7])
+
+---
+
+## TL;DR (do this)
+
+From **solution root** every time:
+
+```bash
+# create migration in Infrastructure, using Api to resolve config
+dotnet ef migrations add InitialCreate \
+  --project src/Archu.Infrastructure \
+  --startup-project src/Archu.Api \
+  --output-dir Persistence/Migrations \
+  --context ApplicationDbContext
+
+# apply it
+dotnet ef database update \
+  --project src/Archu.Infrastructure \
+  --startup-project src/Archu.Api \
+  --context ApplicationDbContext
+```
+
+That’s the clean way, boss—fast, predictable, and plays nice with Aspire and CI.
+
+[1]: https://learn.microsoft.com/en-us/ef/core/cli/dotnet?utm_source=chatgpt.com "Entity Framework Core tools reference - .NET CLI"
+[2]: https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/applying?utm_source=chatgpt.com "Applying Migrations - EF Core"
+[3]: https://www.jetbrains.com/help/rider/EF_Core_add_migrations.html?utm_source=chatgpt.com "Entity Framework Core: Add Migration | JetBrains Rider"
+[4]: https://learn.microsoft.com/en-us/dotnet/aspire/database/sql-server-integration?utm_source=chatgpt.com "Aspire SQL Server integration"
+[5]: https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/?utm_source=chatgpt.com "Migrations Overview - EF Core"
+[6]: https://learn.microsoft.com/en-us/ef/core/cli/dbcontext-creation?utm_source=chatgpt.com "Design-time DbContext Creation - EF Core"
+[7]: https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/projects?utm_source=chatgpt.com "Using a Separate Migrations Project - EF Core"
+
+dotnet ef migrations add InitialCreate --project src/Archu.Infrastructure --startup-project src/Archu.Api --output-dir Persistence/Migrations --context ApplicationDbContext

@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>(); // implement per your auth
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITimeProvider, SystemTimeProvider>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
