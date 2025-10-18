@@ -1,0 +1,51 @@
+@namespace Archu.Ui.Components.Common
+
+<MudAlert Severity="@Severity" 
+          Variant="@Variant" 
+          Elevation="@Elevation"
+          Class="@CssClass"
+          Dense="@Dense"
+          NoIcon="@NoIcon"
+          ShowCloseIcon="@ShowCloseButton"
+          CloseIconClicked="@OnClose">
+    @if (ChildContent != null)
+    {
+        @ChildContent
+    }
+    else
+    {
+        @Message
+    }
+</MudAlert>
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public Severity Severity { get; set; } = Severity.Info;
+
+    [Parameter]
+    public Variant Variant { get; set; } = Variant.Filled;
+
+    [Parameter]
+    public int Elevation { get; set; } = 0;
+
+    [Parameter]
+    public bool Dense { get; set; } = false;
+
+    [Parameter]
+    public bool NoIcon { get; set; } = false;
+
+    [Parameter]
+    public bool ShowCloseButton { get; set; } = false;
+
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}
