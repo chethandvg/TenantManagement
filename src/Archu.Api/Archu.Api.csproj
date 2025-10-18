@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.9.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -19,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Archu.Contracts\Archu.Contracts.csproj" />
     <ProjectReference Include="..\Archu.Application\Archu.Application.csproj" />
     <ProjectReference Include="..\Archu.Infrastructure\Archu.Infrastructure.csproj" />
     <ProjectReference Include="..\Archu.ServiceDefaults\Archu.ServiceDefaults.csproj" />

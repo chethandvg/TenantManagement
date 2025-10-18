@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.AppHost", "src\Archu.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.ServiceDefaults", "src\Archu.ServiceDefaults\Archu.ServiceDefaults.csproj", "{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archu.Contracts", "src\Archu.Contracts\Archu.Contracts.csproj", "{EC0516A1-98E6-40E6-98F3-4E0F339E55E3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09EF6A25-4B7F-6058-6F57-AB32894B4BFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC0516A1-98E6-40E6-98F3-4E0F339E55E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC0516A1-98E6-40E6-98F3-4E0F339E55E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC0516A1-98E6-40E6-98F3-4E0F339E55E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC0516A1-98E6-40E6-98F3-4E0F339E55E3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

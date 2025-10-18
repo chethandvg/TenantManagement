@@ -1,6 +1,32 @@
 @Archu.Api_HostAddress = http://localhost:5268
 
-GET {{Archu.Api_HostAddress}}/weatherforecast/
+### Retrieve all products
+GET {{Archu.Api_HostAddress}}/api/Products
 Accept: application/json
 
-###
+### Retrieve a single product by identifier
+GET {{Archu.Api_HostAddress}}/api/Products/00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+### Create a product
+POST {{Archu.Api_HostAddress}}/api/Products
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Sample Product",
+  "price": 19.99
+}
+
+### Update a product
+PUT {{Archu.Api_HostAddress}}/api/Products/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "name": "Updated Product",
+  "price": 24.99,
+  "rowVersion": "AAAAAAAAAAA="
+}
+
+### Delete a product
+DELETE {{Archu.Api_HostAddress}}/api/Products/00000000-0000-0000-0000-000000000000
