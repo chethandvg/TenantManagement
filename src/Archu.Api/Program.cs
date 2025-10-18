@@ -3,6 +3,7 @@ using Archu.Application.Abstractions;
 using Archu.Infrastructure.Persistence;
 using Archu.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "Archu API";
+    });
 }
 
 app.UseHttpsRedirection();
