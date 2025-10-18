@@ -20,8 +20,8 @@ public sealed class UpdateProductRequest : IValidatableObject
     [Range(0, double.MaxValue)]
     public decimal Price { get; init; }
 
-    [Required]
-    public byte[] RowVersion { get; init; } = Array.Empty<byte>();
+    [Required, MinLength(1)]
+    public byte[] RowVersion { get; init; }
 
     /// <summary>
     /// Confirms that price updates stay within the two-decimal precision agreed
