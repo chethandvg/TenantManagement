@@ -3,6 +3,7 @@ using Archu.Application.Abstractions;
 using Archu.Infrastructure.Persistence;
 using Archu.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddScalar();
 
 var app = builder.Build();
 
@@ -31,6 +33,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "Archu API";
+    });
 }
 
 app.UseHttpsRedirection();
