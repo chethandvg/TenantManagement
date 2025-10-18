@@ -25,7 +25,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddScalar();
 
 var app = builder.Build();
 
