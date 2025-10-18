@@ -1,11 +1,13 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Dev-time SQL Server (container) for local runs
+// Configure dev-time SQL Server container to back the API locally and persist data between runs.
 var sql = builder.AddSqlServer("sql")
-                 .WithDataVolume(); // keep data between runs (optional)
+                 .WithDataVolume();
 
-// Wire connection string into API
-var api = builder.AddProject<Projects.Archu_Api>("api")
-                 .WithReference(sql);
+// Register the API, connect it to SQL, and expose HTTP endpoints externally for Scalar UI access.
+builder.AddProject<Projects.Archu_Api>("api")
+       .WithReference(sql)
+       .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+       .WithExternalHttpEndpoints();
 
 builder.Build().Run();
