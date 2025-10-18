@@ -69,10 +69,10 @@ dotnet run --project src/Archu.AppHost
 
 This will:
 - Start SQL Server in a Docker container
-- Apply database migrations
 - Start the Archu.Api web service
 - Launch the Aspire Dashboard
 
+**Note:** Database migrations are not applied automatically. Please apply migrations manually using the instructions in the [Database Migrations](#database-migrations) section below.
 ### 3. Access the Application
 
 - **API**: Displayed in Aspire Dashboard (typically `https://localhost:7xxx`)
