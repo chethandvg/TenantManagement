@@ -2,7 +2,8 @@ using Archu.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var sql = builder.AddSqlServer("sql").WithDataVolume();
+var sql = builder.AddSqlServer("sql").WithDataVolume().
+    AddDatabase("archudb");
 
 var api = builder.AddProject<Projects.Archu_Api>("api")
     .WithReference(sql)
