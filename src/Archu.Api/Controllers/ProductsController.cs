@@ -162,7 +162,7 @@ public class ProductsController : ControllerBase
             return NotFound();
         }
 
-        _context.Products.Remove(product);
+        product.IsDeleted = true;
         await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();
