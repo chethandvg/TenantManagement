@@ -1,4 +1,4 @@
-using Archu.Api.Contracts.Products;
+using Archu.Contracts.Products;
 using Archu.Domain.Entities;
 using Archu.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;

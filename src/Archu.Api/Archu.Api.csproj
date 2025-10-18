@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Archu.Contracts\Archu.Contracts.csproj" />
     <ProjectReference Include="..\Archu.Application\Archu.Application.csproj" />
     <ProjectReference Include="..\Archu.Infrastructure\Archu.Infrastructure.csproj" />
     <ProjectReference Include="..\Archu.ServiceDefaults\Archu.ServiceDefaults.csproj" />

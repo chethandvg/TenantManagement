@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace Archu.Api.Contracts.Products;
+namespace Archu.Contracts.Products;
 
 /// <summary>
 /// Captures the inputs required to create a product so workflow steps that
