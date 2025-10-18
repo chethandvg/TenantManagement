@@ -1,4 +1,4 @@
-namespace Archu.Api.Contracts.Products;
+namespace Archu.Contracts.Products;
 
 /// <summary>
 /// Represents the shape of product data exposed by the API so that clients can

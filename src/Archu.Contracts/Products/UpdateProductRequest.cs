@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace Archu.Api.Contracts.Products;
+namespace Archu.Contracts.Products;
 
 /// <summary>
 /// Captures the edits that operators submit when refreshing product details,
