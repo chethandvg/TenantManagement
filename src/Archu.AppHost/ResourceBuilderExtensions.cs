@@ -14,8 +14,8 @@ internal static class ResourceBuilderExtensions
     private static IResourceBuilder<T> WithOpenApiDocs<T>(this IResourceBuilder<T> builder, string name, string displayName, string openApiUiPath) where T : IResourceWithEndpoints
     {
         return builder.WithCommand(
-    name: "scalar-ui-docs",
-    displayName: "Scalar API Documentation",
+    name: name,
+    displayName: displayName,
     executeCommand: async context =>
     {
         // Prefer https; fall back to http
@@ -31,7 +31,7 @@ internal static class ResourceBuilderExtensions
         if (string.IsNullOrWhiteSpace(endpointUrl))
             return CommandResults.Failure("Could not resolve the API endpoint URL.");
 
-        var scalarUrl = $"{endpointUrl.TrimEnd('/')}/scalar/v1";
+        var scalarUrl = $"{endpointUrl.TrimEnd('/')}{openApiUiPath}";
 
         try
         {
