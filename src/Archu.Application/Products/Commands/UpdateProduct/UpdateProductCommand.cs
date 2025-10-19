@@ -1,4 +1,5 @@
 using Archu.Application.Common;
+using Archu.Contracts.Products;
 using MediatR;
 
 namespace Archu.Application.Products.Commands.UpdateProduct;
@@ -11,4 +12,4 @@ public record UpdateProductCommand(
     string Name,
     decimal Price,
     byte[] RowVersion
-) : IRequest<Result>;
+) : IRequest<Result<ProductDto>>;

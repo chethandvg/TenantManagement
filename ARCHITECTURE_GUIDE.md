@@ -594,7 +594,7 @@ dotnet test
 
 ### Key Patterns
 
-**Command Handler:**
+**Command Handler (Create):**
 ```csharp
 public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, ProductDto>
 {
@@ -606,7 +606,45 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         await _unitOfWork.Products.AddAsync(product, ct);
         await _unitOfWork.SaveChangesAsync(ct); // ✅
         
-        return MapToDto(product);
+        // ✅ Return created product with generated ID and RowVersion
+        return new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            RowVersion = product.RowVersion
+        };
+    }
+}
+```
+
+**Command Handler (Update):**
+```csharp
+public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Result<ProductDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+
+    public async Task<Result<ProductDto>> Handle(UpdateProductCommand request, CancellationToken ct)
+    {
+        var product = await _unitOfWork.Products.GetByIdAsync(request.Id, ct);
+        
+        if (product is null)
+            return Result<ProductDto>.Failure("Product not found");
+
+        product.Name = request.Name;
+        product.Price = request.Price;
+
+        await _unitOfWork.Products.UpdateAsync(product, ct);
+        await _unitOfWork.SaveChangesAsync(ct); // ✅ Gets new RowVersion
+        
+        // ✅ Return updated product with new RowVersion
+        return Result<ProductDto>.Success(new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            RowVersion = product.RowVersion // Critical for next update!
+        });
     }
 }
 ```
@@ -631,6 +669,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, IEnumer
 
 ✅ **DO:**
 - Always use `IUnitOfWork.SaveChangesAsync()` in handlers
+- **Return data after POST/PUT** - Clients need generated/updated values (ID, RowVersion)
 - Write tests before adding features
 - Cache read-heavy queries
 - Secure all non-public endpoints
@@ -639,6 +678,7 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, IEnumer
 
 ❌ **DON'T:**
 - Call `SaveChangesAsync` in repository
+- **Return null after POST/PUT** - Breaks optimistic concurrency and requires extra GET
 - Expose domain entities in API (use DTOs)
 - Put business logic in controllers
 - Skip tests
@@ -646,50 +686,22 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, IEnumer
 
 ---
 
-## Checklist
+### REST API Best Practices
 
-### Critical (This Week)
-- [x] Fix repository pattern
-- [ ] Create test projects
-- [ ] Implement JWT authentication
-- [ ] Add Redis caching
+**POST (Create):**
+- ✅ Return **201 Created** with Location header
+- ✅ Return created resource in body (ID, RowVersion, audit fields)
+- ✅ Use `CreatedAtAction()` to include resource URI
 
-### High Priority (2-4 Weeks)
-- [ ] Add rate limiting
-- [ ] Add response compression
-- [ ] Domain events
-- [ ] Specification pattern
-- [ ] AutoMapper
+**PUT (Update):**
+- ✅ Return **200 OK** with updated resource in body
+- ✅ Include new RowVersion (critical for optimistic concurrency!)
+- ❌ Don't return 204 No Content (client loses RowVersion)
 
-### Medium Priority (1-3 Months)
-- [ ] Domain-rich entities
-- [ ] Outbox pattern
-- [ ] Pagination
-- [ ] Performance optimization
+**GET:**
+- ✅ Return **200 OK** with resource(s)
 
-### Polish
-- [ ] Correlation IDs
-- [ ] Enhanced health checks
-- [ ] Security headers
-- [ ] Database indexes
+**DELETE:**
+- ✅ Return **204 No Content** or **200 OK** with no body
 
----
-
-## Resources
-
-### Documentation
-- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [.NET Aspire](https://learn.microsoft.com/dotnet/aspire/)
-- [EF Core Performance](https://learn.microsoft.com/ef/core/performance/)
-- [MediatR Wiki](https://github.com/jbogard/MediatR/wiki)
-
-### Learning
-- **Nick Chapsas** - .NET best practices (YouTube)
-- **Milan Jovanović** - Clean Architecture & DDD (YouTube)
-- **Jason Taylor** - [Clean Architecture Template](https://github.com/jasontaylordev/CleanArchitecture)
-
----
-
-**Version:** 1.0  
-**Last Updated:** 2025-01-19  
-**Build Status:** ✅ Passing
+**See:** `REST_API_IMPROVEMENTS_IMPLEMENTED.md` for detailed explanation.

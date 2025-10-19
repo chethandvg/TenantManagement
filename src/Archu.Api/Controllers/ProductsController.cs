@@ -42,7 +42,7 @@ public partial class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<IEnumerable<ProductDto>>>> GetProducts(CancellationToken cancellationToken)
     {
         LogRetrievingProducts();
-        
+
         var products = await _mediator.Send(new GetProductsQuery(), cancellationToken);
 
         LogProductsRetrieved(products.Count());
@@ -63,7 +63,7 @@ public partial class ProductsController : ControllerBase
     public async Task<ActionResult<ApiResponse<ProductDto>>> GetProduct(Guid id, CancellationToken cancellationToken)
     {
         LogRetrievingProduct(id);
-        
+
         var product = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
 
         if (product is null)
@@ -87,7 +87,7 @@ public partial class ProductsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<ProductDto>>> CreateProduct(
-        CreateProductRequest request, 
+        CreateProductRequest request,
         CancellationToken cancellationToken)
     {
         LogCreatingProduct(request.Name);
@@ -96,10 +96,10 @@ public partial class ProductsController : ControllerBase
         var product = await _mediator.Send(command, cancellationToken);
 
         LogProductCreated(product.Id);
-        
+
         return CreatedAtAction(
-            nameof(GetProduct), 
-            new { id = product.Id, version = "1.0" }, 
+            nameof(GetProduct),
+            new { id = product.Id, version = "1.0" },
             ApiResponse<ProductDto>.Ok(product, "Product created successfully"));
     }
 
@@ -109,24 +109,24 @@ public partial class ProductsController : ControllerBase
     /// <param name="id">The product identifier.</param>
     /// <param name="request">The product update request.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>A standardized API response.</returns>
-    /// <response code="200">If the product was successfully updated.</response>
+    /// <returns>A standardized API response with the updated product.</returns>
+    /// <response code="200">Returns the updated product with new RowVersion.</response>
     /// <response code="400">If the request is invalid.</response>
     /// <response code="404">If the product is not found.</response>
     /// <response code="409">If there is a concurrency conflict.</response>
     [HttpPut("{id:guid}")]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ApiResponse<object>>> UpdateProduct(
-        Guid id, 
-        UpdateProductRequest request, 
+    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<ProductDto>>> UpdateProduct(
+        Guid id,
+        UpdateProductRequest request,
         CancellationToken cancellationToken)
     {
         if (id != request.Id)
         {
-            return BadRequest(ApiResponse<object>.Fail("The route ID does not match the request payload ID"));
+            return BadRequest(ApiResponse<ProductDto>.Fail("The route ID does not match the request payload ID"));
         }
 
         LogUpdatingProduct(id);
@@ -137,11 +137,12 @@ public partial class ProductsController : ControllerBase
         if (!result.IsSuccess)
         {
             LogProductNotFound(id);
-            return NotFound(ApiResponse<object>.Fail(result.Error!));
+            return NotFound(ApiResponse<ProductDto>.Fail(result.Error!));
         }
 
         LogProductUpdated(id);
-        return Ok(ApiResponse<object>.Ok(null, "Product updated successfully"));
+        // ✅ Return updated product with new RowVersion
+        return Ok(ApiResponse<ProductDto>.Ok(result.Value!, "Product updated successfully"));
     }
 
     /// <summary>
@@ -161,7 +162,7 @@ public partial class ProductsController : ControllerBase
 
         var command = new DeleteProductCommand(id);
         var result = await _mediator.Send(command, cancellationToken);
-        
+
         if (!result.IsSuccess)
         {
             LogProductNotFound(id);
