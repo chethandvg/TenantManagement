@@ -10,5 +10,6 @@ namespace Archu.Application.Products.Commands.UpdateProduct;
 public record UpdateProductCommand(
     Guid Id,
     string Name,
-    decimal Price
+    decimal Price,
+    byte[] RowVersion
 ) : IRequest<Result<ProductDto>>;
