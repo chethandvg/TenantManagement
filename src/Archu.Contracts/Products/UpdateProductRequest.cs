@@ -3,9 +3,8 @@ using System.ComponentModel.DataAnnotations;
 namespace Archu.Contracts.Products;
 
 /// <summary>
-/// Captures the edits that operators submit when refreshing product details,
-/// including concurrency metadata so the workflow can detect conflicting
-/// updates.
+/// Captures the edits that operators submit when refreshing product details.
+/// Concurrency is handled server-side by fetching the current entity state.
 /// </summary>
 public sealed class UpdateProductRequest : IValidatableObject
 {
@@ -19,13 +18,9 @@ public sealed class UpdateProductRequest : IValidatableObject
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal Price { get; init; }
 
-    [Required, MinLength(1)]
-    public byte[] RowVersion { get; init; }
-
     /// <summary>
     /// Confirms that price updates stay within the two-decimal precision agreed
-    /// upon by the product management workflow so concurrency checks align with
-    /// stored values.
+    /// upon by the product management workflow.
     /// </summary>
     /// <param name="validationContext">Validation metadata supplied by the pipeline.</param>
     /// <returns>Validation results indicating whether the price precision is acceptable.</returns>

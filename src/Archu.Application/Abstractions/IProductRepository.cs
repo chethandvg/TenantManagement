@@ -33,12 +33,13 @@ public interface IProductRepository
     Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Tracks an existing product for update.
+    /// Tracks an existing product for update with concurrency control.
     /// Call IUnitOfWork.SaveChangesAsync() to persist.
     /// </summary>
     /// <param name="product">The product to update.</param>
+    /// <param name="originalRowVersion">The original RowVersion from the client for concurrency detection.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
+    Task UpdateAsync(Product product, byte[] originalRowVersion, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Tracks a product for deletion (soft delete).

@@ -131,7 +131,7 @@ public partial class ProductsController : ControllerBase
 
         LogUpdatingProduct(id);
 
-        var command = new UpdateProductCommand(request.Id, request.Name, request.Price, request.RowVersion);
+        var command = new UpdateProductCommand(request.Id, request.Name, request.Price);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.IsSuccess)
@@ -141,7 +141,6 @@ public partial class ProductsController : ControllerBase
         }
 
         LogProductUpdated(id);
-        // ✅ Return updated product with new RowVersion
         return Ok(ApiResponse<ProductDto>.Ok(result.Value!, "Product updated successfully"));
     }
 
