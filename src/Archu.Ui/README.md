@@ -283,8 +283,8 @@ All components use CSS isolation (scoped styles). To override styles:
 
 ## Dependencies
 
-- **Microsoft.AspNetCore.Components.Web** (9.0.0)
-- **MudBlazor** (7.24.0)
+- **Microsoft.AspNetCore.Components.Web** (9.0.1)
+- **MudBlazor** (8.0.0)
 - **Archu.Contracts** (project reference)
 
 ## Architecture Notes
