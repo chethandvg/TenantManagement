@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Archu.Application.Products.Commands.UpdateProduct;
 
 /// <summary>
-/// Handles updating an existing product.
+/// Handles updating an existing product with client-side optimistic concurrency control.
 /// </summary>
 public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Result<ProductDto>>
 {
@@ -26,7 +26,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
     {
         _logger.LogInformation("Updating product with ID: {ProductId}", request.Id);
 
-        // Fetch current entity from database - this gives us the current RowVersion
+        // Fetch current entity from database
         var product = await _unitOfWork.Products.GetByIdAsync(request.Id, cancellationToken);
 
         if (product is null)
@@ -35,8 +35,17 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
             return Result<ProductDto>.Failure("Product not found");
         }
 
-        // Store the current RowVersion BEFORE making changes
-        var currentRowVersion = product.RowVersion;
+        // ✅ CRITICAL: Validate RowVersion before making changes
+        // This provides early detection of concurrency conflicts with a clear error message
+        if (!product.RowVersion.SequenceEqual(request.RowVersion))
+        {
+            _logger.LogWarning(
+                "Concurrency conflict detected for product {ProductId}. Client RowVersion does not match current database version",
+                request.Id);
+
+            return Result<ProductDto>.Failure(
+                "The product was modified by another user. Please refresh and try again.");
+        }
 
         // Update product properties
         product.Name = request.Name;
@@ -44,8 +53,8 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
         try
         {
-            // Use the RowVersion from the client (optimistic concurrency)
-            // This ensures we're comparing against the state the client last saw
+            // Use the RowVersion from the client for optimistic concurrency control
+            // This ensures the client is updating the same version they retrieved
             await _unitOfWork.Products.UpdateAsync(product, request.RowVersion, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -64,16 +73,20 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
         }
         catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
         {
-            // Handle concurrency exception - this means someone else modified the record
-            // between our GetByIdAsync and SaveChangesAsync calls
+            // This catch block handles race conditions where the product was modified
+            // between our RowVersion check and SaveChangesAsync call
             if (!await _unitOfWork.Products.ExistsAsync(request.Id, cancellationToken))
             {
-                _logger.LogWarning("Product with ID {ProductId} not found during concurrency check", request.Id);
+                _logger.LogWarning("Product with ID {ProductId} was deleted during update operation", request.Id);
                 return Result<ProductDto>.Failure("Product not found");
             }
 
-            _logger.LogWarning("Concurrency conflict updating product with ID {ProductId}. The product was modified by another user.", request.Id);
-            return Result<ProductDto>.Failure("The product was modified by another user. Please refresh and try again.");
+            _logger.LogWarning(
+                "Race condition detected: Product {ProductId} was modified between validation and save",
+                request.Id);
+
+            return Result<ProductDto>.Failure(
+                "The product was modified by another user. Please refresh and try again.");
         }
     }
 }

@@ -34,6 +34,16 @@ Optimistic concurrency assumes that conflicts between concurrent operations are 
 
 ### How It Works
 
+Archu implements **client-side optimistic concurrency control**. This means:
+
+1. Client GETs product and receives current RowVersion
+2. Client edits the product locally
+3. Client PUTs update request including the RowVersion from step 1
+4. Server fetches the current product from the database
+5. Server applies the changes from the request
+6. Server attempts to save, using the client's RowVersion for concurrency detection
+7. If the database RowVersion doesn't match the client's RowVersion, a concurrency exception is thrown
+
 ```
 1. Client GETs product → RowVersion: v1
 2. Client edits locally
@@ -116,6 +126,11 @@ This tells EF Core: *"The client was working with this specific version. If the 
 
 #### 4. **Command Handlers** - Passing RowVersion
 
+The handler performs **two levels of concurrency validation**:
+
+1. **Early validation**: Explicit check before making changes (fast fail with clear error)
+2. **Database validation**: EF Core check during save (handles race conditions)
+
 ```csharp
 public async Task<Result<ProductDto>> Handle(UpdateProductCommand request, CancellationToken ct)
 {
@@ -123,6 +138,18 @@ public async Task<Result<ProductDto>> Handle(UpdateProductCommand request, Cance
     
     if (product is null)
         return Result<ProductDto>.Failure("Product not found");
+
+    // ✅ CRITICAL: Validate RowVersion BEFORE making changes
+    // This provides early detection of concurrency conflicts
+    if (!product.RowVersion.SequenceEqual(request.RowVersion))
+    {
+        _logger.LogWarning(
+            "Concurrency conflict detected for product {ProductId}. Client RowVersion does not match current database version",
+            request.Id);
+        
+        return Result<ProductDto>.Failure(
+            "The product was modified by another user. Please refresh and try again.");
+    }
 
     // Update properties
     product.Name = request.Name;
@@ -145,20 +172,51 @@ public async Task<Result<ProductDto>> Handle(UpdateProductCommand request, Cance
     }
     catch (DbUpdateConcurrencyException)
     {
+        // This handles race conditions where the product was modified
+        // between our RowVersion check and SaveChangesAsync call
+        if (!await _unitOfWork.Products.ExistsAsync(request.Id, ct))
+            return Result<ProductDto>.Failure("Product not found");
+
         return Result<ProductDto>.Failure(
             "The product was modified by another user. Please refresh and try again.");
     }
 }
 ```
 
+**Why Two Levels of Validation?**
+
+1. **Early Check** (`SequenceEqual`):
+   - Catches most concurrency conflicts immediately
+   - Provides clear logging and error messages
+   - Avoids unnecessary property modifications
+   - Better performance (fails fast)
+
+2. **Database Check** (EF Core):
+   - Handles race conditions (modifications between check and save)
+   - Ensures database-level consistency
+   - Required for true concurrency safety
+
+**Example Scenarios:**
+| Scenario | Early Check | DB Check | Result |
+|----------|-------------|----------|--------|
+| No conflict | ✅ Pass | ✅ Pass | Success |
+| Stale client data | ❌ Fail | N/A | 409 Conflict (early) |
+| Race condition | ✅ Pass | ❌ Fail | 409 Conflict (at save) |
+ 
 #### 5. **API Layer** - Including RowVersion in DTOs
 
 ```csharp
-public sealed class UpdateProductRequest
+public sealed class UpdateProductRequest : IValidatableObject
 {
-    [Required] public Guid Id { get; init; }
-    [Required] public string Name { get; init; } = string.Empty;
-    [Range(0, double.MaxValue)] public decimal Price { get; init; }
+    [Required] 
+    public Guid Id { get; init; }
+    
+    [Required]
+    [MaxLength(200)]
+    public string Name { get; init; } = string.Empty;
+    
+    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+    public decimal Price { get; init; }
     
     [Required, MinLength(1)]
     public byte[] RowVersion { get; init; } = Array.Empty<byte>();  // ← From previous GET
@@ -171,6 +229,29 @@ public sealed class ProductDto
     public decimal Price { get; init; }
     public byte[] RowVersion { get; init; } = Array.Empty<byte>();  // ← For next PUT
 }
+```
+
+**Command Definition:**
+
+```csharp
+public record UpdateProductCommand(
+    Guid Id,
+    string Name,
+    decimal Price,
+    byte[] RowVersion  // ← From client
+) : IRequest<Result<ProductDto>>;
+```
+
+**Controller Implementation:**
+
+```csharp
+var command = new UpdateProductCommand(
+    request.Id, 
+    request.Name, 
+    request.Price, 
+    request.RowVersion);  // ← Pass from client
+
+var result = await _mediator.Send(command, cancellationToken);
 ```
 
 ### Client Workflow
@@ -193,17 +274,60 @@ public sealed class ProductDto
 
 ### Why This Matters
 
-**❌ Without setting OriginalValue:**
-- Handler loads product from database (getting the latest RowVersion)
-- Updates properties
-- Saves changes
-- **Problem**: EF Core compares the database RowVersion with itself → always matches → no conflict detection
+**Two-Level Concurrency Protection:**
 
-**✅ With setting OriginalValue:**
-- Handler loads product (current RowVersion: `v2`)
-- Sets original RowVersion from client (client has: `v1`)
-- Saves changes
-- **Result**: EF Core compares `v1` (client) vs `v2` (database) → conflict detected → `DbUpdateConcurrencyException`
+**Level 1: Early Validation (Application Layer)**
+```csharp
+if (!product.RowVersion.SequenceEqual(request.RowVersion))
+{
+    return Result<ProductDto>.Failure("The product was modified by another user...");
+}
+```
+- Catches most concurrency conflicts immediately
+- Fails fast before modifying entity properties
+- Provides clear, specific error messages
+- Better performance (no database round-trip for failed updates)
+
+**Level 2: Database Validation (EF Core + SQL Server)**
+```csharp
+Context.Entry(product).Property(e => e.RowVersion).OriginalValue = request.RowVersion;
+await SaveChangesAsync();  // SQL Server checks RowVersion
+```
+- Handles race conditions (modifications between Level 1 check and save)
+- Ensures database-level consistency
+- Required for true concurrency safety
+- Throws `DbUpdateConcurrencyException` if conflict detected
+
+**Example Timeline:**
+```
+Time    User 1                           User 2                      Database
+----    ------                           ------                      --------
+t0      GET product (v1)                                            v1
+t1                                       GET product (v1)            v1
+t2      Modify locally
+t3                                       Modify locally
+t4      PUT with v1
+        → Fetch from DB (v1)
+        → Early check: v1 == v1 ✅
+        → Update properties
+        → Set OriginalValue = v1
+        → Save succeeds
+        → Return v2                                                  v2 ✅
+t5                                       PUT with v1
+                                         → Fetch from DB (v2)
+                                         → Early check: v2 != v1 ❌
+                                         → Return 409 Conflict
+```
+
+**❌ Without Two-Level Protection:**
+- Without early check: Unnecessary property modifications and logging
+- Without EF Core check: Race conditions can cause data loss
+- **Problem**: Data integrity at risk
+
+**✅ With Two-Level Protection:**
+- Early check catches most conflicts immediately
+- EF Core check handles race conditions
+- **Result**: Maximum safety + best performance
 
 ---
 
@@ -364,6 +488,9 @@ private void ApplyAuditing()
 - [ ] Repository implementation: `SetOriginalRowVersion(entity, originalRowVersion)`
 - [ ] DTO includes `byte[] RowVersion`
 - [ ] Request includes `byte[] RowVersion` with `[Required, MinLength(1)]`
+- [ ] Command includes `byte[] RowVersion` parameter
+- [ ] Controller passes `request.RowVersion` to command
+- [ ] **Handler validates RowVersion with `SequenceEqual` before making changes** ✨
 - [ ] Handler passes `request.RowVersion` to repository
 - [ ] Handler returns `entity.RowVersion` after save
 - [ ] Handler catches `DbUpdateConcurrencyException`
@@ -400,14 +527,50 @@ PUT /api/v1/products/{id}
 # 5. Update (User 2 with stale RowVersion)
 PUT /api/v1/products/{id}
 { "id": "...", "name": "Updated by User 2", "price": 200, "rowVersion": "AAAAAAAA=" }
-→ ✅ 409 Conflict: "The product was modified by another user..."
+→ ✅ 409 Conflict: "The product was modified by another user. Please refresh and try again."
 ```
 
-### Unit Test Example
+### Unit Test Examples
+
+#### Test 1: Early Validation Catches Stale RowVersion
 
 ```csharp
 [Fact]
-public async Task UpdateProduct_WithStaleRowVersion_ReturnsConflict()
+public async Task UpdateProduct_WithStaleRowVersion_ReturnsConflictFromEarlyValidation()
+{
+    // Arrange
+    var product = new Product { Name = "Product A", Price = 10m };
+    await _context.Products.AddAsync(product);
+    await _context.SaveChangesAsync();
+    
+    var staleRowVersion = product.RowVersion;
+
+    // Simulate another user updating the product
+    product.Price = 20m;
+    await _context.SaveChangesAsync(); // RowVersion changes to v2
+
+    // Act - Try to update with stale RowVersion
+    var command = new UpdateProductCommand(
+        product.Id, 
+        "Updated Name", 
+        30m, 
+        staleRowVersion); // Using v1, but database has v2
+    
+    var handler = new UpdateProductCommandHandler(_unitOfWork, _logger);
+    var result = await handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    Assert.False(result.IsSuccess);
+    Assert.Equal("The product was modified by another user. Please refresh and try again.", 
+        result.Error);
+}
+```
+
+#### Test 2: Database Validation Catches Race Condition
+
+```csharp
+[Fact]
+public async Task UpdateProduct_WithRaceCondition_ReturnsConflictFromDatabaseValidation()
 {
     // Arrange
     var product = new Product { Name = "Product A", Price = 10m };
@@ -416,22 +579,127 @@ public async Task UpdateProduct_WithStaleRowVersion_ReturnsConflict()
     
     var originalRowVersion = product.RowVersion;
 
-    // Simulate another user updating the product
+    // Act & Assert
+    // Simulate race condition: Another context updates between fetch and save
     var anotherContext = CreateNewContext();
     var sameProduct = await anotherContext.Products.FindAsync(product.Id);
-    sameProduct.Price = 20m;
-    await anotherContext.SaveChangesAsync(); // RowVersion changes to v2
-
-    // Act & Assert
+    
+    // User 1 starts update (early validation passes)
     var repository = new ProductRepository(_context);
-    sameProduct.Price = 30m;
+    var productToUpdate = await _context.Products.FindAsync(product.Id);
+    var capturedRowVersion = productToUpdate!.RowVersion;
     
-    // Use the stale RowVersion (v1) while database has v2
-    await repository.UpdateAsync(sameProduct, originalRowVersion);
+    // User 2 completes update (race condition)
+    sameProduct!.Price = 20m;
+    await anotherContext.SaveChangesAsync(); // RowVersion changes to v2
     
-    // Should throw DbUpdateConcurrencyException
+    // User 1 continues (early check passed, but database check will fail)
+    productToUpdate.Price = 30m;
+    await repository.UpdateAsync(productToUpdate, capturedRowVersion);
+    
+    // Should throw DbUpdateConcurrencyException because database has v2
     await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => 
         _context.SaveChangesAsync());
+}
+```
+
+#### Test 3: Successful Update Returns New RowVersion
+
+```csharp
+[Fact]
+public async Task UpdateProduct_WithValidRowVersion_ReturnsSuccessWithNewRowVersion()
+{
+    // Arrange
+    var product = new Product { Name = "Product A", Price = 10m };
+    await _context.Products.AddAsync(product);
+    await _context.SaveChangesAsync();
+    
+    var originalRowVersion = product.RowVersion;
+
+    // Act
+    var command = new UpdateProductCommand(
+        product.Id, 
+        "Updated Name", 
+        20m, 
+        originalRowVersion);
+    
+    var handler = new UpdateProductCommandHandler(_unitOfWork, _logger);
+    var result = await handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    Assert.True(result.IsSuccess);
+    Assert.Equal("Updated Name", result.Value!.Name);
+    Assert.Equal(20m, result.Value.Price);
+    Assert.NotEqual(originalRowVersion, result.Value.RowVersion); // New version
+}
+```
+
+#### Test 4: SequenceEqual Works Correctly for Byte Arrays
+
+```csharp
+[Fact]
+public void RowVersion_SequenceEqual_WorksCorrectly()
+{
+    // Arrange
+    byte[] version1 = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+    byte[] version1Copy = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+    byte[] version2 = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02 };
+
+    // Assert
+    Assert.True(version1.SequenceEqual(version1Copy));  // Same content
+    Assert.False(version1.SequenceEqual(version2));     // Different content
+    Assert.False(version1 == version1Copy);             // Different references
+}
+```
+
+### Integration Test: Full Concurrency Scenario
+
+```csharp
+[Fact]
+public async Task IntegrationTest_ConcurrentUpdates_SecondUpdateFailsWithConflict()
+{
+    // Arrange - Create a product
+    var createResponse = await _client.PostAsJsonAsync("/api/v1/products", 
+        new { name = "Test Product", price = 100 });
+    var createdProduct = await createResponse.Content.ReadFromJsonAsync<ApiResponse<ProductDto>>();
+    var productId = createdProduct!.Data!.Id;
+
+    // User 1 and User 2 both GET the product
+    var user1Response = await _client.GetAsync($"/api/v1/products/{productId}");
+    var user1Product = await user1Response.Content.ReadFromJsonAsync<ApiResponse<ProductDto>>();
+    
+    var user2Response = await _client.GetAsync($"/api/v1/products/{productId}");
+    var user2Product = await user2Response.Content.ReadFromJsonAsync<ApiResponse<ProductDto>>();
+
+    // Both users have the same RowVersion
+    Assert.Equal(user1Product!.Data!.RowVersion, user2Product!.Data!.RowVersion);
+
+    // User 1 updates successfully
+    var user1Update = await _client.PutAsJsonAsync($"/api/v1/products/{productId}", 
+        new 
+        { 
+            id = productId,
+            name = "Updated by User 1", 
+            price = 150,
+            rowVersion = user1Product.Data.RowVersion 
+        });
+    
+    Assert.Equal(HttpStatusCode.OK, user1Update.StatusCode);
+
+    // User 2 tries to update with stale RowVersion
+    var user2Update = await _client.PutAsJsonAsync($"/api/v1/products/{productId}", 
+        new 
+        { 
+            id = productId,
+            name = "Updated by User 2", 
+            price = 200,
+            rowVersion = user2Product.Data.RowVersion // Stale version
+        });
+    
+    // Assert - User 2 gets conflict
+    Assert.Equal(HttpStatusCode.Conflict, user2Update.StatusCode);
+    var errorResponse = await user2Update.Content.ReadFromJsonAsync<ApiResponse<ProductDto>>();
+    Assert.Contains("modified by another user", errorResponse!.Message!.ToLower());
 }
 ```
 
@@ -460,6 +728,54 @@ public Task UpdateAsync(Product product, byte[] originalRowVersion, ...)
 }
 ```
 
+### Problem: RowVersion validation always fails with SequenceEqual
+
+**Symptoms:**
+- Early validation fails even when client has correct RowVersion
+- Error: "The product was modified by another user" immediately after GET
+
+**Solution**: Check that you're comparing byte arrays correctly and that RowVersion is being returned properly in DTOs.
+
+```csharp
+// ❌ Wrong - comparing references
+if (product.RowVersion != request.RowVersion)  // Always false for byte arrays
+
+// ✅ Correct - comparing contents
+if (!product.RowVersion.SequenceEqual(request.RowVersion))
+
+// Also verify DTO mapping includes RowVersion
+return new ProductDto
+{
+    Id = product.Id,
+    Name = product.Name,
+    Price = product.Price,
+    RowVersion = product.RowVersion  // ← Must be included
+};
+```
+
+### Problem: Early validation passes but database validation fails
+
+**Symptoms:**
+- `SequenceEqual` check passes
+- `DbUpdateConcurrencyException` thrown during save
+- This is **expected behavior** for race conditions
+
+**Explanation**: This is normal and correct! It means:
+1. Your RowVersion was valid when you checked it
+2. Another user modified the product between your check and save
+3. EF Core caught the race condition
+
+**Solution**: This is working as designed. Ensure you're catching and handling `DbUpdateConcurrencyException`:
+
+```csharp
+catch (DbUpdateConcurrencyException)
+{
+    _logger.LogWarning("Race condition detected: Product modified between validation and save");
+    return Result<ProductDto>.Failure(
+        "The product was modified by another user. Please refresh and try again.");
+}
+```
+
 ### Problem: Exception "The property 'RowVersion' cannot be set"
 
 **Solution**: Don't try to SET RowVersion directly, only set OriginalValue:
@@ -469,7 +785,7 @@ public Task UpdateAsync(Product product, byte[] originalRowVersion, ...)
 product.RowVersion = request.RowVersion;
 
 // ✅ Correct
-Context.Entry(product).Property(p => p.RowVersion).OriginalValue = request.RowVersion;
+Context.Entry(product).Property(e => e.RowVersion).OriginalValue = request.RowVersion;
 ```
 
 ### Problem: Client receives old RowVersion after update
@@ -482,6 +798,33 @@ return new ProductDto { RowVersion = request.RowVersion };  // Stale!
 
 // ✅ Correct
 return new ProductDto { RowVersion = product.RowVersion };  // New version from SQL Server
+```
+
+### Problem: RowVersion is null or empty in response
+
+**Symptoms:**
+- GET request returns empty byte array for RowVersion
+- Or RowVersion is null
+
+**Solution**: Verify the database column is configured correctly and entity is being tracked:
+
+```csharp
+// Check entity configuration
+modelBuilder.Entity<Product>(entity =>
+{
+    entity.Property(e => e.RowVersion)
+        .IsRowVersion()  // ← Critical for SQL Server
+        .IsRequired();
+});
+
+// Check query is tracking the entity (for updates)
+var product = await DbSet
+    .FirstOrDefaultAsync(p => p.Id == id, ct);  // ✅ Tracked
+
+// Not this (for updates):
+var product = await DbSet
+    .AsNoTracking()  // ❌ Not tracked - RowVersion won't update
+    .FirstOrDefaultAsync(p => p.Id == id, ct);
 ```
 
 ### Problem: Soft delete creates database DELETE
@@ -521,13 +864,31 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 ## Best Practices
 
 1. ✅ **Always include RowVersion in DTOs** for GET and PUT operations
-2. ✅ **Always pass RowVersion to UpdateAsync** in repositories
-3. ✅ **Handle DbUpdateConcurrencyException** gracefully in command handlers
-4. ✅ **Return user-friendly error messages** like "modified by another user"
-5. ✅ **Use BaseRepository** for new entity repositories to inherit common functionality
-6. ✅ **Never manually set RowVersion** - let SQL Server generate it
-7. ✅ **Test concurrency scenarios** in integration tests
-8. ✅ **Document expected behavior** in API documentation (Swagger)
+2. ✅ **Validate RowVersion explicitly** in handlers before making changes (use `SequenceEqual`)
+3. ✅ **Always pass RowVersion to UpdateAsync** in repositories (sets `OriginalValue`)
+4. ✅ **Handle DbUpdateConcurrencyException** gracefully in command handlers (for race conditions)
+5. ✅ **Return user-friendly error messages** like "modified by another user"
+6. ✅ **Use BaseRepository** for new entity repositories to inherit common functionality
+7. ✅ **Never manually set RowVersion** - let SQL Server generate it
+8. ✅ **Return the NEW RowVersion** after successful updates (not the request's RowVersion)
+9. ✅ **Log concurrency conflicts** for monitoring and debugging
+10. ✅ **Test concurrency scenarios** in integration tests
+11. ✅ **Document expected behavior** in API documentation (Swagger)
+12. ✅ **Use two-level validation** (early check + database check) for best safety and performance
+
+### Performance Considerations
+
+- **Early validation** (`SequenceEqual`) is very fast - O(n) byte array comparison
+- Prevents unnecessary property modifications when conflict is certain
+- Reduces database load by failing fast
+- The rare race condition case still requires database validation
+
+### Security Considerations
+
+- RowVersion prevents **lost update attacks** (overwrites by malicious users)
+- Client must provide exact version they're modifying
+- Server validates both in-memory and at database level
+- Audit logs capture all concurrency conflicts
 
 ---
 
@@ -537,6 +898,8 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 - `src/Archu.Infrastructure/Persistence/ApplicationDbContext.cs` - DbContext with soft delete and auditing
 - `src/Archu.Infrastructure/Repositories/BaseRepository.cs` - Base repository with common functionality
 - `src/Archu.Application/Products/Commands/UpdateProduct/UpdateProductCommandHandler.cs` - Example handler
+- `src/Archu.Contracts/Products/UpdateProductRequest.cs` - API request contract with RowVersion
+- `src/Archu.Api/Controllers/ProductsController.cs` - API controller
 
 ---
 
@@ -550,5 +913,5 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 ---
 
 **Last Updated**: 2025-01-22  
-**Version**: 2.0 (Consolidated)  
+**Version**: 2.0 (Consolidated - Client-Side Concurrency Control)  
 **Maintainer**: Archu Development Team

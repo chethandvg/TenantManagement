@@ -131,7 +131,7 @@ public partial class ProductsController : ControllerBase
 
         LogUpdatingProduct(id);
 
-        var command = new UpdateProductCommand(request.Id, request.Name, request.Price);
+        var command = new UpdateProductCommand(request.Id, request.Name, request.Price, request.RowVersion);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (!result.IsSuccess)
