@@ -8,12 +8,12 @@ A reusable Razor Class Library containing UI components built with MudBlazor. Th
 
 ## Features
 
-- ?? Pre-styled components with CSS isolation
-- ?? MudBlazor-based components for consistent design
-- ?? Platform-agnostic (no ASP.NET Core dependencies)
-- ?? Easy service registration with `AddArchuUi()`
-- ?? Type-safe component parameters
-- ? Accessibility-focused
+- ✔️ Pre-styled components with CSS isolation
+- ✔️ MudBlazor-based components for consistent design
+- ✔️ Platform-agnostic (no ASP.NET Core dependencies)
+- ✔️ Easy service registration with `AddArchuUi()`
+- ✔️ Type-safe component parameters
+- ✔️ Accessibility-focused
 
 ## Installation
 
