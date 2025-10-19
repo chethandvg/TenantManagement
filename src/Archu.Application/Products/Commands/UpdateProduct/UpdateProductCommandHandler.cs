@@ -44,9 +44,9 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
         try
         {
-            // Use the RowVersion from the database (before our changes)
-            // This ensures we're comparing against the actual current state
-            await _unitOfWork.Products.UpdateAsync(product, currentRowVersion, cancellationToken);
+            // Use the RowVersion from the client (optimistic concurrency)
+            // This ensures we're comparing against the state the client last saw
+            await _unitOfWork.Products.UpdateAsync(product, request.RowVersion, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Product with ID {ProductId} updated successfully", request.Id);
