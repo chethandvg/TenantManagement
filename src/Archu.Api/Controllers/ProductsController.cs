@@ -59,7 +59,7 @@ public partial class ProductsController : ControllerBase
     /// <response code="404">If the product is not found.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<ProductDto>>> GetProduct(Guid id, CancellationToken cancellationToken)
     {
         LogRetrievingProduct(id);
@@ -85,7 +85,7 @@ public partial class ProductsController : ControllerBase
     /// <response code="400">If the request is invalid.</response>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<ProductDto>>> CreateProduct(
         CreateProductRequest request,
         CancellationToken cancellationToken)
@@ -116,9 +116,9 @@ public partial class ProductsController : ControllerBase
     /// <response code="409">If there is a concurrency conflict.</response>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ProductDto>>> UpdateProduct(
         Guid id,
         UpdateProductRequest request,
@@ -137,7 +137,7 @@ public partial class ProductsController : ControllerBase
         if (!result.IsSuccess)
         {
             LogProductNotFound(id);
-            return NotFound(ApiResponse<ProductDto>.Fail(result.Error!));
+            return NotFound(ApiResponse<object>.Fail(result.Error!));
         }
 
         LogProductUpdated(id);

@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text.Json;
+using Archu.Contracts.Common;
 
 namespace Archu.Api.Middleware;
 
@@ -50,37 +51,37 @@ public class GlobalExceptionHandlerMiddleware
                 StatusCodes.Status409Conflict,
                 "The resource was modified by another user. Please reload and try again.",
                 "Concurrency conflict occurred",
-                null
+                (IEnumerable<string>?)null
             ),
             KeyNotFoundException => (
                 StatusCodes.Status404NotFound,
                 "The requested resource was not found.",
                 exception.Message,
-                null
+                (IEnumerable<string>?)null
             ),
             UnauthorizedAccessException => (
                 StatusCodes.Status403Forbidden,
                 "You do not have permission to access this resource.",
                 exception.Message,
-                null
+                (IEnumerable<string>?)null
             ),
             ArgumentException => (
                 StatusCodes.Status400BadRequest,
                 "Invalid request parameters.",
                 exception.Message,
-                null
+                (IEnumerable<string>?)null
             ),
             InvalidOperationException => (
                 StatusCodes.Status400BadRequest,
                 "The operation is invalid in the current state.",
                 exception.Message,
-                null
+                (IEnumerable<string>?)null
             ),
             _ => (
                 StatusCodes.Status500InternalServerError,
                 "An error occurred while processing your request.",
                 exception.Message,
-                null
+                (IEnumerable<string>?)null
             )
         };
 
@@ -89,15 +90,31 @@ public class GlobalExceptionHandlerMiddleware
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = statusCode;
 
-        var response = new ErrorResponse
+        // Build error details for development environment
+        var errorDetails = new List<string>();
+        if (_environment.IsDevelopment())
         {
-            StatusCode = statusCode,
-            Message = message,
-            Details = _environment.IsDevelopment() ? details : null,
-            Errors = errors,
-            StackTrace = _environment.IsDevelopment() ? exception.StackTrace : null,
-            TraceId = context.TraceIdentifier
-        };
+            if (!string.IsNullOrWhiteSpace(details))
+            {
+                errorDetails.Add($"Details: {details}");
+            }
+            if (!string.IsNullOrWhiteSpace(exception.StackTrace))
+            {
+                errorDetails.Add($"StackTrace: {exception.StackTrace}");
+            }
+            errorDetails.Add($"TraceId: {context.TraceIdentifier}");
+        }
+
+        // Combine validation errors with development details
+        var allErrors = errors != null
+            ? errors.Concat(errorDetails)
+            : errorDetails.Any() ? errorDetails : null;
+
+        // Use ApiResponse<object> for consistent error contract
+        var response = ApiResponse<object>.Fail(
+            message: message,
+            errors: allErrors
+        );
 
         var options = new JsonSerializerOptions
         {
@@ -105,15 +122,5 @@ public class GlobalExceptionHandlerMiddleware
         };
 
         await context.Response.WriteAsJsonAsync(response, options);
-    }
-
-    private record ErrorResponse
-    {
-        public int StatusCode { get; init; }
-        public string Message { get; init; } = string.Empty;
-        public string? Details { get; init; }
-        public IEnumerable<string>? Errors { get; init; }
-        public string? StackTrace { get; init; }
-        public string? TraceId { get; init; }
     }
 }
