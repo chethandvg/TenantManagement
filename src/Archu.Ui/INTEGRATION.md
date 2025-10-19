@@ -112,7 +112,7 @@ public static class MauiProgram
         builder.Services.AddBlazorWebViewDeveloperTools();
         #endif
         
-        builder.Services.AddArchuUi(); // ? Add this line
+        builder.Services.AddArchuUi(); // Add this line
         
         return builder.Build();
     }
