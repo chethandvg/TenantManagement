@@ -1,7 +1,8 @@
 @namespace Archu.Ui.Components.Inputs
 @typeparam T
 
-<MudTextField Value="@Value"
+<MudTextField T="T"
+              Value="@Value"
               ValueChanged="@ValueChanged"
               Label="@Label"
               Placeholder="@Placeholder"
