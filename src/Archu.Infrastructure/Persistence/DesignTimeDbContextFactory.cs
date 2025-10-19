@@ -1,4 +1,4 @@
-﻿using Archu.Application.Abstractions;
+using Archu.Application.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +18,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
             .Build();
 
         var cs = cfg.GetConnectionString("Sql")
-                 ?? "Server=localhost;Database=AcmeDb;Trusted_Connection=True;TrustServerCertificate=True;";
+                 ?? "Server=localhost;Database=archuDatabase;Trusted_Connection=True;TrustServerCertificate=True;";
 
         var opts = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlServer(cs, sql =>

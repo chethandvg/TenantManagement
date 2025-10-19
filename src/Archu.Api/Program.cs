@@ -30,7 +30,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
     opt.UseSqlServer(
-        builder.Configuration.GetConnectionString("archudb") ?? builder.Configuration.GetConnectionString("Sql"),
+        builder.Configuration.GetConnectionString("Sql") ?? builder.Configuration.GetConnectionString("archudb"),
         sql =>
         {
             sql.EnableRetryOnFailure();
