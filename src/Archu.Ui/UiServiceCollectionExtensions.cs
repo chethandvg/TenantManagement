@@ -29,7 +29,6 @@ public static class UiServiceCollectionExtensions
         });
 
         // Add any custom UI services here in the future
-        
         return services;
     }
 }

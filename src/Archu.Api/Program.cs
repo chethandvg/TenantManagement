@@ -2,10 +2,12 @@ using Archu.Api.Auth;
 using Archu.Api.Health;
 using Archu.Api.Middleware;
 using Archu.Application.Abstractions;
+using Archu.Application.Common.Behaviors;
 using Archu.Infrastructure.Persistence;
 using Archu.Infrastructure.Repositories;
 using Archu.Infrastructure.Time;
 using Asp.Versioning;
+using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -22,8 +24,9 @@ builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>(); // implement
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITimeProvider, SystemTimeProvider>();
 
-// Register repositories
+// Register repositories and Unit of Work
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
     opt.UseSqlServer(
@@ -33,6 +36,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
             sql.EnableRetryOnFailure();
             sql.CommandTimeout(30);
         }));
+
+// Add MediatR with behaviors
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Archu.Application.AssemblyReference).Assembly);
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+    cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
+});
+
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(Archu.Application.AssemblyReference).Assembly);
 
 // Add API Versioning
 builder.Services.AddApiVersioning(options =>

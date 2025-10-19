@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text.Json;
@@ -37,37 +38,49 @@ public class GlobalExceptionHandlerMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var (statusCode, message, details) = exception switch
+        var (statusCode, message, details, errors) = exception switch
         {
+            ValidationException validationEx => (
+                StatusCodes.Status400BadRequest,
+                "One or more validation errors occurred",
+                "Validation failed",
+                validationEx.Errors.Select(e => e.ErrorMessage).ToList()
+            ),
             DbUpdateConcurrencyException => (
                 StatusCodes.Status409Conflict,
                 "The resource was modified by another user. Please reload and try again.",
-                "Concurrency conflict occurred"
+                "Concurrency conflict occurred",
+                null
             ),
             KeyNotFoundException => (
                 StatusCodes.Status404NotFound,
                 "The requested resource was not found.",
-                exception.Message
+                exception.Message,
+                null
             ),
             UnauthorizedAccessException => (
                 StatusCodes.Status403Forbidden,
                 "You do not have permission to access this resource.",
-                exception.Message
+                exception.Message,
+                null
             ),
             ArgumentException => (
                 StatusCodes.Status400BadRequest,
                 "Invalid request parameters.",
-                exception.Message
+                exception.Message,
+                null
             ),
             InvalidOperationException => (
                 StatusCodes.Status400BadRequest,
                 "The operation is invalid in the current state.",
-                exception.Message
+                exception.Message,
+                null
             ),
             _ => (
                 StatusCodes.Status500InternalServerError,
                 "An error occurred while processing your request.",
-                exception.Message
+                exception.Message,
+                null
             )
         };
 
@@ -81,6 +94,7 @@ public class GlobalExceptionHandlerMiddleware
             StatusCode = statusCode,
             Message = message,
             Details = _environment.IsDevelopment() ? details : null,
+            Errors = errors,
             StackTrace = _environment.IsDevelopment() ? exception.StackTrace : null,
             TraceId = context.TraceIdentifier
         };
@@ -98,6 +112,7 @@ public class GlobalExceptionHandlerMiddleware
         public int StatusCode { get; init; }
         public string Message { get; init; } = string.Empty;
         public string? Details { get; init; }
+        public IEnumerable<string>? Errors { get; init; }
         public string? StackTrace { get; init; }
         public string? TraceId { get; init; }
     }
