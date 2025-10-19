@@ -10,14 +10,14 @@ namespace Archu.Application.Products.Commands.UpdateProduct;
 /// </summary>
 public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Result>
 {
-    private readonly IProductRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateProductCommandHandler> _logger;
 
     public UpdateProductCommandHandler(
-        IProductRepository repository,
+        IUnitOfWork unitOfWork,
         ILogger<UpdateProductCommandHandler> logger)
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -25,7 +25,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
     {
         _logger.LogInformation("Updating product with ID: {ProductId}", request.Id);
 
-        var product = await _repository.GetByIdAsync(request.Id, cancellationToken);
+        var product = await _unitOfWork.Products.GetByIdAsync(request.Id, cancellationToken);
         
         if (product is null)
         {
@@ -38,14 +38,16 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
         try
         {
-            await _repository.UpdateAsync(product, cancellationToken);
+            await _unitOfWork.Products.UpdateAsync(product, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
             _logger.LogInformation("Product with ID {ProductId} updated successfully", request.Id);
             return Result.Success();
         }
         catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
         {
             // Handle concurrency exception without direct EF Core reference
-            if (!await _repository.ExistsAsync(request.Id, cancellationToken))
+            if (!await _unitOfWork.Products.ExistsAsync(request.Id, cancellationToken))
             {
                 _logger.LogWarning("Product with ID {ProductId} not found during concurrency check", request.Id);
                 return Result.Failure("Product not found");

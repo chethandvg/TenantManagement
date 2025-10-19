@@ -7,6 +7,7 @@ namespace Archu.Infrastructure.Repositories;
 
 /// <summary>
 /// Implements product data access operations using Entity Framework Core.
+/// Note: This repository only tracks changes. Call IUnitOfWork.SaveChangesAsync() to persist.
 /// </summary>
 public class ProductRepository : IProductRepository
 {
@@ -27,34 +28,25 @@ public class ProductRepository : IProductRepository
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Products
-            .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
-    public async Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default)
+    public Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default)
     {
         _context.Products.Add(product);
-        await _context.SaveChangesAsync(cancellationToken);
-        return product;
+        return Task.FromResult(product);
     }
 
-    public async Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
     {
         _context.Products.Update(product);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(Product product, CancellationToken cancellationToken = default)
     {
-        var product = await _context.Products.FindAsync(new object[] { id }, cancellationToken);
-        if (product is null)
-        {
-            return false;
-        }
-
-        product.IsDeleted = true;
-        await _context.SaveChangesAsync(cancellationToken);
-        return true;
+        _context.Products.Remove(product);
+        return Task.CompletedTask;
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)

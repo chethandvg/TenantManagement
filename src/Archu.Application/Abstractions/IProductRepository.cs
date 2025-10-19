@@ -4,6 +4,7 @@ namespace Archu.Application.Abstractions;
 
 /// <summary>
 /// Defines contract for product data access operations.
+/// Note: This repository only tracks changes. Call IUnitOfWork.SaveChangesAsync() to persist.
 /// </summary>
 public interface IProductRepository
 {
@@ -23,27 +24,29 @@ public interface IProductRepository
     Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Adds a new product to the catalog.
+    /// Tracks a new product for addition to the catalog.
+    /// Call IUnitOfWork.SaveChangesAsync() to persist.
     /// </summary>
     /// <param name="product">The product to add.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>The added product with generated values.</returns>
+    /// <returns>The tracked product.</returns>
     Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Updates an existing product in the catalog.
+    /// Tracks an existing product for update.
+    /// Call IUnitOfWork.SaveChangesAsync() to persist.
     /// </summary>
     /// <param name="product">The product to update.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Soft deletes a product from the catalog.
+    /// Tracks a product for deletion (soft delete).
+    /// Call IUnitOfWork.SaveChangesAsync() to persist.
     /// </summary>
-    /// <param name="id">The product identifier to delete.</param>
+    /// <param name="product">The product to delete.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>True if the product was found and deleted; otherwise false.</returns>
-    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Product product, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Checks if a product exists.

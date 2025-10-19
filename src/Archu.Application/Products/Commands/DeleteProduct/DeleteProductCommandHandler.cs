@@ -10,14 +10,14 @@ namespace Archu.Application.Products.Commands.DeleteProduct;
 /// </summary>
 public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, Result>
 {
-    private readonly IProductRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<DeleteProductCommandHandler> _logger;
 
     public DeleteProductCommandHandler(
-        IProductRepository repository,
+        IUnitOfWork unitOfWork,
         ILogger<DeleteProductCommandHandler> logger)
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -25,13 +25,16 @@ public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand,
     {
         _logger.LogInformation("Deleting product with ID: {ProductId}", request.Id);
 
-        var deleted = await _repository.DeleteAsync(request.Id, cancellationToken);
+        var product = await _unitOfWork.Products.GetByIdAsync(request.Id, cancellationToken);
         
-        if (!deleted)
+        if (product is null)
         {
             _logger.LogWarning("Product with ID {ProductId} not found", request.Id);
             return Result.Failure("Product not found");
         }
+
+        await _unitOfWork.Products.DeleteAsync(product, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Product with ID {ProductId} deleted successfully", request.Id);
         return Result.Success();

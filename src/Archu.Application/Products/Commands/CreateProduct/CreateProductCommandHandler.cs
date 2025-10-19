@@ -11,14 +11,14 @@ namespace Archu.Application.Products.Commands.CreateProduct;
 /// </summary>
 public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, ProductDto>
 {
-    private readonly IProductRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CreateProductCommandHandler> _logger;
 
     public CreateProductCommandHandler(
-        IProductRepository repository,
+        IUnitOfWork unitOfWork,
         ILogger<CreateProductCommandHandler> logger)
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -32,7 +32,8 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             Price = request.Price
         };
 
-        var createdProduct = await _repository.AddAsync(product, cancellationToken);
+        var createdProduct = await _unitOfWork.Products.AddAsync(product, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Product created with ID: {ProductId}", createdProduct.Id);
 
