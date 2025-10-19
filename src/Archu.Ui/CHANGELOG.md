@@ -5,7 +5,7 @@
 ### Project Structure
 - ? Created new Razor Class Library targeting .NET 9.0
 - ? Configured for platform-agnostic usage (Blazor Server, WASM, MAUI)
-- ? Added MudBlazor 7.24.0 as core UI framework
+- ? Added MudBlazor 8.0.0 as core UI framework
 - ? Reference to Archu.Contracts for ProductDto
 
 ### Components Created
