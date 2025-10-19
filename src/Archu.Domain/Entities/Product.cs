@@ -1,4 +1,4 @@
-﻿using Archu.Domain.Common;
+using Archu.Domain.Common;
 
 namespace Archu.Domain.Entities;
 

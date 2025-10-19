@@ -1,166 +1,208 @@
+using Archu.Application.Products.Commands.CreateProduct;
+using Archu.Application.Products.Commands.DeleteProduct;
+using Archu.Application.Products.Commands.UpdateProduct;
+using Archu.Application.Products.Queries.GetProductById;
+using Archu.Application.Products.Queries.GetProducts;
+using Archu.Contracts.Common;
 using Archu.Contracts.Products;
-using Archu.Domain.Entities;
-using Archu.Infrastructure.Persistence;
+using Asp.Versioning;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Archu.Api.Controllers;
 
 /// <summary>
-/// Exposes CRUD endpoints that orchestrate the product catalog workflow backed
-/// by <see cref="ApplicationDbContext"/>.
+/// Exposes CRUD endpoints that orchestrate the product catalog workflow using CQRS pattern.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
-public class ProductsController : ControllerBase
+[Route("api/v{version:apiVersion}/[controller]")]
+[ApiVersion("1.0")]
+public partial class ProductsController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IMediator _mediator;
+    private readonly ILogger<ProductsController> _logger;
 
     /// <summary>
-    /// Wires up the database context so each action can collaborate with the
-    /// persistence layer while executing the catalog workflow.
+    /// Initializes a new instance of the <see cref="ProductsController"/> class.
     /// </summary>
-    public ProductsController(ApplicationDbContext context)
+    public ProductsController(IMediator mediator, ILogger<ProductsController> logger)
     {
-        _context = context;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     /// <summary>
-    /// Retrieves the current catalog so list or search screens can present
-    /// up-to-date product data without tracking the entities for changes.
+    /// Retrieves all active products from the catalog.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A standardized API response containing the list of products.</returns>
+    /// <response code="200">Returns the list of products.</response>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProductDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<ProductDto>>>> GetProducts(CancellationToken cancellationToken)
     {
-        var products = await _context.Products
-            .AsNoTracking()
-            .Select(product => new ProductDto
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Price = product.Price,
-                RowVersion = product.RowVersion
-            })
-            .ToListAsync(cancellationToken);
+        LogRetrievingProducts();
 
-        return products;
+        var products = await _mediator.Send(new GetProductsQuery(), cancellationToken);
+
+        LogProductsRetrieved(products.Count());
+        return Ok(ApiResponse<IEnumerable<ProductDto>>.Ok(products, "Products retrieved successfully"));
     }
 
     /// <summary>
-    /// Loads the requested product so detail or edit forms can display the
-    /// authoritative information for a single item.
+    /// Retrieves a specific product by its unique identifier.
     /// </summary>
+    /// <param name="id">The product identifier.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A standardized API response containing the product.</returns>
+    /// <response code="200">Returns the requested product.</response>
+    /// <response code="404">If the product is not found.</response>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<ProductDto>> GetProduct(Guid id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ProductDto>>> GetProduct(Guid id, CancellationToken cancellationToken)
     {
-        var product = await _context.Products
-            .AsNoTracking()
-            .Where(p => p.Id == id)
-            .Select(product => new ProductDto
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Price = product.Price,
-                RowVersion = product.RowVersion
-            })
-            .SingleOrDefaultAsync(cancellationToken);
+        LogRetrievingProduct(id);
+
+        var product = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
 
         if (product is null)
         {
-            return NotFound();
+            LogProductNotFound(id);
+            return NotFound(ApiResponse<ProductDto>.Fail($"Product with ID {id} was not found"));
         }
 
-        return product;
+        return Ok(ApiResponse<ProductDto>.Ok(product, "Product retrieved successfully"));
     }
 
     /// <summary>
-    /// Creates a product record when the onboarding workflow confirms a new
-    /// catalog item, then returns the persisted shape to the caller.
+    /// Creates a new product in the catalog.
     /// </summary>
+    /// <param name="request">The product creation request.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A standardized API response containing the created product.</returns>
+    /// <response code="201">Returns the newly created product.</response>
+    /// <response code="400">If the request is invalid.</response>
     [HttpPost]
-    public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<ProductDto>>> CreateProduct(
+        CreateProductRequest request,
+        CancellationToken cancellationToken)
     {
+        LogCreatingProduct(request.Name);
 
-        var product = new Product
-        {
-            Name = request.Name,
-            Price = request.Price
-        };
+        var command = new CreateProductCommand(request.Name, request.Price);
+        var product = await _mediator.Send(command, cancellationToken);
 
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync(cancellationToken);
+        LogProductCreated(product.Id);
 
-        var dto = new ProductDto
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Price = product.Price,
-            RowVersion = product.RowVersion
-        };
-
-        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, dto);
+        return CreatedAtAction(
+            nameof(GetProduct),
+            new { id = product.Id, version = "1.0" },
+            ApiResponse<ProductDto>.Ok(product, "Product created successfully"));
     }
 
     /// <summary>
-    /// Applies user edits from maintenance workflows, enforcing concurrency by
-    /// validating the supplied row version before committing updates.
+    /// Updates an existing product in the catalog.
     /// </summary>
+    /// <param name="id">The product identifier.</param>
+    /// <param name="request">The product update request.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A standardized API response with the updated product.</returns>
+    /// <response code="200">Returns the updated product with new RowVersion.</response>
+    /// <response code="400">If the request is invalid.</response>
+    /// <response code="404">If the product is not found.</response>
+    /// <response code="409">If there is a concurrency conflict.</response>
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateProduct(Guid id, UpdateProductRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<ProductDto>>> UpdateProduct(
+        Guid id,
+        UpdateProductRequest request,
+        CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-        {
-            return ValidationProblem(ModelState);
-        }
-
         if (id != request.Id)
         {
-            return BadRequest("The route id does not match the request payload.");
+            return BadRequest(ApiResponse<ProductDto>.Fail("The route ID does not match the request payload ID"));
         }
 
-        var product = await _context.Products.SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
-        if (product is null)
+        LogUpdatingProduct(id);
+
+        var command = new UpdateProductCommand(request.Id, request.Name, request.Price, request.RowVersion);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
         {
-            return NotFound();
+            LogProductNotFound(id);
+            return NotFound(ApiResponse<object>.Fail(result.Error!));
         }
 
-        product.Name = request.Name;
-        product.Price = request.Price;
-        _context.Entry(product).Property(p => p.RowVersion).OriginalValue = request.RowVersion;
-
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.Products.AsNoTracking().AnyAsync(p => p.Id == id, cancellationToken))
-            {
-                return NotFound();
-            }
-
-            return Conflict("The product was updated by another process. Reload and try again.");
-        }
-
-        return NoContent();
+        LogProductUpdated(id);
+        return Ok(ApiResponse<ProductDto>.Ok(result.Value!, "Product updated successfully"));
     }
 
     /// <summary>
-    /// Triggers the soft-delete workflow so retired items disappear from public
-    /// listings while retaining audit history.
+    /// Soft deletes a product from the catalog.
     /// </summary>
+    /// <param name="id">The product identifier.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A standardized API response.</returns>
+    /// <response code="200">If the product was successfully deleted.</response>
+    /// <response code="404">If the product is not found.</response>
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<object>>> DeleteProduct(Guid id, CancellationToken cancellationToken)
     {
-        var product = await _context.Products.SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
-        if (product is null)
+        LogDeletingProduct(id);
+
+        var command = new DeleteProductCommand(id);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
         {
-            return NotFound();
+            LogProductNotFound(id);
+            return NotFound(ApiResponse<object>.Fail(result.Error!));
         }
 
-        product.IsDeleted = true;
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
+        LogProductDeleted(id);
+        return Ok(ApiResponse<object>.Ok(null, "Product deleted successfully"));
     }
+
+    #region Logging
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Retrieving all products")]
+    private partial void LogRetrievingProducts();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Retrieved {Count} products")]
+    private partial void LogProductsRetrieved(int count);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Retrieving product with ID {ProductId}")]
+    private partial void LogRetrievingProduct(Guid productId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Product with ID {ProductId} not found")]
+    private partial void LogProductNotFound(Guid productId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Creating product: {ProductName}")]
+    private partial void LogCreatingProduct(string productName);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Product created with ID {ProductId}")]
+    private partial void LogProductCreated(Guid productId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Updating product with ID {ProductId}")]
+    private partial void LogUpdatingProduct(Guid productId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Product with ID {ProductId} updated successfully")]
+    private partial void LogProductUpdated(Guid productId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Deleting product with ID {ProductId}")]
+    private partial void LogDeletingProduct(Guid productId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Product with ID {ProductId} deleted successfully")]
+    private partial void LogProductDeleted(Guid productId);
+
+    #endregion
 }

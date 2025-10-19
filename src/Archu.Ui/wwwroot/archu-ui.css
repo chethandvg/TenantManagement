@@ -1,0 +1,34 @@
+/* Archu.Ui - Global Styles */
+
+/* These styles are automatically included when you reference Archu.Ui */
+
+:root {
+    --archu-primary: #1976d2;
+    --archu-secondary: #dc004e;
+    --archu-success: #4caf50;
+    --archu-error: #f44336;
+    --archu-warning: #ff9800;
+    --archu-info: #2196f3;
+}
+
+/* Utility classes */
+.archu-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.archu-card-hover {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.archu-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Spacing utilities */
+.mt-4 { margin-top: 1rem; }
+.mb-4 { margin-bottom: 1rem; }
+.my-4 { margin-top: 1rem; margin-bottom: 1rem; }
+.pa-4 { padding: 1rem; }

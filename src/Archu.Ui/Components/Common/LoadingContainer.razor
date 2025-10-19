@@ -1,0 +1,35 @@
+@namespace Archu.Ui.Components.Common
+
+<div class="loading-container">
+    @if (IsLoading)
+    {
+        <MudProgressCircular Color="@Color" 
+                            Size="@Size" 
+                            Indeterminate="true" />
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <MudText Typo="Typo.body2" Class="mt-2">@Message</MudText>
+        }
+    }
+    else
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    [Parameter]
+    public bool IsLoading { get; set; } = false;
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public Color Color { get; set; } = Color.Primary;
+
+    [Parameter]
+    public Size Size { get; set; } = Size.Medium;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

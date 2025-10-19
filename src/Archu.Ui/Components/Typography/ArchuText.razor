@@ -1,0 +1,29 @@
+@namespace Archu.Ui.Components.Typography
+
+<MudText Typo="@Typo" 
+         Color="@Color" 
+         Align="@Align" 
+         GutterBottom="@GutterBottom"
+         Class="@CssClass">
+    @ChildContent
+</MudText>
+
+@code {
+    [Parameter]
+    public Typo Typo { get; set; } = Typo.body1;
+
+    [Parameter]
+    public Color Color { get; set; } = Color.Default;
+
+    [Parameter]
+    public Align Align { get; set; } = Align.Inherit;
+
+    [Parameter]
+    public bool GutterBottom { get; set; } = false;
+
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,93 @@
+@namespace Archu.Ui.Components.Forms
+@typeparam TModel
+
+<MudPaper Class="pa-4 form-container" Elevation="@Elevation">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <MudText Typo="Typo.h5" Class="mb-4">@Title</MudText>
+    }
+    
+    <EditForm Model="@Model" OnValidSubmit="@OnValidSubmit" OnInvalidSubmit="@OnInvalidSubmit">
+        <DataAnnotationsValidator />
+        
+        @if (ShowValidationSummary)
+        {
+            <MudPaper Class="pa-2 mb-4" Elevation="0">
+                <ValidationSummary />
+            </MudPaper>
+        }
+        
+        @ChildContent
+        
+        <div class="form-actions mt-4">
+            <MudButton ButtonType="ButtonType.Submit" 
+                      Variant="Variant.Filled" 
+                      Color="Color.Primary"
+                      Disabled="@IsSubmitting"
+                      StartIcon="@SubmitIcon">
+                @if (IsSubmitting)
+                {
+                    <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                }
+                @SubmitButtonText
+            </MudButton>
+            
+            @if (ShowCancelButton)
+            {
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Default"
+                          Disabled="@IsSubmitting"
+                          OnClick="@OnCancel"
+                          Class="ml-2">
+                    @CancelButtonText
+                </MudButton>
+            }
+            
+            @FormActions
+        </div>
+    </EditForm>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public TModel Model { get; set; } = default!;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public int Elevation { get; set; } = 2;
+
+    [Parameter]
+    public bool ShowValidationSummary { get; set; } = true;
+
+    [Parameter]
+    public bool IsSubmitting { get; set; } = false;
+
+    [Parameter]
+    public string SubmitButtonText { get; set; } = "Submit";
+
+    [Parameter]
+    public string? SubmitIcon { get; set; }
+
+    [Parameter]
+    public bool ShowCancelButton { get; set; } = false;
+
+    [Parameter]
+    public string CancelButtonText { get; set; } = "Cancel";
+
+    [Parameter]
+    public EventCallback<EditContext> OnValidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback<EditContext> OnInvalidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? FormActions { get; set; }
+}

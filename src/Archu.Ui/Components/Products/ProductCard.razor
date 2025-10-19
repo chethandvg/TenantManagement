@@ -1,0 +1,68 @@
+@namespace Archu.Ui.Components.Products
+@using Archu.Contracts.Products
+
+<MudCard Class="product-card" Elevation="2">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6" Class="product-name">@Product.Name</MudText>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            @if (ShowActions)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                               Color="Color.Primary" 
+                               Size="Size.Small"
+                               OnClick="@(() => OnEdit.InvokeAsync(Product))"
+                               Disabled="@(!OnEdit.HasDelegate)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                               Color="Color.Error" 
+                               Size="Size.Small"
+                               OnClick="@(() => OnDelete.InvokeAsync(Product))"
+                               Disabled="@(!OnDelete.HasDelegate)" />
+            }
+        </CardHeaderActions>
+    </MudCardHeader>
+    
+    <MudCardContent>
+        <div class="product-details">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                <strong>ID:</strong> @Product.Id.ToString("N")[..8]...
+            </MudText>
+            <MudText Typo="Typo.h5" Color="Color.Success" Class="product-price">
+                @Product.Price.ToString("C")
+            </MudText>
+        </div>
+    </MudCardContent>
+    
+    @if (ShowViewButton)
+    {
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" 
+                       Color="Color.Primary"
+                       OnClick="@(() => OnView.InvokeAsync(Product))"
+                       Disabled="@(!OnView.HasDelegate)">
+                View Details
+            </MudButton>
+        </MudCardActions>
+    }
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired]
+    public ProductDto Product { get; set; } = null!;
+
+    [Parameter]
+    public bool ShowActions { get; set; } = true;
+
+    [Parameter]
+    public bool ShowViewButton { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<ProductDto> OnView { get; set; }
+
+    [Parameter]
+    public EventCallback<ProductDto> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<ProductDto> OnDelete { get; set; }
+}

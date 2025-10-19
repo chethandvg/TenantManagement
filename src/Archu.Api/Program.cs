@@ -1,8 +1,16 @@
 using Archu.Api.Auth;
+using Archu.Api.Health;
+using Archu.Api.Middleware;
 using Archu.Application.Abstractions;
+using Archu.Application.Common.Behaviors;
 using Archu.Infrastructure.Persistence;
+using Archu.Infrastructure.Repositories;
 using Archu.Infrastructure.Time;
+using Asp.Versioning;
+using FluentValidation;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,14 +24,57 @@ builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>(); // implement
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITimeProvider, SystemTimeProvider>();
 
+// Register repositories and Unit of Work
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
     opt.UseSqlServer(
-        builder.Configuration.GetConnectionString("archudb") ?? builder.Configuration.GetConnectionString("Sql"),
+        builder.Configuration.GetConnectionString("Sql") ?? builder.Configuration.GetConnectionString("archudb"),
         sql =>
         {
             sql.EnableRetryOnFailure();
             sql.CommandTimeout(30);
         }));
+
+// Add MediatR with behaviors
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Archu.Application.AssemblyReference).Assembly);
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+    cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
+});
+
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(Archu.Application.AssemblyReference).Assembly);
+
+// Add API Versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+});
+
+// Add Health Checks
+var connectionString = builder.Configuration.GetConnectionString("archudb") 
+    ?? builder.Configuration.GetConnectionString("Sql") 
+    ?? throw new InvalidOperationException("Database connection string not configured");
+
+builder.Services.AddHealthChecks()
+    .AddSqlServer(
+        connectionString,
+        healthQuery: "SELECT 1;",
+        name: "sql-server",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: new[] { "db", "sql", "sqlserver" })
+    .AddCheck<DatabaseHealthCheck>(
+        "application-db-context",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: new[] { "db", "ef-core" });
+
+builder.Services.AddScoped<DatabaseHealthCheck>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -58,6 +109,8 @@ var app = builder.Build();
   run: dotnet ef database update --project src/Archu.Infrastructure
 */
 
+// Add Global Exception Handler - Must be first in pipeline
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -74,6 +127,41 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map health check endpoints
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => true,
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                duration = e.Value.Duration.ToString(),
+                exception = e.Value.Exception?.Message,
+                data = e.Value.Data
+            }),
+            totalDuration = report.TotalDuration.ToString()
+        };
+        await context.Response.WriteAsJsonAsync(response);
+    }
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false // Only checks that the app is running
+});
 
 app.MapDefaultEndpoints();
 

@@ -1,0 +1,10 @@
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
