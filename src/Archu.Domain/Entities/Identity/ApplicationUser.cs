@@ -36,7 +36,7 @@ public class ApplicationUser : BaseEntity
     /// <summary>
     /// Security stamp for invalidating tokens when credentials change.
     /// </summary>
-    public string SecurityStamp { get; set; };
+    public string SecurityStamp { get; set; }
 
     /// <summary>
     /// Current refresh token for JWT authentication.
