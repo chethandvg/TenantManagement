@@ -26,11 +26,24 @@ public sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswor
         _logger.LogInformation("Password reset requested for email: {Email}", request.Email);
 
         // Call authentication service (internally handles non-existent users securely)
-        await _authenticationService.ForgotPasswordAsync(request.Email, cancellationToken);
+        var result = await _authenticationService.ForgotPasswordAsync(request.Email, cancellationToken);
 
-        _logger.LogInformation("Password reset email processed for: {Email}", request.Email);
+        if (!result.IsSuccess)
+        {
+            // Log the actual error for operational visibility
+            _logger.LogError(
+                "Password reset failed for email: {Email}. Error: {Error}",
+                request.Email,
+                result.Error);
 
-        // Always return success to prevent email enumeration attacks
+            // Return generic error to prevent email enumeration
+            // but surface operational failures (email service down, database errors, etc.)
+            return Result.Failure("Unable to process password reset request at this time. Please try again later.");
+        }
+
+        _logger.LogInformation("Password reset email processed successfully for: {Email}", request.Email);
+
+        // Return success - could be actual success or non-existent user (handled by service)
         return Result.Success();
     }
 }

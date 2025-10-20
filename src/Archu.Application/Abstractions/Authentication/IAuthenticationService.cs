@@ -69,10 +69,16 @@ public interface IAuthenticationService
 
     /// <summary>
     /// Initiates a password reset by generating and sending a reset token.
+    /// Implementation should return success for non-existent users to prevent email enumeration,
+    /// but should return failure for operational issues (e.g., email service unavailable, database errors).
     /// </summary>
     /// <param name="email">The user's email address.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A result indicating success or failure.</returns>
+    /// <returns>
+    /// A result indicating success or failure.
+    /// Returns success for both valid users (email sent) and non-existent users (silently ignored).
+    /// Returns failure only for operational/infrastructure issues.
+    /// </returns>
     Task<Result> ForgotPasswordAsync(
         string email,
         CancellationToken cancellationToken = default);
