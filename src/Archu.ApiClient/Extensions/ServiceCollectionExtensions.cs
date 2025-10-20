@@ -32,52 +32,7 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration,
         Action<AuthenticationOptions>? configureAuthentication = null)
     {
-        // Bind configuration
-        services.Configure<ApiClientOptions>(
-            configuration.GetSection(ApiClientOptions.SectionName));
-
-        var options = configuration
-            .GetSection(ApiClientOptions.SectionName)
-            .Get<ApiClientOptions>() ?? new ApiClientOptions();
-
-        // Configure authentication if specified
-        var authOptions = new AuthenticationOptions();
-        if (configureAuthentication != null)
-        {
-            services.Configure(configureAuthentication);
-            configureAuthentication(authOptions);
-        }
-        else
-        {
-            services.Configure<AuthenticationOptions>(
-                configuration.GetSection(AuthenticationOptions.SectionName));
-            authOptions = configuration
-                .GetSection(AuthenticationOptions.SectionName)
-                .Get<AuthenticationOptions>() ?? new AuthenticationOptions();
-        }
-
-        // Register authentication services for WASM (singleton token storage)
-        RegisterAuthenticationServicesForWasm(services, authOptions);
-
-        // Add HttpClient with Polly retry policy and authentication
-        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
-        {
-            client.BaseAddress = new Uri(options.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-        })
-        .AddPolicyHandler((serviceProvider, request) =>
-            GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
-        .AddPolicyHandler((serviceProvider, request) =>
-            GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
-
-        // Add authentication handler if enabled
-        if (authOptions.AutoAttachToken)
-        {
-            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
-        }
-
-        return services;
+        return AddApiClient(services, configuration, configureAuthentication, isWasm: true);
     }
 
     /// <summary>
@@ -93,52 +48,7 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration,
         Action<AuthenticationOptions>? configureAuthentication = null)
     {
-        // Bind configuration
-        services.Configure<ApiClientOptions>(
-            configuration.GetSection(ApiClientOptions.SectionName));
-
-        var options = configuration
-            .GetSection(ApiClientOptions.SectionName)
-            .Get<ApiClientOptions>() ?? new ApiClientOptions();
-
-        // Configure authentication if specified
-        var authOptions = new AuthenticationOptions();
-        if (configureAuthentication != null)
-        {
-            services.Configure(configureAuthentication);
-            configureAuthentication(authOptions);
-        }
-        else
-        {
-            services.Configure<AuthenticationOptions>(
-                configuration.GetSection(AuthenticationOptions.SectionName));
-            authOptions = configuration
-                .GetSection(AuthenticationOptions.SectionName)
-                .Get<AuthenticationOptions>() ?? new AuthenticationOptions();
-        }
-
-        // Register authentication services for Server (scoped token storage)
-        RegisterAuthenticationServicesForServer(services, authOptions);
-
-        // Add HttpClient with Polly retry policy and authentication
-        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
-        {
-            client.BaseAddress = new Uri(options.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-        })
-        .AddPolicyHandler((serviceProvider, request) =>
-            GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
-        .AddPolicyHandler((serviceProvider, request) =>
-            GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
-
-        // Add authentication handler if enabled
-        if (authOptions.AutoAttachToken)
-        {
-            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
-        }
-
-        return services;
+        return AddApiClient(services, configuration, configureAuthentication, isWasm: false);
     }
 
     /// <summary>
@@ -153,40 +63,7 @@ public static class ServiceCollectionExtensions
         Action<ApiClientOptions> configureOptions,
         Action<AuthenticationOptions>? configureAuthentication = null)
     {
-        services.Configure(configureOptions);
-
-        var options = new ApiClientOptions();
-        configureOptions(options);
-
-        // Configure authentication if specified
-        var authOptions = new AuthenticationOptions();
-        if (configureAuthentication != null)
-        {
-            services.Configure(configureAuthentication);
-            configureAuthentication(authOptions);
-        }
-
-        // Register authentication services for WASM
-        RegisterAuthenticationServicesForWasm(services, authOptions);
-
-        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
-        {
-            client.BaseAddress = new Uri(options.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-        })
-        .AddPolicyHandler((serviceProvider, request) =>
-            GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
-        .AddPolicyHandler((serviceProvider, request) =>
-            GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
-
-        // Add authentication handler if enabled
-        if (authOptions.AutoAttachToken)
-        {
-            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
-        }
-
-        return services;
+        return AddApiClient(services, configureOptions, configureAuthentication, isWasm: true);
     }
 
     /// <summary>
@@ -201,12 +78,48 @@ public static class ServiceCollectionExtensions
         Action<ApiClientOptions> configureOptions,
         Action<AuthenticationOptions>? configureAuthentication = null)
     {
+        return AddApiClient(services, configureOptions, configureAuthentication, isWasm: false);
+    }
+
+    /// <summary>
+    /// Core method to add API client with configuration.
+    /// </summary>
+    private static IServiceCollection AddApiClient(
+        IServiceCollection services,
+        IConfiguration configuration,
+        Action<AuthenticationOptions>? configureAuthentication,
+        bool isWasm)
+    {
+        // Bind configuration
+        services.Configure<ApiClientOptions>(
+            configuration.GetSection(ApiClientOptions.SectionName));
+
+        var options = configuration
+            .GetSection(ApiClientOptions.SectionName)
+            .Get<ApiClientOptions>() ?? new ApiClientOptions();
+
+        var authOptions = ConfigureAuthentication(services, configuration, configureAuthentication);
+
+        RegisterAuthenticationServices(services, authOptions, isWasm);
+        ConfigureHttpClient(services, options, authOptions);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Core method to add API client with custom configuration.
+    /// </summary>
+    private static IServiceCollection AddApiClient(
+        IServiceCollection services,
+        Action<ApiClientOptions> configureOptions,
+        Action<AuthenticationOptions>? configureAuthentication,
+        bool isWasm)
+    {
         services.Configure(configureOptions);
 
         var options = new ApiClientOptions();
         configureOptions(options);
 
-        // Configure authentication if specified
         var authOptions = new AuthenticationOptions();
         if (configureAuthentication != null)
         {
@@ -214,27 +127,97 @@ public static class ServiceCollectionExtensions
             configureAuthentication(authOptions);
         }
 
-        // Register authentication services for Server
-        RegisterAuthenticationServicesForServer(services, authOptions);
+        RegisterAuthenticationServices(services, authOptions, isWasm);
+        ConfigureHttpClient(services, options, authOptions);
 
+        return services;
+    }
+
+    /// <summary>
+    /// Configures authentication options.
+    /// </summary>
+    private static AuthenticationOptions ConfigureAuthentication(
+        IServiceCollection services,
+        IConfiguration configuration,
+        Action<AuthenticationOptions>? configureAuthentication)
+    {
+        var authOptions = new AuthenticationOptions();
+
+        if (configureAuthentication != null)
+        {
+            services.Configure(configureAuthentication);
+            configureAuthentication(authOptions);
+        }
+        else
+        {
+            services.Configure<AuthenticationOptions>(
+                configuration.GetSection(AuthenticationOptions.SectionName));
+            authOptions = configuration
+                .GetSection(AuthenticationOptions.SectionName)
+                .Get<AuthenticationOptions>() ?? new AuthenticationOptions();
+        }
+
+        return authOptions;
+    }
+
+    /// <summary>
+    /// Registers authentication services based on hosting model.
+    /// </summary>
+    private static void RegisterAuthenticationServices(
+        IServiceCollection services,
+        AuthenticationOptions options,
+        bool isWasm)
+    {
+        if (isWasm)
+        {
+            RegisterAuthenticationServicesForWasm(services, options);
+        }
+        else
+        {
+            RegisterAuthenticationServicesForServer(services, options);
+        }
+    }
+
+    /// <summary>
+    /// Configures the HttpClient with policies and handlers.
+    /// </summary>
+    private static void ConfigureHttpClient(
+        IServiceCollection services,
+        ApiClientOptions options,
+        AuthenticationOptions authOptions)
+    {
         var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
         {
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
-        })
-        .AddPolicyHandler((serviceProvider, request) =>
-            GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
-        .AddPolicyHandler((serviceProvider, request) =>
-            GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+        });
+
+        // Add retry policy if enabled
+        if (options.EnableRetryPolicy)
+        {
+            httpClientBuilder.AddPolicyHandler((serviceProvider, request) =>
+                GetRetryPolicy(
+                    options.RetryCount,
+                    options.RetryBaseDelaySeconds,
+                    serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+        }
+
+        // Add circuit breaker if enabled
+        if (options.EnableCircuitBreaker)
+        {
+            httpClientBuilder.AddPolicyHandler((serviceProvider, request) =>
+                GetCircuitBreakerPolicy(
+                    options.CircuitBreakerFailureThreshold,
+                    options.CircuitBreakerDurationSeconds,
+                    serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+        }
 
         // Add authentication handler if enabled
         if (authOptions.AutoAttachToken)
         {
             httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
         }
-
-        return services;
     }
 
     /// <summary>
@@ -290,50 +273,71 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Creates a retry policy with exponential backoff.
     /// </summary>
-    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(int retryCount, ILogger logger)
+    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(
+        int retryCount,
+        double baseDelaySeconds,
+        ILogger logger)
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
+            .Or<TaskCanceledException>() // Handle timeouts
             .WaitAndRetryAsync(
                 retryCount,
-                retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                retryAttempt => TimeSpan.FromSeconds(baseDelaySeconds * Math.Pow(2, retryAttempt - 1)),
                 onRetry: (outcome, timespan, retryAttempt, context) =>
                 {
+                    var statusCode = outcome.Result?.StatusCode.ToString() ?? "N/A";
+                    var exceptionType = outcome.Exception?.GetType().Name ?? "None";
+
                     logger.LogWarning(
-                        "Request failed with {StatusCode}. Waiting {Delay}s before retry attempt {RetryAttempt}/{RetryCount}. Request: {RequestUri}",
-                        outcome.Result?.StatusCode,
+                        "Request to {RequestUri} failed (Status: {StatusCode}, Exception: {ExceptionType}). " +
+                        "Waiting {Delay:0.00}s before retry {RetryAttempt}/{RetryCount}",
+                        outcome.Result?.RequestMessage?.RequestUri ?? context.GetValueOrDefault("RequestUri"),
+                        statusCode,
+                        exceptionType,
                         timespan.TotalSeconds,
                         retryAttempt,
-                        retryCount,
-                        outcome.Result?.RequestMessage?.RequestUri);
+                        retryCount);
                 });
     }
 
     /// <summary>
     /// Creates a circuit breaker policy.
     /// </summary>
-    private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(ILogger logger)
+    private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(
+        int failureThreshold,
+        int durationSeconds,
+        ILogger logger)
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
+            .Or<TaskCanceledException>() // Handle timeouts
             .CircuitBreakerAsync(
-                handledEventsAllowedBeforeBreaking: 5,
-                durationOfBreak: TimeSpan.FromSeconds(30),
+                handledEventsAllowedBeforeBreaking: failureThreshold,
+                durationOfBreak: TimeSpan.FromSeconds(durationSeconds),
                 onBreak: (outcome, breakDelay) =>
                 {
+                    var statusCode = outcome.Result?.StatusCode.ToString() ?? "N/A";
+                    var exceptionType = outcome.Exception?.GetType().Name ?? "None";
+
                     logger.LogError(
-                        "Circuit breaker opened for {BreakDelay}s due to {StatusCode}. Request: {RequestUri}",
+                        "Circuit breaker OPENED for {BreakDelay}s after {FailureThreshold} consecutive failures. " +
+                        "Last failure - Status: {StatusCode}, Exception: {ExceptionType}, Request: {RequestUri}",
                         breakDelay.TotalSeconds,
-                        outcome.Result?.StatusCode,
+                        failureThreshold,
+                        statusCode,
+                        exceptionType,
                         outcome.Result?.RequestMessage?.RequestUri);
                 },
                 onReset: () =>
                 {
-                    logger.LogInformation("Circuit breaker reset, requests will be allowed through");
+                    logger.LogInformation(
+                        "Circuit breaker RESET - Normal operations resumed");
                 },
                 onHalfOpen: () =>
                 {
-                    logger.LogInformation("Circuit breaker is half-open, testing with next request");
+                    logger.LogInformation(
+                        "Circuit breaker HALF-OPEN - Testing service availability with next request");
                 });
     }
 }
