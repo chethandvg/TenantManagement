@@ -1,8 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Archu.ApiClient.Authentication.Models;
 using Archu.ApiClient.Authentication.Storage;
 using Microsoft.Extensions.Logging;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace Archu.ApiClient.Authentication.Services;
 
@@ -79,7 +79,7 @@ public sealed class TokenManager : ITokenManager
         try
         {
             var token = await _tokenStorage.GetTokenAsync(cancellationToken);
-            
+
             if (token == null)
             {
                 _logger.LogDebug("No token found in storage");
@@ -139,14 +139,14 @@ public sealed class TokenManager : ITokenManager
         try
         {
             var token = await _tokenStorage.GetTokenAsync(cancellationToken);
-            
+
             if (token == null || token.IsExpired())
             {
                 return Models.AuthenticationState.Unauthenticated();
             }
 
             var claimsPrincipal = ExtractClaimsFromToken(token.AccessToken);
-            
+
             if (claimsPrincipal == null)
             {
                 _logger.LogWarning("Failed to extract claims from token");
@@ -180,7 +180,7 @@ public sealed class TokenManager : ITokenManager
 
             var jwtToken = _jwtHandler.ReadJwtToken(accessToken);
             var identity = new ClaimsIdentity(jwtToken.Claims, "jwt");
-            
+
             return new ClaimsPrincipal(identity);
         }
         catch (Exception ex)
