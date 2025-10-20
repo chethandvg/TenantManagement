@@ -30,8 +30,4 @@
     <ProjectReference Include="..\Archu.ServiceDefaults\Archu.ServiceDefaults.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Auth\" />
-  </ItemGroup>
-
 </Project>

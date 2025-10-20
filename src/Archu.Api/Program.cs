@@ -32,6 +32,7 @@ builder.Services.AddScoped<ITimeProvider, SystemTimeProvider>();
 // Register authentication services
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>(); // ✅ FIX #1: Register IAuthenticationService implementation
 
 // Configure JWT options
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
