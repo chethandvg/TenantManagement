@@ -161,7 +161,7 @@ public abstract class ApiClientServiceBase
             }
 
             await ThrowForStatusCodeAsync(response, cancellationToken);
-            
+
             // This line won't be reached due to the throw above, but keeps the compiler happy
             return ApiResponse<bool>.Fail("Request failed");
         }
@@ -177,8 +177,8 @@ public abstract class ApiClientServiceBase
     private string BuildUri(string endpoint)
     {
         var trimmedEndpoint = endpoint.TrimStart('/');
-        return string.IsNullOrWhiteSpace(trimmedEndpoint) 
-            ? BasePath 
+        return string.IsNullOrWhiteSpace(trimmedEndpoint)
+            ? BasePath
             : $"{BasePath}/{trimmedEndpoint}";
     }
 
@@ -209,7 +209,7 @@ public abstract class ApiClientServiceBase
         }
 
         await ThrowForStatusCodeAsync(response, cancellationToken);
-        
+
         // This line won't be reached due to the throw above, but keeps the compiler happy
         return ApiResponse<T>.Fail("Request failed");
     }
@@ -223,7 +223,7 @@ public abstract class ApiClientServiceBase
     {
         var statusCode = (int)response.StatusCode;
         string errorContent;
-        
+
         try
         {
             errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -242,7 +242,7 @@ public abstract class ApiClientServiceBase
             var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<object>>(
                 _jsonOptions,
                 cancellationToken);
-            
+
             if (errorResponse?.Errors != null)
             {
                 errors = errorResponse.Errors;
@@ -285,11 +285,11 @@ public abstract class ApiClientServiceBase
             HttpRequestException httpEx => ApiResponse<T>.Fail(
                 "Network error occurred while processing the request",
                 new[] { httpEx.Message }),
-            
+
             TaskCanceledException or OperationCanceledException => ApiResponse<T>.Fail(
                 "Request was cancelled or timed out",
                 new[] { ex.Message }),
-            
+
             _ => ApiResponse<T>.Fail(
                 "An unexpected error occurred while processing the request",
                 new[] { ex.Message })

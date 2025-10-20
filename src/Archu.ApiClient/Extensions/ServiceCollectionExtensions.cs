@@ -1,5 +1,11 @@
+using Archu.ApiClient.Authentication.Configuration;
+using Archu.ApiClient.Authentication.Handlers;
+using Archu.ApiClient.Authentication.Providers;
+using Archu.ApiClient.Authentication.Services;
+using Archu.ApiClient.Authentication.Storage;
 using Archu.ApiClient.Configuration;
 using Archu.ApiClient.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,14 +20,17 @@ namespace Archu.ApiClient.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the API client services to the service collection.
+    /// Adds the API client services with authentication for Blazor WebAssembly applications.
+    /// Uses singleton lifetime for token storage (single-user context).
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration.</param>
+    /// <param name="configureAuthentication">Optional action to configure authentication.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddApiClient(
+    public static IServiceCollection AddApiClientForWasm(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        Action<AuthenticationOptions>? configureAuthentication = null)
     {
         // Bind configuration
         services.Configure<ApiClientOptions>(
@@ -31,48 +40,251 @@ public static class ServiceCollectionExtensions
             .GetSection(ApiClientOptions.SectionName)
             .Get<ApiClientOptions>() ?? new ApiClientOptions();
 
-        // Add HttpClient with Polly retry policy
-        services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
+        // Configure authentication if specified
+        var authOptions = new AuthenticationOptions();
+        if (configureAuthentication != null)
+        {
+            services.Configure(configureAuthentication);
+            configureAuthentication(authOptions);
+        }
+        else
+        {
+            services.Configure<AuthenticationOptions>(
+                configuration.GetSection(AuthenticationOptions.SectionName));
+            authOptions = configuration
+                .GetSection(AuthenticationOptions.SectionName)
+                .Get<AuthenticationOptions>() ?? new AuthenticationOptions();
+        }
+
+        // Register authentication services for WASM (singleton token storage)
+        RegisterAuthenticationServicesForWasm(services, authOptions);
+
+        // Add HttpClient with Polly retry policy and authentication
+        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
         {
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         })
-        .AddPolicyHandler((serviceProvider, request) => 
+        .AddPolicyHandler((serviceProvider, request) =>
             GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
-        .AddPolicyHandler((serviceProvider, request) => 
+        .AddPolicyHandler((serviceProvider, request) =>
             GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+
+        // Add authentication handler if enabled
+        if (authOptions.AutoAttachToken)
+        {
+            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
+        }
 
         return services;
     }
 
     /// <summary>
-    /// Adds the API client services to the service collection with custom configuration.
+    /// Adds the API client services with authentication for Blazor Server applications.
+    /// Uses scoped lifetime for token storage (per-user/per-circuit isolation).
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="configureAuthentication">Optional action to configure authentication.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddApiClientForServer(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Action<AuthenticationOptions>? configureAuthentication = null)
+    {
+        // Bind configuration
+        services.Configure<ApiClientOptions>(
+            configuration.GetSection(ApiClientOptions.SectionName));
+
+        var options = configuration
+            .GetSection(ApiClientOptions.SectionName)
+            .Get<ApiClientOptions>() ?? new ApiClientOptions();
+
+        // Configure authentication if specified
+        var authOptions = new AuthenticationOptions();
+        if (configureAuthentication != null)
+        {
+            services.Configure(configureAuthentication);
+            configureAuthentication(authOptions);
+        }
+        else
+        {
+            services.Configure<AuthenticationOptions>(
+                configuration.GetSection(AuthenticationOptions.SectionName));
+            authOptions = configuration
+                .GetSection(AuthenticationOptions.SectionName)
+                .Get<AuthenticationOptions>() ?? new AuthenticationOptions();
+        }
+
+        // Register authentication services for Server (scoped token storage)
+        RegisterAuthenticationServicesForServer(services, authOptions);
+
+        // Add HttpClient with Polly retry policy and authentication
+        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
+        {
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        })
+        .AddPolicyHandler((serviceProvider, request) =>
+            GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
+        .AddPolicyHandler((serviceProvider, request) =>
+            GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+
+        // Add authentication handler if enabled
+        if (authOptions.AutoAttachToken)
+        {
+            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
+        }
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the API client services to the service collection with custom configuration for WASM.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configureOptions">Action to configure the API client options.</param>
+    /// <param name="configureAuthentication">Optional action to configure authentication.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddApiClient(
+    public static IServiceCollection AddApiClientForWasm(
         this IServiceCollection services,
-        Action<ApiClientOptions> configureOptions)
+        Action<ApiClientOptions> configureOptions,
+        Action<AuthenticationOptions>? configureAuthentication = null)
     {
         services.Configure(configureOptions);
 
         var options = new ApiClientOptions();
         configureOptions(options);
 
-        services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
+        // Configure authentication if specified
+        var authOptions = new AuthenticationOptions();
+        if (configureAuthentication != null)
+        {
+            services.Configure(configureAuthentication);
+            configureAuthentication(authOptions);
+        }
+
+        // Register authentication services for WASM
+        RegisterAuthenticationServicesForWasm(services, authOptions);
+
+        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
         {
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         })
-        .AddPolicyHandler((serviceProvider, request) => 
+        .AddPolicyHandler((serviceProvider, request) =>
             GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
-        .AddPolicyHandler((serviceProvider, request) => 
+        .AddPolicyHandler((serviceProvider, request) =>
             GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
 
+        // Add authentication handler if enabled
+        if (authOptions.AutoAttachToken)
+        {
+            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
+        }
+
         return services;
+    }
+
+    /// <summary>
+    /// Adds the API client services to the service collection with custom configuration for Server.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configureOptions">Action to configure the API client options.</param>
+    /// <param name="configureAuthentication">Optional action to configure authentication.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddApiClientForServer(
+        this IServiceCollection services,
+        Action<ApiClientOptions> configureOptions,
+        Action<AuthenticationOptions>? configureAuthentication = null)
+    {
+        services.Configure(configureOptions);
+
+        var options = new ApiClientOptions();
+        configureOptions(options);
+
+        // Configure authentication if specified
+        var authOptions = new AuthenticationOptions();
+        if (configureAuthentication != null)
+        {
+            services.Configure(configureAuthentication);
+            configureAuthentication(authOptions);
+        }
+
+        // Register authentication services for Server
+        RegisterAuthenticationServicesForServer(services, authOptions);
+
+        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
+        {
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        })
+        .AddPolicyHandler((serviceProvider, request) =>
+            GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
+        .AddPolicyHandler((serviceProvider, request) =>
+            GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+
+        // Add authentication handler if enabled
+        if (authOptions.AutoAttachToken)
+        {
+            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
+        }
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers authentication services for Blazor WebAssembly with singleton token storage.
+    /// </summary>
+    private static void RegisterAuthenticationServicesForWasm(
+        IServiceCollection services,
+        AuthenticationOptions options)
+    {
+        // Register token storage as SINGLETON for WASM (single-user context)
+        if (options.UseBrowserStorage)
+        {
+            services.AddSingleton<ITokenStorage, BrowserLocalTokenStorage>();
+        }
+        else
+        {
+            services.AddSingleton<ITokenStorage, InMemoryTokenStorage>();
+        }
+
+        // Register core authentication services
+        services.AddScoped<ITokenManager, TokenManager>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddTransient<AuthenticationMessageHandler>();
+
+        // Register authentication state provider for Blazor
+        services.AddScoped<ApiAuthenticationStateProvider>();
+        services.AddScoped<AuthenticationStateProvider>(sp =>
+            sp.GetRequiredService<ApiAuthenticationStateProvider>());
+    }
+
+    /// <summary>
+    /// Registers authentication services for Blazor Server with scoped token storage.
+    /// </summary>
+    private static void RegisterAuthenticationServicesForServer(
+        IServiceCollection services,
+        AuthenticationOptions options)
+    {
+        // Register token storage as SCOPED for Server (per-user/per-circuit isolation)
+        // Note: Browser storage is not used for Server, always use in-memory
+        services.AddScoped<ITokenStorage, InMemoryTokenStorage>();
+
+        // Register core authentication services
+        services.AddScoped<ITokenManager, TokenManager>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddTransient<AuthenticationMessageHandler>();
+
+        // Register authentication state provider for Blazor
+        services.AddScoped<ApiAuthenticationStateProvider>();
+        services.AddScoped<AuthenticationStateProvider>(sp =>
+            sp.GetRequiredService<ApiAuthenticationStateProvider>());
     }
 
     /// <summary>
