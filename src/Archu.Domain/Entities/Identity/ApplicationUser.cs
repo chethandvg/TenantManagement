@@ -35,8 +35,9 @@ public class ApplicationUser : BaseEntity
 
     /// <summary>
     /// Security stamp for invalidating tokens when credentials change.
+    /// Should be set explicitly during user creation.
     /// </summary>
-    public string SecurityStamp { get; set; }
+    public string SecurityStamp { get; set; } = string.Empty;
 
     /// <summary>
     /// Current refresh token for JWT authentication.
