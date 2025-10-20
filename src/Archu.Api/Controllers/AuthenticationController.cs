@@ -1,4 +1,5 @@
 using Archu.Application.Abstractions.Authentication;
+using Archu.Contracts.Authentication;
 using Archu.Contracts.Common;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +9,19 @@ namespace Archu.Api.Controllers;
 
 /// <summary>
 /// Controller for authentication operations (login, register, refresh token, etc.).
+/// Provides secure JWT-based authentication endpoints.
 /// </summary>
+/// <remarks>
+/// This controller handles all authentication-related operations including:
+/// - User registration
+/// - User login (email/password)
+/// - Token refresh
+/// - Password management (change, reset, forgot)
+/// - Email confirmation
+/// - Logout (token revocation)
+/// 
+/// All endpoints use standardized ApiResponse wrapper for consistent error handling.
+/// </remarks>
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
@@ -29,9 +42,27 @@ public class AuthenticationController : ControllerBase
     /// <summary>
     /// Registers a new user account.
     /// </summary>
+    /// <remarks>
+    /// Sample request:
+    /// 
+    ///     POST /api/v1/authentication/register
+    ///     {
+    ///         "email": "user@example.com",
+    ///         "password": "SecurePassword123!",
+    ///         "userName": "johndoe"
+    ///     }
+    /// 
+    /// Password requirements:
+    /// - Minimum 8 characters
+    /// - Maximum 100 characters
+    /// 
+    /// Returns JWT access token and refresh token upon successful registration.
+    /// </remarks>
     /// <param name="request">Registration details (email, password, username).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Authentication tokens if successful.</returns>
+    /// <returns>Authentication tokens and user information if successful.</returns>
+    /// <response code="200">Registration successful. Returns JWT tokens and user info.</response>
+    /// <response code="400">Validation failed or user already exists.</response>
     [HttpPost("register")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<AuthenticationResult>), StatusCodes.Status200OK)]
@@ -61,9 +92,23 @@ public class AuthenticationController : ControllerBase
     /// <summary>
     /// Authenticates a user and returns JWT tokens.
     /// </summary>
+    /// <remarks>
+    /// Sample request:
+    /// 
+    ///     POST /api/v1/authentication/login
+    ///     {
+    ///         "email": "user@example.com",
+    ///         "password": "SecurePassword123!"
+    ///     }
+    /// 
+    /// Returns JWT access token (valid for 1 hour by default) and refresh token (valid for 7 days).
+    /// Access token should be included in subsequent API requests in the Authorization header.
+    /// </remarks>
     /// <param name="request">Login credentials (email and password).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Authentication tokens if successful.</returns>
+    /// <returns>Authentication tokens and user information if successful.</returns>
+    /// <response code="200">Login successful. Returns JWT tokens and user info.</response>
+    /// <response code="401">Invalid credentials.</response>
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<AuthenticationResult>), StatusCodes.Status200OK)]
@@ -92,9 +137,23 @@ public class AuthenticationController : ControllerBase
     /// <summary>
     /// Refreshes an expired access token using a valid refresh token.
     /// </summary>
-    /// <param name="request">Refresh token.</param>
+    /// <remarks>
+    /// Sample request:
+    /// 
+    ///     POST /api/v1/authentication/refresh-token
+    ///     {
+    ///         "refreshToken": "base64-encoded-refresh-token"
+    ///     }
+    /// 
+    /// Use this endpoint when the access token expires (typically after 1 hour).
+    /// Returns a new access token and refresh token pair.
+    /// Old refresh token is invalidated after successful refresh.
+    /// </remarks>
+    /// <param name="request">Refresh token obtained from login or previous refresh.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>New authentication tokens if successful.</returns>
+    /// <response code="200">Token refreshed successfully. Returns new JWT tokens.</response>
+    /// <response code="401">Invalid or expired refresh token.</response>
     [HttpPost("refresh-token")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<AuthenticationResult>), StatusCodes.Status200OK)]
@@ -122,8 +181,15 @@ public class AuthenticationController : ControllerBase
     /// <summary>
     /// Logs out the current user by revoking their refresh token.
     /// </summary>
+    /// <remarks>
+    /// Requires valid JWT token in Authorization header.
+    /// Invalidates the refresh token to prevent future token refreshes.
+    /// Client should discard both access and refresh tokens.
+    /// </remarks>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Success response.</returns>
+    /// <response code="200">Logout successful.</response>
+    /// <response code="401">User not authenticated (invalid or missing token).</response>
     [HttpPost("logout")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -155,9 +221,24 @@ public class AuthenticationController : ControllerBase
     /// <summary>
     /// Changes the current user's password.
     /// </summary>
-    /// <param name="request">Current and new password.</param>
+    /// <remarks>
+    /// Requires authentication. User must provide current password for verification.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/v1/authentication/change-password
+    ///     Authorization: Bearer {token}
+    ///     {
+    ///         "currentPassword": "OldPassword123!",
+    ///         "newPassword": "NewSecurePassword456!"
+    ///     }
+    /// </remarks>
+    /// <param name="request">Current password and new password.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Success response.</returns>
+    /// <response code="200">Password changed successfully.</response>
+    /// <response code="400">Invalid current password or validation failed.</response>
+    /// <response code="401">User not authenticated.</response>
     [HttpPost("change-password")]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -196,9 +277,22 @@ public class AuthenticationController : ControllerBase
     /// <summary>
     /// Initiates a password reset by sending a reset token to the user's email.
     /// </summary>
+    /// <remarks>
+    /// Always returns success to prevent email enumeration attacks.
+    /// If email exists, user will receive reset instructions via email.
+    /// Reset token is valid for limited time (typically 1 hour).
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/v1/authentication/forgot-password
+    ///     {
+    ///         "email": "user@example.com"
+    ///     }
+    /// </remarks>
     /// <param name="request">User's email address.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Success response (always returns success to prevent email enumeration).</returns>
+    /// <returns>Success response (always returns success for security).</returns>
+    /// <response code="200">Request processed. If email exists, reset instructions sent.</response>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -228,9 +322,24 @@ public class AuthenticationController : ControllerBase
     /// <summary>
     /// Resets a user's password using a valid reset token.
     /// </summary>
-    /// <param name="request">Reset token and new password.</param>
+    /// <remarks>
+    /// Use the reset token received via email from forgot-password endpoint.
+    /// Token is single-use and expires after limited time.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/v1/authentication/reset-password
+    ///     {
+    ///         "email": "user@example.com",
+    ///         "resetToken": "token-from-email",
+    ///         "newPassword": "NewSecurePassword123!"
+    ///     }
+    /// </remarks>
+    /// <param name="request">Email, reset token, and new password.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Success response.</returns>
+    /// <response code="200">Password reset successfully.</response>
+    /// <response code="400">Invalid or expired token, or validation failed.</response>
     [HttpPost("reset-password")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -260,9 +369,23 @@ public class AuthenticationController : ControllerBase
     /// <summary>
     /// Confirms a user's email address.
     /// </summary>
+    /// <remarks>
+    /// Use the confirmation token received via email during registration.
+    /// Required before certain operations (if email verification is enabled).
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/v1/authentication/confirm-email
+    ///     {
+    ///         "userId": "user-guid",
+    ///         "confirmationToken": "token-from-email"
+    ///     }
+    /// </remarks>
     /// <param name="request">User ID and confirmation token.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Success response.</returns>
+    /// <response code="200">Email confirmed successfully.</response>
+    /// <response code="400">Invalid or expired token.</response>
     [HttpPost("confirm-email")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -287,71 +410,4 @@ public class AuthenticationController : ControllerBase
         _logger.LogInformation("Email confirmed successfully for user: {UserId}", request.UserId);
         return Ok(ApiResponse<object>.Ok(new { }, "Email confirmed successfully"));
     }
-}
-
-// ============================================
-// Request DTOs
-// ============================================
-
-/// <summary>
-/// Request model for user registration.
-/// </summary>
-public sealed record RegisterRequest
-{
-    public string Email { get; init; } = string.Empty;
-    public string Password { get; init; } = string.Empty;
-    public string UserName { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Request model for user login.
-/// </summary>
-public sealed record LoginRequest
-{
-    public string Email { get; init; } = string.Empty;
-    public string Password { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Request model for refreshing an access token.
-/// </summary>
-public sealed record RefreshTokenRequest
-{
-    public string RefreshToken { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Request model for changing password.
-/// </summary>
-public sealed record ChangePasswordRequest
-{
-    public string CurrentPassword { get; init; } = string.Empty;
-    public string NewPassword { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Request model for initiating password reset.
-/// </summary>
-public sealed record ForgotPasswordRequest
-{
-    public string Email { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Request model for resetting password with a token.
-/// </summary>
-public sealed record ResetPasswordRequest
-{
-    public string Email { get; init; } = string.Empty;
-    public string ResetToken { get; init; } = string.Empty;
-    public string NewPassword { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Request model for confirming email.
-/// </summary>
-public sealed record ConfirmEmailRequest
-{
-    public string UserId { get; init; } = string.Empty;
-    public string ConfirmationToken { get; init; } = string.Empty;
 }
