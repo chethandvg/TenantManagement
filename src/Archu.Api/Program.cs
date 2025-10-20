@@ -1,3 +1,4 @@
+using Archu.Api.Authorization;
 using Archu.Api.Health;
 using Archu.Api.Middleware;
 using Archu.Application.Abstractions;
@@ -133,8 +134,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Add Authorization
-builder.Services.AddAuthorization();
+// Configure Authorization with custom policies
+builder.Services.AddAuthorizationHandlers(); // Register custom authorization handlers
+builder.Services.AddAuthorization(options =>
+{
+    options.ConfigureArchuPolicies(); // Configure all application policies
+});
 
 // Add API Versioning
 builder.Services.AddApiVersioning(options =>
