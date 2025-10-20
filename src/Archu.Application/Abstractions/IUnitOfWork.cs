@@ -1,3 +1,5 @@
+using Archu.Application.Abstractions.Repositories;
+
 namespace Archu.Application.Abstractions;
 
 /// <summary>
@@ -9,6 +11,21 @@ public interface IUnitOfWork : IDisposable
     /// Gets the product repository.
     /// </summary>
     IProductRepository Products { get; }
+
+    /// <summary>
+    /// Gets the user repository.
+    /// </summary>
+    IUserRepository Users { get; }
+
+    /// <summary>
+    /// Gets the role repository.
+    /// </summary>
+    IRoleRepository Roles { get; }
+
+    /// <summary>
+    /// Gets the user-role repository.
+    /// </summary>
+    IUserRoleRepository UserRoles { get; }
 
     /// <summary>
     /// Saves all pending changes to the database.
