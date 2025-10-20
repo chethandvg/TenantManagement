@@ -169,7 +169,7 @@ public partial class ProductsController : ControllerBase
         }
 
         LogProductDeleted(id);
-        return Ok(ApiResponse<object>.Ok(null, "Product deleted successfully"));
+        return Ok(ApiResponse<object>.Ok(new { }, "Product deleted successfully"));
     }
 
     #region Logging
