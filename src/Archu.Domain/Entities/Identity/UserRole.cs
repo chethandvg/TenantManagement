@@ -6,6 +6,11 @@ namespace Archu.Domain.Entities.Identity;
 /// </summary>
 public class UserRole
 {
+    public UserRole()
+    {
+        AssignedAtUtc = DateTime.UtcNow;
+    }
+
     /// <summary>
     /// Foreign key to the ApplicationUser.
     /// </summary>

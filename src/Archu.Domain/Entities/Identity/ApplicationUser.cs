@@ -8,6 +8,11 @@ namespace Archu.Domain.Entities.Identity;
 /// </summary>
 public class ApplicationUser : BaseEntity
 {
+    public ApplicationUser()
+    {
+        SecurityStamp = Guid.NewGuid().ToString();
+    }
+
     /// <summary>
     /// Unique username for the user.
     /// </summary>
@@ -36,7 +41,7 @@ public class ApplicationUser : BaseEntity
     /// <summary>
     /// Security stamp for invalidating tokens when credentials change.
     /// </summary>
-    public string SecurityStamp { get; set; } = Guid.NewGuid().ToString();
+    public string SecurityStamp { get; set; } = string.Empty;
 
     /// <summary>
     /// Current refresh token for JWT authentication.
