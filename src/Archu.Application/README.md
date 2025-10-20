@@ -1,106 +1,55 @@
 # Archu.Application
 
 ## Overview
-The Application layer contains the business use cases and orchestrates the flow of data between the Domain and Infrastructure layers. This layer defines interfaces that are implemented by the outer layers.
+The Application layer contains business use cases and orchestrates data flow between Domain and Infrastructure layers. This layer defines interfaces implemented by outer layers.
 
 ## Target Framework
 - .NET 9.0
 
-## Responsibilities
-- **Abstractions**: Application-level interfaces for cross-cutting concerns
-- **Use Cases**: Business workflows and application services via CQRS with MediatR
-- **Commands & Queries**: CQRS pattern implementation for business operations
-- **Validators**: FluentValidation validators for request validation
-- **Behaviors**: MediatR pipeline behaviors (validation, performance monitoring)
-- **Common**: Shared application logic, result patterns, and constants
+## Quick Links
+📖 **[Complete Documentation](./docs/README.md)** - Full documentation index  
+🚀 **[Quick Start Guide](./docs/02-QUICK-START.md)** - Get started quickly  
+🔐 **[Authentication Guide](./docs/Authentication/README.md)** - Authentication implementation  
 
-## Key Components
+## Project Structure
 
-### Abstractions
-
-#### Authentication & Authorization
-- **ICurrentUser**: Enhanced interface for accessing authenticated user information and authorization
-  - `string? UserId`: Gets the current user's identifier
-  - `bool IsAuthenticated`: Checks if the user is authenticated
-  - `bool IsInRole(string role)`: Checks if user belongs to a specific role
-  - `bool HasAnyRole(params string[] roles)`: Checks if user belongs to any of the specified roles
-  - `IEnumerable<string> GetRoles()`: Gets all roles assigned to the current user
-  
-  📖 [Authentication Documentation](./Abstractions/Authentication/README.md)  
-  📖 [Authentication Examples](./Abstractions/Authentication/EXAMPLES.md)
-
-#### Time & System
-- **ITimeProvider**: Interface for abstracting system time operations (testability, time zone handling)
-
-#### Data Access
-- **IUnitOfWork**: Manages transactions and repositories
-- **IProductRepository**: Product-specific data access operations
-
-### Common
-
-#### Result Pattern
-- **Result<T>**: Standardized result type for operation outcomes (success/failure)
-- Provides consistent error handling across the application
-
-#### Role Constants
-- **ApplicationRoles**: Centralized role name constants
-  - Standard roles: Admin, User, Manager, Supervisor, ProductManager, Editor, Viewer
-  - Role groups: Administrative, ProductManagement, Approvers, ReadOnly
-  - Helper methods: `IsValid()`, `IsAdministrative()`
-  
-  📖 [ApplicationRoles.cs](./Common/ApplicationRoles.cs)
-
-### CQRS Implementation
-
-#### Products
-- **Commands**: CreateProduct, UpdateProduct, DeleteProduct
-- **Queries**: GetProducts, GetProductById
-- **Validators**: CreateProductCommandValidator, UpdateProductCommandValidator
-
-#### Pipeline Behaviors
-- **ValidationBehavior**: Automatic FluentValidation execution
-- **PerformanceBehavior**: Performance monitoring and logging
-
-## Architecture Patterns
-
-### CQRS (Command Query Responsibility Segregation)
-Separates read operations (queries) from write operations (commands) for clarity and scalability.
-
-**Commands**: Mutate state
-```csharp
-public record CreateProductCommand(string Name, decimal Price) : IRequest<Result<ProductDto>>;
+```
+Archu.Application/
+├── Abstractions/           # Interfaces for cross-cutting concerns
+│   ├── Authentication/     # Auth service interfaces
+│   ├── ICurrentUser.cs    # Current user context
+│   ├── IUnitOfWork.cs     # Transaction management
+│   └── Repositories/      # Data access abstractions
+├── Auth/                  # Authentication operations (CQRS)
+│   ├── Commands/          # Auth commands (Register, Login, etc.)
+│   └── Queries/           # Auth queries (ValidateToken, etc.)
+├── Products/              # Product feature (example)
+│   ├── Commands/          # Product commands
+│   └── Queries/           # Product queries
+├── Common/                # Shared application logic
+│   ├── Behaviors/         # MediatR pipeline behaviors
+│   ├── ApplicationRoles.cs # Role constants
+│   └── Result.cs          # Result pattern
+└── docs/                  # 📚 Documentation
+    ├── README.md          # Documentation index
+    ├── 01-APPLICATION-OVERVIEW.md
+    ├── 02-QUICK-START.md
+    └── Authentication/    # Auth documentation
+        └── README.md
 ```
 
-**Queries**: Read state
-```csharp
-public record GetProductByIdQuery(Guid Id) : IRequest<Result<ProductDto>>;
-```
+## Key Features
 
-### Repository Pattern
-Abstractions define data access contracts; implementations live in Infrastructure layer.
+✅ **CQRS Pattern** - Clear separation of commands and queries  
+✅ **FluentValidation** - Automatic request validation  
+✅ **MediatR Pipeline** - Validation and performance behaviors  
+✅ **Authentication** - Complete auth with JWT support  
+✅ **Role-Based Authorization** - Fine-grained access control  
+✅ **Result Pattern** - Consistent error handling  
 
-```csharp
-public interface IProductRepository
-{
-    Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default);
-    Task UpdateAsync(Product product, byte[] originalRowVersion, CancellationToken ct = default);
-}
-```
+## Quick Examples
 
-### Unit of Work Pattern
-Encapsulates transaction management and coordinates repository operations.
-
-```csharp
-public interface IUnitOfWork
-{
-    IProductRepository Products { get; }
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-}
-```
-
-## Authentication & Authorization
-
-### Usage in Command Handlers
+### Command Handler with Authorization
 ```csharp
 public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, Result>
 {
@@ -108,124 +57,75 @@ public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand,
     
     public async Task<Result> Handle(DeleteProductCommand request, CancellationToken ct)
     {
-        // Check authentication
-        if (!_currentUser.IsAuthenticated)
-            return Result.Failure("Authentication required");
-        
-        // Check authorization
         if (!_currentUser.IsInRole(ApplicationRoles.Admin))
-            return Result.Failure("Only administrators can delete products");
+            return Result.Failure("Admin access required");
         
         // Proceed with deletion
     }
 }
 ```
 
-### Role-Based Authorization
+### Authentication Flow
 ```csharp
-public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Result<ProductDto>>
-{
-    private readonly ICurrentUser _currentUser;
-    
-    public async Task<Result<ProductDto>> Handle(UpdateProductCommand request, CancellationToken ct)
-    {
-        // Allow multiple roles
-        if (!_currentUser.HasAnyRole(ApplicationRoles.ProductManagement.ToArray()))
-            return Result<ProductDto>.Failure("Insufficient permissions");
-        
-        // Proceed with update
-    }
-}
-```
+// Register
+var registerCommand = new RegisterCommand { Email = "...", Password = "..." };
+var result = await _mediator.Send(registerCommand);
 
-📖 **Complete Examples**: [Authentication Examples](./Abstractions/Authentication/EXAMPLES.md)
+// Login
+var loginCommand = new LoginCommand { Email = "...", Password = "..." };
+var authResult = await _mediator.Send(loginCommand);
+
+// Use access token for API calls
+```
 
 ## Dependencies
 - `Archu.Domain` - Domain entities and abstractions
 - `MediatR` - CQRS pattern implementation
 - `FluentValidation` - Request validation
 
-## Design Principles
-- **Dependency Inversion**: Defines interfaces that infrastructure implements
-- **Use Case Driven**: Each command/query represents a single business operation
-- **Framework Agnostic**: No direct dependencies on web frameworks or databases
-- **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
-- **Clean Architecture**: Application layer orchestrates use cases without knowing implementation details
+## Getting Started
 
-## Usage
-This project is referenced by:
-- `Archu.Infrastructure` - to implement abstractions (repositories, time providers)
-- `Archu.Api` - to invoke commands/queries and access abstractions
-
-## Testing
-
-### Unit Testing Application Services
-```csharp
-[Fact]
-public async Task Handle_UserNotAuthenticated_ReturnsFailure()
-{
-    // Arrange
-    var mockCurrentUser = new Mock<ICurrentUser>();
-    mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
-    
-    var handler = new DeleteProductCommandHandler(
-        Mock.Of<IUnitOfWork>(),
-        mockCurrentUser.Object,
-        Mock.Of<ILogger<DeleteProductCommandHandler>>());
-    
-    // Act
-    var result = await handler.Handle(command, CancellationToken.None);
-    
-    // Assert
-    Assert.False(result.IsSuccess);
-    Assert.Equal("Authentication required", result.Error);
-}
-```
-
-## Best Practices
-
-### ✅ Do
-- Use CQRS pattern for clear separation of concerns
-- Validate all commands with FluentValidation
-- Use `ICurrentUser` for authentication/authorization checks
-- Use `ApplicationRoles` constants instead of magic strings
-- Return `Result<T>` for consistent error handling
-- Log authorization failures for security auditing
-- Use dependency injection for all dependencies
-
-### ❌ Don't
-- Put infrastructure concerns in application layer
-- Hardcode role names - use `ApplicationRoles` constants
-- Skip authentication/authorization checks on sensitive operations
-- Return null - use `Result<T>` pattern instead
-- Perform data access directly - use repositories via `IUnitOfWork`
+1. **Read the documentation**: Start with [docs/README.md](./docs/README.md)
+2. **Explore examples**: Check [Quick Start Guide](./docs/02-QUICK-START.md)
+3. **Implement features**: Follow CQRS pattern with commands/queries
+4. **Add authentication**: Use [Authentication Guide](./docs/Authentication/README.md)
 
 ## Documentation
 
-### Core Documentation
-- 📖 [Authentication Implementation Summary](./AUTHENTICATION_IMPLEMENTATION_SUMMARY.md)
-- 📖 [ICurrentUser API Reference](./Abstractions/Authentication/README.md)
-- 📖 [Authentication Examples](./Abstractions/Authentication/EXAMPLES.md)
+📖 **[Full Documentation Index](./docs/README.md)**
 
-### Related Documentation
-- [Domain Layer](../Archu.Domain/README.md)
-- [Domain Identity Entities](../Archu.Domain/Entities/Identity/README.md)
-- [RBAC Implementation Guide](../Archu.Domain/Abstractions/Identity/IMPLEMENTATION_SUMMARY_RBAC.md)
-- [Clean Architecture Guidelines](../../docs/ARCHITECTURE.md)
+**Core Guides:**
+- [Application Overview](./docs/01-APPLICATION-OVERVIEW.md) - Architecture and patterns
+- [Quick Start](./docs/02-QUICK-START.md) - Common patterns and examples
+- [Authentication](./docs/Authentication/README.md) - Complete auth guide
+
+## Best Practices
+
+✅ Use CQRS pattern for all operations  
+✅ Validate all commands with FluentValidation  
+✅ Use `ApplicationRoles` constants for role names  
+✅ Return `Result<T>` for consistent error handling  
+✅ Log authorization failures for security auditing  
+✅ Check authentication/authorization in handlers  
 
 ## Version History
 
-### v1.1.0 (2025-01-22)
-- ✨ Enhanced `ICurrentUser` interface with authentication and role-based authorization
-- ✨ Added `ApplicationRoles` constants for type-safe role names
-- ✨ Comprehensive authentication documentation and examples
-- ✨ Updated all implementations (`HttpContextCurrentUser`, `DesignTimeCurrentUser`)
+### v2.0.0 (2025-01-22)
+- 📚 Reorganized documentation into `docs/` folder
+- ✨ Complete authentication implementation
+- ✨ Enhanced ICurrentUser with role-based authorization
+- ✨ Added ApplicationRoles constants
+- ✨ Added authentication commands and queries
 
 ### v1.0.0
 - ✅ CQRS pattern with MediatR
-- ✅ FluentValidation for request validation
+- ✅ FluentValidation
 - ✅ Repository and Unit of Work patterns
-- ✅ Pipeline behaviors for validation and performance monitoring
+- ✅ Pipeline behaviors
+
+---
+
+**For detailed documentation, see [docs/README.md](./docs/README.md)**
 
 **Maintainer**: Archu Development Team  
 **Last Updated**: 2025-01-22
