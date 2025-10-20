@@ -6,11 +6,6 @@ namespace Archu.Domain.Entities.Identity;
 /// </summary>
 public class UserRole
 {
-    public UserRole()
-    {
-        AssignedAtUtc = DateTime.UtcNow;
-    }
-
     /// <summary>
     /// Foreign key to the ApplicationUser.
     /// </summary>
@@ -34,7 +29,7 @@ public class UserRole
     /// <summary>
     /// Timestamp when the role was assigned to the user.
     /// </summary>
-    public DateTime AssignedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime AssignedAtUtc { get; set; }
 
     /// <summary>
     /// Who assigned this role (audit trail).
