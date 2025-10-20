@@ -28,7 +28,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
             })
             .Options;
 
-        // Minimal dummy services for design-time (tools don’t use them)
+        // Minimal dummy services for design-time (tools don't use them)
         var currentUser = new DesignTimeCurrentUser();
         var time = new SystemTimeProvider();
 
@@ -38,6 +38,14 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
     private sealed class DesignTimeCurrentUser : ICurrentUser
     {
         public string? UserId => "design-time";
+
+        public bool IsAuthenticated => true;
+
+        public bool IsInRole(string role) => false;
+
+        public bool HasAnyRole(params string[] roles) => false;
+
+        public IEnumerable<string> GetRoles() => Enumerable.Empty<string>();
     }
 
     private sealed class SystemTimeProvider : ITimeProvider
