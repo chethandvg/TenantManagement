@@ -1,6 +1,5 @@
 using Archu.ApiClient.Authentication.Models;
 using Archu.ApiClient.Authentication.Providers;
-using Archu.ApiClient.Authentication.Services;
 using Archu.ApiClient.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -94,8 +93,8 @@ public sealed class AuthenticationService : IAuthenticationService
 
     /// <inheritdoc/>
     public async Task<AuthenticationResult> LoginAsync(
-        string username, 
-        string password, 
+        string username,
+        string password,
         CancellationToken cancellationToken = default)
     {
         try
@@ -115,7 +114,7 @@ public sealed class AuthenticationService : IAuthenticationService
             // }
             //
             // var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken);
-            
+
             // Placeholder implementation
             _logger.LogWarning("Login method requires HTTP client implementation to call authentication API");
             throw new NotImplementedException(
@@ -147,14 +146,14 @@ public sealed class AuthenticationService : IAuthenticationService
         try
         {
             _logger.LogInformation("Logging out user");
-            
+
             await _tokenManager.RemoveTokenAsync(cancellationToken);
-            
+
             if (_authStateProvider != null)
             {
                 await _authStateProvider.MarkUserAsLoggedOutAsync();
             }
-            
+
             _logger.LogInformation("User logged out successfully");
         }
         catch (Exception ex)
@@ -175,7 +174,7 @@ public sealed class AuthenticationService : IAuthenticationService
             // Get current token with refresh token
             // Make API call to refresh endpoint
             // Store new token
-            
+
             _logger.LogWarning("Token refresh requires implementation");
             throw new NotImplementedException(
                 "RefreshTokenAsync requires HTTP client to make API calls to refresh token endpoint. " +

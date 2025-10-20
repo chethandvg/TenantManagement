@@ -65,9 +65,9 @@ public static class ServiceCollectionExtensions
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         })
-        .AddPolicyHandler((serviceProvider, request) => 
+        .AddPolicyHandler((serviceProvider, request) =>
             GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
-        .AddPolicyHandler((serviceProvider, request) => 
+        .AddPolicyHandler((serviceProvider, request) =>
             GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
 
         // Add authentication handler if enabled
@@ -113,9 +113,9 @@ public static class ServiceCollectionExtensions
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         })
-        .AddPolicyHandler((serviceProvider, request) => 
+        .AddPolicyHandler((serviceProvider, request) =>
             GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
-        .AddPolicyHandler((serviceProvider, request) => 
+        .AddPolicyHandler((serviceProvider, request) =>
             GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
 
         // Add authentication handler if enabled
@@ -151,7 +151,7 @@ public static class ServiceCollectionExtensions
 
         // Register authentication state provider for Blazor
         services.AddScoped<ApiAuthenticationStateProvider>();
-        services.AddScoped<AuthenticationStateProvider>(sp => 
+        services.AddScoped<AuthenticationStateProvider>(sp =>
             sp.GetRequiredService<ApiAuthenticationStateProvider>());
     }
 

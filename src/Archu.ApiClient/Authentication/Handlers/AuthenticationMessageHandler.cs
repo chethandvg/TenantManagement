@@ -1,6 +1,6 @@
+using System.Net.Http.Headers;
 using Archu.ApiClient.Authentication.Services;
 using Microsoft.Extensions.Logging;
-using System.Net.Http.Headers;
 
 namespace Archu.ApiClient.Authentication.Handlers;
 
@@ -38,8 +38,8 @@ public sealed class AuthenticationMessageHandler : DelegatingHandler
             if (!string.IsNullOrWhiteSpace(accessToken))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                _logger.LogDebug("Bearer token attached to request: {Method} {Uri}", 
-                    request.Method, 
+                _logger.LogDebug("Bearer token attached to request: {Method} {Uri}",
+                    request.Method,
                     request.RequestUri);
             }
             else

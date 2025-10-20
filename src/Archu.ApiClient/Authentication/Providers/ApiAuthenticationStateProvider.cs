@@ -1,7 +1,7 @@
+using System.Security.Claims;
 using Archu.ApiClient.Authentication.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
-using System.Security.Claims;
 
 namespace Archu.ApiClient.Authentication.Providers;
 
@@ -30,7 +30,7 @@ public sealed class ApiAuthenticationStateProvider : AuthenticationStateProvider
         try
         {
             var authState = await _tokenManager.GetAuthenticationStateAsync();
-            
+
             _logger.LogDebug("Authentication state retrieved: Authenticated={IsAuthenticated}, User={User}",
                 authState.IsAuthenticated,
                 authState.UserName ?? "Anonymous");
@@ -45,13 +45,14 @@ public sealed class ApiAuthenticationStateProvider : AuthenticationStateProvider
     }
 
     /// <summary>
-    /// Notifies that the authentication state has changed.
+    /// Raises a notification that the authentication state has changed.
     /// Call this after login or logout.
     /// </summary>
-    public void NotifyAuthenticationStateChanged()
+    public void RaiseAuthenticationStateChanged()
     {
         _logger.LogInformation("Authentication state changed, notifying subscribers");
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        // Use the base protected method to avoid ambiguity with public API
+        base.NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
     /// <summary>
@@ -62,7 +63,7 @@ public sealed class ApiAuthenticationStateProvider : AuthenticationStateProvider
         try
         {
             var claimsPrincipal = _tokenManager.ExtractClaimsFromToken(accessToken);
-            
+
             if (claimsPrincipal == null)
             {
                 _logger.LogWarning("Failed to extract claims from token during authentication");
@@ -70,11 +71,12 @@ public sealed class ApiAuthenticationStateProvider : AuthenticationStateProvider
             }
 
             var authState = new AuthenticationState(claimsPrincipal);
-            
-            _logger.LogInformation("User marked as authenticated: {User}", 
+
+            _logger.LogInformation("User marked as authenticated: {User}",
                 claimsPrincipal.Identity?.Name ?? "Unknown");
-            
-            NotifyAuthenticationStateChanged(Task.FromResult(authState));
+
+            // Directly notify with the prepared state
+            base.NotifyAuthenticationStateChanged(Task.FromResult(authState));
         }
         catch (Exception ex)
         {
@@ -90,13 +92,13 @@ public sealed class ApiAuthenticationStateProvider : AuthenticationStateProvider
         try
         {
             await _tokenManager.RemoveTokenAsync();
-            
+
             var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
             var authState = new AuthenticationState(anonymousUser);
-            
+
             _logger.LogInformation("User marked as logged out");
-            
-            NotifyAuthenticationStateChanged(Task.FromResult(authState));
+
+            base.NotifyAuthenticationStateChanged(Task.FromResult(authState));
         }
         catch (Exception ex)
         {

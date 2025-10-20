@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Archu.ApiClient.Authentication.Models;
 using Microsoft.Extensions.Logging;
 

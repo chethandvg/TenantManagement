@@ -1,4 +1,3 @@
-using Archu.ApiClient.Authentication.Models;
 using Archu.ApiClient.Authentication.Providers;
 using Archu.ApiClient.Authentication.Services;
 using Microsoft.Extensions.Logging;
@@ -41,14 +40,14 @@ public class AuthenticationExample
             if (result.Success)
             {
                 _logger.LogInformation("Login successful for user: {Username}", username);
-                
+
                 // Authentication state is automatically updated
                 // You can get the current state
                 var authState = result.AuthenticationState;
-                _logger.LogInformation("User authenticated: {UserId}, Name: {UserName}", 
-                    authState?.UserId, 
+                _logger.LogInformation("User authenticated: {UserId}, Name: {UserName}",
+                    authState?.UserId,
                     authState?.UserName);
-                
+
                 return true;
             }
             else
@@ -72,9 +71,9 @@ public class AuthenticationExample
         try
         {
             _logger.LogInformation("Logging out user");
-            
+
             await _authService.LogoutAsync();
-            
+
             _logger.LogInformation("Logout successful");
         }
         catch (Exception ex)
@@ -91,19 +90,19 @@ public class AuthenticationExample
         try
         {
             var isAuthenticated = await _tokenManager.IsAuthenticatedAsync();
-            
+
             if (isAuthenticated)
             {
                 var authState = await _authService.GetAuthenticationStateAsync();
-                _logger.LogInformation("User is authenticated: {UserId}, Name: {UserName}", 
-                    authState.UserId, 
+                _logger.LogInformation("User is authenticated: {UserId}, Name: {UserName}",
+                    authState.UserId,
                     authState.UserName);
             }
             else
             {
                 _logger.LogInformation("User is not authenticated");
             }
-            
+
             return isAuthenticated;
         }
         catch (Exception ex)
@@ -121,7 +120,7 @@ public class AuthenticationExample
         try
         {
             var authState = await _authService.GetAuthenticationStateAsync();
-            
+
             if (!authState.IsAuthenticated)
             {
                 _logger.LogInformation("No authenticated user");
@@ -145,9 +144,9 @@ public class AuthenticationExample
         try
         {
             _logger.LogInformation("Attempting to refresh token");
-            
+
             var result = await _authService.RefreshTokenAsync();
-            
+
             if (result.Success)
             {
                 _logger.LogInformation("Token refreshed successfully");
@@ -173,13 +172,13 @@ public class AuthenticationExample
     {
         // In a Blazor component, you can subscribe to authentication state changes
         // using the AuthenticationStateProvider
-        
+
         var authState = await _authStateProvider.GetAuthenticationStateAsync();
-        
+
         if (authState.User.Identity?.IsAuthenticated == true)
         {
             _logger.LogInformation("User is authenticated: {Name}", authState.User.Identity.Name);
-            
+
             // Access user claims
             foreach (var claim in authState.User.Claims)
             {
