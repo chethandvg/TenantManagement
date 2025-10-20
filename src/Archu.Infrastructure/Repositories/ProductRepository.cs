@@ -38,7 +38,7 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
     {
         // ✅ Set the original RowVersion to enable concurrency detection
         SetOriginalRowVersion(product, originalRowVersion);
-        
+
         DbSet.Update(product);
         return Task.CompletedTask;
     }

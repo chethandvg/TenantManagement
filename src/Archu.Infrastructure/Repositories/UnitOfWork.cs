@@ -1,4 +1,5 @@
 using Archu.Application.Abstractions;
+using Archu.Application.Abstractions.Repositories;
 using Archu.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -12,6 +13,9 @@ public class UnitOfWork : IUnitOfWork
     private readonly ApplicationDbContext _context;
     private IDbContextTransaction? _currentTransaction;
     private IProductRepository? _productRepository;
+    private IUserRepository? _userRepository;
+    private IRoleRepository? _roleRepository;
+    private IUserRoleRepository? _userRoleRepository;
 
     public UnitOfWork(ApplicationDbContext context)
     {
@@ -19,6 +23,9 @@ public class UnitOfWork : IUnitOfWork
     }
 
     public IProductRepository Products => _productRepository ??= new ProductRepository(_context);
+    public IUserRepository Users => _userRepository ??= new UserRepository(_context);
+    public IRoleRepository Roles => _roleRepository ??= new RoleRepository(_context);
+    public IUserRoleRepository UserRoles => _userRoleRepository ??= new UserRoleRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
