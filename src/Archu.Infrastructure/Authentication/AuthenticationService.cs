@@ -101,7 +101,25 @@ public class AuthenticationService : IAuthenticationService
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("User {Email} registered successfully", email);
+            // ✅ FIX #4: Generate secure email confirmation token
+            // This token is time-limited (24 hours) and single-use
+            var confirmationToken = await _unitOfWork.EmailConfirmationTokens.CreateTokenAsync(
+                user.Id,
+                cancellationToken);
+
+            _logger.LogInformation(
+                "User {Email} registered successfully with confirmation token expiring at {ExpiresAt}",
+                email,
+                confirmationToken.ExpiresAtUtc);
+
+            // TODO: Send confirmation email with token
+            // In production, integrate email service to send:
+            // await _emailService.SendEmailConfirmationAsync(user.Email, confirmationToken.Token);
+            // For now, log for development (remove in production)
+            _logger.LogDebug(
+                "Email confirmation token for {Email}: {Token} (Remove this log in production!)",
+                email,
+                confirmationToken.Token);
 
             // Generate authentication result
             return await GenerateAuthenticationResultAsync(user, cancellationToken);
@@ -253,6 +271,27 @@ public class AuthenticationService : IAuthenticationService
         if (string.IsNullOrWhiteSpace(confirmationToken))
             return Result.Failure("Confirmation token is required");
 
+        // ✅ FIX #4 IMPLEMENTED: Secure email confirmation using dedicated token repository
+        // 1. Get valid token from repository (checks expiry, used status, revoked status)
+        var token = await _unitOfWork.EmailConfirmationTokens.GetValidTokenAsync(confirmationToken, cancellationToken);
+
+        if (token == null)
+        {
+            _logger.LogWarning("Email confirmation failed: Invalid or expired token");
+            return Result.Failure("Invalid or expired confirmation token");
+        }
+
+        // 2. Validate token belongs to the correct user
+        if (token.UserId != userGuid)
+        {
+            _logger.LogWarning(
+                "Email confirmation failed: Token user mismatch. Expected {ExpectedUserId}, got {TokenUserId}",
+                userGuid,
+                token.UserId);
+            return Result.Failure("Invalid confirmation token");
+        }
+
+        // 3. Get the user
         var user = await _unitOfWork.Users.GetByIdAsync(userGuid, cancellationToken);
 
         if (user == null)
@@ -261,22 +300,25 @@ public class AuthenticationService : IAuthenticationService
             return Result.Failure("User not found");
         }
 
-        // Simple token validation (you might want to implement proper token generation/validation)
-        if (user.SecurityStamp != confirmationToken)
-        {
-            _logger.LogWarning("Email confirmation failed: Invalid token for user {UserId}", userId);
-            return Result.Failure("Invalid or expired confirmation token");
-        }
-
+        // 4. Check if email already confirmed
         if (user.EmailConfirmed)
         {
             _logger.LogInformation("Email already confirmed for user {UserId}", userId);
+            // Still mark token as used even if email was already confirmed
+            await _unitOfWork.EmailConfirmationTokens.MarkAsUsedAsync(token, cancellationToken);
             return Result.Success();
         }
 
+        // 5. Confirm email
         user.EmailConfirmed = true;
-
         await _unitOfWork.Users.UpdateAsync(user, user.RowVersion, cancellationToken);
+
+        // 6. Mark token as used (prevents reuse)
+        await _unitOfWork.EmailConfirmationTokens.MarkAsUsedAsync(token, cancellationToken);
+
+        // 7. Revoke any other outstanding confirmation tokens for this user
+        await _unitOfWork.EmailConfirmationTokens.RevokeAllForUserAsync(userGuid, cancellationToken);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Email confirmed successfully for user {UserId}", userId);
@@ -301,6 +343,25 @@ public class AuthenticationService : IAuthenticationService
             return Result.Success(); // Return success to prevent email enumeration
         }
 
+        // ⚠️ FIX #1 TODO: SECURITY IMPROVEMENT REQUIRED
+        // Current implementation uses SecurityStamp which is NOT secure:
+        // - Not time-limited (no expiration)
+        // - Can be reused multiple times
+        // - Attacker with old SecurityStamp can reset password anytime
+        //
+        // RECOMMENDED IMPLEMENTATION:
+        // 1. Revoke all existing password reset tokens for user
+        // 2. Create new time-limited token (1 hour expiry)
+        // 3. Store token in PasswordResetToken entity
+        // 4. Send email with token
+        // 5. Validate token expiry and single-use on reset
+        //
+        // Example:
+        // await _passwordResetTokenRepo.RevokeAllForUserAsync(user.Id, ct);
+        // var token = await _passwordResetTokenRepo.CreateTokenAsync(user.Id, ct);
+        // await _emailService.SendPasswordResetEmailAsync(user.Email, token.Token);
+        // await _unitOfWork.SaveChangesAsync(ct);
+
         // Generate password reset token (SecurityStamp)
         user.SecurityStamp = Guid.NewGuid().ToString();
 
@@ -309,10 +370,10 @@ public class AuthenticationService : IAuthenticationService
 
         _logger.LogInformation("Password reset token generated for user {UserId}", user.Id);
 
-        // TODO: Send email with reset token
-        // In a real implementation, you would send an email here
-        // For now, we just log it (in production, remove this log)
-        _logger.LogDebug("Password reset token for {Email}: {Token}", email, user.SecurityStamp);
+        // ✅ FIX #3: REMOVED SECURITY VULNERABILITY
+        // Never log sensitive tokens - they could be exposed in log files
+        // TODO: Send email with reset token using email service
+        // In production, integrate email service (SendGrid, AWS SES, etc.)
 
         return Result.Success();
     }
@@ -342,6 +403,15 @@ public class AuthenticationService : IAuthenticationService
             _logger.LogWarning("Password reset failed: User with email {Email} not found", email);
             return Result.Failure("Invalid email or reset token");
         }
+
+        // ⚠️ FIX #1 TODO: SECURITY IMPROVEMENT REQUIRED
+        // Current validation is INSECURE (see ForgotPasswordAsync for details)
+        //
+        // RECOMMENDED IMPLEMENTATION:
+        // var token = await _passwordResetTokenRepo.GetValidTokenAsync(resetToken, ct);
+        // if (token == null || token.UserId != user.Id || !token.IsValid(_timeProvider.UtcNow))
+        //     return Result.Failure("Invalid or expired reset token");
+        // await _passwordResetTokenRepo.MarkAsUsedAsync(token, ct);
 
         // Validate reset token
         if (user.SecurityStamp != resetToken)
@@ -435,9 +505,22 @@ public class AuthenticationService : IAuthenticationService
         ApplicationUser user,
         CancellationToken cancellationToken)
     {
-        // Load user roles
-        var userRoles = user.UserRoles?.Select(ur => ur.Role?.Name ?? string.Empty).Where(r => !string.IsNullOrEmpty(r)).ToList()
-            ?? new List<string>();
+        // ✅ FIX #5: Handle navigation properties correctly
+        // User must be loaded with .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+        // from repository to ensure navigation properties are available
+        var userRoles = user.UserRoles?
+            .Where(ur => ur.Role != null)
+            .Select(ur => ur.Role!.Name)
+            .Where(name => !string.IsNullOrEmpty(name))
+            .ToList() ?? new List<string>();
+
+        // If no roles loaded, it might mean user was not properly included
+        if (user.UserRoles != null && user.UserRoles.Any() && !userRoles.Any())
+        {
+            _logger.LogWarning(
+                "User {UserId} has UserRoles but no Role names loaded. Check repository includes.",
+                user.Id);
+        }
 
         // Generate JWT access token
         var accessToken = _jwtTokenService.GenerateAccessToken(

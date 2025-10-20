@@ -1,3 +1,4 @@
+using System.Text;
 using Archu.Api.Authorization;
 using Archu.Api.Health;
 using Archu.Api.Middleware;
@@ -16,7 +17,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,23 +77,25 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     var key = Encoding.UTF8.GetBytes(jwtOptions.Secret);
-    
+
     options.SaveToken = true;
     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Allow HTTP in development
-    
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ClockSkew = TimeSpan.Zero, // No tolerance for token expiration
-        
+        // ✅ FIX #2: Allow 5-minute tolerance for clock skew between servers
+        // Zero tolerance can cause valid tokens to be rejected in distributed systems
+        ClockSkew = TimeSpan.FromMinutes(5),
+
         ValidIssuer = jwtOptions.Issuer,
         ValidAudience = jwtOptions.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
-    
+
     // Configure event handlers for better logging and debugging
     options.Events = new JwtBearerEvents
     {
@@ -101,35 +103,35 @@ builder.Services.AddAuthentication(options =>
         {
             var logger = context.HttpContext.RequestServices
                 .GetRequiredService<ILogger<Program>>();
-            
+
             logger.LogWarning(
                 context.Exception,
                 "JWT authentication failed: {Message}",
                 context.Exception.Message);
-            
+
             return Task.CompletedTask;
         },
         OnTokenValidated = context =>
         {
             var logger = context.HttpContext.RequestServices
                 .GetRequiredService<ILogger<Program>>();
-            
+
             var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            
+
             logger.LogDebug("JWT token validated successfully for user: {UserId}", userId);
-            
+
             return Task.CompletedTask;
         },
         OnChallenge = context =>
         {
             var logger = context.HttpContext.RequestServices
                 .GetRequiredService<ILogger<Program>>();
-            
+
             logger.LogWarning(
                 "JWT authentication challenge: {Error} - {ErrorDescription}",
                 context.Error,
                 context.ErrorDescription);
-            
+
             return Task.CompletedTask;
         }
     };
@@ -152,8 +154,8 @@ builder.Services.AddApiVersioning(options =>
 });
 
 // Add Health Checks
-var connectionString = builder.Configuration.GetConnectionString("archudb") 
-    ?? builder.Configuration.GetConnectionString("Sql") 
+var connectionString = builder.Configuration.GetConnectionString("archudb")
+    ?? builder.Configuration.GetConnectionString("Sql")
     ?? throw new InvalidOperationException("Database connection string not configured");
 
 builder.Services.AddHealthChecks()

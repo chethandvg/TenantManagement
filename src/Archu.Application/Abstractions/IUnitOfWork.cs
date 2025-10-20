@@ -28,6 +28,16 @@ public interface IUnitOfWork : IDisposable
     IUserRoleRepository UserRoles { get; }
 
     /// <summary>
+    /// Gets the email confirmation token repository.
+    /// </summary>
+    IEmailConfirmationTokenRepository EmailConfirmationTokens { get; }
+
+    /// <summary>
+    /// Gets the password reset token repository.
+    /// </summary>
+    IPasswordResetTokenRepository PasswordResetTokens { get; }
+
+    /// <summary>
     /// Saves all pending changes to the database.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>

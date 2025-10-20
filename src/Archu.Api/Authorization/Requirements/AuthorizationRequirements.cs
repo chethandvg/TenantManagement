@@ -36,10 +36,11 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
     {
         var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        // Check if user has the specific permission claim
+        // ✅ FIX #6: Use case-sensitive comparison (Ordinal) for security
+        // Permissions must match exactly to prevent authorization bypass
         var hasPermission = context.User.HasClaim(c =>
             c.Type == CustomClaimTypes.Permission &&
-            c.Value.Equals(requirement.Permission, StringComparison.OrdinalIgnoreCase));
+            c.Value.Equals(requirement.Permission, StringComparison.Ordinal));
 
         if (hasPermission)
         {
