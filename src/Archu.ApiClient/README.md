@@ -6,14 +6,14 @@ A .NET 9 HTTP client library for interacting with the Archu API using the HttpCl
 
 - ✅ Clean Architecture with separation of concerns
 - ✅ HttpClientFactory pattern for efficient HTTP client management
-- ✅ Polly integration for retry policies and circuit breaker
+- ✅ **Advanced Resilience Policies** - Configurable retry and circuit breaker with Polly
+- ✅ **Comprehensive Logging** - Structured logging for all operations and errors
 - ✅ **JWT Authentication Framework** - Complete authentication solution
 - ✅ **Blazor Integration** - First-class support for Blazor Server and WebAssembly
 - ✅ **Platform-Specific Registration** - Proper token storage lifetimes for WASM and Server
 - ✅ Strongly-typed API clients
 - ✅ Configuration-based setup
 - ✅ Comprehensive exception handling with custom exceptions
-- ✅ Structured logging support
 - ✅ Full nullable reference type support
 
 ## Installation
@@ -35,7 +35,12 @@ Add the following configuration to your `appsettings.json`:
     "TimeoutSeconds": 30,
     "RetryCount": 3,
     "ApiVersion": "v1",
-    "EnableDetailedLogging": false
+    "EnableDetailedLogging": false,
+    "CircuitBreakerFailureThreshold": 5,
+    "CircuitBreakerDurationSeconds": 30,
+    "RetryBaseDelaySeconds": 1.0,
+    "EnableCircuitBreaker": true,
+    "EnableRetryPolicy": true
   },
   "Authentication": {
     "AutoAttachToken": true,
@@ -47,6 +52,34 @@ Add the following configuration to your `appsettings.json`:
     "UseBrowserStorage": false
   }
 }
+```
+
+## 🛡️ Resilience & Error Handling
+
+The API client includes comprehensive error handling, structured logging, and automatic retry policies. For detailed documentation, see:
+
+📖 **[Resilience & Error Handling Documentation](RESILIENCE.md)**
+
+### Key Resilience Features
+
+- ✅ **Automatic Retry with Exponential Backoff** - Smart retry for transient failures
+- ✅ **Circuit Breaker Pattern** - Prevents cascading failures with automatic recovery
+- ✅ **Configurable Policies** - Customize retry count, delays, and thresholds
+- ✅ **Structured Logging** - Complete visibility into request lifecycle and failures
+- ✅ **Exception Hierarchy** - Type-safe error handling with specific exception types
+
+### Quick Configuration Example
+
+```csharp
+builder.Services.AddApiClientForWasm(options =>
+{
+    options.BaseUrl = "https://api.example.com";
+    options.RetryCount = 3;  // Retry up to 3 times
+    options.RetryBaseDelaySeconds = 1.0;  // Exponential backoff starting at 1s
+    options.CircuitBreakerFailureThreshold = 5;  // Open after 5 failures
+    options.CircuitBreakerDurationSeconds = 30;  // Stay open for 30s
+    options.EnableDetailedLogging = true;  // Enable verbose logging
+});
 ```
 
 ## Quick Start
@@ -596,7 +629,8 @@ The API client expects error responses in the following format:
 
 ## Related Documentation
 
-- 📖 [Authentication Framework](Authentication/README.md) - Complete authentication documentation
+- 📖 **[Resilience & Error Handling](RESILIENCE.md)** - Comprehensive resilience documentation
+- 📖 **[Authentication Framework](Authentication/README.md)** - Complete authentication documentation
 - 📖 [Exception Handling Examples](Examples/ProductServiceExample.cs) - Exception handling patterns
 - 📖 [Authentication Examples](Authentication/Examples/AuthenticationExample.cs) - Authentication usage examples
 
@@ -607,5 +641,5 @@ Follow clean code architecture principles and modern C# best practices when cont
 ---
 
 **Last Updated**: 2025-01-22  
-**Version**: 2.0  
+**Version**: 2.1  
 **Maintainer**: Archu Development Team

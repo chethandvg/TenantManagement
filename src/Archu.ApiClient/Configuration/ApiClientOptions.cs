@@ -34,4 +34,29 @@ public sealed class ApiClientOptions
     /// Gets or sets whether to enable detailed logging.
     /// </summary>
     public bool EnableDetailedLogging { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the number of failures before the circuit breaker opens.
+    /// </summary>
+    public int CircuitBreakerFailureThreshold { get; set; } = 10;
+
+    /// <summary>
+    /// Gets or sets the duration in seconds that the circuit breaker stays open.
+    /// </summary>
+    public int CircuitBreakerDurationSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Gets or sets the base delay in seconds for exponential backoff retry.
+    /// </summary>
+    public double RetryBaseDelaySeconds { get; set; } = 1.0;
+
+    /// <summary>
+    /// Gets or sets whether to enable the circuit breaker policy.
+    /// </summary>
+    public bool EnableCircuitBreaker { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to enable retry policies.
+    /// </summary>
+    public bool EnableRetryPolicy { get; set; } = true;
 }
