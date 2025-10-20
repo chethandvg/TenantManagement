@@ -2,137 +2,57 @@
 
 Welcome to the Archu project documentation!
 
-## 📚 Quick Links
+## 📚 Core Documentation
 
-| Topic | Description |
-|-------|-------------|
-| **[Project Structure](./PROJECT_STRUCTURE.md)** | All projects overview and responsibilities |
-| **[Architecture](./ARCHITECTURE.md)** | Clean Architecture design and patterns |
-| **[Adding New Entity](./getting-started/ADDING_NEW_ENTITY.md)** | Step-by-step CRUD guide |
-| **[Authentication](./authentication/)** | JWT, passwords, user management |
-| **[Database](./database/)** | Concurrency control, EF Core, migrations |
+| Document | Description |
+|----------|-------------|
+| **[Architecture Guide](./ARCHITECTURE.md)** | Clean Architecture, patterns, and design principles |
+| **[Project Structure](./PROJECT_STRUCTURE.md)** | All 9 projects and their responsibilities |
+| **[Authentication & Authorization](./AUTHENTICATION_AND_AUTHORIZATION.md)** | Complete JWT auth and role-based access guide |
 
----
+## 🚀 Quick Start Guides
 
-## 🚀 Getting Started
-
-### For New Developers
-1. Read [Project Structure](./PROJECT_STRUCTURE.md)
-2. Understand [Architecture](./ARCHITECTURE.md)
-3. Try [Adding a New Entity](./getting-started/ADDING_NEW_ENTITY.md)
-
-### For Feature Development
-1. **Authentication** - [JWT Implementation](./authentication/JWT_TOKEN_IMPLEMENTATION.md)
-2. **Database** - [Concurrency Guide](./database/CONCURRENCY_GUIDE.md)
-3. **Current User** - [CurrentUser Service](./authentication/CURRENT_USER_SERVICE.md)
+| Guide | Purpose |
+|-------|---------|
+| **[Adding New Entity](./getting-started/ADDING_NEW_ENTITY.md)** | Step-by-step CRUD implementation |
+| **[Concurrency Guide](./database/CONCURRENCY_GUIDE.md)** | Optimistic concurrency & soft delete |
+| **[Current User Service](./authentication/CURRENT_USER_SERVICE.md)** | Access authenticated user info |
+| **[Infrastructure Auth Setup](./authentication/INFRASTRUCTURE_AUTH_SETUP.md)** | Database setup for authentication |
+| **[JWT Token Implementation](./authentication/JWT_TOKEN_IMPLEMENTATION.md)** | Detailed JWT implementation |
 
 ---
 
-## 📖 Documentation Map
+## 🔐 Authentication & Authorization Quick Reference
 
-```
-docs/
-├── README.md                                    # This file
-├── PROJECT_STRUCTURE.md                         # All projects explained
-├── ARCHITECTURE.md                              # Architecture guide
-├── getting-started/
-│   └── ADDING_NEW_ENTITY.md                     # Complete CRUD guide
-├── authentication/
-│   ├── JWT_TOKEN_IMPLEMENTATION.md              # JWT tokens (complete guide)
-│   ├── INFRASTRUCTURE_AUTH_SETUP.md             # Auth database setup
-│   └── CURRENT_USER_SERVICE.md                  # Current user access
-└── database/
-    └── CONCURRENCY_GUIDE.md                     # Concurrency & soft delete
-```
-
----
-
-## 🎯 Common Tasks
-
-### Setup Development Environment
+### Authentication Endpoints
 ```bash
-# Clone repository
-git clone https://github.com/chethandvg/archu.git
+# Register
+POST /api/v1/authentication/register
 
-# Update connection string in appsettings.Development.json
-"ConnectionStrings": {
-  "Sql": "Server=localhost;Database=archuDatabase;Trusted_Connection=True;TrustServerCertificate=True;"
-}
+# Login
+POST /api/v1/authentication/login
 
-# Apply migrations
-cd src/Archu.Infrastructure
-dotnet ef database update --startup-project ../Archu.Api
-
-# Run with Aspire
-cd ../Archu.AppHost
-dotnet run
+# Refresh Token
+POST /api/v1/authentication/refresh-token
 ```
 
-### Add New Feature
-1. Create entity in `Archu.Domain`
-2. Create repository in `Archu.Application` (interface) and `Archu.Infrastructure` (implementation)
-3. Create commands/queries in `Archu.Application`
-4. Add API endpoints in `Archu.Api`
+### Role Hierarchy
+- **Admin**: Full access (CRUD)
+- **Manager**: Read, Create, Update
+- **User**: Read only
 
-Full guide: [Adding New Entity](./getting-started/ADDING_NEW_ENTITY.md)
-
----
-
-## 🔐 Authentication & Security
-
-### JWT Authentication
-- [Complete Implementation Guide](./authentication/JWT_TOKEN_IMPLEMENTATION.md)
-- [Database Setup](./authentication/INFRASTRUCTURE_AUTH_SETUP.md)
-- [CurrentUser Service](./authentication/CURRENT_USER_SERVICE.md)
-
-### Quick Setup
+### Using Authorization
 ```csharp
-// appsettings.json
-{
-  "Jwt": {
-    "Secret": "YourSecretKey32CharactersMinimum!",
-    "Issuer": "https://api.archu.com",
-    "Audience": "https://api.archu.com",
-    "AccessTokenExpirationMinutes": 60,
-    "RefreshTokenExpirationDays": 7
-  }
-}
+// Require role
+[Authorize(Roles = Roles.Admin)]
 
-// Program.cs
-builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
-builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+// Require policy
+[Authorize(Policy = AuthorizationPolicies.CanCreateProducts)]
 ```
 
 ---
 
-## 🗄️ Database & Persistence
-
-### Key Features
-- **Optimistic Concurrency**: RowVersion-based conflict detection
-- **Soft Delete**: Records marked as deleted, not removed
-- **Audit Tracking**: Automatic created/modified tracking
-
-### Guide
-[Complete Concurrency Guide](./database/CONCURRENCY_GUIDE.md)
-
-### Quick Reference
-```csharp
-// Entity with concurrency, auditing, soft delete
-public class Product : BaseEntity
-{
-    public string Name { get; set; }
-    public decimal Price { get; set; }
-}
-
-// Update with concurrency control
-await _repository.UpdateAsync(product, request.RowVersion);
-await _unitOfWork.SaveChangesAsync();
-```
-
----
-
-## 🏗️ Clean Architecture Layers
+## 🏗️ Architecture Overview
 
 ```
 ┌─────────────────────────────────────┐
@@ -146,82 +66,130 @@ await _unitOfWork.SaveChangesAsync();
 └─────────────────────────────────────┘
 ```
 
-See: [Architecture Guide](./ARCHITECTURE.md)
+See [Architecture Guide](./ARCHITECTURE.md) for details.
 
 ---
 
-## 📦 Project Breakdown
+## 🗄️ Database Features
 
-See [Project Structure](./PROJECT_STRUCTURE.md) for complete details on all 9 projects.
+- **Optimistic Concurrency** - RowVersion-based conflict detection
+- **Soft Delete** - Records marked as deleted, not removed
+- **Audit Tracking** - Automatic created/modified tracking
 
-**Core Projects**:
-- **Domain** - Business entities (zero dependencies)
-- **Application** - Use cases, CQRS, abstractions
-- **Infrastructure** - Data access, external services
-- **Contracts** - API DTOs
-- **Api** - REST endpoints
-
-**Supporting**:
-- **ApiClient** - Typed HTTP client
-- **Ui** - Blazor components
-- **AppHost** - Aspire orchestrator
-- **ServiceDefaults** - Shared config
+See [Concurrency Guide](./database/CONCURRENCY_GUIDE.md) for usage.
 
 ---
 
 ## 🔄 Development Workflow
 
-1. **Create feature branch**
-   ```bash
-   git checkout -b feature/your-feature
-   ```
+### Setup
+```bash
+# Clone repository
+git clone https://github.com/chethandvg/archu.git
 
-2. **Make changes** (follow architecture)
+# Update connection string in appsettings.Development.json
+# Apply migrations
+cd src/Archu.Infrastructure
+dotnet ef database update --startup-project ../Archu.Api
 
-3. **Test locally**
-   ```bash
-   dotnet build
-   dotnet test
-   ```
+# Run with Aspire
+cd ../Archu.AppHost
+dotnet run
+```
 
-4. **Commit and push**
-   ```bash
-   git commit -m "Add: feature description"
-   git push origin feature/your-feature
-   ```
+### Add New Feature
+1. Create entity in `Archu.Domain`
+2. Create repository interface in `Archu.Application`
+3. Implement repository in `Archu.Infrastructure`
+4. Create commands/queries in `Archu.Application`
+5. Add API endpoints in `Archu.Api`
 
-5. **Create pull request**
+See [Adding New Entity](./getting-started/ADDING_NEW_ENTITY.md) for detailed steps.
 
 ---
 
-## 🛠️ Troubleshooting
+## 📦 Project Structure
 
-### Database Connection Issues
-- Check SQL Server is running
-- Verify connection string
-- Ensure firewall allows connections
+**9 Projects:**
+- **Domain** - Entities (zero dependencies)
+- **Application** - Use cases, CQRS
+- **Infrastructure** - Data access, services
+- **Contracts** - API DTOs
+- **Api** - REST endpoints
+- **ApiClient** - Typed HTTP client
+- **Ui** - Blazor components
+- **AppHost** - Aspire orchestrator
+- **ServiceDefaults** - Shared config
 
-### Migration Failures
-- Ensure correct directory: `src/Archu.Infrastructure`
-- Specify startup project: `--startup-project ../Archu.Api`
+See [Project Structure](./PROJECT_STRUCTURE.md) for complete details.
 
-### Build Errors
+---
+
+## 🛠️ Common Tasks
+
+### Run Application
 ```bash
-dotnet restore
-dotnet clean
-dotnet build
+cd src/Archu.AppHost
+dotnet run
+# Open: https://localhost:7001 (API)
+# Dashboard: https://localhost:15001 (Aspire)
+```
+
+### Apply Migrations
+```bash
+cd src/Archu.Infrastructure
+dotnet ef migrations add MigrationName --startup-project ../Archu.Api
+dotnet ef database update --startup-project ../Archu.Api
+```
+
+### Test API
+```bash
+# Via Scalar UI
+https://localhost:7001/scalar/v1
+
+# Via curl
+curl -X GET https://localhost:7001/api/v1/products
+```
+
+---
+
+## 🧪 Testing
+
+### Unit Tests
+Focus on Domain and Application layers (no dependencies)
+
+### Integration Tests
+Test Infrastructure and API layers (with database)
+
+### Authentication Testing
+```bash
+# Get token
+TOKEN=$(curl -X POST http://localhost:5000/api/v1/authentication/login \
+  -d '{"email":"admin@example.com","password":"Admin123!"}' | jq -r '.data.accessToken')
+
+# Use token
+curl -X GET http://localhost:5000/api/v1/products \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
 
 ## 📞 Support
 
-- **Documentation Issues**: Create an issue
+- **Issues**: Create GitHub issue
 - **Questions**: GitHub Discussions
-- **Bugs**: GitHub Issues
+- **Documentation Updates**: Submit PR
+
+---
+
+## 📖 External Resources
+
+- [ASP.NET Core Documentation](https://learn.microsoft.com/en-us/aspnet/core/)
+- [.NET Aspire Documentation](https://learn.microsoft.com/en-us/dotnet/aspire/)
+- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [CQRS Pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs)
 
 ---
 
 **Last Updated**: 2025-01-22  
-**Version**: 3.0 (Streamlined)  
-**Total Documentation**: 10 core files (56% reduction)
+**Version**: 4.0 (Consolidated)
