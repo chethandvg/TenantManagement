@@ -9,6 +9,7 @@ A .NET 9 HTTP client library for interacting with the Archu API using the HttpCl
 - ✅ Polly integration for retry policies and circuit breaker
 - ✅ **JWT Authentication Framework** - Complete authentication solution
 - ✅ **Blazor Integration** - First-class support for Blazor Server and WebAssembly
+- ✅ **Platform-Specific Registration** - Proper token storage lifetimes for WASM and Server
 - ✅ Strongly-typed API clients
 - ✅ Configuration-based setup
 - ✅ Comprehensive exception handling with custom exceptions
@@ -52,36 +53,44 @@ Add the following configuration to your `appsettings.json`:
 
 ### 1. Register the API Client in Dependency Injection
 
-**With Authentication:**
+⚠️ **IMPORTANT**: Choose the appropriate registration method based on your Blazor hosting model.
+
+**For Blazor WebAssembly:**
 
 ```csharp
 using Archu.ApiClient.Extensions;
 
 // Using configuration (recommended)
-builder.Services.AddApiClient(builder.Configuration, authOptions =>
+builder.Services.AddApiClientForWasm(builder.Configuration, authOptions =>
 {
     authOptions.AutoAttachToken = true;
-    authOptions.UseBrowserStorage = false; // false for Blazor Server, true for WASM
+    authOptions.UseBrowserStorage = true; // Optional: use browser local storage
 });
 
 // Add authorization for Blazor
 builder.Services.AddAuthorizationCore();
 ```
 
-**Without Authentication:**
+**For Blazor Server:**
 
 ```csharp
-// Using configuration
-builder.Services.AddApiClient(builder.Configuration);
+using Archu.ApiClient.Extensions;
 
-// Or using explicit configuration
-builder.Services.AddApiClient(options =>
+// Using configuration (recommended)
+builder.Services.AddApiClientForServer(builder.Configuration, authOptions =>
 {
-    options.BaseUrl = "https://localhost:7001";
-    options.TimeoutSeconds = 30;
-    options.RetryCount = 3;
+    authOptions.AutoAttachToken = true;
+    // Note: UseBrowserStorage is ignored for Server - always uses scoped in-memory storage
 });
+
+// Add authorization for Blazor
+builder.Services.AddAuthorizationCore();
 ```
+
+**Why Different Methods?**
+
+- **Blazor WebAssembly**: Uses **singleton** token storage (single-user, client-side context)
+- **Blazor Server**: Uses **scoped** token storage (multi-user, per-circuit isolation to prevent token leakage between users)
 
 ### 2. Use the API Client
 
@@ -112,6 +121,7 @@ The API client includes a complete authentication framework with JWT token manag
 - ✅ JWT token acquisition and management
 - ✅ Automatic token attachment to HTTP requests
 - ✅ Token storage (in-memory or browser local storage)
+- ✅ **Platform-specific token storage lifetimes** (singleton for WASM, scoped for Server)
 - ✅ AuthenticationStateProvider for Blazor
 - ✅ Token refresh support
 - ✅ Claims extraction from JWT tokens
@@ -180,6 +190,72 @@ The API client includes a complete authentication framework with JWT token manag
     </NotAuthorized>
 </AuthorizeView>
 ```
+
+## Platform-Specific Registration
+
+### Blazor WebAssembly Registration
+
+```csharp
+// Program.cs for Blazor WASM
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
+// Register with configuration
+builder.Services.AddApiClientForWasm(builder.Configuration);
+
+// Or with custom options
+builder.Services.AddApiClientForWasm(
+    options =>
+    {
+        options.BaseUrl = "https://api.example.com";
+        options.TimeoutSeconds = 30;
+    },
+    authOptions =>
+    {
+        authOptions.AutoAttachToken = true;
+        authOptions.UseBrowserStorage = true;
+    });
+
+builder.Services.AddAuthorizationCore();
+
+await builder.Build().RunAsync();
+```
+
+### Blazor Server Registration
+
+```csharp
+// Program.cs for Blazor Server
+var builder = WebApplication.CreateBuilder(args);
+
+// Register with configuration
+builder.Services.AddApiClientForServer(builder.Configuration);
+
+// Or with custom options
+builder.Services.AddApiClientForServer(
+    options =>
+    {
+        options.BaseUrl = "https://api.example.com";
+        options.TimeoutSeconds = 30;
+    },
+    authOptions =>
+    {
+        authOptions.AutoAttachToken = true;
+        // UseBrowserStorage is not used for Server
+    });
+
+builder.Services.AddAuthorizationCore();
+
+var app = builder.Build();
+// ... rest of configuration
+```
+
+### Token Storage Lifetimes
+
+| Platform | Token Storage Lifetime | Reason |
+|----------|----------------------|--------|
+| **Blazor WebAssembly** | Singleton | Single-user, client-side context - one user per browser instance |
+| **Blazor Server** | Scoped (per circuit) | Multi-user, server-side - prevents token leakage between concurrent users |
+
+⚠️ **Security Note**: Using singleton token storage in Blazor Server would cause all users to share the same token after any login, which is a serious security vulnerability. Always use `AddApiClientForServer` for Blazor Server applications.
 
 ## Usage Examples
 

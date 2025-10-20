@@ -29,7 +29,7 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
             // In real implementation:
             // await _jsRuntime.InvokeVoidAsync("localStorage.setItem", cancellationToken, StorageKey, json);
             _logger.LogDebug("Token stored in browser local storage");
-            
+
             // Placeholder for demonstration
             await Task.CompletedTask;
             throw new NotImplementedException(
@@ -53,9 +53,9 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
             // if (string.IsNullOrWhiteSpace(json))
             //     return null;
             // return JsonSerializer.Deserialize<StoredToken>(json);
-            
+
             _logger.LogDebug("Retrieving token from browser local storage");
-            
+
             // Placeholder for demonstration
             await Task.CompletedTask;
             throw new NotImplementedException(
@@ -77,7 +77,7 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
             // In real implementation:
             // await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", cancellationToken, StorageKey);
             _logger.LogDebug("Token removed from browser local storage");
-            
+
             // Placeholder for demonstration
             await Task.CompletedTask;
             throw new NotImplementedException(

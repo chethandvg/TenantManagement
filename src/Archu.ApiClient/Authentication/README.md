@@ -8,6 +8,7 @@ The Archu.ApiClient authentication framework provides a complete solution for ma
 
 ✅ **JWT Token Management** - Automatic token acquisition, storage, and validation  
 ✅ **Token Storage** - In-memory and browser local storage implementations  
+✅ **Platform-Specific Lifetimes** - Singleton for WASM, scoped for Server (prevents token leakage)  
 ✅ **Automatic Token Attachment** - HTTP message handler automatically adds tokens to requests  
 ✅ **AuthenticationStateProvider** - Blazor integration for authentication state  
 ✅ **Token Refresh** - Support for refresh token flow  
@@ -82,40 +83,95 @@ The authentication framework is included in the Archu.ApiClient package. The fol
 | `TokenRefreshThresholdSeconds` | Refresh token when lifetime is less than N seconds | `300` |
 | `AuthenticationEndpoint` | API endpoint for login | `api/auth/login` |
 | `RefreshTokenEndpoint` | API endpoint for token refresh | `api/auth/refresh` |
-| `UseBrowserStorage` | Use browser local storage (WASM) vs in-memory (Server) | `false` |
+| `UseBrowserStorage` | Use browser local storage (WASM only) | `false` |
 
 ## Setup
 
-### 1. Register Services
+⚠️ **IMPORTANT**: Choose the correct registration method based on your Blazor hosting model to ensure proper token storage lifetimes.
 
-**Program.cs (Blazor Server or API Client Consumer)**
+### 1. Register Services - Blazor WebAssembly
+
+**Program.cs (Blazor WASM)**
+
+```csharp
+using Archu.ApiClient.Extensions;
+
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
+// Add API client with authentication for WASM (singleton token storage)
+builder.Services.AddApiClientForWasm(builder.Configuration, authOptions =>
+{
+    authOptions.AutoAttachToken = true;
+    authOptions.UseBrowserStorage = true; // Optional: persist tokens in browser
+});
+
+// Add authorization services
+builder.Services.AddAuthorizationCore();
+
+await builder.Build().RunAsync();
+```
+
+### 1. Register Services - Blazor Server
+
+**Program.cs (Blazor Server)**
 
 ```csharp
 using Archu.ApiClient.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add API client with authentication
-builder.Services.AddApiClient(builder.Configuration, authOptions =>
+// Add API client with authentication for Server (scoped token storage)
+builder.Services.AddApiClientForServer(builder.Configuration, authOptions =>
 {
     authOptions.AutoAttachToken = true;
-    authOptions.UseBrowserStorage = false; // false for Blazor Server, true for WASM
+    // Note: UseBrowserStorage is not used for Server
 });
 
-// Add authorization services (for Blazor)
+// Add authorization services
 builder.Services.AddAuthorizationCore();
 
 var app = builder.Build();
+// ... rest of configuration
 ```
 
-**Or with custom configuration:**
+### Token Storage Lifetimes Explained
+
+| Platform | Method | Token Storage Lifetime | Reason |
+|----------|--------|----------------------|--------|
+| **Blazor WebAssembly** | `AddApiClientForWasm` | **Singleton** | Single-user, client-side context - one user per browser instance |
+| **Blazor Server** | `AddApiClientForServer` | **Scoped** (per circuit) | Multi-user, server-side - prevents token leakage between concurrent users |
+
+⚠️ **Security Warning**: Using singleton token storage in Blazor Server would cause all users to share the same token after any login, which is a **critical security vulnerability**. Always use `AddApiClientForServer` for Blazor Server applications.
+
+### Custom Configuration (Without appsettings.json)
+
+**Blazor WebAssembly:**
 
 ```csharp
-builder.Services.AddApiClient(
+builder.Services.AddApiClientForWasm(
     options =>
     {
         options.BaseUrl = "https://api.example.com";
         options.TimeoutSeconds = 30;
+        options.RetryCount = 3;
+    },
+    authOptions =>
+    {
+        authOptions.AutoAttachToken = true;
+        authOptions.UseBrowserStorage = true;
+        authOptions.TokenExpirationBufferSeconds = 60;
+    });
+```
+
+**Blazor Server:**
+
+```csharp
+builder.Services.AddApiClientForServer(
+    options =>
+    {
+        options.BaseUrl = "https://api.example.com";
+        options.TimeoutSeconds = 30;
+        options.RetryCount = 3;
     },
     authOptions =>
     {
@@ -240,51 +296,30 @@ The `AuthenticationMessageHandler` automatically attaches tokens to HTTP request
 var response = await productsApiClient.GetProductsAsync();
 ```
 
-### Manual Token Management
-
-```csharp
-@inject ITokenManager TokenManager
-
-// Get access token
-var accessToken = await TokenManager.GetAccessTokenAsync();
-
-// Check if authenticated
-var isAuthenticated = await TokenManager.IsAuthenticatedAsync();
-
-// Store a token manually (e.g., after receiving from API)
-var tokenResponse = new TokenResponse
-{
-    AccessToken = "eyJhbGc...",
-    RefreshToken = "refresh_token",
-    ExpiresIn = 3600
-};
-await TokenManager.StoreTokenAsync(tokenResponse);
-
-// Remove token (logout)
-await TokenManager.RemoveTokenAsync();
-```
-
 ## Token Storage
 
-### In-Memory Storage (Default for Blazor Server)
+### In-Memory Storage
 
-Tokens are stored in memory and lost when the application restarts. Suitable for server-side Blazor.
+**Blazor Server (Scoped):**
+- Tokens stored in memory per user session/circuit
+- Automatically disposed when user disconnects
+- Prevents token sharing between users
+- **Registered automatically when using `AddApiClientForServer`**
+
+**Blazor WebAssembly (Singleton):**
+- Tokens stored in memory for the application lifetime
+- Suitable for single-user client-side context
+- Lost when browser tab is closed or refreshed
+- **Registered automatically when using `AddApiClientForWasm` with `UseBrowserStorage = false`**
+
+### Browser Local Storage (WASM Only)
+
+Tokens are persisted in browser local storage across page refreshes.
 
 ```csharp
-builder.Services.AddApiClient(builder.Configuration, authOptions =>
+builder.Services.AddApiClientForWasm(builder.Configuration, authOptions =>
 {
-    authOptions.UseBrowserStorage = false; // Use in-memory storage
-});
-```
-
-### Browser Local Storage (For Blazor WebAssembly)
-
-Tokens are persisted in browser local storage. Requires JavaScript interop implementation.
-
-```csharp
-builder.Services.AddApiClient(builder.Configuration, authOptions =>
-{
-    authOptions.UseBrowserStorage = true; // Use browser storage
+    authOptions.UseBrowserStorage = true; // Enable browser storage
 });
 ```
 
@@ -297,11 +332,11 @@ The `ApiAuthenticationStateProvider` integrates with Blazor's built-in authentic
 ```csharp
 @inject ApiAuthenticationStateProvider AuthStateProvider
 
-// Notify Blazor that authentication state has changed
-AuthStateProvider.NotifyAuthenticationStateChanged();
+// Raise notification that authentication state has changed
+AuthStateProvider.RaiseAuthenticationStateChanged();
 
 // Mark user as authenticated
-await AuthStateProvider.MarkUserAsAuthenticatedAsync(accessToken);
+AuthStateProvider.MarkUserAsAuthenticated(accessToken);
 
 // Mark user as logged out
 await AuthStateProvider.MarkUserAsLoggedOutAsync();
@@ -310,12 +345,14 @@ await AuthStateProvider.MarkUserAsLoggedOutAsync();
 ## Security Best Practices
 
 1. **Use HTTPS** - Always use HTTPS in production to protect tokens in transit
-2. **Token Expiration** - Set appropriate token expiration times
-3. **Refresh Tokens** - Implement refresh token rotation
-4. **Secure Storage** - Use secure storage mechanisms (HttpOnly cookies for sensitive scenarios)
-5. **CORS Configuration** - Configure CORS properly on your API
-6. **Validate JWT** - Ensure your API validates JWT signatures and claims
-7. **Don't Log Tokens** - Never log tokens in production
+2. **Correct Registration** - Use `AddApiClientForServer` for Blazor Server, `AddApiClientForWasm` for WASM
+3. **Token Expiration** - Set appropriate token expiration times
+4. **Refresh Tokens** - Implement refresh token rotation
+5. **Secure Storage** - Use secure storage mechanisms (HttpOnly cookies for sensitive scenarios)
+6. **CORS Configuration** - Configure CORS properly on your API
+7. **Validate JWT** - Ensure your API validates JWT signatures and claims
+8. **Don't Log Tokens** - Never log tokens in production
+9. **Scoped Storage** - Always use scoped storage for multi-user environments
 
 ## Token Refresh Flow
 
@@ -352,147 +389,6 @@ var roles = authState.Roles;          // role claims
 var customClaim = authState.User.FindFirst("custom_claim_type")?.Value;
 ```
 
-## Integration with Existing Code
-
-The authentication framework integrates seamlessly with existing API client code:
-
-```csharp
-// Before authentication
-builder.Services.AddApiClient(builder.Configuration);
-
-// After adding authentication
-builder.Services.AddApiClient(builder.Configuration, authOptions =>
-{
-    authOptions.AutoAttachToken = true;
-});
-
-// Your existing API clients automatically get authentication!
-@inject IProductsApiClient ProductsClient
-
-var products = await ProductsClient.GetProductsAsync(); // Token automatically attached
-```
-
-## Error Handling
-
-```csharp
-try
-{
-    var result = await AuthService.LoginAsync(username, password);
-    
-    if (!result.Success)
-    {
-        // Handle authentication failure
-        Console.WriteLine($"Login failed: {result.ErrorMessage}");
-    }
-}
-catch (AuthorizationException ex)
-{
-    // Handle 401/403 errors
-    Console.WriteLine("Authentication failed");
-}
-catch (Exception ex)
-{
-    // Handle other errors
-    Console.WriteLine($"Error: {ex.Message}");
-}
-```
-
-## Testing
-
-### Mocking Authentication
-
-```csharp
-// Mock ITokenManager
-var mockTokenManager = new Mock<ITokenManager>();
-mockTokenManager
-    .Setup(x => x.IsAuthenticatedAsync(It.IsAny<CancellationToken>()))
-    .ReturnsAsync(true);
-
-// Mock IAuthenticationService
-var mockAuthService = new Mock<IAuthenticationService>();
-mockAuthService
-    .Setup(x => x.LoginAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-    .ReturnsAsync(AuthenticationResult.Succeeded(authState));
-```
-
-## Extending the Framework
-
-### Custom Token Storage
-
-Implement `ITokenStorage` for custom storage mechanisms:
-
-```csharp
-public class CustomTokenStorage : ITokenStorage
-{
-    public async Task StoreTokenAsync(StoredToken token, CancellationToken ct)
-    {
-        // Your custom storage implementation
-    }
-    
-    // Implement other methods...
-}
-
-// Register
-services.AddSingleton<ITokenStorage, CustomTokenStorage>();
-```
-
-### Custom Authentication Handler
-
-Extend `AuthenticationMessageHandler` for custom behavior:
-
-```csharp
-public class CustomAuthHandler : AuthenticationMessageHandler
-{
-    public CustomAuthHandler(ITokenManager tokenManager, ILogger<CustomAuthHandler> logger)
-        : base(tokenManager, logger)
-    {
-    }
-    
-    protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken ct)
-    {
-        // Custom logic before request
-        var response = await base.SendAsync(request, ct);
-        // Custom logic after response
-        return response;
-    }
-}
-```
-
-## API Contract Models
-
-The framework expects the following API contract models (available in `Archu.Contracts.Authentication`):
-
-```csharp
-// Login request
-public record LoginRequest
-{
-    public string Username { get; init; }
-    public string Password { get; init; }
-    public bool RememberMe { get; init; }
-}
-
-// Authentication response
-public record AuthenticationResponse
-{
-    public string AccessToken { get; init; }
-    public string? RefreshToken { get; init; }
-    public string TokenType { get; init; }
-    public int ExpiresIn { get; init; }
-    public string UserId { get; init; }
-    public string Username { get; init; }
-    public string? Email { get; init; }
-    public IEnumerable<string> Roles { get; init; }
-}
-
-// Refresh token request
-public record RefreshTokenRequest
-{
-    public string RefreshToken { get; init; }
-}
-```
-
 ## Troubleshooting
 
 ### Tokens not being attached to requests
@@ -503,7 +399,7 @@ public record RefreshTokenRequest
 
 ### Authentication state not updating
 
-- Call `NotifyAuthenticationStateChanged()` after login/logout
+- Call `RaiseAuthenticationStateChanged()` after login/logout
 - Ensure `ApiAuthenticationStateProvider` is registered correctly
 - Check that `CascadingAuthenticationState` wraps your Blazor components
 
@@ -512,6 +408,12 @@ public record RefreshTokenRequest
 - Adjust `TokenExpirationBufferSeconds` in configuration
 - Implement automatic token refresh
 - Ensure server and client clocks are synchronized
+
+### Token leakage between users (Blazor Server)
+
+- **Ensure you're using `AddApiClientForServer`** (not `AddApiClientForWasm`)
+- Verify token storage is registered as scoped, not singleton
+- Check logs for concurrent login attempts
 
 ## Examples
 
@@ -533,5 +435,5 @@ Follow clean code architecture principles and modern C# best practices when cont
 ---
 
 **Last Updated**: 2025-01-22  
-**Version**: 1.0  
+**Version**: 1.1  
 **Maintainer**: Archu Development Team
