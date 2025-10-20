@@ -16,32 +16,32 @@ public static class RolePermissions
     /// <summary>
     /// Gets the default permissions for the User role.
     /// </summary>
-    public static Permission UserPermissions => 
-        Permission.Read | 
-        Permission.Create | 
+    public static Permission UserPermissions =>
+        Permission.Read |
+        Permission.Create |
         Permission.Update;
 
     /// <summary>
     /// Gets the default permissions for the Manager role.
     /// </summary>
-    public static Permission ManagerPermissions => 
-        Permission.Read | 
-        Permission.Create | 
-        Permission.Update | 
-        Permission.Delete | 
+    public static Permission ManagerPermissions =>
+        Permission.Read |
+        Permission.Create |
+        Permission.Update |
+        Permission.Delete |
         Permission.ExportData |
         Permission.ViewAuditLogs;
 
     /// <summary>
     /// Gets the default permissions for the Administrator role.
-    /// </summary>
-    public static Permission AdministratorPermissions => 
-        Permission.Read | 
-        Permission.Create | 
-        Permission.Update | 
-        Permission.Delete | 
-        Permission.ManageUsers | 
-        Permission.ExportData | 
+    /// </summary>  
+    public static Permission AdministratorPermissions =>
+        Permission.Read |
+        Permission.Create |
+        Permission.Update |
+        Permission.Delete |
+        Permission.ManageUsers |
+        Permission.ExportData |
         Permission.ImportData |
         Permission.ViewAuditLogs;
 
