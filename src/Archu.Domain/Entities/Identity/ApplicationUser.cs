@@ -86,5 +86,15 @@ public class ApplicationUser : BaseEntity
     /// <summary>
     /// Checks if the user is currently locked out.
     /// </summary>
-    public bool IsLockedOut => LockoutEnabled && LockoutEnd.HasValue && LockoutEnd.Value > DateTime.UtcNow;
+    public bool IsLockedOut => IsLockedOutAt(DateTime.UtcNow);
+
+    /// <summary>
+    /// Checks if the user is locked out at the specified time (for testability).
+    /// </summary>
+    /// <param name="currentTime">The time to check lockout status against.</param>
+    /// <returns>True if the user is locked out at the specified time; otherwise, false.</returns>
+    public bool IsLockedOutAt(DateTime currentTime)
+    {
+        return LockoutEnabled && LockoutEnd.HasValue && LockoutEnd.Value > currentTime;
+    }
 }
