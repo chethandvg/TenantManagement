@@ -7,6 +7,8 @@ A .NET 9 HTTP client library for interacting with the Archu API using the HttpCl
 - ✅ Clean Architecture with separation of concerns
 - ✅ HttpClientFactory pattern for efficient HTTP client management
 - ✅ Polly integration for retry policies and circuit breaker
+- ✅ **JWT Authentication Framework** - Complete authentication solution
+- ✅ **Blazor Integration** - First-class support for Blazor Server and WebAssembly
 - ✅ Strongly-typed API clients
 - ✅ Configuration-based setup
 - ✅ Comprehensive exception handling with custom exceptions
@@ -33,19 +35,42 @@ Add the following configuration to your `appsettings.json`:
     "RetryCount": 3,
     "ApiVersion": "v1",
     "EnableDetailedLogging": false
+  },
+  "Authentication": {
+    "AutoAttachToken": true,
+    "TokenExpirationBufferSeconds": 60,
+    "AutoRefreshToken": true,
+    "TokenRefreshThresholdSeconds": 300,
+    "AuthenticationEndpoint": "api/auth/login",
+    "RefreshTokenEndpoint": "api/auth/refresh",
+    "UseBrowserStorage": false
   }
 }
 ```
 
-## Usage
+## Quick Start
 
 ### 1. Register the API Client in Dependency Injection
 
-In your `Program.cs` or startup configuration:
+**With Authentication:**
 
 ```csharp
 using Archu.ApiClient.Extensions;
 
+// Using configuration (recommended)
+builder.Services.AddApiClient(builder.Configuration, authOptions =>
+{
+    authOptions.AutoAttachToken = true;
+    authOptions.UseBrowserStorage = false; // false for Blazor Server, true for WASM
+});
+
+// Add authorization for Blazor
+builder.Services.AddAuthorizationCore();
+```
+
+**Without Authentication:**
+
+```csharp
 // Using configuration
 builder.Services.AddApiClient(builder.Configuration);
 
@@ -58,7 +83,107 @@ builder.Services.AddApiClient(options =>
 });
 ```
 
-### 2. Inject and Use the API Client
+### 2. Use the API Client
+
+```csharp
+@inject IProductsApiClient ProductsClient
+@inject IAuthenticationService AuthService
+
+// Login
+var loginResult = await AuthService.LoginAsync(username, password);
+if (loginResult.Success)
+{
+    // Tokens are automatically attached to subsequent requests
+    var products = await ProductsClient.GetProductsAsync();
+}
+
+// Logout
+await AuthService.LogoutAsync();
+```
+
+## 🔐 Authentication Framework
+
+The API client includes a complete authentication framework with JWT token management. For detailed documentation, see:
+
+📖 **[Authentication Framework Documentation](Authentication/README.md)**
+
+### Authentication Features
+
+- ✅ JWT token acquisition and management
+- ✅ Automatic token attachment to HTTP requests
+- ✅ Token storage (in-memory or browser local storage)
+- ✅ AuthenticationStateProvider for Blazor
+- ✅ Token refresh support
+- ✅ Claims extraction from JWT tokens
+- ✅ Thread-safe operations
+
+### Quick Authentication Example
+
+```csharp
+@page "/login"
+@inject IAuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<h3>Login</h3>
+
+<EditForm Model="@model" OnValidSubmit="HandleLoginAsync">
+    <InputText @bind-Value="model.Username" placeholder="Username" />
+    <InputText @bind-Value="model.Password" type="password" placeholder="Password" />
+    <button type="submit">Login</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="error">@errorMessage</p>
+}
+
+@code {
+    private LoginModel model = new();
+    private string? errorMessage;
+
+    private async Task HandleLoginAsync()
+    {
+        var result = await AuthService.LoginAsync(model.Username, model.Password);
+        
+        if (result.Success)
+        {
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            errorMessage = result.ErrorMessage;
+        }
+    }
+
+    private class LoginModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}
+```
+
+### Protect Routes in Blazor
+
+```razor
+@page "/"
+@attribute [Authorize]
+
+<h1>Protected Page</h1>
+
+<AuthorizeView>
+    <Authorized>
+        <p>Hello, @context.User.Identity?.Name!</p>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+```
+
+## Usage Examples
+
+### Get Products
 
 ```csharp
 using Archu.ApiClient.Services;
@@ -236,23 +361,46 @@ catch (Exception ex)
 
 ```
 Archu.ApiClient/
+├── Authentication/                       # 🔐 Authentication Framework
+│   ├── Configuration/
+│   │   └── AuthenticationOptions.cs     # Authentication configuration
+│   ├── Models/
+│   │   ├── TokenResponse.cs             # Token response from API
+│   │   ├── StoredToken.cs               # Stored token representation
+│   │   └── AuthenticationState.cs       # User authentication state
+│   ├── Storage/
+│   │   ├── ITokenStorage.cs             # Token storage interface
+│   │   ├── InMemoryTokenStorage.cs      # In-memory storage
+│   │   └── BrowserLocalTokenStorage.cs  # Browser storage
+│   ├── Services/
+│   │   ├── ITokenManager.cs             # Token management
+│   │   ├── TokenManager.cs
+│   │   ├── IAuthenticationService.cs    # Authentication operations
+│   │   └── AuthenticationService.cs
+│   ├── Handlers/
+│   │   └── AuthenticationMessageHandler.cs # Token attachment
+│   ├── Providers/
+│   │   └── ApiAuthenticationStateProvider.cs # Blazor integration
+│   ├── Examples/
+│   │   └── AuthenticationExample.cs     # Usage examples
+│   └── README.md                        # Authentication documentation
 ├── Configuration/
-│   └── ApiClientOptions.cs          # Configuration options
+│   └── ApiClientOptions.cs              # Configuration options
 ├── Exceptions/
-│   ├── ApiClientException.cs        # Base exception
-│   ├── ResourceNotFoundException.cs  # 404 exceptions
-│   ├── ValidationException.cs       # 400/422 exceptions
-│   ├── AuthorizationException.cs    # 401/403 exceptions
-│   ├── ServerException.cs           # 5xx exceptions
-│   └── NetworkException.cs          # Network errors
+│   ├── ApiClientException.cs            # Base exception
+│   ├── ResourceNotFoundException.cs      # 404 exceptions
+│   ├── ValidationException.cs           # 400/422 exceptions
+│   ├── AuthorizationException.cs        # 401/403 exceptions
+│   ├── ServerException.cs               # 5xx exceptions
+│   └── NetworkException.cs              # Network errors
 ├── Extensions/
-│   └── ServiceCollectionExtensions.cs # DI registration
+│   └── ServiceCollectionExtensions.cs   # DI registration
 ├── Helpers/
-│   └── ExceptionHandler.cs          # Exception handling utilities
+│   └── ExceptionHandler.cs              # Exception handling utilities
 ├── Services/
-│   ├── ApiClientServiceBase.cs      # Base HTTP client with common operations
-│   ├── IProductsApiClient.cs        # Products API client interface
-│   └── ProductsApiClient.cs         # Products API client implementation
+│   ├── ApiClientServiceBase.cs          # Base HTTP client
+│   ├── IProductsApiClient.cs            # Products API client interface
+│   └── ProductsApiClient.cs             # Products API client implementation
 └── README.md
 ```
 
@@ -317,7 +465,7 @@ public sealed class OrdersApiClient : ApiClientServiceBase, IOrdersApiClient
 }
 ```
 
-3. Register in DI:
+3. Register in DI (in ServiceCollectionExtensions):
 
 ```csharp
 services.AddHttpClient<IOrdersApiClient, OrdersApiClient>(client =>
@@ -326,7 +474,8 @@ services.AddHttpClient<IOrdersApiClient, OrdersApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
 })
 .AddPolicyHandler(GetRetryPolicy(options.RetryCount, logger))
-.AddPolicyHandler(GetCircuitBreakerPolicy(logger));
+.AddPolicyHandler(GetCircuitBreakerPolicy(logger))
+.AddHttpMessageHandler<AuthenticationMessageHandler>(); // Automatic token attachment
 ```
 
 ## Best Practices
@@ -341,6 +490,8 @@ services.AddHttpClient<IOrdersApiClient, OrdersApiClient>(client =>
 8. **Provide user-friendly error messages** using ExceptionHandler.GetUserFriendlyMessage()
 9. **Don't retry non-retryable exceptions** - use ExceptionHandler.IsRetryable() to check
 10. **Use structured logging** to capture important context
+11. **Secure token storage** - Use appropriate storage based on platform (in-memory for server, secure storage for client)
+12. **Implement token refresh** - Handle token expiration gracefully
 
 ## Error Response Format
 
@@ -363,4 +514,22 @@ The API client expects error responses in the following format:
 - Microsoft.Extensions.Http (9.0.0)
 - Microsoft.Extensions.Http.Polly (9.0.0)
 - Microsoft.Extensions.Options.ConfigurationExtensions (9.0.0)
+- System.IdentityModel.Tokens.Jwt (8.14.0)
+- Microsoft.AspNetCore.Components.Authorization (9.0.10)
 - Archu.Contracts (Project Reference)
+
+## Related Documentation
+
+- 📖 [Authentication Framework](Authentication/README.md) - Complete authentication documentation
+- 📖 [Exception Handling Examples](Examples/ProductServiceExample.cs) - Exception handling patterns
+- 📖 [Authentication Examples](Authentication/Examples/AuthenticationExample.cs) - Authentication usage examples
+
+## Contributing
+
+Follow clean code architecture principles and modern C# best practices when contributing.
+
+---
+
+**Last Updated**: 2025-01-22  
+**Version**: 2.0  
+**Maintainer**: Archu Development Team

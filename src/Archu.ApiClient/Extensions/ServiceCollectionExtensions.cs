@@ -1,5 +1,11 @@
+using Archu.ApiClient.Authentication.Configuration;
+using Archu.ApiClient.Authentication.Handlers;
+using Archu.ApiClient.Authentication.Providers;
+using Archu.ApiClient.Authentication.Services;
+using Archu.ApiClient.Authentication.Storage;
 using Archu.ApiClient.Configuration;
 using Archu.ApiClient.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,10 +24,12 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The configuration.</param>
+    /// <param name="configureAuthentication">Optional action to configure authentication.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddApiClient(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        Action<AuthenticationOptions>? configureAuthentication = null)
     {
         // Bind configuration
         services.Configure<ApiClientOptions>(
@@ -31,8 +39,27 @@ public static class ServiceCollectionExtensions
             .GetSection(ApiClientOptions.SectionName)
             .Get<ApiClientOptions>() ?? new ApiClientOptions();
 
-        // Add HttpClient with Polly retry policy
-        services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
+        // Configure authentication if specified
+        var authOptions = new AuthenticationOptions();
+        if (configureAuthentication != null)
+        {
+            services.Configure(configureAuthentication);
+            configureAuthentication(authOptions);
+        }
+        else
+        {
+            services.Configure<AuthenticationOptions>(
+                configuration.GetSection(AuthenticationOptions.SectionName));
+            authOptions = configuration
+                .GetSection(AuthenticationOptions.SectionName)
+                .Get<AuthenticationOptions>() ?? new AuthenticationOptions();
+        }
+
+        // Register authentication services
+        RegisterAuthenticationServices(services, authOptions);
+
+        // Add HttpClient with Polly retry policy and authentication
+        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
         {
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
@@ -42,6 +69,12 @@ public static class ServiceCollectionExtensions
             GetRetryPolicy(options.RetryCount, serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()))
         .AddPolicyHandler((serviceProvider, request) => 
             GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+
+        // Add authentication handler if enabled
+        if (authOptions.AutoAttachToken)
+        {
+            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
+        }
 
         return services;
     }
@@ -51,17 +84,30 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configureOptions">Action to configure the API client options.</param>
+    /// <param name="configureAuthentication">Optional action to configure authentication.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddApiClient(
         this IServiceCollection services,
-        Action<ApiClientOptions> configureOptions)
+        Action<ApiClientOptions> configureOptions,
+        Action<AuthenticationOptions>? configureAuthentication = null)
     {
         services.Configure(configureOptions);
 
         var options = new ApiClientOptions();
         configureOptions(options);
 
-        services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
+        // Configure authentication if specified
+        var authOptions = new AuthenticationOptions();
+        if (configureAuthentication != null)
+        {
+            services.Configure(configureAuthentication);
+            configureAuthentication(authOptions);
+        }
+
+        // Register authentication services
+        RegisterAuthenticationServices(services, authOptions);
+
+        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
         {
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
@@ -72,7 +118,41 @@ public static class ServiceCollectionExtensions
         .AddPolicyHandler((serviceProvider, request) => 
             GetCircuitBreakerPolicy(serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
 
+        // Add authentication handler if enabled
+        if (authOptions.AutoAttachToken)
+        {
+            httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
+        }
+
         return services;
+    }
+
+    /// <summary>
+    /// Registers authentication services.
+    /// </summary>
+    private static void RegisterAuthenticationServices(
+        IServiceCollection services,
+        AuthenticationOptions options)
+    {
+        // Register token storage based on configuration
+        if (options.UseBrowserStorage)
+        {
+            services.AddSingleton<ITokenStorage, BrowserLocalTokenStorage>();
+        }
+        else
+        {
+            services.AddSingleton<ITokenStorage, InMemoryTokenStorage>();
+        }
+
+        // Register core authentication services
+        services.AddScoped<ITokenManager, TokenManager>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddTransient<AuthenticationMessageHandler>();
+
+        // Register authentication state provider for Blazor
+        services.AddScoped<ApiAuthenticationStateProvider>();
+        services.AddScoped<AuthenticationStateProvider>(sp => 
+            sp.GetRequiredService<ApiAuthenticationStateProvider>());
     }
 
     /// <summary>
