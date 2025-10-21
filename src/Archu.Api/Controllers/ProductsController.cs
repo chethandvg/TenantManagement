@@ -1,3 +1,4 @@
+using Archu.Api.Authorization;
 using Archu.Application.Products.Commands.CreateProduct;
 using Archu.Application.Products.Commands.DeleteProduct;
 using Archu.Application.Products.Commands.UpdateProduct;
@@ -7,16 +8,20 @@ using Archu.Contracts.Common;
 using Archu.Contracts.Products;
 using Asp.Versioning;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Archu.Api.Controllers;
 
 /// <summary>
 /// Exposes CRUD endpoints that orchestrate the product catalog workflow using CQRS pattern.
+/// Demonstrates role-based and permission-based authorization.
+/// All endpoints require authentication and specific roles or permissions.
 /// </summary>
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
+[Authorize] // Require authentication for all endpoints
 public partial class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -34,11 +39,21 @@ public partial class ProductsController : ControllerBase
     /// <summary>
     /// Retrieves all active products from the catalog.
     /// </summary>
+    /// <remarks>
+    /// Accessible by all authenticated users (User, Manager, Admin roles).
+    /// Demonstrates basic read access for all user roles.
+    /// </remarks>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A standardized API response containing the list of products.</returns>
     /// <response code="200">Returns the list of products.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="403">If the user doesn't have the required role or permission.</response>
     [HttpGet]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Manager},{Roles.User}")]
+    [Authorize(Policy = AuthorizationPolicies.CanReadProducts)]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<IEnumerable<ProductDto>>>> GetProducts(CancellationToken cancellationToken)
     {
         LogRetrievingProducts();
@@ -52,13 +67,23 @@ public partial class ProductsController : ControllerBase
     /// <summary>
     /// Retrieves a specific product by its unique identifier.
     /// </summary>
+    /// <remarks>
+    /// Accessible by all authenticated users (User, Manager, Admin roles).
+    /// Demonstrates basic read access for individual product details.
+    /// </remarks>
     /// <param name="id">The product identifier.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A standardized API response containing the product.</returns>
     /// <response code="200">Returns the requested product.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="403">If the user doesn't have the required role or permission.</response>
     /// <response code="404">If the product is not found.</response>
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Manager},{Roles.User}")]
+    [Authorize(Policy = AuthorizationPolicies.CanReadProducts)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<ProductDto>>> GetProduct(Guid id, CancellationToken cancellationToken)
     {
@@ -78,14 +103,25 @@ public partial class ProductsController : ControllerBase
     /// <summary>
     /// Creates a new product in the catalog.
     /// </summary>
+    /// <remarks>
+    /// Restricted to Admin and Manager roles only.
+    /// Regular users cannot create products.
+    /// Demonstrates elevated permissions for write operations.
+    /// </remarks>
     /// <param name="request">The product creation request.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A standardized API response containing the created product.</returns>
     /// <response code="201">Returns the newly created product.</response>
     /// <response code="400">If the request is invalid.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="403">If the user doesn't have Admin or Manager role.</response>
     [HttpPost]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Manager}")]
+    [Authorize(Policy = AuthorizationPolicies.CanCreateProducts)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<ProductDto>>> CreateProduct(
         CreateProductRequest request,
         CancellationToken cancellationToken)
@@ -106,17 +142,28 @@ public partial class ProductsController : ControllerBase
     /// <summary>
     /// Updates an existing product in the catalog.
     /// </summary>
+    /// <remarks>
+    /// Restricted to Admin and Manager roles only.
+    /// Regular users cannot update products.
+    /// Demonstrates elevated permissions for modification operations.
+    /// </remarks>
     /// <param name="id">The product identifier.</param>
     /// <param name="request">The product update request.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A standardized API response with the updated product.</returns>
     /// <response code="200">Returns the updated product with new RowVersion.</response>
     /// <response code="400">If the request is invalid.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="403">If the user doesn't have Admin or Manager role.</response>
     /// <response code="404">If the product is not found.</response>
     /// <response code="409">If there is a concurrency conflict.</response>
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.Manager}")]
+    [Authorize(Policy = AuthorizationPolicies.CanUpdateProducts)]
     [ProducesResponseType(typeof(ApiResponse<ProductDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<ProductDto>>> UpdateProduct(
@@ -147,13 +194,24 @@ public partial class ProductsController : ControllerBase
     /// <summary>
     /// Soft deletes a product from the catalog.
     /// </summary>
+    /// <remarks>
+    /// Restricted to Admin role only.
+    /// Only administrators can delete products.
+    /// Demonstrates the highest level of access control for destructive operations.
+    /// </remarks>
     /// <param name="id">The product identifier.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A standardized API response.</returns>
     /// <response code="200">If the product was successfully deleted.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="403">If the user doesn't have Admin role.</response>
     /// <response code="404">If the product is not found.</response>
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = Roles.Admin)]
+    [Authorize(Policy = AuthorizationPolicies.CanDeleteProducts)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteProduct(Guid id, CancellationToken cancellationToken)
     {
@@ -169,7 +227,7 @@ public partial class ProductsController : ControllerBase
         }
 
         LogProductDeleted(id);
-        return Ok(ApiResponse<object>.Ok(null, "Product deleted successfully"));
+        return Ok(ApiResponse<object>.Ok(new { }, "Product deleted successfully"));
     }
 
     #region Logging
