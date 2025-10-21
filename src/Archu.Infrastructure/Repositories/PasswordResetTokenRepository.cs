@@ -59,7 +59,7 @@ public class PasswordResetTokenRepository : IPasswordResetTokenRepository
         }
         else
         {
-            _logger.LogWarning("No valid password reset token found for token: {Token}", token.Substring(0, Math.Min(10, token.Length)) + "...");
+            _logger.LogWarning("No valid password reset token found.");
         }
 
         return resetToken;
