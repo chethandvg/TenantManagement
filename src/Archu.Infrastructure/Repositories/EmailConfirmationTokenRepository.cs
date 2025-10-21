@@ -59,7 +59,7 @@ public class EmailConfirmationTokenRepository : IEmailConfirmationTokenRepositor
         }
         else
         {
-            _logger.LogWarning("No valid email confirmation token found for token: {Token}", token.Substring(0, Math.Min(10, token.Length)) + "...");
+            _logger.LogWarning("No valid email confirmation token found.");
         }
 
         return confirmationToken;
