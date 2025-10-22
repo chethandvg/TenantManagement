@@ -68,4 +68,14 @@ public sealed class UserRoleRepository : IUserRoleRepository
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<int> CountUsersWithRoleAsync(
+        Guid roleId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.UserRoles
+            .AsNoTracking()
+            .CountAsync(ur => ur.RoleId == roleId, cancellationToken);
+    }
 }

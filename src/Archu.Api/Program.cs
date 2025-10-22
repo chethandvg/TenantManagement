@@ -2,20 +2,14 @@ using System.Text;
 using Archu.Api.Authorization;
 using Archu.Api.Health;
 using Archu.Api.Middleware;
-using Archu.Application.Abstractions;
-using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Common.Behaviors;
-using Archu.Infrastructure.Authentication;
+using Archu.Infrastructure;
 using Archu.Infrastructure.Persistence;
-using Archu.Infrastructure.Repositories;
-using Archu.Infrastructure.Time;
 using Asp.Versioning;
 using FluentValidation;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,36 +19,14 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>(); // Use Infrastructure implementation
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddScoped<ITimeProvider, SystemTimeProvider>();
 
-// Register authentication services
-builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>(); // ✅ FIX #1: Register IAuthenticationService implementation
-
-// Configure JWT options
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-
-// Validate JWT options on startup
-var jwtOptions = builder.Configuration
-    .GetSection(JwtOptions.SectionName)
-    .Get<JwtOptions>() ?? throw new InvalidOperationException("JWT configuration is missing");
-jwtOptions.Validate();
-
-// Register repositories and Unit of Work
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-builder.Services.AddDbContext<ApplicationDbContext>(opt =>
-    opt.UseSqlServer(
-        builder.Configuration.GetConnectionString("Sql") ?? builder.Configuration.GetConnectionString("archudb"),
-        sql =>
-        {
-            sql.EnableRetryOnFailure();
-            sql.CommandTimeout(30);
-        }));
+// ✅ Use Infrastructure DependencyInjection extension
+// This registers:
+// - Database (ApplicationDbContext)
+// - JWT Authentication (JwtTokenService, JwtOptions, JWT Bearer middleware)
+// - Repositories (ProductRepository, UserRepository, etc.)
+// - Infrastructure Services (ICurrentUser, ITimeProvider, etc.)
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 // Add MediatR with behaviors
 builder.Services.AddMediatR(cfg =>
@@ -66,76 +38,6 @@ builder.Services.AddMediatR(cfg =>
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(Archu.Application.AssemblyReference).Assembly);
-
-// Configure JWT Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    var key = Encoding.UTF8.GetBytes(jwtOptions.Secret);
-
-    options.SaveToken = true;
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Allow HTTP in development
-
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        // ✅ FIX #2: Allow 5-minute tolerance for clock skew between servers
-        // Zero tolerance can cause valid tokens to be rejected in distributed systems
-        ClockSkew = TimeSpan.FromMinutes(5),
-
-        ValidIssuer = jwtOptions.Issuer,
-        ValidAudience = jwtOptions.Audience,
-        IssuerSigningKey = new SymmetricSecurityKey(key)
-    };
-
-    // Configure event handlers for better logging and debugging
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            var logger = context.HttpContext.RequestServices
-                .GetRequiredService<ILogger<Program>>();
-
-            logger.LogWarning(
-                context.Exception,
-                "JWT authentication failed: {Message}",
-                context.Exception.Message);
-
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            var logger = context.HttpContext.RequestServices
-                .GetRequiredService<ILogger<Program>>();
-
-            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            logger.LogDebug("JWT token validated successfully for user: {UserId}", userId);
-
-            return Task.CompletedTask;
-        },
-        OnChallenge = context =>
-        {
-            var logger = context.HttpContext.RequestServices
-                .GetRequiredService<ILogger<Program>>();
-
-            logger.LogWarning(
-                "JWT authentication challenge: {Error} - {ErrorDescription}",
-                context.Error,
-                context.ErrorDescription);
-
-            return Task.CompletedTask;
-        }
-    };
-});
 
 // Configure Authorization with custom policies
 builder.Services.AddAuthorizationHandlers(); // Register custom authorization handlers
@@ -173,37 +75,247 @@ builder.Services.AddHealthChecks()
 builder.Services.AddScoped<DatabaseHealthCheck>();
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+
+// ✅ Configure OpenAPI with comprehensive documentation
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info = new()
+        {
+            Title = "Archu API",
+            Version = "v1",
+            Description = """
+                ## Archu API
+                
+                Comprehensive API for authentication, product management, and application services.
+                
+                ### Features
+                - 🔐 **JWT Authentication** - Secure token-based authentication with refresh tokens
+                - 👤 **User Registration & Login** - Complete user account management
+                - 🔑 **Password Management** - Change, reset, and forgot password workflows
+                - ✉️ **Email Verification** - Confirm user email addresses
+                - 📦 **Product Management** - Full CRUD operations for product catalog
+                - 🛡️ **Role-Based Authorization** - Fine-grained access control with custom policies
+                - 🔄 **Token Refresh** - Seamless token renewal without re-authentication
+                - 🏥 **Health Checks** - Monitor application and database status
+                
+                ### Authentication
+                Most endpoints require JWT authentication. Include the token in the `Authorization` header:
+                ```
+                Authorization: Bearer <your-jwt-token>
+                ```
+                
+                ### Getting Started
+                1. **Register** a new account using `/api/v1/authentication/register`
+                2. **Login** to get JWT access and refresh tokens
+                3. Use the **access token** for authenticated requests
+                4. **Refresh** tokens before expiration using `/api/v1/authentication/refresh-token`
+                
+                ### Token Lifetimes
+                - **Access Token**: 1 hour (default)
+                - **Refresh Token**: 7 days (default)
+                
+                ### Role-Based Access
+                Different endpoints require different roles:
+                - **Public**: No authentication required (register, login)
+                - **User**: Standard authenticated access (read products)
+                - **Manager**: Elevated access (create, update products)
+                - **Admin**: Full access (delete products, all operations)
+                
+                ### Password Requirements
+                - Minimum 8 characters
+                - Maximum 100 characters
+                - Additional complexity requirements may apply
+                
+                ### API Response Format
+                All endpoints return standardized `ApiResponse<T>` wrapper:
+                ```json
+                {
+                  "success": true,
+                  "message": "Operation completed successfully",
+                  "data": { /* response data */ }
+                }
+                ```
+                
+                ### Error Handling
+                Errors follow consistent format:
+                ```json
+                {
+                  "success": false,
+                  "message": "Error description",
+                  "data": null
+                }
+                ```
+                
+                ### Common Status Codes
+                - **200 OK**: Success
+                - **201 Created**: Resource created successfully
+                - **400 Bad Request**: Validation error or invalid request
+                - **401 Unauthorized**: Missing or invalid authentication
+                - **403 Forbidden**: Insufficient permissions
+                - **404 Not Found**: Resource doesn't exist
+                - **409 Conflict**: Concurrency conflict (optimistic locking)
+                
+                ### Workflow Examples
+                
+                **Complete Registration Flow:**
+                1. POST `/api/v1/authentication/register` - Create account
+                2. POST `/api/v1/authentication/confirm-email` - Verify email (optional)
+                3. Use tokens from registration response
+                
+                **Password Reset Flow:**
+                1. POST `/api/v1/authentication/forgot-password` - Request reset token
+                2. Check email for reset token
+                3. POST `/api/v1/authentication/reset-password` - Reset with token
+                
+                **Token Refresh Flow:**
+                1. Detect access token expiration (401 error)
+                2. POST `/api/v1/authentication/refresh-token` - Get new tokens
+                3. Retry original request with new access token
+                
+                ### Additional Resources
+                - **GitHub Repository**: [https://github.com/chethandvg/archu](https://github.com/chethandvg/archu)
+                - **HTTP Test File**: `src/Archu.Api/Archu.Api.http` (40+ example requests)
+                - **Documentation**: `/docs` folder in repository
+                
+                ### Support
+                For questions or issues, please visit our GitHub repository or contact support.
+                """,
+            Contact = new()
+            {
+                Name = "Archu API Support",
+                Email = "support@archu.com",
+                Url = new Uri("https://github.com/chethandvg/archu")
+            },
+            License = new()
+            {
+                Name = "MIT License",
+                Url = new Uri("https://opensource.org/licenses/MIT")
+            }
+        };
+
+        // Add security scheme for JWT Bearer token
+        document.Components ??= new();
+        document.Components.SecuritySchemes = new Dictionary<string, OpenApiSecurityScheme>
+        {
+            ["Bearer"] = new()
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = """
+                    JWT Authorization header using the Bearer scheme.
+                    
+                    **How to authenticate:**
+                    1. Register or login to get a JWT token
+                    2. Copy the token value from the response
+                    3. Click "Authorize" button above
+                    4. Paste token in the input field (without "Bearer " prefix)
+                    5. Click "Authorize" to apply
+                    
+                    **Token Format:**
+                    ```
+                    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+                    ```
+                    
+                    **Note:** The "Bearer " prefix is added automatically.
+                    
+                    **Token Expiration:**
+                    - Access tokens expire after 1 hour
+                    - Use `/api/v1/authentication/refresh-token` to get new tokens
+                    - Refresh tokens are valid for 7 days
+                    """
+            }
+        };
+
+        // Apply security requirement globally (endpoints can override with [AllowAnonymous])
+        document.SecurityRequirements = new List<OpenApiSecurityRequirement>
+        {
+            new()
+            {
+                [new OpenApiSecurityScheme
+                {
+                    Reference = new()
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                }] = Array.Empty<string>()
+            }
+        };
+
+        // Add server information
+        document.Servers = new List<OpenApiServer>
+        {
+            new() { Url = "https://localhost:7123", Description = "Local Development (HTTPS)" },
+            new() { Url = "http://localhost:5268", Description = "Local Development (HTTP)" }
+        };
+
+        // Add tags with descriptions for better organization
+        document.Tags = new List<OpenApiTag>
+        {
+            new()
+            {
+                Name = "Authentication",
+                Description = """
+                    User authentication and account management endpoints.
+                    
+                    **Public Endpoints** (No auth required):
+                    - Register new account
+                    - Login with credentials
+                    - Refresh expired tokens
+                    - Request password reset
+                    - Reset password with token
+                    - Confirm email address
+                    
+                    **Protected Endpoints** (Auth required):
+                    - Change password
+                    - Logout (revoke refresh token)
+                    """
+            },
+            new()
+            {
+                Name = "Products",
+                Description = """
+                    Product catalog management with role-based access control.
+                    
+                    **Access Levels:**
+                    - **Read (GET)**: All authenticated users
+                    - **Create (POST)**: Manager and Admin roles only
+                    - **Update (PUT)**: Manager and Admin roles only
+                    - **Delete (DELETE)**: Admin role only
+                    
+                    **Features:**
+                    - Optimistic concurrency control (RowVersion)
+                    - Soft delete support
+                    - Full CRUD operations
+                    """
+            },
+            new()
+            {
+                Name = "Health",
+                Description = """
+                    Health check endpoints for monitoring application status.
+                    
+                    **Endpoints:**
+                    - `/health` - Full health status (all checks)
+                    - `/health/ready` - Readiness check (ready to accept traffic)
+                    - `/health/live` - Liveness check (application is running)
+                    
+                    **Checked Components:**
+                    - SQL Server connection
+                    - Entity Framework Core DbContext
+                    - Application dependencies
+                    """
+            }
+        };
+
+        return Task.CompletedTask;
+    });
+});
 
 var app = builder.Build();
-
-// Apply migrations in development
-//if (app.Environment.IsDevelopment())
-//{
-//    try
-//    {
-//        using var scope = app.Services.CreateScope();
-//        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-//        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-//        logger.LogInformation("Applying database migrations...");
-//        await dbContext.Database.MigrateAsync();
-//        logger.LogInformation("Database migrations applied successfully");
-//    }
-//    catch (Exception ex)
-//    {
-//        var logger = app.Services.GetRequiredService<ILogger<Program>>();
-//        logger.LogError(ex, "An error occurred while applying database migrations");
-//        // Decide whether to throw or continue
-//        throw;
-//    }
-//}
-
-/*# Example Azure DevOps/GitHub Actions step
-- name: Apply EF Core Migrations
-  run: dotnet ef database update --project src/Archu.Infrastructure
-*/
 
 // Add Global Exception Handler - Must be first in pipeline
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
@@ -215,6 +327,10 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options.Title = "Archu API";
+        options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        options.Theme = ScalarTheme.DeepSpace;
+        options.ShowSidebar = true;
+        options.DarkMode = true;
     });
 }
 
@@ -249,17 +365,17 @@ app.MapHealthChecks("/health", new HealthCheckOptions
         };
         await context.Response.WriteAsJsonAsync(response);
     }
-});
+}).WithTags("Health");
 
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready")
-});
+}).WithTags("Health");
 
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false // Only checks that the app is running
-});
+}).WithTags("Health");
 
 app.MapDefaultEndpoints();
 

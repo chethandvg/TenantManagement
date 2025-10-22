@@ -1,4 +1,5 @@
 using Archu.Application.Abstractions;
+using Archu.Application.Common;
 using Archu.Contracts.Products;
 using Archu.Domain.Entities;
 using MediatR;
@@ -9,33 +10,40 @@ namespace Archu.Application.Products.Commands.CreateProduct;
 /// <summary>
 /// Handles the creation of a new product.
 /// </summary>
-public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, ProductDto>
+public class CreateProductCommandHandler : BaseCommandHandler, IRequestHandler<CreateProductCommand, ProductDto>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<CreateProductCommandHandler> _logger;
 
     public CreateProductCommandHandler(
         IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
         ILogger<CreateProductCommandHandler> logger)
+        : base(currentUser, logger)
     {
         _unitOfWork = unitOfWork;
-        _logger = logger;
     }
 
     public async Task<ProductDto> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Creating product: {ProductName}", request.Name);
+        // ✅ IMPROVED: Use base class method for user ID extraction and validation
+        var ownerIdGuid = GetCurrentUserId("create products");
+
+        Logger.LogInformation("User {UserId} creating product: {ProductName}", ownerIdGuid, request.Name);
 
         var product = new Product
         {
             Name = request.Name,
-            Price = request.Price
+            Price = request.Price,
+            OwnerId = ownerIdGuid
         };
 
         var createdProduct = await _unitOfWork.Products.AddAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Product created with ID: {ProductId}", createdProduct.Id);
+        Logger.LogInformation(
+            "Product created with ID: {ProductId} by User: {UserId}",
+            createdProduct.Id,
+            ownerIdGuid);
 
         return new ProductDto
         {

@@ -47,6 +47,16 @@ public class UnitOfWork : IUnitOfWork
             _timeProvider,
             _loggerFactory.CreateLogger<PasswordResetTokenRepository>());
 
+    public async Task<TResult> ExecuteWithRetryAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(
+            state: operation,
+            operation: async (_, op, ct) => await op(),
+            verifySucceeded: null,
+            cancellationToken: cancellationToken);
+    }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.SaveChangesAsync(cancellationToken);

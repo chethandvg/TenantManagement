@@ -38,6 +38,16 @@ public interface IUnitOfWork : IDisposable
     IPasswordResetTokenRepository PasswordResetTokens { get; }
 
     /// <summary>
+    /// Executes an operation with retry logic for transient failures.
+    /// Required when using transactions with database retry-on-failure strategies.
+    /// </summary>
+    /// <typeparam name="TResult">The return type of the operation.</typeparam>
+    /// <param name="operation">The operation to execute.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The result of the operation.</returns>
+    Task<TResult> ExecuteWithRetryAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Saves all pending changes to the database.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
