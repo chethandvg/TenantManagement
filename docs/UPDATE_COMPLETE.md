@@ -187,14 +187,14 @@ Successfully updated the OpenAPI documentation for **Archu.Api** with comprehens
 ## 🚀 How to Access
 
 ### Interactive Documentation
-- **Scalar UI**: https://localhost:7268/scalar/v1
+- **Scalar UI**: https://localhost:7123/scalar/v1
   - Beautiful dark theme (DeepSpace)
   - Try-it-out functionality
   - Authentication support
   - Schema browsing
 
 ### OpenAPI Specification
-- **JSON Format**: https://localhost:7268/openapi/v1.json
+- **JSON Format**: https://localhost:7123/openapi/v1.json
   - Machine-readable
   - Import into Postman/Insomnia
   - Generate client SDKs
@@ -262,7 +262,7 @@ Comprehensive Coverage:
    ```
 
 2. **Access Scalar UI:**
-   - Navigate to: https://localhost:7268/scalar/v1
+   - Navigate to: https://localhost:7123/scalar/v1
    - Explore endpoints by tags
    - Try authentication endpoints first
 
@@ -317,7 +317,7 @@ Comprehensive Coverage:
    - Review best practices
 
 3. **Import OpenAPI Spec:**
-   - URL: https://localhost:7268/openapi/v1.json
+   - URL: https://localhost:7123/openapi/v1.json
    - Import into Postman/Insomnia
    - Use for client SDK generation
    - Reference for API contracts
@@ -446,7 +446,7 @@ Comprehensive Coverage:
 - 📖 Read the full guide: `/docs/ARCHU_API_DOCUMENTATION.md`
 - 🚀 Check quick reference: `/docs/ARCHU_API_QUICK_REFERENCE.md`
 - 🧪 Try HTTP examples: `src/Archu.Api/Archu.Api.http`
-- 🌐 Explore Scalar UI: https://localhost:7268/scalar/v1
+- 🌐 Explore Scalar UI: https://localhost:7123/scalar/v1
 
 ### Issues?
 - 🐛 GitHub Issues: https://github.com/chethandvg/archu/issues

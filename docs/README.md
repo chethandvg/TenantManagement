@@ -58,7 +58,7 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 #### Test the API
 1. **[HTTP Requests Guide](HTTP_REQUESTS_GUIDE.md)** - Testing guide ⚡ **NEW**
 2. HTTP Examples: `src/Archu.Api/Archu.Api.http` (40+ examples) ⚡ **NEW**
-3. Scalar UI: https://localhost:7268/scalar/v1 ⚡ **NEW**
+3. Scalar UI: https://localhost:7123/scalar/v1 ⚡ **NEW**
 
 #### Set up authentication
 1. **[JWT Quick Start](JWT_QUICK_START.md)** - 5-minute setup ⚡
@@ -115,7 +115,7 @@ System management:
 
 ### For API Consumers
 Using the APIs:
-1. Scalar UI: https://localhost:7268/scalar/v1 (Main API) ⚡ **NEW**
+1. Scalar UI: https://localhost:7123/scalar/v1 (Main API) ⚡ **NEW**
 2. Scalar UI: https://localhost:7290/scalar/v1 (Admin API) ⚡ **NEW**
 3. **[Archu API Quick Reference](ARCHU_API_QUICK_REFERENCE.md)** ⚡ **NEW**
 4. **[Archu API Documentation](ARCHU_API_DOCUMENTATION.md)** ⚡ **NEW**
@@ -231,9 +231,9 @@ dotnet run
 ```
 
 **Access Points:**
-- Main API: https://localhost:7268
+- Main API: https://localhost:7123
 - Admin API: https://localhost:7290
-- Main API Docs: https://localhost:7268/scalar/v1 ⚡ **NEW**
+- Main API Docs: https://localhost:7123/scalar/v1 ⚡ **NEW**
 - Admin API Docs: https://localhost:7290/scalar/v1
 
 ### Setting Up Authentication
@@ -254,7 +254,7 @@ cd src/Archu.Api
 # Archu.AdminApi/Archu.AdminApi.http (31 examples)
 
 # Or use Scalar UI
-https://localhost:7268/scalar/v1  # Main API
+https://localhost:7123/scalar/v1  # Main API
 https://localhost:7290/scalar/v1  # Admin API
 ```
 
@@ -302,7 +302,7 @@ Follow the step-by-step guide: [Adding New Entities](../src/README_NEW_ENTITY.md
 - Variables for easy customization
 
 ✨ **Interactive Documentation:**
-- Scalar UI for Main API: https://localhost:7268/scalar/v1
+- Scalar UI for Main API: https://localhost:7123/scalar/v1
 - Scalar UI for Admin API: https://localhost:7290/scalar/v1
 - Try-it-out functionality
 - Authentication support

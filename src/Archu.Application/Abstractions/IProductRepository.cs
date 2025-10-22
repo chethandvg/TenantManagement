@@ -82,4 +82,14 @@ public interface IProductRepository
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>True if the product exists and is owned by the user; otherwise false.</returns>
     Task<bool> ExistsAndIsOwnedByAsync(Guid id, Guid ownerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if a product is owned by the specified user without loading the entire entity.
+    /// This is optimized for authorization checks where only ownership verification is needed.
+    /// </summary>
+    /// <param name="resourceId">The product identifier.</param>
+    /// <param name="userId">The ID of the user to check ownership for.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>True if the product is owned by the user; otherwise false.</returns>
+    Task<bool> IsOwnedByAsync(Guid resourceId, Guid userId, CancellationToken cancellationToken = default);
 }

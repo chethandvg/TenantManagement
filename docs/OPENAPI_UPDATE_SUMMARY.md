@@ -320,7 +320,7 @@ Content-Type: application/json
 
 ### OpenAPI UI (Scalar)
 
-**Access:** https://localhost:7268/scalar/v1
+**Access:** https://localhost:7123/scalar/v1
 
 **Features:**
 - 🎨 DeepSpace theme with dark mode
@@ -339,7 +339,7 @@ Content-Type: application/json
 
 ### OpenAPI Specification
 
-**Access:** https://localhost:7268/openapi/v1.json
+**Access:** https://localhost:7123/openapi/v1.json
 
 **Includes:**
 - Complete endpoint definitions
@@ -443,8 +443,8 @@ Content-Type: application/json
    ```
 
 2. **Access Documentation:**
-   - **Interactive UI:** https://localhost:7268/scalar/v1
-   - **OpenAPI JSON:** https://localhost:7268/openapi/v1.json
+   - **Interactive UI:** https://localhost:7123/scalar/v1
+   - **OpenAPI JSON:** https://localhost:7123/openapi/v1.json
    - **Quick Reference:** `/docs/ARCHU_API_QUICK_REFERENCE.md`
    - **Full Guide:** `/docs/ARCHU_API_DOCUMENTATION.md`
 
@@ -618,7 +618,7 @@ Both APIs now have consistent, comprehensive documentation:
 - Review full documentation: `/docs/ARCHU_API_DOCUMENTATION.md`
 - Check quick reference: `/docs/ARCHU_API_QUICK_REFERENCE.md`
 - Try examples: `src/Archu.Api/Archu.Api.http`
-- Explore Scalar UI: https://localhost:7268/scalar/v1
+- Explore Scalar UI: https://localhost:7123/scalar/v1
 
 ### Issues?
 - GitHub Issues: https://github.com/chethandvg/archu/issues

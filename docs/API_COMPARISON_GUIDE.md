@@ -9,7 +9,7 @@ This guide compares the two Archu APIs and helps you choose which one to use for
 ## 🎯 API Overview
 
 ### Archu.Api (Main API)
-**Base URL:** https://localhost:7268  
+**Base URL:** https://localhost:7123  
 **Purpose:** Public-facing API for application functionality  
 **Primary Use:** User authentication, product management, application features
 
@@ -202,8 +202,8 @@ Admin manages other users:
 
 | Resource | Location | Description |
 |----------|----------|-------------|
-| **OpenAPI UI** | https://localhost:7268/scalar/v1 | Interactive API explorer |
-| **OpenAPI Spec** | https://localhost:7268/openapi/v1.json | Machine-readable spec |
+| **OpenAPI UI** | https://localhost:7123/scalar/v1 | Interactive API explorer |
+| **OpenAPI Spec** | https://localhost:7123/openapi/v1.json | Machine-readable spec |
 | **HTTP Examples** | `src/Archu.Api/Archu.Api.http` | 40+ request examples |
 | **Full Guide** | `/docs/ARCHU_API_DOCUMENTATION.md` | Comprehensive guide |
 | **Quick Reference** | `/docs/ARCHU_API_QUICK_REFERENCE.md` | Developer cheat sheet |
@@ -252,7 +252,7 @@ Both APIs share:
 ### Separate Configuration
 
 Each API has:
-- **Port Numbers:** Different (7268 vs 7290)
+- **Port Numbers:** Different (7123 vs 7290)
 - **OpenAPI Docs:** Separate specifications
 - **Authorization Policies:** Different policy sets
 - **Endpoints:** Non-overlapping functionality
@@ -321,7 +321,7 @@ Each API has:
 │                         │
 │  ┌──────────────────┐  │
 │  │  User Features   │──┼──→ Archu.Api
-│  │  - Login         │  │    (Port 7268)
+│  │  - Login         │  │    (Port 7123)
 │  │  - Products      │  │
 │  │  - Profile       │  │
 │  └──────────────────┘  │
@@ -340,7 +340,7 @@ Each API has:
 // Configure both API clients
 builder.Services.AddHttpClient("ArchuApi", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7268");
+    client.BaseAddress = new Uri("https://localhost:7123");
 });
 
 builder.Services.AddHttpClient("ArchuAdminApi", client =>
@@ -439,7 +439,7 @@ Authorization: Bearer {admin-token}
 
 **4. User Self-Registration (Api):**
 ```http
-POST https://localhost:7268/api/v1/authentication/register
+POST https://localhost:7123/api/v1/authentication/register
 {
   "userName": "user1",
   "email": "user@example.com",
@@ -449,7 +449,7 @@ POST https://localhost:7268/api/v1/authentication/register
 
 **5. Manager Creates Product (Api):**
 ```http
-POST https://localhost:7268/api/v1/products
+POST https://localhost:7123/api/v1/products
 Authorization: Bearer {manager-token}
 {
   "name": "New Product",
@@ -459,7 +459,7 @@ Authorization: Bearer {manager-token}
 
 **6. User Views Products (Api):**
 ```http
-GET https://localhost:7268/api/v1/products
+GET https://localhost:7123/api/v1/products
 Authorization: Bearer {user-token}
 ```
 
@@ -595,7 +595,7 @@ public async Task<T> HandleApiCall<T>(Func<Task<ApiResponse<T>>> apiCall)
 
 ### Interactive Documentation
 
-- **Archu.Api Scalar UI**: https://localhost:7268/scalar/v1
+- **Archu.Api Scalar UI**: https://localhost:7123/scalar/v1
 - **AdminApi Scalar UI**: https://localhost:7290/scalar/v1
 
 ### Contact

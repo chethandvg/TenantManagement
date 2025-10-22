@@ -77,4 +77,11 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
             .AsNoTracking()
             .AnyAsync(p => p.Id == id && p.OwnerId == ownerId, cancellationToken);
     }
+
+    public async Task<bool> IsOwnedByAsync(Guid resourceId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsNoTracking()
+            .AnyAsync(p => p.Id == resourceId && p.OwnerId == userId, cancellationToken);
+    }
 }

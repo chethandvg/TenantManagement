@@ -104,29 +104,14 @@ public sealed class ResourceOwnerRequirementHandler : AuthorizationHandler<Resou
             return false;
         }
 
-        var product = await productRepository.GetByIdAsync(resourceId);
-        
-        if (product == null)
+        // ✅ OPTIMIZED: Use specialized method that only checks ownership without loading the entire entity
+        var isOwned = await productRepository.IsOwnedByAsync(resourceId, userId);
+
+        if (!isOwned)
         {
-            _logger.LogWarning("Product {ProductId} not found", resourceId);
-            return false;
+            _logger.LogWarning("Product {ProductId} is not owned by user {UserId} or does not exist", resourceId, userId);
         }
 
-        // Check if product implements IHasOwner
-        if (product is IHasOwner ownedResource)
-        {
-            return ownedResource.IsOwnedBy(userId);
-        }
-
-        // If product doesn't implement IHasOwner, check CreatedBy from audit
-        // This is a fallback for entities that haven't been updated yet
-        var createdByString = product.CreatedBy;
-        if (!string.IsNullOrEmpty(createdByString) && Guid.TryParse(createdByString, out var creatorId))
-        {
-            return creatorId == userId;
-        }
-
-        _logger.LogWarning("Product {ProductId} has no owner information", resourceId);
-        return false;
+        return isOwned;
     }
 }

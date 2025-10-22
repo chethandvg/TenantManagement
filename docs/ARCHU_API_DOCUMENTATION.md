@@ -26,14 +26,14 @@ cd src/Archu.AppHost
 dotnet run
 
 # The API will be available at:
-# HTTPS: https://localhost:7268
+# HTTPS: https://localhost:7123
 # HTTP:  http://localhost:5268
 ```
 
 ### Access Documentation
-- **Scalar UI**: https://localhost:7268/scalar/v1
-- **OpenAPI JSON**: https://localhost:7268/openapi/v1.json
-- **Health Check**: https://localhost:7268/health
+- **Scalar UI**: https://localhost:7123/scalar/v1
+- **OpenAPI JSON**: https://localhost:7123/openapi/v1.json
+- **Health Check**: https://localhost:7123/health
 
 ---
 
@@ -693,8 +693,8 @@ All error responses follow this structure:
 All endpoints are prefixed with `/api/v1/`:
 
 ```
-https://localhost:7268/api/v1/authentication/login
-https://localhost:7268/api/v1/products
+https://localhost:7123/api/v1/authentication/login
+https://localhost:7123/api/v1/products
 ```
 
 ### Version Header
@@ -722,7 +722,7 @@ The project includes `Archu.Api.http` with 40+ example requests:
 
 ```http
 ### Login
-POST https://localhost:7268/api/v1/authentication/login
+POST https://localhost:7123/api/v1/authentication/login
 Content-Type: application/json
 
 {
@@ -731,7 +731,7 @@ Content-Type: application/json
 }
 
 ### Get Products (with auth)
-GET https://localhost:7268/api/v1/products
+GET https://localhost:7123/api/v1/products
 Authorization: Bearer {{jwt_token}}
 ```
 
@@ -740,13 +740,13 @@ Authorization: Bearer {{jwt_token}}
 ### Using Scalar UI
 
 1. Start the application
-2. Navigate to https://localhost:7268/scalar/v1
+2. Navigate to https://localhost:7123/scalar/v1
 3. Explore endpoints, try requests, view schemas
 4. Click "Authorize" to add JWT token
 
 ### Using Postman/Insomnia
 
-1. Import OpenAPI JSON: https://localhost:7268/openapi/v1.json
+1. Import OpenAPI JSON: https://localhost:7123/openapi/v1.json
 2. Set up environment variables for tokens
 3. Use collection to test all endpoints
 

@@ -3,7 +3,7 @@
 ## 🚀 Base URLs
 
 ```
-HTTPS: https://localhost:7268
+HTTPS: https://localhost:7123
 HTTP:  http://localhost:5268
 ```
 
@@ -367,8 +367,8 @@ Located at: `src/Archu.Api/Archu.Api.http`
 
 ## 📖 Documentation Resources
 
-- **Scalar UI**: https://localhost:7268/scalar/v1
-- **OpenAPI JSON**: https://localhost:7268/openapi/v1.json
+- **Scalar UI**: https://localhost:7123/scalar/v1
+- **OpenAPI JSON**: https://localhost:7123/openapi/v1.json
 - **Full Documentation**: `/docs/ARCHU_API_DOCUMENTATION.md`
 - **HTTP Examples**: `/src/Archu.Api/Archu.Api.http`
 - **Admin API Guide**: `/docs/ADMIN_API_QUICK_REFERENCE.md`
@@ -468,7 +468,7 @@ if (response.StatusCode == 409)
 
 ```http
 ### 1. Register
-POST https://localhost:7268/api/v1/authentication/register
+POST https://localhost:7123/api/v1/authentication/register
 Content-Type: application/json
 
 {
@@ -480,11 +480,11 @@ Content-Type: application/json
 # Save token from response: eyJhbGciOiJIUzI1NiIs...
 
 ### 2. Get Products
-GET https://localhost:7268/api/v1/products
+GET https://localhost:7123/api/v1/products
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 
 ### 3. Create Product (need Manager/Admin role)
-POST https://localhost:7268/api/v1/products
+POST https://localhost:7123/api/v1/products
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 Content-Type: application/json
 
@@ -494,7 +494,7 @@ Content-Type: application/json
 }
 
 ### 4. Update Product
-PUT https://localhost:7268/api/v1/products/product-id-here
+PUT https://localhost:7123/api/v1/products/product-id-here
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 Content-Type: application/json
 
@@ -506,7 +506,7 @@ Content-Type: application/json
 }
 
 ### 5. Logout
-POST https://localhost:7268/api/v1/authentication/logout
+POST https://localhost:7123/api/v1/authentication/logout
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ```
 

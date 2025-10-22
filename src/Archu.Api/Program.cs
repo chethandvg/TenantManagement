@@ -248,7 +248,7 @@ builder.Services.AddOpenApi(options =>
         // Add server information
         document.Servers = new List<OpenApiServer>
         {
-            new() { Url = "https://localhost:7268", Description = "Local Development (HTTPS)" },
+            new() { Url = "https://localhost:7123", Description = "Local Development (HTTPS)" },
             new() { Url = "http://localhost:5268", Description = "Local Development (HTTP)" }
         };
 
