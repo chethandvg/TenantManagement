@@ -17,8 +17,16 @@ if (useDockerDatabase)
     var sql = builder.AddSqlServer("sql").WithDataVolume()
         .AddDatabase("archudb");
 
+    // Main API
     var api = builder.AddProject<Projects.Archu_Api>("api")
         .WithReference(sql)  // This injects the Docker connection string
+        .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+        .WithExternalHttpEndpoints()
+        .WithScalar();
+
+    // Admin API - shares the same database
+    var adminApi = builder.AddProject<Projects.Archu_AdminApi>("admin-api")
+        .WithReference(sql)  // Share the same database with main API
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
         .WithExternalHttpEndpoints()
         .WithScalar();
@@ -26,8 +34,17 @@ if (useDockerDatabase)
 else
 {
     // Using local SQL Server (connection string from appsettings.Development.json)
+    
+    // Main API
     var api = builder.AddProject<Projects.Archu_Api>("api")
         // No .WithReference(sql) - API will use connection string from appsettings.Development.json
+        .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+        .WithExternalHttpEndpoints()
+        .WithScalar();
+
+    // Admin API
+    var adminApi = builder.AddProject<Projects.Archu_AdminApi>("admin-api")
+        // No .WithReference(sql) - Admin API will use connection string from appsettings.Development.json
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
         .WithExternalHttpEndpoints()
         .WithScalar();

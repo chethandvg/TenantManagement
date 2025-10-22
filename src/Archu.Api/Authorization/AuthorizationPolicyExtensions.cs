@@ -1,143 +1,97 @@
 using Archu.Api.Authorization.Requirements;
+using Archu.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Archu.Api.Authorization;
 
 /// <summary>
-/// Extension methods for configuring authorization policies.
+/// Extension methods for configuring Archu authorization policies.
 /// </summary>
 public static class AuthorizationPolicyExtensions
 {
     /// <summary>
-    /// Configures all authorization policies for the application.
+    /// Configures all Archu authorization policies.
     /// </summary>
-    /// <param name="options">Authorization options to configure.</param>
     public static void ConfigureArchuPolicies(this AuthorizationOptions options)
     {
-        // ============================================
-        // ROLE-BASED POLICIES
-        // ============================================
-
-        options.AddPolicy(AuthorizationPolicies.RequireAdminRole, policy =>
+        // Email verification policy
+        options.AddPolicy(PolicyNames.EmailVerified, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.RequireRole(Roles.Admin);
+            policy.Requirements.Add(new EmailVerifiedRequirement());
         });
 
-        options.AddPolicy(AuthorizationPolicies.RequireManagerRole, policy =>
+        // Two-factor authentication policy
+        options.AddPolicy(PolicyNames.TwoFactorEnabled, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.RequireRole(Roles.Manager);
+            policy.Requirements.Add(new TwoFactorEnabledRequirement());
         });
 
-        options.AddPolicy(AuthorizationPolicies.RequireUserRole, policy =>
+        // Role-based policies
+        options.AddPolicy(PolicyNames.RequireUserRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.RequireRole(Roles.User);
+            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.User));
         });
 
-        options.AddPolicy(AuthorizationPolicies.RequireAdminOrManager, policy =>
+        options.AddPolicy(PolicyNames.RequireManagerRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new MinimumRoleRequirement(Roles.Admin, Roles.Manager));
+            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Manager));
         });
 
-        // ============================================
-        // CLAIM-BASED POLICIES
-        // ============================================
-
-        options.AddPolicy(AuthorizationPolicies.RequireEmailVerified, policy =>
+        options.AddPolicy(PolicyNames.RequireAdminRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new EmailVerifiedRequirement());
+            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Administrator));
         });
 
-        options.AddPolicy(AuthorizationPolicies.RequireTwoFactorEnabled, policy =>
+        options.AddPolicy(PolicyNames.RequireSuperAdminRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new TwoFactorEnabledRequirement());
+            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.SuperAdmin));
         });
 
-        // ============================================
-        // PERMISSION-BASED POLICIES
-        // ============================================
-
-        options.AddPolicy(AuthorizationPolicies.CanCreateProducts, policy =>
+        // Resource ownership policy
+        options.AddPolicy(PolicyNames.ResourceOwner, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new PermissionRequirement(Permissions.ProductsCreate));
+            policy.Requirements.Add(new ResourceOwnerRequirement());
         });
 
-        options.AddPolicy(AuthorizationPolicies.CanReadProducts, policy =>
-        {
-            policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new PermissionRequirement(Permissions.ProductsRead));
-        });
-
-        options.AddPolicy(AuthorizationPolicies.CanUpdateProducts, policy =>
-        {
-            policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new PermissionRequirement(Permissions.ProductsUpdate));
-        });
-
-        options.AddPolicy(AuthorizationPolicies.CanDeleteProducts, policy =>
-        {
-            policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new PermissionRequirement(Permissions.ProductsDelete));
-        });
-
-        options.AddPolicy(AuthorizationPolicies.CanManageProducts, policy =>
-        {
-            policy.RequireAuthenticatedUser();
-            policy.RequireAssertion(context =>
-            {
-                // User can manage products if they have:
-                // 1. Admin role, OR
-                // 2. products:manage permission
-                return context.User.IsInRole(Roles.Admin) ||
-                       context.User.HasClaim(c =>
-                           c.Type == CustomClaimTypes.Permission &&
-                           c.Value == Permissions.ProductsManage);
-            });
-        });
-
-        // ============================================
-        // COMPOSITE POLICIES
-        // ============================================
-
-        options.AddPolicy(AuthorizationPolicies.AuthenticatedWithVerifiedEmail, policy =>
-        {
-            policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new EmailVerifiedRequirement());
-        });
-
-        options.AddPolicy(AuthorizationPolicies.CanAccessApiDocs, policy =>
-        {
-            policy.RequireAuthenticatedUser();
-            policy.AddRequirements(new MinimumRoleRequirement(Roles.Admin, Roles.Manager));
-        });
-
-        // ============================================
-        // FALLBACK POLICY (Optional)
-        // ============================================
-        // Uncomment to require authentication by default for all endpoints
-        // options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        //     .RequireAuthenticatedUser()
-        //     .Build();
+        // Permission-based policies for Products
+        ConfigureProductPolicies(options);
     }
 
     /// <summary>
-    /// Registers all authorization requirement handlers.
+    /// Configures permission-based authorization policies for product operations.
+    /// Uses strongly-typed permission constants from Domain layer.
     /// </summary>
-    /// <param name="services">Service collection.</param>
-    public static IServiceCollection AddAuthorizationHandlers(this IServiceCollection services)
+    private static void ConfigureProductPolicies(AuthorizationOptions options)
     {
-        // Register custom authorization handlers
-        services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
-        services.AddScoped<IAuthorizationHandler, EmailVerifiedRequirementHandler>();
-        services.AddScoped<IAuthorizationHandler, TwoFactorEnabledRequirementHandler>();
-        services.AddScoped<IAuthorizationHandler, MinimumRoleRequirementHandler>();
+        options.AddPolicy(PolicyNames.Products.View, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Read));
+        });
 
-        return services;
+        options.AddPolicy(PolicyNames.Products.Create, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Create));
+        });
+
+        options.AddPolicy(PolicyNames.Products.Update, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Update));
+        });
+
+        options.AddPolicy(PolicyNames.Products.Delete, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Delete));
+        });
     }
 }

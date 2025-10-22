@@ -2,20 +2,13 @@ using System.Text;
 using Archu.Api.Authorization;
 using Archu.Api.Health;
 using Archu.Api.Middleware;
-using Archu.Application.Abstractions;
-using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Common.Behaviors;
-using Archu.Infrastructure.Authentication;
+using Archu.Infrastructure;
 using Archu.Infrastructure.Persistence;
-using Archu.Infrastructure.Repositories;
-using Archu.Infrastructure.Time;
 using Asp.Versioning;
 using FluentValidation;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,36 +18,14 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>(); // Use Infrastructure implementation
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddScoped<ITimeProvider, SystemTimeProvider>();
 
-// Register authentication services
-builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>(); // ✅ FIX #1: Register IAuthenticationService implementation
-
-// Configure JWT options
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-
-// Validate JWT options on startup
-var jwtOptions = builder.Configuration
-    .GetSection(JwtOptions.SectionName)
-    .Get<JwtOptions>() ?? throw new InvalidOperationException("JWT configuration is missing");
-jwtOptions.Validate();
-
-// Register repositories and Unit of Work
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-builder.Services.AddDbContext<ApplicationDbContext>(opt =>
-    opt.UseSqlServer(
-        builder.Configuration.GetConnectionString("Sql") ?? builder.Configuration.GetConnectionString("archudb"),
-        sql =>
-        {
-            sql.EnableRetryOnFailure();
-            sql.CommandTimeout(30);
-        }));
+// ✅ Use Infrastructure DependencyInjection extension
+// This registers:
+// - Database (ApplicationDbContext)
+// - JWT Authentication (JwtTokenService, JwtOptions, JWT Bearer middleware)
+// - Repositories (ProductRepository, UserRepository, etc.)
+// - Infrastructure Services (ICurrentUser, ITimeProvider, etc.)
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 // Add MediatR with behaviors
 builder.Services.AddMediatR(cfg =>
@@ -66,76 +37,6 @@ builder.Services.AddMediatR(cfg =>
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(Archu.Application.AssemblyReference).Assembly);
-
-// Configure JWT Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    var key = Encoding.UTF8.GetBytes(jwtOptions.Secret);
-
-    options.SaveToken = true;
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Allow HTTP in development
-
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        // ✅ FIX #2: Allow 5-minute tolerance for clock skew between servers
-        // Zero tolerance can cause valid tokens to be rejected in distributed systems
-        ClockSkew = TimeSpan.FromMinutes(5),
-
-        ValidIssuer = jwtOptions.Issuer,
-        ValidAudience = jwtOptions.Audience,
-        IssuerSigningKey = new SymmetricSecurityKey(key)
-    };
-
-    // Configure event handlers for better logging and debugging
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            var logger = context.HttpContext.RequestServices
-                .GetRequiredService<ILogger<Program>>();
-
-            logger.LogWarning(
-                context.Exception,
-                "JWT authentication failed: {Message}",
-                context.Exception.Message);
-
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            var logger = context.HttpContext.RequestServices
-                .GetRequiredService<ILogger<Program>>();
-
-            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            logger.LogDebug("JWT token validated successfully for user: {UserId}", userId);
-
-            return Task.CompletedTask;
-        },
-        OnChallenge = context =>
-        {
-            var logger = context.HttpContext.RequestServices
-                .GetRequiredService<ILogger<Program>>();
-
-            logger.LogWarning(
-                "JWT authentication challenge: {Error} - {ErrorDescription}",
-                context.Error,
-                context.ErrorDescription);
-
-            return Task.CompletedTask;
-        }
-    };
-});
 
 // Configure Authorization with custom policies
 builder.Services.AddAuthorizationHandlers(); // Register custom authorization handlers
@@ -177,33 +78,6 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
-
-// Apply migrations in development
-//if (app.Environment.IsDevelopment())
-//{
-//    try
-//    {
-//        using var scope = app.Services.CreateScope();
-//        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-//        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-//        logger.LogInformation("Applying database migrations...");
-//        await dbContext.Database.MigrateAsync();
-//        logger.LogInformation("Database migrations applied successfully");
-//    }
-//    catch (Exception ex)
-//    {
-//        var logger = app.Services.GetRequiredService<ILogger<Program>>();
-//        logger.LogError(ex, "An error occurred while applying database migrations");
-//        // Decide whether to throw or continue
-//        throw;
-//    }
-//}
-
-/*# Example Azure DevOps/GitHub Actions step
-- name: Apply EF Core Migrations
-  run: dotnet ef database update --project src/Archu.Infrastructure
-*/
 
 // Add Global Exception Handler - Must be first in pipeline
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();

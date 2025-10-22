@@ -1,0 +1,6 @@
+@Archu.AdminApi_HostAddress = http://localhost:5279
+
+GET {{Archu.AdminApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

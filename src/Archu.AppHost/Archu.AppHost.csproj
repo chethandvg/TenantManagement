@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Archu.AdminApi\Archu.AdminApi.csproj" />
     <ProjectReference Include="..\Archu.Api\Archu.Api.csproj" />
   </ItemGroup>
 
