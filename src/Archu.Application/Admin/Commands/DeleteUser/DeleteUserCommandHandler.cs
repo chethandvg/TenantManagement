@@ -113,17 +113,10 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
             return Result.Success();
         }
 
-        // Count how many users have SuperAdmin role
-        var superAdminCount = 0;
-        var allUsers = await _unitOfWork.Users.GetAllAsync(1, int.MaxValue, cancellationToken);
-
-        foreach (var user in allUsers)
-        {
-            if (await _unitOfWork.UserRoles.UserHasRoleAsync(user.Id, superAdminRole.Id, cancellationToken))
-            {
-                superAdminCount++;
-            }
-        }
+        // Count how many users have SuperAdmin role using a single database query
+        var superAdminCount = await _unitOfWork.UserRoles.CountUsersWithRoleAsync(
+            superAdminRole.Id,
+            cancellationToken);
 
         _logger.LogDebug("Found {Count} SuperAdmin users in the system", superAdminCount);
 

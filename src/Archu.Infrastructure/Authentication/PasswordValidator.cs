@@ -10,10 +10,11 @@ namespace Archu.Infrastructure.Authentication;
 /// Implementation of password validation service.
 /// Validates passwords against configurable policy rules.
 /// </summary>
-public sealed class PasswordValidator : IPasswordValidator
+public sealed partial class PasswordValidator : IPasswordValidator
 {
     private readonly PasswordPolicyOptions _policy;
     private readonly ILogger<PasswordValidator> _logger;
+    private readonly Regex? _specialCharsPattern;
 
     // Common weak passwords (top 100 most common passwords)
     private static readonly HashSet<string> CommonPasswords = new(StringComparer.OrdinalIgnoreCase)
@@ -26,6 +27,19 @@ public sealed class PasswordValidator : IPasswordValidator
         "root", "toor", "pass", "guest", "user", "demo", "temporary"
     };
 
+    // Compiled regex patterns for performance
+    [GeneratedRegex(@"[A-Z]", RegexOptions.Compiled)]
+    private static partial Regex UppercasePattern();
+
+    [GeneratedRegex(@"[a-z]", RegexOptions.Compiled)]
+    private static partial Regex LowercasePattern();
+
+    [GeneratedRegex(@"\d", RegexOptions.Compiled)]
+    private static partial Regex DigitPattern();
+
+    [GeneratedRegex(@"[^a-zA-Z0-9]", RegexOptions.Compiled)]
+    private static partial Regex SpecialCharPatternGeneric();
+
     public PasswordValidator(
         IOptions<PasswordPolicyOptions> policyOptions,
         ILogger<PasswordValidator> logger)
@@ -35,6 +49,13 @@ public sealed class PasswordValidator : IPasswordValidator
 
         // Validate policy on startup
         _policy.Validate();
+
+        // Compile special chars pattern once if special characters are required
+        if (_policy.RequireSpecialCharacter)
+        {
+            var specialCharsRegex = $"[{Regex.Escape(_policy.SpecialCharacters)}]";
+            _specialCharsPattern = new Regex(specialCharsRegex, RegexOptions.Compiled);
+        }
     }
 
     /// <inheritdoc />
@@ -59,26 +80,25 @@ public sealed class PasswordValidator : IPasswordValidator
             errors.Add($"Password cannot exceed {_policy.MaximumLength} characters");
         }
 
-        // 2. Check character type requirements
-        if (_policy.RequireUppercase && !Regex.IsMatch(password, @"[A-Z]"))
+        // 2. Check character type requirements using compiled regex
+        if (_policy.RequireUppercase && !UppercasePattern().IsMatch(password))
         {
             errors.Add("Password must contain at least one uppercase letter (A-Z)");
         }
 
-        if (_policy.RequireLowercase && !Regex.IsMatch(password, @"[a-z]"))
+        if (_policy.RequireLowercase && !LowercasePattern().IsMatch(password))
         {
             errors.Add("Password must contain at least one lowercase letter (a-z)");
         }
 
-        if (_policy.RequireDigit && !Regex.IsMatch(password, @"\d"))
+        if (_policy.RequireDigit && !DigitPattern().IsMatch(password))
         {
             errors.Add("Password must contain at least one digit (0-9)");
         }
 
-        if (_policy.RequireSpecialCharacter)
+        if (_policy.RequireSpecialCharacter && _specialCharsPattern != null)
         {
-            var specialCharsPattern = $"[{Regex.Escape(_policy.SpecialCharacters)}]";
-            if (!Regex.IsMatch(password, specialCharsPattern))
+            if (!_specialCharsPattern.IsMatch(password))
             {
                 errors.Add($"Password must contain at least one special character ({_policy.SpecialCharacters})");
             }
@@ -152,7 +172,7 @@ public sealed class PasswordValidator : IPasswordValidator
     }
 
     /// <summary>
-    /// Calculates password strength score (0-100) and strength level.
+    /// Calculates password strength score (0-100) and strength level using compiled regex.
     /// </summary>
     private (int score, PasswordStrengthLevel level) CalculatePasswordStrength(string password)
     {
@@ -163,11 +183,11 @@ public sealed class PasswordValidator : IPasswordValidator
         if (password.Length >= 12) score += 10;
         if (password.Length >= 16) score += 10;
 
-        // Character variety contribution (max 40 points)
-        if (Regex.IsMatch(password, @"[a-z]")) score += 10; // Lowercase
-        if (Regex.IsMatch(password, @"[A-Z]")) score += 10; // Uppercase
-        if (Regex.IsMatch(password, @"\d")) score += 10;     // Digits
-        if (Regex.IsMatch(password, @"[^a-zA-Z0-9]")) score += 10; // Special chars
+        // Character variety contribution (max 40 points) using compiled regex
+        if (LowercasePattern().IsMatch(password)) score += 10; // Lowercase
+        if (UppercasePattern().IsMatch(password)) score += 10; // Uppercase
+        if (DigitPattern().IsMatch(password)) score += 10;     // Digits
+        if (SpecialCharPatternGeneric().IsMatch(password)) score += 10; // Special chars
 
         // Complexity contribution (max 30 points)
         var uniqueChars = password.Distinct().Count();

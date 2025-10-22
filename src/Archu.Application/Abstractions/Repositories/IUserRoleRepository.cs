@@ -50,4 +50,14 @@ public interface IUserRoleRepository
     Task<IEnumerable<UserRole>> GetUserRolesAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Counts the number of users who have a specific role.
+    /// </summary>
+    /// <param name="roleId">The role's unique identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The count of users with the specified role.</returns>
+    Task<int> CountUsersWithRoleAsync(
+        Guid roleId,
+        CancellationToken cancellationToken = default);
 }

@@ -73,7 +73,7 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
                     await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                     throw;
                 }
-            });
+            }, cancellationToken);
 
             _logger.LogInformation(
                 "System initialized successfully. Created {RolesCount} roles and super admin user {Email}",

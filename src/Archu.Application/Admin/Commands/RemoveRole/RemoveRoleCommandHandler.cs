@@ -218,20 +218,10 @@ public class RemoveRoleCommandHandler : IRequestHandler<RemoveRoleCommand, Resul
     {
         _logger.LogDebug("Checking if user {UserId} is the last SuperAdmin", userId);
 
-        // Get all users who have the SuperAdmin role
-        var superAdminUsers = await _unitOfWork.UserRoles.GetUserRolesAsync(userId, cancellationToken);
-
-        // Count how many users have SuperAdmin role
-        var superAdminCount = 0;
-        var allUsers = await _unitOfWork.Users.GetAllAsync(1, int.MaxValue, cancellationToken);
-
-        foreach (var user in allUsers)
-        {
-            if (await _unitOfWork.UserRoles.UserHasRoleAsync(user.Id, superAdminRoleId, cancellationToken))
-            {
-                superAdminCount++;
-            }
-        }
+        // Count how many users have SuperAdmin role using a single database query
+        var superAdminCount = await _unitOfWork.UserRoles.CountUsersWithRoleAsync(
+            superAdminRoleId,
+            cancellationToken);
 
         _logger.LogDebug("Found {Count} SuperAdmin users in the system", superAdminCount);
 
