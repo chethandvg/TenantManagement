@@ -26,7 +26,7 @@ public abstract class BaseCommandHandler
     protected Guid GetCurrentUserId(string? operationName = null)
     {
         var userId = _currentUser.UserId;
-        
+
         if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userIdGuid))
         {
             var operation = string.IsNullOrEmpty(operationName) ? "this operation" : operationName;
@@ -45,7 +45,7 @@ public abstract class BaseCommandHandler
     protected bool TryGetCurrentUserId(out Guid userIdGuid)
     {
         var userId = _currentUser.UserId;
-        
+
         if (string.IsNullOrEmpty(userId))
         {
             userIdGuid = Guid.Empty;

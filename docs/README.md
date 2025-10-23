@@ -25,7 +25,12 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 - **[Architecture Guide](ARCHITECTURE.md)** - Clean Architecture overview
 - **[Project Structure](PROJECT_STRUCTURE.md)** - Directory organization
 
-### Authentication & Security
+### Authentication & Security ⚡ **NEW**
+- **[Password Complexity Validation](PASSWORD_COMPLEXITY_VALIDATION.md)** - Complete password validation guide ⚡ **NEW**
+- **[Password Validation Quick Start](PASSWORD_VALIDATION_QUICK_START.md)** - 5-minute setup guide ⚡ **NEW**
+- **[Password Validation Summary](PASSWORD_VALIDATION_IMPLEMENTATION_SUMMARY.md)** - Implementation overview ⚡ **NEW**
+- **[Password Validation Report](PASSWORD_VALIDATION_COMPLETE_REPORT.md)** - Complete report ⚡ **NEW**
+- **[Security Configuration](SECURITY_CONFIGURATION.md)** - Security settings and best practices ⚡ **NEW**
 - **[JWT Quick Start](JWT_QUICK_START.md)** - 5-minute authentication setup ⚡
 - **[JWT Configuration Guide](JWT_CONFIGURATION_GUIDE.md)** - Complete JWT configuration reference
 - **[Database Seeding Guide](DATABASE_SEEDING_GUIDE.md)** - Initialize roles and admin user
