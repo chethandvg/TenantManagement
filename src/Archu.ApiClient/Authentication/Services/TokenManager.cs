@@ -22,6 +22,11 @@ public interface ITokenManager
     Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets the stored token.
+    /// </summary>
+    Task<StoredToken?> GetStoredTokenAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Stores a new token.
     /// </summary>
     Task StoreTokenAsync(TokenResponse tokenResponse, CancellationToken cancellationToken = default);
@@ -98,6 +103,20 @@ public sealed class TokenManager : ITokenManager
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving access token");
+            return null;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<StoredToken?> GetStoredTokenAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _tokenStorage.GetTokenAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving stored token");
             return null;
         }
     }

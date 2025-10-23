@@ -48,7 +48,7 @@ public sealed class ApiAuthenticationStateProvider : AuthenticationStateProvider
     /// Raises a notification that the authentication state has changed.
     /// Call this after login or logout.
     /// </summary>
-    public void RaiseAuthenticationStateChanged()
+    public void NotifyAuthenticationStateChanged()
     {
         _logger.LogInformation("Authentication state changed, notifying subscribers");
         // Use the base protected method to avoid ambiguity with public API
@@ -56,32 +56,23 @@ public sealed class ApiAuthenticationStateProvider : AuthenticationStateProvider
     }
 
     /// <summary>
-    /// Marks the user as authenticated with the given token.
+    /// Marks the user as authenticated.
     /// </summary>
-    public void MarkUserAsAuthenticated(string accessToken)
+    public async Task MarkUserAsAuthenticatedAsync(string userName)
     {
         try
         {
-            var claimsPrincipal = _tokenManager.ExtractClaimsFromToken(accessToken);
+            _logger.LogInformation("User marked as authenticated: {UserName}", userName);
 
-            if (claimsPrincipal == null)
-            {
-                _logger.LogWarning("Failed to extract claims from token during authentication");
-                return;
-            }
-
-            var authState = new AuthenticationState(claimsPrincipal);
-
-            _logger.LogInformation("User marked as authenticated: {User}",
-                claimsPrincipal.Identity?.Name ?? "Unknown");
-
-            // Directly notify with the prepared state
-            base.NotifyAuthenticationStateChanged(Task.FromResult(authState));
+            // Notify subscribers that the authentication state has changed
+            NotifyAuthenticationStateChanged();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error marking user as authenticated");
         }
+
+        await Task.CompletedTask;
     }
 
     /// <summary>

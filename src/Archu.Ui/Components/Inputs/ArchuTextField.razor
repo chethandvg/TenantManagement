@@ -20,7 +20,13 @@
               AdornmentIcon="@AdornmentIcon"
               AdornmentColor="@AdornmentColor"
               OnAdornmentClick="@OnAdornmentClick"
-              FullWidth="@FullWidth" />
+              FullWidth="@FullWidth"
+              MaxLength="@MaxLength"
+              Counter="@Counter"
+              Immediate="@Immediate"
+              Lines="@Lines"
+              InputType="@InputType"
+              AutoFocus="@AutoFocus" />
 
 @code {
     [Parameter]
@@ -79,4 +85,40 @@
 
     [Parameter]
     public bool FullWidth { get; set; } = true;
+
+    /// <summary>
+    /// Maximum number of characters that can be entered
+    /// </summary>
+    [Parameter]
+    public int MaxLength { get; set; } = 524288;
+
+    /// <summary>
+    /// If true, a character counter will be displayed
+    /// </summary>
+    [Parameter]
+    public int? Counter { get; set; }
+
+    /// <summary>
+    /// If true, the input will update the Value immediately on keystroke
+    /// </summary>
+    [Parameter]
+    public bool Immediate { get; set; } = false;
+
+    /// <summary>
+    /// Number of lines for multiline input (1 = single line)
+    /// </summary>
+    [Parameter]
+    public int Lines { get; set; } = 1;
+
+    /// <summary>
+    /// The input type (text, password, email, etc.)
+    /// </summary>
+    [Parameter]
+    public InputType InputType { get; set; } = InputType.Text;
+
+    /// <summary>
+    /// If true, the input will be focused automatically
+    /// </summary>
+    [Parameter]
+    public bool AutoFocus { get; set; } = false;
 }

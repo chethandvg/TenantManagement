@@ -19,7 +19,15 @@
                  Max="@Max"
                  Step="@Step"
                  HideSpinButtons="@HideSpinButtons"
-                 FullWidth="@FullWidth" />
+                 FullWidth="@FullWidth"
+                 Format="@Format"
+                 Culture="@Culture"
+                 Adornment="@Adornment"
+                 AdornmentIcon="@AdornmentIcon"
+                 AdornmentColor="@AdornmentColor"
+                 OnAdornmentClick="@OnAdornmentClick"
+                 Immediate="@Immediate"
+                 AutoFocus="@AutoFocus" />
 
 @code {
     [Parameter]
@@ -64,18 +72,78 @@
     [Parameter]
     public string? HelperText { get; set; }
 
+    /// <summary>
+    /// Minimum allowed value
+    /// </summary>
     [Parameter]
     public T? Min { get; set; }
 
+    /// <summary>
+    /// Maximum allowed value
+    /// </summary>
     [Parameter]
     public T? Max { get; set; }
 
+    /// <summary>
+    /// Step value for increment/decrement
+    /// </summary>
     [Parameter]
     public T? Step { get; set; }
 
+    /// <summary>
+    /// If true, hides the spin buttons
+    /// </summary>
     [Parameter]
     public bool HideSpinButtons { get; set; } = false;
 
     [Parameter]
     public bool FullWidth { get; set; } = true;
+
+    /// <summary>
+    /// Format string for displaying the value (e.g., "C2" for currency, "N0" for integer)
+    /// </summary>
+    [Parameter]
+    public string? Format { get; set; }
+
+    /// <summary>
+    /// Culture for formatting the numeric value
+    /// </summary>
+    [Parameter]
+    public System.Globalization.CultureInfo? Culture { get; set; }
+
+    /// <summary>
+    /// Position of the adornment
+    /// </summary>
+    [Parameter]
+    public Adornment Adornment { get; set; } = Adornment.None;
+
+    /// <summary>
+    /// Icon to display as adornment
+    /// </summary>
+    [Parameter]
+    public string? AdornmentIcon { get; set; }
+
+    /// <summary>
+    /// Color of the adornment
+    /// </summary>
+    [Parameter]
+    public Color AdornmentColor { get; set; } = Color.Default;
+
+    /// <summary>
+    /// Callback when adornment is clicked
+    /// </summary>
+    [Parameter]
+    public EventCallback OnAdornmentClick { get; set; }
+
+    /// <summary>
+    /// If true, the input will update the Value immediately on keystroke
+    /// </summary>
+    [Parameter]
+    public bool Immediate { get; set; } = false;
+
+    /// <summary>
+    /// If true, the input will be focused automatically
+    /// </summary>
+    [Parameter]
+    public bool AutoFocus { get; set; } = false;
 }

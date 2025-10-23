@@ -1,0 +1,131 @@
+@page "/register"
+@inject IAuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+            Create Account
+        </MudText>
+        
+        <EditForm Model="@model" OnValidSubmit="HandleRegisterAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            
+            <MudTextField @bind-Value="model.UserName"
+                         Label="Username"
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true"
+                         AutoFocus="true" />
+            
+            <MudTextField @bind-Value="model.Email"
+                         Label="Email"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Email"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true" />
+            
+            <MudTextField @bind-Value="model.Password"
+                         Label="Password"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Password"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true"
+                         HelperText="Minimum 8 characters" />
+            
+            <MudTextField @bind-Value="model.ConfirmPassword"
+                         Label="Confirm Password"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Password"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true" />
+            
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-4">
+                    @errorMessage
+                </MudAlert>
+            }
+            
+            <MudButton ButtonType="ButtonType.Submit"
+                      Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      FullWidth="true"
+                      Size="Size.Large"
+                      Class="mt-6"
+                      Disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <MudText>Creating account...</MudText>
+                }
+                else
+                {
+                    <MudText>Create Account</MudText>
+                }
+            </MudButton>
+        </EditForm>
+        
+        <MudDivider Class="my-6" />
+        
+        <MudStack Row="true" Justify="Justify.Center">
+            <MudText>Already have an account?</MudText>
+            <MudLink Href="/login">Login</MudLink>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private RegisterModel model = new();
+    private bool isLoading = false;
+    private string? errorMessage;
+    
+    private async Task HandleRegisterAsync()
+    {
+        if (model.Password != model.ConfirmPassword)
+        {
+            errorMessage = "Passwords do not match.";
+            return;
+        }
+        
+        isLoading = true;
+        errorMessage = null;
+        
+        try
+        {
+            var result = await AuthService.RegisterAsync(model.Email, model.Password, model.UserName);
+            
+            if (result.Success)
+            {
+                Snackbar.Add("Registration successful! Please login.", Severity.Success);
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Registration failed. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private class RegisterModel
+    {
+        public string UserName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}
