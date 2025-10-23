@@ -1,40 +1,122 @@
-﻿@page "/weather"
+@page "/weather"
 @inject HttpClient Http
 
 <PageTitle>Weather</PageTitle>
 
-<h1>Weather</h1>
+<MudText Typo="Typo.h3" GutterBottom="true">Weather Forecast</MudText>
 
-<p>This component demonstrates fetching data from the server.</p>
+<MudPaper Elevation="2" Class="pa-4">
+    <MudText Typo="Typo.body1" Class="mb-4">
+        This component demonstrates fetching data from the server.
+    </MudText>
 
-@if (forecasts == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th aria-label="Temperature in Celsius">Temp. (C)</th>
-                <th aria-label="Temperature in Farenheit">Temp. (F)</th>
-                <th>Summary</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var forecast in forecasts)
-            {
-                <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+    @if (forecasts == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        <MudText Typo="Typo.body1" Align="Align.Center">
+            <MudIcon Icon="@Icons.Material.Filled.Cloud" Class="mr-2" />
+            Loading weather data...
+        </MudText>
+    }
+    else
+    {
+        <MudTable Items="@forecasts" Hover="true" Striped="true" Dense="true" Elevation="0">
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<WeatherForecast, object>(x => x.Date)">
+                        Date
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<WeatherForecast, object>(x => x.TemperatureC)">
+                        Temp. (°C)
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<WeatherForecast, object>(x => x.TemperatureF)">
+                        Temp. (°F)
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<WeatherForecast, object>(x => x.Summary ?? string.Empty)">
+                        Summary
+                    </MudTableSortLabel>
+                </MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Date">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-2" />
+                    @context.Date.ToShortDateString()
+                </MudTd>
+                <MudTd DataLabel="Temp. (C)">
+                    <MudChip Size="Size.Small" Color="@GetTemperatureColor(context.TemperatureC)">
+                        @context.TemperatureC°C
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Temp. (F)">
+                    <MudChip Size="Size.Small" Color="@GetTemperatureColor(context.TemperatureC)">
+                        @context.TemperatureF°F
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Summary">
+                    <MudIcon Icon="@GetWeatherIcon(context.Summary)" Size="Size.Small" Class="mr-2" />
+                    @context.Summary
+                </MudTd>
+                <MudTd DataLabel="Status">
+                    @if (context.TemperatureC < 0)
+                    {
+                        <MudChip Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.AcUnit">Cold</MudChip>
+                    }
+                    else if (context.TemperatureC > 25)
+                    {
+                        <MudChip Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.WbSunny">Hot</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.Check">Mild</MudChip>
+                    }
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 25, 50 }" />
+            </PagerContent>
+        </MudTable>
+
+        <MudGrid Class="mt-4">
+            <MudItem xs="12" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Average Temperature</MudText>
+                        <MudText Typo="Typo.h3" Color="Color.Primary">
+                            @($"{forecasts.Average(f => f.TemperatureC):F1}°C")
+                        </MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Hottest Day</MudText>
+                        <MudText Typo="Typo.h3" Color="Color.Error">
+                            @($"{forecasts.Max(f => f.TemperatureC)}°C")
+                        </MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Coldest Day</MudText>
+                        <MudText Typo="Typo.h3" Color="Color.Info">
+                            @($"{forecasts.Min(f => f.TemperatureC)}°C")
+                        </MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
+</MudPaper>
 
 @code {
     private WeatherForecast[]? forecasts;
@@ -42,6 +124,31 @@ else
     protected override async Task OnInitializedAsync()
     {
         forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
+    }
+
+    private Color GetTemperatureColor(int tempC)
+    {
+        return tempC switch
+        {
+            < 0 => Color.Info,
+            < 10 => Color.Primary,
+            < 20 => Color.Success,
+            < 30 => Color.Warning,
+            _ => Color.Error
+        };
+    }
+
+    private string GetWeatherIcon(string? summary)
+    {
+        return summary?.ToLower() switch
+        {
+            var s when s?.Contains("sun") == true => Icons.Material.Filled.WbSunny,
+            var s when s?.Contains("rain") == true => Icons.Material.Filled.WaterDrop,
+            var s when s?.Contains("snow") == true => Icons.Material.Filled.AcUnit,
+            var s when s?.Contains("cloud") == true => Icons.Material.Filled.Cloud,
+            var s when s?.Contains("storm") == true => Icons.Material.Filled.Thunderstorm,
+            _ => Icons.Material.Filled.Cloud
+        };
     }
 
     public class WeatherForecast

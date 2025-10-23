@@ -10,6 +10,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.10" PrivateAssets="all" />
+    <PackageReference Include="MudBlazor" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Archu.Ui\Archu.Ui.csproj" />
+    <ProjectReference Include="..\Archu.ApiClient\Archu.ApiClient.csproj" />
+    <ProjectReference Include="..\Archu.Contracts\Archu.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

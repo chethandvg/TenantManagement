@@ -1,18 +1,123 @@
-﻿@page "/counter"
+@page "/counter"
 
 <PageTitle>Counter</PageTitle>
 
-<h1>Counter</h1>
+<MudText Typo="Typo.h3" GutterBottom="true">Counter</MudText>
 
-<p role="status">Current count: @currentCount</p>
-
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<MudPaper Elevation="2" Class="pa-4">
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h5" Align="Align.Center">Current Count</MudText>
+                    <MudText Typo="Typo.h2" Align="Align.Center" Color="Color.Primary" Class="my-4">
+                        @currentCount
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions Class="d-flex justify-center pb-4">
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              StartIcon="@Icons.Material.Filled.Add"
+                              OnClick="IncrementCount"
+                              Size="Size.Large">
+                        Increment
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Secondary" 
+                              StartIcon="@Icons.Material.Filled.Remove"
+                              OnClick="DecrementCount"
+                              Size="Size.Large"
+                              Disabled="@(currentCount <= 0)">
+                        Decrement
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Error" 
+                              StartIcon="@Icons.Material.Filled.Refresh"
+                              OnClick="ResetCount"
+                              Size="Size.Large">
+                        Reset
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" GutterBottom="true">Counter Statistics</MudText>
+                    <MudList Dense="true">
+                        <MudListItem Icon="@Icons.Material.Filled.TrendingUp">
+                            <MudText>Total Increments: @totalIncrements</MudText>
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.TrendingDown">
+                            <MudText>Total Decrements: @totalDecrements</MudText>
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.TouchApp">
+                            <MudText>Total Clicks: @(totalIncrements + totalDecrements)</MudText>
+                        </MudListItem>
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+            
+            <MudCard Class="mt-4">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" GutterBottom="true">Quick Actions</MudText>
+                    <MudButton Variant="Variant.Text" 
+                              Color="Color.Primary" 
+                              OnClick="@(() => AddAmount(5))"
+                              FullWidth="true"
+                              Class="mb-2">
+                        Add 5
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" 
+                              Color="Color.Primary" 
+                              OnClick="@(() => AddAmount(10))"
+                              FullWidth="true"
+                              Class="mb-2">
+                        Add 10
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" 
+                              Color="Color.Primary" 
+                              OnClick="@(() => AddAmount(100))"
+                              FullWidth="true">
+                        Add 100
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
 
 @code {
     private int currentCount = 0;
+    private int totalIncrements = 0;
+    private int totalDecrements = 0;
 
     private void IncrementCount()
     {
         currentCount++;
+        totalIncrements++;
+    }
+    
+    private void DecrementCount()
+    {
+        if (currentCount > 0)
+        {
+            currentCount--;
+            totalDecrements++;
+        }
+    }
+    
+    private void ResetCount()
+    {
+        currentCount = 0;
+        totalIncrements = 0;
+        totalDecrements = 0;
+    }
+    
+    private void AddAmount(int amount)
+    {
+        currentCount += amount;
+        totalIncrements++;
     }
 }
