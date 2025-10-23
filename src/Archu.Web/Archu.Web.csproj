@@ -15,8 +15,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\src\Archu.ApiClient\Archu.ApiClient.csproj" />
-		<ProjectReference Include="..\src\Archu.Contracts\Archu.Contracts.csproj" />
+	  <ProjectReference Include="..\Archu.ApiClient\Archu.ApiClient.csproj" />
 	</ItemGroup>
 	
 </Project>
