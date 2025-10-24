@@ -37,30 +37,39 @@ public partial class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves all active products from the catalog.
+    /// Retrieves all active products from the catalog with pagination.
     /// </summary>
     /// <remarks>
     /// Accessible by all authenticated users (User, Manager, Admin roles).
     /// Demonstrates basic read access for all user roles.
     /// </remarks>
+    /// <param name="pageNumber">The page number (1-based, defaults to 1).</param>
+    /// <param name="pageSize">The page size (defaults to 10, max 100).</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>A standardized API response containing the list of products.</returns>
-    /// <response code="200">Returns the list of products.</response>
+    /// <returns>A standardized API response containing the paginated list of products.</returns>
+    /// <response code="200">Returns the paginated list of products.</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="403">If the user doesn't have the required role or permission.</response>
     [HttpGet]
     [Authorize(Policy = PolicyNames.Products.View)]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProductDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<ApiResponse<IEnumerable<ProductDto>>>> GetProducts(CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<PagedResult<ProductDto>>>> GetProducts(
+        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
+        // Enforce max page size
+        if (pageSize > 100) pageSize = 100;
+        if (pageNumber < 1) pageNumber = 1;
+
         LogRetrievingProducts();
 
-        var products = await _mediator.Send(new GetProductsQuery(), cancellationToken);
+        var pagedResult = await _mediator.Send(new GetProductsQuery(pageNumber, pageSize), cancellationToken);
 
-        LogProductsRetrieved(products.Count());
-        return Ok(ApiResponse<IEnumerable<ProductDto>>.Ok(products, "Products retrieved successfully"));
+        LogProductsRetrieved(pagedResult.Items.Count(), pagedResult.TotalCount);
+        return Ok(ApiResponse<PagedResult<ProductDto>>.Ok(pagedResult, "Products retrieved successfully"));
     }
 
     /// <summary>
@@ -227,11 +236,11 @@ public partial class ProductsController : ControllerBase
 
     #region Logging
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Retrieving all products")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Retrieving products with pagination")]
     private partial void LogRetrievingProducts();
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Retrieved {Count} products")]
-    private partial void LogProductsRetrieved(int count);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Retrieved {Count} products out of {TotalCount} total")]
+    private partial void LogProductsRetrieved(int count, int totalCount);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Retrieving product with ID {ProductId}")]
     private partial void LogRetrievingProduct(Guid productId);

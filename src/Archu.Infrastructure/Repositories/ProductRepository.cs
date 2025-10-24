@@ -22,6 +22,21 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = DbSet.AsNoTracking();
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(p => p.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task<IEnumerable<Product>> GetByOwnerIdAsync(Guid ownerId, CancellationToken cancellationToken = default)
     {
         return await DbSet

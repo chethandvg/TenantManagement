@@ -364,6 +364,9 @@ namespace Archu.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -377,6 +380,8 @@ namespace Archu.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Products", (string)null);
                 });
@@ -420,6 +425,15 @@ namespace Archu.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Archu.Domain.Entities.Product", b =>
+                {
+                    b.HasOne("Archu.Domain.Entities.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Archu.Domain.Entities.Identity.ApplicationRole", b =>

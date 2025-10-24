@@ -1,4 +1,5 @@
 using Archu.Application.Abstractions;
+using Archu.Contracts.Common;
 using Archu.Contracts.Products;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -6,9 +7,9 @@ using Microsoft.Extensions.Logging;
 namespace Archu.Application.Products.Queries.GetProducts;
 
 /// <summary>
-/// Handles retrieving all active products.
+/// Handles retrieving paginated active products.
 /// </summary>
-public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, IEnumerable<ProductDto>>
+public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedResult<ProductDto>>
 {
     private readonly IProductRepository _repository;
     private readonly ILogger<GetProductsQueryHandler> _logger;
@@ -21,11 +22,11 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, IEnumer
         _logger = logger;
     }
 
-    public async Task<IEnumerable<ProductDto>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<ProductDto>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Retrieving all products");
+        _logger.LogInformation("Retrieving products - Page {PageNumber}, Size {PageSize}", request.PageNumber, request.PageSize);
 
-        var products = await _repository.GetAllAsync(cancellationToken);
+        var (products, totalCount) = await _repository.GetPagedAsync(request.PageNumber, request.PageSize, cancellationToken);
 
         var productDtos = products.Select(p => new ProductDto
         {
@@ -35,8 +36,8 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, IEnumer
             RowVersion = p.RowVersion
         }).ToList();
 
-        _logger.LogInformation("Retrieved {Count} products", productDtos.Count);
+        _logger.LogInformation("Retrieved {Count} products out of {TotalCount} total", productDtos.Count, totalCount);
 
-        return productDtos;
+        return PagedResult<ProductDto>.Create(productDtos, request.PageNumber, request.PageSize, totalCount);
     }
 }

@@ -16,6 +16,15 @@ public interface IProductRepository
     Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves a paginated list of active products from the catalog.
+    /// </summary>
+    /// <param name="pageNumber">The page number (1-based).</param>
+    /// <param name="pageSize">The page size.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A tuple containing the products and the total count.</returns>
+    Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Retrieves all products owned by a specific user.
     /// </summary>
     /// <param name="ownerId">The ID of the user who owns the products.</param>

@@ -20,7 +20,7 @@ public sealed class ProductsApiClient : ApiClientServiceBase, IProductsApiClient
     }
 
     /// <inheritdoc/>
-    protected override string BasePath => "api/products";
+    protected override string BasePath => "api/v1/products";
 
     /// <inheritdoc/>
     public Task<ApiResponse<PagedResult<ProductDto>>> GetProductsAsync(
