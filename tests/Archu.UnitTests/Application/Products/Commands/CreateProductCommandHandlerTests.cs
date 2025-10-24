@@ -34,6 +34,11 @@ public class CreateProductCommandHandlerTests
             .Callback<Product, CancellationToken>((p, _) => capturedProduct = p)
             .ReturnsAsync((Product p, CancellationToken _) => p);
 
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
         var command = new CreateProductCommand(productName, productPrice);
 
         // Act
@@ -92,6 +97,11 @@ public class CreateProductCommandHandlerTests
             .Callback<Product, CancellationToken>((p, _) => capturedProduct = p)
             .ReturnsAsync((Product p, CancellationToken _) => p);
 
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
         var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act
@@ -126,6 +136,11 @@ public class CreateProductCommandHandlerTests
                 return p;
             });
 
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
         var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act
@@ -140,6 +155,7 @@ public class CreateProductCommandHandlerTests
 
     [Theory, AutoMoqData]
     public async Task Handle_RespectsCancellationToken(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
         [Frozen] Mock<IProductRepository> mockProductRepository,
         [Frozen] Mock<ICurrentUser> mockCurrentUser,
         CreateProductCommandHandler handler)
@@ -153,7 +169,14 @@ public class CreateProductCommandHandlerTests
 
         mockProductRepository
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new OperationCanceledException());
+            .Callback<Product, CancellationToken>((p, ct) =>
+            {
+                if (ct.IsCancellationRequested)
+                    throw new OperationCanceledException();
+            })
+            .ReturnsAsync((Product p, CancellationToken _) => p);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -177,6 +200,7 @@ public class CreateProductCommandHandlerTests
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product p, CancellationToken _) => p);
 
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
         mockUnitOfWork
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));

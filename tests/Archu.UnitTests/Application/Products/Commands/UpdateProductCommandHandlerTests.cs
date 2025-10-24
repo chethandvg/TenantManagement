@@ -44,6 +44,11 @@ public class UpdateProductCommandHandlerTests
             .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
         var command = new UpdateProductCommand(
             existingProduct.Id,
             "Updated Name",
@@ -74,6 +79,7 @@ public class UpdateProductCommandHandlerTests
 
     [Theory, AutoMoqData]
     public async Task Handle_WhenProductNotFound_ReturnsFailure(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
         [Frozen] Mock<IProductRepository> mockProductRepository,
         [Frozen] Mock<ICurrentUser> mockCurrentUser,
         UpdateProductCommandHandler handler)
@@ -86,6 +92,8 @@ public class UpdateProductCommandHandlerTests
         mockProductRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
 
         var command = new UpdateProductCommand(
             productId,
@@ -104,6 +112,7 @@ public class UpdateProductCommandHandlerTests
 
     [Theory, AutoMoqData]
     public async Task Handle_WhenRowVersionMismatch_ReturnsFailure(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
         [Frozen] Mock<IProductRepository> mockProductRepository,
         [Frozen] Mock<ICurrentUser> mockCurrentUser,
         UpdateProductCommandHandler handler)
@@ -121,6 +130,8 @@ public class UpdateProductCommandHandlerTests
         mockProductRepository
             .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingProduct);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
@@ -176,8 +187,14 @@ public class UpdateProductCommandHandlerTests
             .ReturnsAsync(existingProduct);
 
         mockProductRepository
+            .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockProductRepository
             .Setup(r => r.ExistsAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
 
         // Simulate concurrency exception by throwing InvalidOperationException with specific message
         mockUnitOfWork
@@ -191,7 +208,7 @@ public class UpdateProductCommandHandlerTests
             originalRowVersion);
 
         // Act & Assert
-        // The handler catches generic exceptions from SaveChangesAsync
+        // The handler does not catch generic InvalidOperationException, so it should be thrown
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => handler.Handle(command, CancellationToken.None));
     }
@@ -222,6 +239,11 @@ public class UpdateProductCommandHandlerTests
             .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
             .Callback<Product, byte[], CancellationToken>((p, _, __) => updatedProduct = p)
             .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
 
         var command = new UpdateProductCommand(
             existingProduct.Id,

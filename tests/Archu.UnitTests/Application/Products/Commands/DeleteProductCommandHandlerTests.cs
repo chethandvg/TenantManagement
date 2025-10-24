@@ -39,6 +39,11 @@ public class DeleteProductCommandHandlerTests
             .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -59,6 +64,7 @@ public class DeleteProductCommandHandlerTests
 
     [Theory, AutoMoqData]
     public async Task Handle_WhenProductNotFound_ReturnsFailure(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
         [Frozen] Mock<IProductRepository> mockProductRepository,
         [Frozen] Mock<ICurrentUser> mockCurrentUser,
         DeleteProductCommandHandler handler)
@@ -71,6 +77,8 @@ public class DeleteProductCommandHandlerTests
         mockProductRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
 
         var command = new DeleteProductCommand(productId);
 
@@ -122,6 +130,11 @@ public class DeleteProductCommandHandlerTests
             .Callback<Product, CancellationToken>((p, _) => deletedProduct = p)
             .Returns(Task.CompletedTask);
 
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -134,6 +147,7 @@ public class DeleteProductCommandHandlerTests
 
     [Theory, AutoMoqData]
     public async Task Handle_RespectsCancellationToken(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
         [Frozen] Mock<IProductRepository> mockProductRepository,
         [Frozen] Mock<ICurrentUser> mockCurrentUser,
         DeleteProductCommandHandler handler)
@@ -148,6 +162,8 @@ public class DeleteProductCommandHandlerTests
         mockProductRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
 
         var command = new DeleteProductCommand(Guid.NewGuid());
 
@@ -177,6 +193,7 @@ public class DeleteProductCommandHandlerTests
             .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
         mockUnitOfWork
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
@@ -190,6 +207,7 @@ public class DeleteProductCommandHandlerTests
 
     [Theory, AutoMoqData]
     public async Task Handle_DoesNotCallDeleteAsync_WhenProductNotFound(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
         [Frozen] Mock<IProductRepository> mockProductRepository,
         [Frozen] Mock<ICurrentUser> mockCurrentUser,
         DeleteProductCommandHandler handler)
@@ -202,6 +220,8 @@ public class DeleteProductCommandHandlerTests
         mockProductRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
 
         var command = new DeleteProductCommand(productId);
 
