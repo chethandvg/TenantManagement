@@ -420,7 +420,7 @@ public class AuthenticationController : ControllerBase
         {
             AccessToken = result.AccessToken,
             RefreshToken = result.RefreshToken,
-            ExpiresIn = (int)(result.AccessTokenExpiresAt - DateTime.UtcNow).TotalSeconds,
+            ExpiresIn = Math.Max(0, (int)(result.AccessTokenExpiresAt - DateTime.UtcNow).TotalSeconds),
             TokenType = result.TokenType,
             User = new UserInfoDto
             {
