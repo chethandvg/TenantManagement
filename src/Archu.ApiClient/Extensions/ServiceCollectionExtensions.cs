@@ -186,11 +186,12 @@ public static class ServiceCollectionExtensions
         ApiClientOptions options,
         AuthenticationOptions authOptions)
     {
-        // Configure Products API Client
-        ConfigureHttpClient<IProductsApiClient, ProductsApiClient>(services, options, authOptions);
+        // Configure Products API Client (requires authentication)
+        ConfigureHttpClient<IProductsApiClient, ProductsApiClient>(services, options, authOptions, useAuthHandler: true);
         
-        // Configure Authentication API Client (no auth handler needed for login/register)
-        ConfigureHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(services, options, authOptions, useAuthHandler: false);
+        // Configure Authentication API Client
+        // The implementation will handle token attachment internally based on endpoint
+        ConfigureHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(services, options, authOptions, useAuthHandler: true);
     }
 
     /// <summary>
@@ -232,6 +233,8 @@ public static class ServiceCollectionExtensions
         }
 
         // Add authentication handler if enabled and requested
+        // For AuthenticationApiClient, the handler will intelligently skip token attachment
+        // for unauthenticated endpoints (login/register/refresh/forgot-password/reset-password/confirm-email)
         if (useAuthHandler && authOptions.AutoAttachToken)
         {
             httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();

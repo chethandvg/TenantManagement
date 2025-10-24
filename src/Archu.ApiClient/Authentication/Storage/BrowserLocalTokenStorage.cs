@@ -91,7 +91,9 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
         try
         {
             var token = await GetTokenAsync(cancellationToken);
-            return token != null && !token.IsExpired();
+            // Only check for existence, not expiration
+            // Expiration should be validated separately when token is actually used
+            return token != null;
         }
         catch
         {
