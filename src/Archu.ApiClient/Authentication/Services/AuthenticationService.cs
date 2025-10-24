@@ -1,6 +1,8 @@
 using Archu.ApiClient.Authentication.Models;
 using Archu.ApiClient.Authentication.Providers;
 using Archu.ApiClient.Exceptions;
+using Archu.ApiClient.Services;
+using Archu.Contracts.Authentication;
 using Microsoft.Extensions.Logging;
 
 namespace Archu.ApiClient.Authentication.Services;
@@ -13,7 +15,12 @@ public interface IAuthenticationService
     /// <summary>
     /// Authenticates a user with username and password.
     /// </summary>
-    Task<AuthenticationResult> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
+    Task<AuthenticationResult> LoginAsync(string email, string password, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Registers a new user account.
+    /// </summary>
+    Task<AuthenticationResult> RegisterAsync(string email, string password, string userName, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Logs out the current user.
@@ -76,67 +83,144 @@ public sealed record AuthenticationResult
 public sealed class AuthenticationService : IAuthenticationService
 {
     private readonly ITokenManager _tokenManager;
+    private readonly IAuthenticationApiClient _authApiClient;
     private readonly ApiAuthenticationStateProvider? _authStateProvider;
     private readonly ILogger<AuthenticationService> _logger;
-    // TODO: Add HttpClient for making authentication API calls
-    // private readonly HttpClient _httpClient;
 
     public AuthenticationService(
         ITokenManager tokenManager,
+        IAuthenticationApiClient authApiClient,
         ILogger<AuthenticationService> logger,
         ApiAuthenticationStateProvider? authStateProvider = null)
     {
         _tokenManager = tokenManager;
+        _authApiClient = authApiClient;
         _logger = logger;
         _authStateProvider = authStateProvider;
     }
 
     /// <inheritdoc/>
     public async Task<AuthenticationResult> LoginAsync(
-        string username,
+        string email,
         string password,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            _logger.LogInformation("Attempting to authenticate user: {Username}", username);
+            _logger.LogInformation("Attempting to authenticate user: {Email}", email);
 
-            // TODO: Make actual HTTP call to authentication endpoint
-            // var response = await _httpClient.PostAsJsonAsync(
-            //     "api/auth/login",
-            //     new { username, password },
-            //     cancellationToken);
-            //
-            // if (!response.IsSuccessStatusCode)
-            // {
-            //     var error = await response.Content.ReadAsStringAsync(cancellationToken);
-            //     return AuthenticationResult.Failed($"Authentication failed: {error}");
-            // }
-            //
-            // var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken);
+            var loginRequest = new LoginRequest
+            {
+                Email = email,
+                Password = password
+            };
 
-            // Placeholder implementation
-            _logger.LogWarning("Login method requires HTTP client implementation to call authentication API");
-            throw new NotImplementedException(
-                "LoginAsync requires HTTP client to make API calls to authentication endpoint. " +
-                "Inject HttpClient and implement the API call.");
+            var response = await _authApiClient.LoginAsync(loginRequest, cancellationToken);
 
-            // After successful API call:
-            // await _tokenManager.StoreTokenAsync(tokenResponse, cancellationToken);
-            // var authState = await _tokenManager.GetAuthenticationStateAsync(cancellationToken);
-            // _authStateProvider?.NotifyAuthenticationStateChanged();
-            // _logger.LogInformation("User authenticated successfully: {Username}", username);
-            // return AuthenticationResult.Succeeded(authState);
+            if (!response.Success || response.Data == null)
+            {
+                var errorMessage = response.Message ?? "Login failed";
+                _logger.LogWarning("Authentication failed for user: {Email} - {Error}", email, errorMessage);
+                return AuthenticationResult.Failed(errorMessage);
+            }
+
+            var authResponse = response.Data;
+
+            // Store the tokens
+            var tokenResponse = new TokenResponse
+            {
+                AccessToken = authResponse.AccessToken,
+                RefreshToken = authResponse.RefreshToken,
+                ExpiresIn = authResponse.ExpiresIn
+            };
+
+            await _tokenManager.StoreTokenAsync(tokenResponse, cancellationToken);
+
+            // Get authentication state from stored token
+            var authState = await _tokenManager.GetAuthenticationStateAsync(cancellationToken);
+
+            // Notify the authentication state provider
+            if (_authStateProvider != null)
+            {
+                await _authStateProvider.MarkUserAsAuthenticatedAsync(authState.UserName ?? email);
+            }
+
+            _logger.LogInformation("User authenticated successfully: {Email}", email);
+            return AuthenticationResult.Succeeded(authState);
         }
         catch (AuthorizationException ex)
         {
-            _logger.LogWarning(ex, "Authentication failed for user: {Username}", username);
-            return AuthenticationResult.Failed("Invalid username or password");
+            _logger.LogWarning(ex, "Authentication failed for user: {Email}", email);
+            return AuthenticationResult.Failed("Invalid email or password");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during authentication for user: {Username}", username);
+            _logger.LogError(ex, "Error during authentication for user: {Email}", email);
             return AuthenticationResult.Failed("An error occurred during authentication");
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<AuthenticationResult> RegisterAsync(
+        string email,
+        string password,
+        string userName,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Attempting to register user: {Email}", email);
+
+            var registerRequest = new RegisterRequest
+            {
+                Email = email,
+                Password = password,
+                UserName = userName
+            };
+
+            var response = await _authApiClient.RegisterAsync(registerRequest, cancellationToken);
+
+            if (!response.Success || response.Data == null)
+            {
+                var errorMessage = response.Message ?? "Registration failed";
+                _logger.LogWarning("Registration failed for user: {Email} - {Error}", email, errorMessage);
+                return AuthenticationResult.Failed(errorMessage);
+            }
+
+            var authResponse = response.Data;
+
+            // Store the tokens
+            var tokenResponse = new TokenResponse
+            {
+                AccessToken = authResponse.AccessToken,
+                RefreshToken = authResponse.RefreshToken,
+                ExpiresIn = authResponse.ExpiresIn
+            };
+
+            await _tokenManager.StoreTokenAsync(tokenResponse, cancellationToken);
+
+            // Get authentication state from stored token
+            var authState = await _tokenManager.GetAuthenticationStateAsync(cancellationToken);
+
+            // Notify the authentication state provider
+            if (_authStateProvider != null)
+            {
+                await _authStateProvider.MarkUserAsAuthenticatedAsync(authState.UserName ?? email);
+            }
+
+            _logger.LogInformation("User registered successfully: {Email}", email);
+            return AuthenticationResult.Succeeded(authState);
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning(ex, "Registration validation failed for user: {Email}", email);
+            var errorMessage = string.Join(", ", ex.Errors);
+            return AuthenticationResult.Failed(errorMessage);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during registration for user: {Email}", email);
+            return AuthenticationResult.Failed("An error occurred during registration");
         }
     }
 
@@ -147,8 +231,21 @@ public sealed class AuthenticationService : IAuthenticationService
         {
             _logger.LogInformation("Logging out user");
 
+            // Call logout endpoint (will fail if not authenticated, but that's okay)
+            try
+            {
+                await _authApiClient.LogoutAsync(cancellationToken);
+            }
+            catch (AuthorizationException)
+            {
+                // User not authenticated on server, but we still want to clear local tokens
+                _logger.LogDebug("Logout API call failed (user not authenticated), clearing local tokens");
+            }
+
+            // Remove local tokens
             await _tokenManager.RemoveTokenAsync(cancellationToken);
 
+            // Notify the authentication state provider
             if (_authStateProvider != null)
             {
                 await _authStateProvider.MarkUserAsLoggedOutAsync();
@@ -170,33 +267,48 @@ public sealed class AuthenticationService : IAuthenticationService
         {
             _logger.LogInformation("Attempting to refresh authentication token");
 
-            // TODO: Implement token refresh logic
             // Get current token with refresh token
-            // Make API call to refresh endpoint
-            // Store new token
+            var currentToken = await _tokenManager.GetStoredTokenAsync(cancellationToken);
+            if (currentToken?.RefreshToken == null)
+            {
+                _logger.LogWarning("No refresh token available");
+                return AuthenticationResult.Failed("No refresh token available");
+            }
 
-            _logger.LogWarning("Token refresh requires implementation");
-            throw new NotImplementedException(
-                "RefreshTokenAsync requires HTTP client to make API calls to refresh token endpoint. " +
-                "Implement the refresh token logic based on your authentication API.");
+            var refreshRequest = new RefreshTokenRequest
+            {
+                RefreshToken = currentToken.RefreshToken
+            };
 
-            // Placeholder for expected implementation:
-            // var currentToken = await _tokenStorage.GetTokenAsync(cancellationToken);
-            // if (currentToken?.RefreshToken == null)
-            // {
-            //     return AuthenticationResult.Failed("No refresh token available");
-            // }
-            //
-            // var response = await _httpClient.PostAsJsonAsync(
-            //     "api/auth/refresh",
-            //     new { refreshToken = currentToken.RefreshToken },
-            //     cancellationToken);
-            //
-            // var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken);
-            // await _tokenManager.StoreTokenAsync(tokenResponse, cancellationToken);
-            // var authState = await _tokenManager.GetAuthenticationStateAsync(cancellationToken);
-            // _authStateProvider?.NotifyAuthenticationStateChanged();
-            // return AuthenticationResult.Succeeded(authState);
+            var response = await _authApiClient.RefreshTokenAsync(refreshRequest, cancellationToken);
+
+            if (!response.Success || response.Data == null)
+            {
+                var errorMessage = response.Message ?? "Token refresh failed";
+                _logger.LogWarning("Token refresh failed: {Error}", errorMessage);
+                return AuthenticationResult.Failed(errorMessage);
+            }
+
+            var authResponse = response.Data;
+
+            // Store the new tokens
+            var tokenResponse = new TokenResponse
+            {
+                AccessToken = authResponse.AccessToken,
+                RefreshToken = authResponse.RefreshToken,
+                ExpiresIn = authResponse.ExpiresIn
+            };
+
+            await _tokenManager.StoreTokenAsync(tokenResponse, cancellationToken);
+
+            // Get authentication state from stored token
+            var authState = await _tokenManager.GetAuthenticationStateAsync(cancellationToken);
+
+            // Notify the authentication state provider
+            _authStateProvider?.NotifyAuthenticationStateChanged();
+
+            _logger.LogInformation("Token refreshed successfully");
+            return AuthenticationResult.Succeeded(authState);
         }
         catch (Exception ex)
         {

@@ -65,7 +65,7 @@ public class AuthenticationController : ControllerBase
     /// <response code="400">Validation failed or user already exists.</response>
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<AuthenticationResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthenticationResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request,
@@ -85,8 +85,9 @@ public class AuthenticationController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail(result.Error!));
         }
 
+        var response = MapToAuthenticationResponse(result.Value!);
         _logger.LogInformation("User registered successfully: {Email}", request.Email);
-        return Ok(ApiResponse<AuthenticationResult>.Ok(result.Value!, "Registration successful"));
+        return Ok(ApiResponse<AuthenticationResponse>.Ok(response, "Registration successful"));
     }
 
     /// <summary>
@@ -111,7 +112,7 @@ public class AuthenticationController : ControllerBase
     /// <response code="401">Invalid credentials.</response>
     [HttpPost("login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<AuthenticationResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthenticationResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request,
@@ -130,8 +131,9 @@ public class AuthenticationController : ControllerBase
             return Unauthorized(ApiResponse<object>.Fail(result.Error!));
         }
 
+        var response = MapToAuthenticationResponse(result.Value!);
         _logger.LogInformation("User logged in successfully: {Email}", request.Email);
-        return Ok(ApiResponse<AuthenticationResult>.Ok(result.Value!, "Login successful"));
+        return Ok(ApiResponse<AuthenticationResponse>.Ok(response, "Login successful"));
     }
 
     /// <summary>
@@ -156,7 +158,7 @@ public class AuthenticationController : ControllerBase
     /// <response code="401">Invalid or expired refresh token.</response>
     [HttpPost("refresh-token")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<AuthenticationResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AuthenticationResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken(
         [FromBody] RefreshTokenRequest request,
@@ -174,8 +176,9 @@ public class AuthenticationController : ControllerBase
             return Unauthorized(ApiResponse<object>.Fail(result.Error!));
         }
 
+        var response = MapToAuthenticationResponse(result.Value!);
         _logger.LogDebug("Token refreshed successfully");
-        return Ok(ApiResponse<AuthenticationResult>.Ok(result.Value!, "Token refreshed successfully"));
+        return Ok(ApiResponse<AuthenticationResponse>.Ok(response, "Token refreshed successfully"));
     }
 
     /// <summary>
@@ -409,5 +412,24 @@ public class AuthenticationController : ControllerBase
 
         _logger.LogInformation("Email confirmed successfully for user: {UserId}", request.UserId);
         return Ok(ApiResponse<object>.Ok(new { }, "Email confirmed successfully"));
+    }
+
+    private static AuthenticationResponse MapToAuthenticationResponse(AuthenticationResult result)
+    {
+        return new AuthenticationResponse
+        {
+            AccessToken = result.AccessToken,
+            RefreshToken = result.RefreshToken,
+            ExpiresIn = Math.Max(0, (int)(result.AccessTokenExpiresAt - DateTime.UtcNow).TotalSeconds),
+            TokenType = result.TokenType,
+            User = new UserInfoDto
+            {
+                Id = result.User.Id,
+                UserName = result.User.UserName,
+                Email = result.User.Email,
+                EmailConfirmed = result.User.EmailConfirmed,
+                Roles = result.User.Roles
+            }
+        };
     }
 }

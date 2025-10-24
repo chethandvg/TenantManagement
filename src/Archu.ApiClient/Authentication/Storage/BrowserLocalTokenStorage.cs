@@ -1,22 +1,25 @@
 using System.Text.Json;
 using Archu.ApiClient.Authentication.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace Archu.ApiClient.Authentication.Storage;
 
 /// <summary>
 /// Browser local storage implementation for token storage (suitable for Blazor WebAssembly).
-/// This is a placeholder - actual implementation requires JavaScript interop.
+/// Uses JavaScript interop to store tokens in browser's localStorage.
 /// </summary>
 public sealed class BrowserLocalTokenStorage : ITokenStorage
 {
     private const string StorageKey = "archu_auth_token";
+    private readonly IJSRuntime _jsRuntime;
     private readonly ILogger<BrowserLocalTokenStorage> _logger;
-    // In real implementation, inject IJSRuntime for JavaScript interop
-    // private readonly IJSRuntime _jsRuntime;
 
-    public BrowserLocalTokenStorage(ILogger<BrowserLocalTokenStorage> logger)
+    public BrowserLocalTokenStorage(
+        IJSRuntime jsRuntime,
+        ILogger<BrowserLocalTokenStorage> logger)
     {
+        _jsRuntime = jsRuntime ?? throw new ArgumentNullException(nameof(jsRuntime));
         _logger = logger;
     }
 
@@ -26,15 +29,8 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
         try
         {
             var json = JsonSerializer.Serialize(token);
-            // In real implementation:
-            // await _jsRuntime.InvokeVoidAsync("localStorage.setItem", cancellationToken, StorageKey, json);
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
             _logger.LogDebug("Token stored in browser local storage");
-
-            // Placeholder for demonstration
-            await Task.CompletedTask;
-            throw new NotImplementedException(
-                "Browser storage requires JavaScript interop. " +
-                "Inject IJSRuntime and implement localStorage.setItem call.");
         }
         catch (Exception ex)
         {
@@ -48,19 +44,24 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
     {
         try
         {
-            // In real implementation:
-            // var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", cancellationToken, StorageKey);
-            // if (string.IsNullOrWhiteSpace(json))
-            //     return null;
-            // return JsonSerializer.Deserialize<StoredToken>(json);
+            var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", StorageKey);
 
-            _logger.LogDebug("Retrieving token from browser local storage");
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                _logger.LogDebug("No token found in browser local storage");
+                return null;
+            }
 
-            // Placeholder for demonstration
-            await Task.CompletedTask;
-            throw new NotImplementedException(
-                "Browser storage requires JavaScript interop. " +
-                "Inject IJSRuntime and implement localStorage.getItem call.");
+            var token = JsonSerializer.Deserialize<StoredToken>(json);
+            _logger.LogDebug("Token retrieved from browser local storage");
+            return token;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize token from browser local storage");
+            // Remove corrupted token
+            await RemoveTokenAsync(cancellationToken);
+            return null;
         }
         catch (Exception ex)
         {
@@ -74,15 +75,8 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
     {
         try
         {
-            // In real implementation:
-            // await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", cancellationToken, StorageKey);
+            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", StorageKey);
             _logger.LogDebug("Token removed from browser local storage");
-
-            // Placeholder for demonstration
-            await Task.CompletedTask;
-            throw new NotImplementedException(
-                "Browser storage requires JavaScript interop. " +
-                "Inject IJSRuntime and implement localStorage.removeItem call.");
         }
         catch (Exception ex)
         {
@@ -97,6 +91,8 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
         try
         {
             var token = await GetTokenAsync(cancellationToken);
+            // Only check for existence, not expiration
+            // Expiration should be validated separately when token is actually used
             return token != null;
         }
         catch

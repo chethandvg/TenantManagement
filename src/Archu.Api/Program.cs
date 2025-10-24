@@ -1,10 +1,8 @@
-using System.Text;
 using Archu.Api.Authorization;
 using Archu.Api.Health;
 using Archu.Api.Middleware;
 using Archu.Application.Common.Behaviors;
 using Archu.Infrastructure;
-using Archu.Infrastructure.Persistence;
 using Asp.Versioning;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -19,6 +17,20 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddHttpContextAccessor();
+
+if (builder.Environment.IsDevelopment())
+{
+    // ✅ Configure CORS for Blazor WebAssembly
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowBlazorWasm", policy =>
+        {
+            policy.AllowAnyOrigin() // Allow any origin in development
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+    });
+}
 
 // ✅ Use Infrastructure DependencyInjection extension
 // This registers:
@@ -335,6 +347,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ✅ Enable CORS - Must be before Authentication/Authorization
+app.UseCors("AllowBlazorWasm");
 
 // Authentication & Authorization Middleware (ORDER MATTERS!)
 app.UseAuthentication(); // First: Identify who you are

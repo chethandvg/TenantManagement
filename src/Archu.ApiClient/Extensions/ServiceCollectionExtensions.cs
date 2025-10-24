@@ -101,7 +101,7 @@ public static class ServiceCollectionExtensions
         var authOptions = ConfigureAuthentication(services, configuration, configureAuthentication);
 
         RegisterAuthenticationServices(services, authOptions, isWasm);
-        ConfigureHttpClient(services, options, authOptions);
+        ConfigureHttpClients(services, options, authOptions);
 
         return services;
     }
@@ -128,7 +128,7 @@ public static class ServiceCollectionExtensions
         }
 
         RegisterAuthenticationServices(services, authOptions, isWasm);
-        ConfigureHttpClient(services, options, authOptions);
+        ConfigureHttpClients(services, options, authOptions);
 
         return services;
     }
@@ -179,14 +179,33 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Configures the HttpClient with policies and handlers.
+    /// Configures the HttpClients with policies and handlers.
     /// </summary>
-    private static void ConfigureHttpClient(
+    private static void ConfigureHttpClients(
         IServiceCollection services,
         ApiClientOptions options,
         AuthenticationOptions authOptions)
     {
-        var httpClientBuilder = services.AddHttpClient<IProductsApiClient, ProductsApiClient>(client =>
+        // Configure Products API Client (requires authentication)
+        ConfigureHttpClient<IProductsApiClient, ProductsApiClient>(services, options, authOptions, useAuthHandler: true);
+        
+        // Configure Authentication API Client
+        // The implementation will handle token attachment internally based on endpoint
+        ConfigureHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(services, options, authOptions, useAuthHandler: true);
+    }
+
+    /// <summary>
+    /// Configures an individual HTTP client.
+    /// </summary>
+    private static void ConfigureHttpClient<TInterface, TImplementation>(
+        IServiceCollection services,
+        ApiClientOptions options,
+        AuthenticationOptions authOptions,
+        bool useAuthHandler = true)
+        where TInterface : class
+        where TImplementation : class, TInterface
+    {
+        var httpClientBuilder = services.AddHttpClient<TInterface, TImplementation>(client =>
         {
             client.BaseAddress = new Uri(options.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
@@ -200,7 +219,7 @@ public static class ServiceCollectionExtensions
                 GetRetryPolicy(
                     options.RetryCount,
                     options.RetryBaseDelaySeconds,
-                    serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+                    serviceProvider.GetRequiredService<ILogger<TImplementation>>()));
         }
 
         // Add circuit breaker if enabled
@@ -210,11 +229,13 @@ public static class ServiceCollectionExtensions
                 GetCircuitBreakerPolicy(
                     options.CircuitBreakerFailureThreshold,
                     options.CircuitBreakerDurationSeconds,
-                    serviceProvider.GetRequiredService<ILogger<ProductsApiClient>>()));
+                    serviceProvider.GetRequiredService<ILogger<TImplementation>>()));
         }
 
-        // Add authentication handler if enabled
-        if (authOptions.AutoAttachToken)
+        // Add authentication handler if enabled and requested
+        // For AuthenticationApiClient, the handler will intelligently skip token attachment
+        // for unauthenticated endpoints (login/register/refresh/forgot-password/reset-password/confirm-email)
+        if (useAuthHandler && authOptions.AutoAttachToken)
         {
             httpClientBuilder.AddHttpMessageHandler<AuthenticationMessageHandler>();
         }

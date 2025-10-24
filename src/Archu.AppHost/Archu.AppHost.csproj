@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAspireHost>true</IsAspireHost>
-    <UserSecretsId>e30cb29d-9170-442f-849f-76d74ea6d2d6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,8 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Archu.AdminApi\Archu.AdminApi.csproj" />
+    <ProjectReference Include="..\Archu.AdminApi\Archu.AdminApi.csproj" />
     <ProjectReference Include="..\Archu.Api\Archu.Api.csproj" />
+    <ProjectReference Include="..\Archu.Web\Archu.Web.csproj" />
   </ItemGroup>
 
 </Project>
