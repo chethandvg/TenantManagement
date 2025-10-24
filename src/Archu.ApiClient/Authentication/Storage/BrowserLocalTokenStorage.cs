@@ -45,7 +45,7 @@ public sealed class BrowserLocalTokenStorage : ITokenStorage
         try
         {
             var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", StorageKey);
-            
+
             if (string.IsNullOrWhiteSpace(json))
             {
                 _logger.LogDebug("No token found in browser local storage");

@@ -40,7 +40,7 @@ if (useDockerDatabase)
 else
 {
     // Using local SQL Server (connection string from appsettings.Development.json)
-    
+
     // Main API
     var api = builder.AddProject<Projects.Archu_Api>("api")
         // No .WithReference(sql) - API will use connection string from appsettings.Development.json

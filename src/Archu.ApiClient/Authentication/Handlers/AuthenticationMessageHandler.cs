@@ -14,14 +14,14 @@ public sealed class AuthenticationMessageHandler : DelegatingHandler
     private readonly ILogger<AuthenticationMessageHandler> _logger;
 
     // Endpoints that should NOT have authentication tokens attached
-    private static readonly HashSet<string> UnauthenticatedEndpoints = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> _unauthenticatedEndpoints = new(StringComparer.OrdinalIgnoreCase)
     {
-        "/register",
-        "/login",
-        "/refresh-token",
-        "/forgot-password",
-        "/reset-password",
-        "/confirm-email"
+        "register",
+        "login",
+        "refresh-token",
+        "forgot-password",
+        "reset-password",
+        "confirm-email"
     };
 
     public AuthenticationMessageHandler(
@@ -90,6 +90,7 @@ public sealed class AuthenticationMessageHandler : DelegatingHandler
 
     /// <summary>
     /// Determines if the request URI is for an unauthenticated authentication endpoint.
+    /// Uses O(1) HashSet lookup for optimal performance.
     /// </summary>
     private static bool IsUnauthenticatedEndpoint(Uri? requestUri)
     {
@@ -98,10 +99,18 @@ public sealed class AuthenticationMessageHandler : DelegatingHandler
             return false;
         }
 
-        var path = requestUri.AbsolutePath;
+        // Extract the last segment of the path (e.g., "/api/v1/authentication/login" -> "login")
+        var path = requestUri.AbsolutePath.TrimEnd('/');
+        var lastSlashIndex = path.LastIndexOf('/');
 
-        // Check if the path ends with any of the unauthenticated endpoints
-        return UnauthenticatedEndpoints.Any(endpoint =>
-            path.EndsWith(endpoint, StringComparison.OrdinalIgnoreCase));
+        if (lastSlashIndex < 0)
+        {
+            return false;
+        }
+
+        var endpoint = path.Substring(lastSlashIndex + 1);
+
+        // O(1) lookup in HashSet
+        return _unauthenticatedEndpoints.Contains(endpoint);
     }
 }
