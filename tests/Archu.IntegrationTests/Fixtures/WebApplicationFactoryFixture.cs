@@ -1,15 +1,15 @@
-using Archu.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Respawn;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Archu.Application.Abstractions;
+using Archu.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
+using Respawn;
 using Testcontainers.MsSql;
 using Xunit;
 
@@ -25,14 +25,19 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
     private string _connectionString = string.Empty;
     private const string TestJwtSecret = "ThisIsATestSecretKeyForJWTTokenGenerationWithAtLeast32Characters";
 
+    // Custom claim types to match the API authorization policies
+    private const string PermissionClaimType = "permission";
+
     public async Task InitializeAsync()
     {
         await _dbContainer.StartAsync();
         _connectionString = _dbContainer.GetConnectionString();
 
-        // Create database schema
+        // Wait for services to be fully configured
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        // Ensure database is created with migrations
         await dbContext.Database.MigrateAsync();
 
         // Initialize Respawner for database cleanup
@@ -45,11 +50,31 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Configure test JWT settings FIRST before Infrastructure registration
+        builder.ConfigureAppConfiguration((context, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Jwt:Secret"] = TestJwtSecret,
+                ["Jwt:Issuer"] = "TestIssuer",
+                ["Jwt:Audience"] = "TestAudience",
+                ["Jwt:AccessTokenExpirationMinutes"] = "60",
+                ["Jwt:RefreshTokenExpirationDays"] = "7"
+            });
+        });
+
         builder.ConfigureTestServices(services =>
         {
             // Remove existing DbContext registration
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.RemoveAll<ApplicationDbContext>();
+
+            // Register test implementations of ICurrentUser and ITimeProvider
+            services.RemoveAll<ICurrentUser>();
+            services.RemoveAll<ITimeProvider>();
+            
+            services.AddSingleton<ICurrentUser, TestCurrentUser>();
+            services.AddSingleton<ITimeProvider, TestTimeProvider>();
 
             // Add test database
             services.AddDbContext<ApplicationDbContext>(options =>
@@ -57,24 +82,22 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
                 options.UseSqlServer(_connectionString);
             });
 
-            // Configure test JWT settings
-            builder.ConfigureAppConfiguration((context, config) =>
+            // Override JWT Bearer authentication with test configuration
+            services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
             {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
+                var key = Encoding.UTF8.GetBytes(TestJwtSecret);
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ["Jwt:Secret"] = TestJwtSecret,
-                    ["Jwt:Issuer"] = "TestIssuer",
-                    ["Jwt:Audience"] = "TestAudience",
-                    ["Jwt:AccessTokenExpirationMinutes"] = "60",
-                    ["Jwt:RefreshTokenExpirationDays"] = "7"
-                });
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.FromMinutes(5),
+                    ValidIssuer = "TestIssuer",
+                    ValidAudience = "TestAudience",
+                    IssuerSigningKey = new SymmetricSecurityKey(key)
+                };
             });
-
-            // Ensure database is created
-            var serviceProvider = services.BuildServiceProvider();
-            using var scope = serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            dbContext.Database.EnsureCreated();
         });
     }
 
@@ -84,13 +107,13 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
     }
 
     /// <summary>
-    /// Generates a test JWT token for the specified role.
+    /// Generates a test JWT token for the specified role with appropriate permission claims.
     /// </summary>
     public Task<string> GetJwtTokenAsync(string role = "User", string userId = "test-user-id", string username = "testuser")
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(TestJwtSecret);
-        
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId),
@@ -99,6 +122,9 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
             new(JwtRegisteredClaimNames.Sub, userId),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        // Add permission claims based on role to satisfy authorization policies
+        AddPermissionClaimsForRole(claims, role);
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -113,13 +139,75 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
-        
+
         return Task.FromResult(tokenString);
+    }
+
+    /// <summary>
+    /// Adds permission claims to the claims list based on the user's role.
+    /// This mimics the real authorization system where roles grant specific permissions.
+    /// </summary>
+    private void AddPermissionClaimsForRole(List<Claim> claims, string role)
+    {
+        // Permission constants matching the API
+        const string productsRead = "products:read";
+        const string productsCreate = "products:create";
+        const string productsUpdate = "products:update";
+        const string productsDelete = "products:delete";
+
+        switch (role.ToUpperInvariant())
+        {
+            case "USER":
+                // Users can only read products
+                claims.Add(new Claim(PermissionClaimType, productsRead));
+                break;
+
+            case "MANAGER":
+                // Managers can read, create, and update products
+                claims.Add(new Claim(PermissionClaimType, productsRead));
+                claims.Add(new Claim(PermissionClaimType, productsCreate));
+                claims.Add(new Claim(PermissionClaimType, productsUpdate));
+                break;
+
+            case "ADMINISTRATOR":
+            case "ADMIN":
+            case "SUPERADMIN":
+                // Administrators have all product permissions
+                claims.Add(new Claim(PermissionClaimType, productsRead));
+                claims.Add(new Claim(PermissionClaimType, productsCreate));
+                claims.Add(new Claim(PermissionClaimType, productsUpdate));
+                claims.Add(new Claim(PermissionClaimType, productsDelete));
+                break;
+
+            default:
+                // Guest or unknown role - no permissions
+                break;
+        }
     }
 
     public new async Task DisposeAsync()
     {
         await _dbContainer.DisposeAsync();
+    }
+
+    /// <summary>
+    /// Test implementation of ICurrentUser for integration tests.
+    /// </summary>
+    private sealed class TestCurrentUser : ICurrentUser
+    {
+        public string? UserId => "test-system-user";
+        public bool IsAuthenticated => false;
+        public bool IsInRole(string role) => false;
+        public bool HasAnyRole(params string[] roles) => false;
+        public IEnumerable<string> GetRoles() => Enumerable.Empty<string>();
+    }
+
+    /// <summary>
+    /// Test implementation of ITimeProvider for integration tests.
+    /// </summary>
+    private sealed class TestTimeProvider : ITimeProvider
+    {
+        public DateTime UtcNow => DateTime.UtcNow;
     }
 }
 

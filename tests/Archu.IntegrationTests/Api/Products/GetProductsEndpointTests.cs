@@ -1,10 +1,10 @@
 using System.Net;
-using System.Net.Http.Json;
 using Archu.Contracts.Common;
 using Archu.Contracts.Products;
 using Archu.Domain.Entities;
-using Archu.IntegrationTests.Fixtures;
+using Archu.Domain.Entities.Identity;
 using Archu.Infrastructure.Persistence;
+using Archu.IntegrationTests.Fixtures;
 using FluentAssertions;
 using Xunit;
 
@@ -27,35 +27,50 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _factory.ResetDatabaseAsync();
-        
+
+        // Create a test user first to satisfy the foreign key constraint
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var testUser = new ApplicationUser
+        {
+            Id = _testUserId,
+            UserName = "testuser",
+            Email = "test@example.com",
+            NormalizedEmail = "TEST@EXAMPLE.COM",
+            PasswordHash = "dummy-hash-for-testing",
+            EmailConfirmed = true,
+            SecurityStamp = Guid.NewGuid().ToString()
+        };
+
+        dbContext.Users.Add(testUser);
+        await dbContext.SaveChangesAsync();
+
         _testProducts = new List<Product>
         {
-            new() 
-            { 
-                Id = Guid.NewGuid(), 
-                Name = "Integration Test Product 1", 
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Integration Test Product 1",
                 Price = 10.99m,
                 OwnerId = _testUserId
             },
-            new() 
-            { 
-                Id = Guid.NewGuid(), 
-                Name = "Integration Test Product 2", 
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Integration Test Product 2",
                 Price = 20.99m,
                 OwnerId = _testUserId
             },
-            new() 
-            { 
-                Id = Guid.NewGuid(), 
-                Name = "Integration Test Product 3", 
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Integration Test Product 3",
                 Price = 30.99m,
                 OwnerId = _testUserId
             }
         };
 
-        await using var scope = _factory.Services.CreateAsyncScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        
         dbContext.Products.AddRange(_testProducts);
         await dbContext.SaveChangesAsync();
     }
@@ -66,13 +81,13 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldReturn200OK_WithPagedProducts()
     {
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/v1/products?pageNumber=1&pageSize=10");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<PagedResult<ProductDto>>>();
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
@@ -89,7 +104,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldReturnCorrectProductData()
     {
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/v1/products");
@@ -99,7 +114,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
         products.Should().Contain(p => p.Name == "Integration Test Product 1" && p.Price == 10.99m);
         products.Should().Contain(p => p.Name == "Integration Test Product 2" && p.Price == 20.99m);
         products.Should().Contain(p => p.Name == "Integration Test Product 3" && p.Price == 30.99m);
-        
+
         products.Should().AllSatisfy(p =>
         {
             p.Id.Should().NotBeEmpty();
@@ -118,15 +133,15 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldReturnEmptyPagedResult_WhenNoProducts()
     {
         await _factory.ResetDatabaseAsync();
-        
+
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/v1/products");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<PagedResult<ProductDto>>>();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data!.Items.Should().BeEmpty();
@@ -140,7 +155,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldAllowAccessForAuthenticatedRoles(string role)
     {
         var token = await _factory.GetJwtTokenAsync(role, _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/v1/products");
@@ -151,7 +166,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldHaveCorrectContentType()
     {
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/v1/products");
@@ -163,7 +178,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     {
         await using var scope = _factory.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        
+
         var deletedProduct = new Product
         {
             Id = Guid.NewGuid(),
@@ -173,12 +188,12 @@ public class GetProductsEndpointTests : IAsyncLifetime
             IsDeleted = true,
             DeletedAtUtc = DateTime.UtcNow
         };
-        
+
         dbContext.Products.Add(deletedProduct);
         await dbContext.SaveChangesAsync();
 
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/v1/products");
@@ -193,7 +208,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldHandleConcurrentRequests()
     {
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var tasks = Enumerable.Range(0, 10)
@@ -208,7 +223,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldIncludeTimestamp()
     {
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var beforeRequest = DateTime.UtcNow;
@@ -230,7 +245,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldHandleDifferentPaginationParameters(int pageNumber, int pageSize, int expectedTotalCount, int expectedTotalPages)
     {
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync($"/api/v1/products?pageNumber={pageNumber}&pageSize={pageSize}");
@@ -247,7 +262,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldEnforceMaxPageSize()
     {
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/v1/products?pageNumber=1&pageSize=200");
@@ -261,7 +276,7 @@ public class GetProductsEndpointTests : IAsyncLifetime
     public async Task GetProducts_ShouldUseDefaultPaginationWhenNotSpecified()
     {
         var token = await _factory.GetJwtTokenAsync("User", _testUserId.ToString());
-        _client.DefaultRequestHeaders.Authorization = 
+        _client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.GetAsync("/api/v1/products");
