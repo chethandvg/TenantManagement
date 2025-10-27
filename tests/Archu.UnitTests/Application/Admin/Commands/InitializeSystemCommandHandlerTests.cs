@@ -320,7 +320,7 @@ public class InitializeSystemCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Be("System initialization failed: boom");
 
-        fixture.VerifyErrorLogged("Error occurred during system initialization");
+        fixture.VerifyErrorLogged("Error occurred during system initialization", exception);
 
         fixture.MockUnitOfWork.Verify(unit => unit.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once());
         fixture.MockUnitOfWork.Verify(unit => unit.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);

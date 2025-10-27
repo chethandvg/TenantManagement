@@ -1,3 +1,4 @@
+using System;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Domain.Entities;
@@ -336,6 +337,24 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
                 null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            times ?? Times.Once());
+    }
+
+    /// <summary>
+    /// Verifies that an Error level log was written with the specified message and exception payload.
+    /// </summary>
+    /// <param name="expectedMessage">The log message expected to be present in the log entry.</param>
+    /// <param name="expectedException">The exception instance expected to be associated with the log entry.</param>
+    /// <param name="times">Optional Moq <see cref="Times"/> constraint describing how often the log should appear.</param>
+    public void VerifyErrorLogged(string expectedMessage, Exception expectedException, Times? times = null)
+    {
+        MockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<Exception?>(ex => ReferenceEquals(ex, expectedException)),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
     }
