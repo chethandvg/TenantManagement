@@ -1,4 +1,5 @@
 using Archu.Application.Abstractions;
+using Archu.Application.Abstractions.Authentication;
 using Archu.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -28,6 +29,7 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     public Mock<IUnitOfWork> MockUnitOfWork { get; }
     public Mock<IProductRepository> MockProductRepository { get; }
     public Mock<ICurrentUser> MockCurrentUser { get; }
+    public Mock<IAuthenticationService> MockAuthenticationService { get; }
     public Mock<ILogger<THandler>> MockLogger { get; }
 
     private Guid _authenticatedUserId = Guid.NewGuid();
@@ -38,6 +40,7 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
         MockUnitOfWork = new Mock<IUnitOfWork>();
         MockProductRepository = new Mock<IProductRepository>();
         MockCurrentUser = new Mock<ICurrentUser>();
+        MockAuthenticationService = new Mock<IAuthenticationService>();
         MockLogger = new Mock<ILogger<THandler>>();
     }
 
@@ -82,6 +85,17 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
         MockCurrentUser.Setup(x => x.UserId).Returns(invalidUserId);
         MockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
 
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the authentication service mock for scenarios that require authentication workflows.
+    /// </summary>
+    /// <param name="configure">An optional callback to arrange the authentication service behavior.</param>
+    public CommandHandlerTestFixture<THandler> WithAuthenticationService(
+        Action<Mock<IAuthenticationService>>? configure = null)
+    {
+        configure?.Invoke(MockAuthenticationService);
         return this;
     }
 
@@ -188,36 +202,60 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
                 MockLogger.Object);
         }
 
-        // Try to use the standard constructor (UnitOfWork, CurrentUser, Logger)
-        try
+        var constructorSignatures = new[]
         {
-            var constructor = typeof(THandler).GetConstructor(new[]
-            {
-                typeof(IUnitOfWork),
-                typeof(ICurrentUser),
-                typeof(ILogger<THandler>)
-            });
+            new[] { typeof(IUnitOfWork), typeof(ICurrentUser), typeof(ILogger<THandler>) },
+            new[] { typeof(IAuthenticationService), typeof(ILogger<THandler>) },
+            new[] { typeof(IAuthenticationService), typeof(ICurrentUser), typeof(ILogger<THandler>) }
+        };
+
+        foreach (var signature in constructorSignatures)
+        {
+            var constructor = typeof(THandler).GetConstructor(signature);
 
             if (constructor != null)
             {
-                return (THandler)constructor.Invoke(new object[]
-                {
-                    MockUnitOfWork.Object,
-                    MockCurrentUser.Object,
-                    MockLogger.Object
-                });
+                var parameters = signature
+                    .Select(ResolveConstructorParameter)
+                    .ToArray();
+
+                return (THandler)constructor.Invoke(parameters);
             }
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                $"Unable to create handler of type {typeof(THandler).Name}. " +
-                "Use WithHandlerFactory to provide a custom factory method.", ex);
         }
 
         throw new InvalidOperationException(
             $"No suitable constructor found for {typeof(THandler).Name}. " +
             "Use WithHandlerFactory to provide a custom factory method.");
+    }
+
+    /// <summary>
+    /// Resolves constructor dependencies to their configured mocks when instantiating handlers.
+    /// </summary>
+    /// <param name="dependencyType">The dependency type requested by the handler constructor.</param>
+    private object ResolveConstructorParameter(Type dependencyType)
+    {
+        if (dependencyType == typeof(IUnitOfWork))
+        {
+            return MockUnitOfWork.Object;
+        }
+
+        if (dependencyType == typeof(IAuthenticationService))
+        {
+            return MockAuthenticationService.Object;
+        }
+
+        if (dependencyType == typeof(ICurrentUser))
+        {
+            return MockCurrentUser.Object;
+        }
+
+        if (dependencyType == typeof(ILogger<THandler>))
+        {
+            return MockLogger.Object;
+        }
+
+        throw new InvalidOperationException(
+            $"Unsupported dependency type {dependencyType.Name} for handler {typeof(THandler).Name}.");
     }
 
     /// <summary>
