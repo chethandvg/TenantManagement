@@ -23,7 +23,11 @@ public class ConfirmEmailCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ConfirmEmailCommand(userId, token);
+        var command = new ConfirmEmailCommand
+        {
+            UserId = userId,
+            Token = token
+        };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -46,7 +50,11 @@ public class ConfirmEmailCommandHandlerTests
                     .ReturnsAsync(Result.Failure(errorMessage)));
 
         var handler = fixture.CreateHandler();
-        var command = new ConfirmEmailCommand(userId, token);
+        var command = new ConfirmEmailCommand
+        {
+            UserId = userId,
+            Token = token
+        };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -69,7 +77,11 @@ public class ConfirmEmailCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ConfirmEmailCommand(userId, token);
+        var command = new ConfirmEmailCommand
+        {
+            UserId = userId,
+            Token = token
+        };
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act

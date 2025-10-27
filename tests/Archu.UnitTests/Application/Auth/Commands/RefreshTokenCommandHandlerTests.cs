@@ -24,7 +24,10 @@ public class RefreshTokenCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Success(authResult)));
 
         var handler = fixture.CreateHandler();
-        var command = new RefreshTokenCommand(refreshToken);
+        var command = new RefreshTokenCommand
+        {
+            RefreshToken = refreshToken
+        };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -47,7 +50,10 @@ public class RefreshTokenCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Failure(errorMessage)));
 
         var handler = fixture.CreateHandler();
-        var command = new RefreshTokenCommand(refreshToken);
+        var command = new RefreshTokenCommand
+        {
+            RefreshToken = refreshToken
+        };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -70,7 +76,10 @@ public class RefreshTokenCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Success(authResult)));
 
         var handler = fixture.CreateHandler();
-        var command = new RefreshTokenCommand(refreshToken);
+        var command = new RefreshTokenCommand
+        {
+            RefreshToken = refreshToken
+        };
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act

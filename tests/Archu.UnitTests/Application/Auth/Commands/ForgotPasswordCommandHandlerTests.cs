@@ -22,7 +22,10 @@ public class ForgotPasswordCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ForgotPasswordCommand(email);
+        var command = new ForgotPasswordCommand
+        {
+            Email = email
+        };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -44,7 +47,10 @@ public class ForgotPasswordCommandHandlerTests
                     .ReturnsAsync(Result.Failure(errorMessage)));
 
         var handler = fixture.CreateHandler();
-        var command = new ForgotPasswordCommand(email);
+        var command = new ForgotPasswordCommand
+        {
+            Email = email
+        };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -66,7 +72,10 @@ public class ForgotPasswordCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ForgotPasswordCommand(email);
+        var command = new ForgotPasswordCommand
+        {
+            Email = email
+        };
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act

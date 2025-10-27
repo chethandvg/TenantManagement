@@ -36,7 +36,11 @@ public class LoginCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Success(authResult)));
 
         var handler = fixture.CreateHandler();
-        var command = new LoginCommand(email, password);
+        var command = new LoginCommand
+        {
+            Email = email,
+            Password = password
+        };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -61,7 +65,11 @@ public class LoginCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Failure(failureMessage)));
 
         var handler = fixture.CreateHandler();
-        var command = new LoginCommand(email, password);
+        var command = new LoginCommand
+        {
+            Email = email,
+            Password = password
+        };
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -85,7 +93,11 @@ public class LoginCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Success(authResult)));
 
         var handler = fixture.CreateHandler();
-        var command = new LoginCommand(email, password);
+        var command = new LoginCommand
+        {
+            Email = email,
+            Password = password
+        };
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act
