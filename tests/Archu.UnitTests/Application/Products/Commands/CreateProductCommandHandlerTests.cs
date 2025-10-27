@@ -211,4 +211,120 @@ public class CreateProductCommandHandlerTests
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => handler.Handle(command, CancellationToken.None));
     }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException(
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        CreateProductCommandHandler handler)
+    {
+        // Arrange
+        mockCurrentUser.Setup(x => x.UserId).Returns("not-a-valid-guid");
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        var command = new CreateProductCommand("Test Product", 99.99m);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        exception.Message.Should().Contain("User must be authenticated to create products");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("invalid-guid-format")]
+    [InlineData("12345")]
+    [InlineData("not-a-guid-at-all")]
+    [InlineData("GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG")]
+    public async Task Handle_WhenUserIdHasInvalidFormat_ThrowsUnauthorizedAccessException(
+        string invalidUserId)
+    {
+        // Arrange
+        var mockCurrentUser = new Mock<ICurrentUser>();
+        var mockUnitOfWork = new Mock<IUnitOfWork>();
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<CreateProductCommandHandler>>();
+        
+        mockCurrentUser.Setup(x => x.UserId).Returns(invalidUserId);
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        var handler = new CreateProductCommandHandler(
+            mockUnitOfWork.Object,
+            mockCurrentUser.Object,
+            mockLogger.Object);
+
+        var command = new CreateProductCommand("Test Product", 99.99m);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        exception.Message.Should().Contain("User must be authenticated to create products");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException(
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        CreateProductCommandHandler handler)
+    {
+        // Arrange
+        mockCurrentUser.Setup(x => x.UserId).Returns(string.Empty);
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
+
+        var command = new CreateProductCommand("Test Product", 99.99m);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        exception.Message.Should().Contain("User must be authenticated to create products");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsWhitespace_ThrowsUnauthorizedAccessException(
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        CreateProductCommandHandler handler)
+    {
+        // Arrange
+        mockCurrentUser.Setup(x => x.UserId).Returns("   ");
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
+
+        var command = new CreateProductCommand("Test Product", 99.99m);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        exception.Message.Should().Contain("User must be authenticated to create products");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsValidGuid_DoesNotThrow(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        CreateProductCommandHandler handler)
+    {
+        // Arrange
+        var validGuid = Guid.NewGuid().ToString();
+        mockCurrentUser.Setup(x => x.UserId).Returns(validGuid);
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Product p, CancellationToken _) => p);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var command = new CreateProductCommand("Test Product", 99.99m);
+
+        // Act
+        Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().NotThrowAsync<UnauthorizedAccessException>();
+    }
 }

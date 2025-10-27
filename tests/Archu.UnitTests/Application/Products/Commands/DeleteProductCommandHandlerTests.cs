@@ -233,4 +233,108 @@ public class DeleteProductCommandHandlerTests
             r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException(
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        mockCurrentUser.Setup(x => x.UserId).Returns("not-a-valid-guid");
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        var command = new DeleteProductCommand(Guid.NewGuid());
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        exception.Message.Should().Contain("User must be authenticated to delete products");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("invalid-guid-format")]
+    [InlineData("12345")]
+    [InlineData("not-a-guid-at-all")]
+    [InlineData("GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG")]
+    public async Task Handle_WhenUserIdHasInvalidFormat_ThrowsUnauthorizedAccessException(
+        string invalidUserId)
+    {
+        // Arrange
+        var mockCurrentUser = new Mock<ICurrentUser>();
+        var mockUnitOfWork = new Mock<IUnitOfWork>();
+        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<DeleteProductCommandHandler>>();
+        
+        mockCurrentUser.Setup(x => x.UserId).Returns(invalidUserId);
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        var handler = new DeleteProductCommandHandler(
+            mockUnitOfWork.Object,
+            mockCurrentUser.Object,
+            mockLogger.Object);
+
+        var command = new DeleteProductCommand(Guid.NewGuid());
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        exception.Message.Should().Contain("User must be authenticated to delete products");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException(
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        mockCurrentUser.Setup(x => x.UserId).Returns(string.Empty);
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
+
+        var command = new DeleteProductCommand(Guid.NewGuid());
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        exception.Message.Should().Contain("User must be authenticated to delete products");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsValidGuid_DoesNotThrowForAuthentication(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        var existingProduct = new ProductBuilder().Build();
+        var validGuid = Guid.NewGuid().ToString();
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(validGuid);
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var command = new DeleteProductCommand(existingProduct.Id);
+
+        // Act
+        Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().NotThrowAsync<UnauthorizedAccessException>();
+    }
 }
