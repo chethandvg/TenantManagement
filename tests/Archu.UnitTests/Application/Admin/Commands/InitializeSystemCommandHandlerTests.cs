@@ -280,8 +280,10 @@ public class InitializeSystemCommandHandlerTests
             .Setup(unit => unit.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        CancellationToken capturedRollbackToken = default;
         fixture.MockUnitOfWork
             .Setup(unit => unit.RollbackTransactionAsync(It.IsAny<CancellationToken>()))
+            .Callback<CancellationToken>(token => capturedRollbackToken = token)
             .Returns(Task.CompletedTask);
 
         roleRepositoryMock
