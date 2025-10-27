@@ -13,11 +13,10 @@ namespace Archu.UnitTests.Application.Products.Commands;
 [Trait("Feature", "Products")]
 public class DeleteProductCommandHandlerTests
 {
-    [Fact]
-    public async Task Handle_WhenProductExists_DeletesProductSuccessfully()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenProductExists_DeletesProductSuccessfully(Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder()
             .WithOwnerId(userId)
             .Build();
@@ -26,11 +25,7 @@ public class DeleteProductCommandHandlerTests
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -44,21 +39,15 @@ public class DeleteProductCommandHandlerTests
         fixture.VerifySaveChangesCalled();
     }
 
-    [Fact]
-    public async Task Handle_WhenProductNotFound_ReturnsFailure()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenProductNotFound_ReturnsFailure(Guid productId)
     {
         // Arrange
-        var productId = Guid.NewGuid();
-
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithProductNotFound(productId);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(productId);
 
         // Act
@@ -70,34 +59,30 @@ public class DeleteProductCommandHandlerTests
         result.Error.Should().Be("Product not found");
     }
 
-    [Fact]
-    public async Task Handle_WhenUserNotAuthenticated_ThrowsException()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserNotAuthenticated_ThrowsException(Guid productId)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new DeleteProductCommand(Guid.NewGuid());
+        var handler = fixture.CreateHandler();
+        var command = new DeleteProductCommand(productId);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.Handle(command, CancellationToken.None));
     }
 
-    [Fact]
-    public async Task Handle_CallsDeleteAsyncWithCorrectProduct()
+    [Theory, AutoMoqData]
+    public async Task Handle_CallsDeleteAsyncWithCorrectProduct(Guid userId)
     {
         // Arrange
         var existingProduct = new ProductBuilder().Build();
         Product? deletedProduct = null;
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
-            .WithAuthenticatedUser()
+            .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
         fixture.MockProductRepository
@@ -105,11 +90,7 @@ public class DeleteProductCommandHandlerTests
             .Callback<Product, CancellationToken>((p, _) => deletedProduct = p)
             .Returns(Task.CompletedTask);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -120,15 +101,15 @@ public class DeleteProductCommandHandlerTests
         deletedProduct.Should().BeSameAs(existingProduct);
     }
 
-    [Fact]
-    public async Task Handle_RespectsCancellationToken()
+    [Theory, AutoMoqData]
+    public async Task Handle_RespectsCancellationToken(Guid userId, Guid productId)
     {
         // Arrange
         var cts = new CancellationTokenSource();
         cts.Cancel();
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
-            .WithAuthenticatedUser();
+            .WithAuthenticatedUser(userId);
 
         fixture.MockProductRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -136,37 +117,29 @@ public class DeleteProductCommandHandlerTests
 
         fixture.MockUnitOfWork.Setup(u => u.Products).Returns(fixture.MockProductRepository.Object);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new DeleteProductCommand(Guid.NewGuid());
+        var handler = fixture.CreateHandler();
+        var command = new DeleteProductCommand(productId);
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => handler.Handle(command, cts.Token));
     }
 
-    [Fact]
-    public async Task Handle_WhenDeleteFails_ThrowsException()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenDeleteFails_ThrowsException(Guid userId)
     {
         // Arrange
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
-            .WithAuthenticatedUser()
+            .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
         fixture.MockUnitOfWork
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act & Assert
@@ -174,21 +147,15 @@ public class DeleteProductCommandHandlerTests
             () => handler.Handle(command, CancellationToken.None));
     }
 
-    [Fact]
-    public async Task Handle_DoesNotCallDeleteAsync_WhenProductNotFound()
+    [Theory, AutoMoqData]
+    public async Task Handle_DoesNotCallDeleteAsync_WhenProductNotFound(Guid productId)
     {
         // Arrange
-        var productId = Guid.NewGuid();
-
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithProductNotFound(productId);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(productId);
 
         // Act
@@ -200,19 +167,17 @@ public class DeleteProductCommandHandlerTests
             Times.Never);
     }
 
-    [Fact]
-    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException(
+        string invalidUserId,
+        Guid productId)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
-            .WithInvalidUserIdFormat("not-a-valid-guid");
+            .WithInvalidUserIdFormat(invalidUserId);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new DeleteProductCommand(Guid.NewGuid());
+        var handler = fixture.CreateHandler();
+        var command = new DeleteProductCommand(productId);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
@@ -222,25 +187,22 @@ public class DeleteProductCommandHandlerTests
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData("invalid-guid-format")]
-    [InlineData("12345")]
-    [InlineData("not-a-guid-at-all")]
-    [InlineData("GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG")]
+    [InlineAutoMoqData("")]
+    [InlineAutoMoqData("   ")]
+    [InlineAutoMoqData("invalid-guid-format")]
+    [InlineAutoMoqData("12345")]
+    [InlineAutoMoqData("not-a-guid-at-all")]
+    [InlineAutoMoqData("GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG")]
     public async Task Handle_WhenUserIdHasInvalidFormat_ThrowsUnauthorizedAccessException(
-        string invalidUserId)
+        string invalidUserId,
+        Guid productId)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithInvalidUserIdFormat(invalidUserId);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new DeleteProductCommand(Guid.NewGuid());
+        var handler = fixture.CreateHandler();
+        var command = new DeleteProductCommand(productId);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
@@ -249,19 +211,18 @@ public class DeleteProductCommandHandlerTests
         exception.Message.Should().Contain("User must be authenticated to delete products");
     }
 
-    [Fact]
-    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException()
+    [Theory]
+    [InlineAutoMoqData("")]
+    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException(
+        string emptyUserId,
+        Guid productId)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
-            .WithInvalidUserIdFormat(string.Empty);
+            .WithInvalidUserIdFormat(emptyUserId);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new DeleteProductCommand(Guid.NewGuid());
+        var handler = fixture.CreateHandler();
+        var command = new DeleteProductCommand(productId);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
@@ -270,21 +231,17 @@ public class DeleteProductCommandHandlerTests
         exception.Message.Should().Contain("User must be authenticated to delete products");
     }
 
-    [Fact]
-    public async Task Handle_WhenUserIdIsValidGuid_DoesNotThrowForAuthentication()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsValidGuid_DoesNotThrowForAuthentication(Guid userId)
     {
         // Arrange
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
-            .WithAuthenticatedUser()
+            .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -296,22 +253,17 @@ public class DeleteProductCommandHandlerTests
 
     #region Logging Verification Tests
 
-    [Fact]
-    public async Task Handle_LogsInformation_WhenDeletingProduct()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsInformation_WhenDeletingProduct(Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -321,22 +273,17 @@ public class DeleteProductCommandHandlerTests
         fixture.VerifyInformationLogged($"User {userId} deleting product with ID: {existingProduct.Id}");
     }
 
-    [Fact]
-    public async Task Handle_LogsInformation_AfterProductDeleted()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsInformation_AfterProductDeleted(Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -346,21 +293,15 @@ public class DeleteProductCommandHandlerTests
         fixture.VerifyInformationLogged($"Product with ID {existingProduct.Id} deleted successfully");
     }
 
-    [Fact]
-    public async Task Handle_LogsWarning_WhenProductNotFound()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsWarning_WhenProductNotFound(Guid productId)
     {
         // Arrange
-        var productId = Guid.NewGuid();
-
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithProductNotFound(productId);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(productId);
 
         // Act
@@ -370,22 +311,17 @@ public class DeleteProductCommandHandlerTests
         fixture.VerifyWarningLogged($"Product with ID {productId} not found");
     }
 
-    [Fact]
-    public async Task Handle_LogsTwoInformationMessages_WhenSuccessful()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsTwoInformationMessages_WhenSuccessful(Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -395,19 +331,15 @@ public class DeleteProductCommandHandlerTests
         fixture.VerifyLogCount(LogLevel.Information, 2);
     }
 
-    [Fact]
-    public async Task Handle_LogsError_WhenUserNotAuthenticated()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsError_WhenUserNotAuthenticated(Guid productId)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new DeleteProductCommand(Guid.NewGuid());
+        var handler = fixture.CreateHandler();
+        var command = new DeleteProductCommand(productId);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
@@ -416,22 +348,17 @@ public class DeleteProductCommandHandlerTests
         fixture.VerifyErrorLogged("Cannot perform delete products");
     }
 
-    [Fact]
-    public async Task Handle_IncludesUserIdInLogs()
+    [Theory, AutoMoqData]
+    public async Task Handle_IncludesUserIdInLogs(Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act
@@ -441,22 +368,17 @@ public class DeleteProductCommandHandlerTests
         fixture.VerifyInformationLogged(userId.ToString(), Times.Exactly(2));
     }
 
-    [Fact]
-    public async Task Handle_IncludesProductIdInAllLogs()
+    [Theory, AutoMoqData]
+    public async Task Handle_IncludesProductIdInAllLogs(Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new DeleteProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
+        var handler = fixture.CreateHandler();
         var command = new DeleteProductCommand(existingProduct.Id);
 
         // Act

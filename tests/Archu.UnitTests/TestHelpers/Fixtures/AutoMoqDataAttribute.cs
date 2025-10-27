@@ -3,6 +3,9 @@ using AutoFixture.AutoMoq;
 using AutoFixture.Xunit2;
 using Archu.Domain.Entities;
 using Archu.Domain.Entities.Identity;
+using Archu.Application.Products.Commands.CreateProduct;
+using Archu.Application.Products.Commands.UpdateProduct;
+using Archu.Application.Products.Commands.DeleteProduct;
 
 namespace Archu.UnitTests.TestHelpers.Fixtures;
 
@@ -30,7 +33,8 @@ public class AutoMoqDataAttribute : AutoDataAttribute
         : base(() => new Fixture()
             .Customize(new AutoMoqCustomization())
             .Customize(new ProductCustomization())
-            .Customize(new UserCustomization()))
+            .Customize(new UserCustomization())
+            .Customize(new CommandCustomization()))
     {
     }
 }
@@ -71,5 +75,31 @@ public class UserCustomization : ICustomization
                 .With(u => u.IsDeleted, false)
                 .With(u => u.CreatedAtUtc, () => DateTime.UtcNow)
                 .With(u => u.ModifiedAtUtc, (DateTime?)null));
+    }
+}
+
+/// <summary>
+/// Customization for Product-related commands to ensure realistic test data.
+/// </summary>
+public class CommandCustomization : ICustomization
+{
+    public void Customize(IFixture fixture)
+    {
+        // CreateProductCommand customization
+        fixture.Customize<CreateProductCommand>(composer =>
+            composer
+                .With(c => c.Name, () => $"Product-{fixture.Create<string>().Substring(0, 10)}")
+                .With(c => c.Price, () => Math.Round(fixture.Create<decimal>() % 10000, 2)));
+
+        // UpdateProductCommand customization
+        fixture.Customize<UpdateProductCommand>(composer =>
+            composer
+                .With(c => c.Name, () => $"Updated-{fixture.Create<string>().Substring(0, 10)}")
+                .With(c => c.Price, () => Math.Round(fixture.Create<decimal>() % 10000, 2))
+                .With(c => c.RowVersion, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
+
+        // DeleteProductCommand customization
+        fixture.Customize<DeleteProductCommand>(composer =>
+            composer.With(c => c.Id, () => Guid.NewGuid()));
     }
 }

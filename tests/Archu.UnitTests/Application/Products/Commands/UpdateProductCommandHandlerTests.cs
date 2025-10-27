@@ -13,14 +13,18 @@ namespace Archu.UnitTests.Application.Products.Commands;
 [Trait("Feature", "Products")]
 public class UpdateProductCommandHandlerTests
 {
-    [Fact]
-    public async Task Handle_WhenProductExistsAndRowVersionMatches_UpdatesProductSuccessfully()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenProductExistsAndRowVersionMatches_UpdatesProductSuccessfully(
+        string originalName,
+        decimal originalPrice,
+        string updatedName,
+        decimal updatedPrice,
+        Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder()
-            .WithName("Original Name")
-            .WithPrice(50.00m)
+            .WithName(originalName)
+            .WithPrice(originalPrice)
             .WithOwnerId(userId)
             .Build();
 
@@ -30,15 +34,12 @@ public class UpdateProductCommandHandlerTests
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "Updated Name",
-            99.99m,
+            updatedName,
+            updatedPrice,
             originalRowVersion);
 
         // Act
@@ -48,33 +49,28 @@ public class UpdateProductCommandHandlerTests
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.Name.Should().Be("Updated Name");
-        result.Value.Price.Should().Be(99.99m);
+        result.Value!.Name.Should().Be(updatedName);
+        result.Value.Price.Should().Be(updatedPrice);
 
         fixture.VerifyProductUpdated();
         fixture.VerifySaveChangesCalled();
     }
 
-    [Fact]
-    public async Task Handle_WhenProductNotFound_ReturnsFailure()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenProductNotFound_ReturnsFailure(
+        string productName,
+        decimal price,
+        Guid productId,
+        byte[] rowVersion)
     {
         // Arrange
-        var productId = Guid.NewGuid();
-
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithProductNotFound(productId);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
-        var command = new UpdateProductCommand(
-            productId,
-            "Updated Name",
-            99.99m,
-            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        var command = new UpdateProductCommand(productId, productName, price, rowVersion);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -85,29 +81,28 @@ public class UpdateProductCommandHandlerTests
         result.Error.Should().Be("Product not found");
     }
 
-    [Fact]
-    public async Task Handle_WhenRowVersionMismatch_ReturnsFailure()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenRowVersionMismatch_ReturnsFailure(
+        string updatedName,
+        decimal updatedPrice,
+        byte[] originalRowVersion,
+        byte[] differentRowVersion)
     {
         // Arrange
         var existingProduct = new ProductBuilder()
-            .WithRowVersion(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 })
+            .WithRowVersion(originalRowVersion)
             .Build();
-
-        var differentRowVersion = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
 
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithExistingProduct(existingProduct);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "Updated Name",
-            99.99m,
+            updatedName,
+            updatedPrice,
             differentRowVersion);
 
         // Act
@@ -119,31 +114,29 @@ public class UpdateProductCommandHandlerTests
         result.Error.Should().Contain("modified by another user");
     }
 
-    [Fact]
-    public async Task Handle_WhenUserNotAuthenticated_ThrowsException()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserNotAuthenticated_ThrowsException(
+        Guid productId,
+        string productName,
+        decimal price,
+        byte[] rowVersion)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new UpdateProductCommand(
-            Guid.NewGuid(),
-            "Updated Name",
-            99.99m,
-            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        var handler = fixture.CreateHandler();
+        var command = new UpdateProductCommand(productId, productName, price, rowVersion);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.Handle(command, CancellationToken.None));
     }
 
-    [Fact]
-    public async Task Handle_WhenConcurrencyExceptionOccurs_ReturnsFailure()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenConcurrencyExceptionOccurs_ReturnsFailure(
+        string updatedName,
+        decimal updatedPrice)
     {
         // Arrange
         var existingProduct = new ProductBuilder().Build();
@@ -157,35 +150,189 @@ public class UpdateProductCommandHandlerTests
             .Setup(r => r.ExistsAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        // Simulate concurrency exception by throwing InvalidOperationException with specific message
+        // Use the test-only DbUpdateConcurrencyException to exercise the catch block
         fixture.MockUnitOfWork
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("Concurrency conflict"));
+            .ThrowsAsync(new TestHelpers.Exceptions.DbUpdateConcurrencyException("Concurrency conflict"));
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "Updated Name",
-            99.99m,
+            updatedName,
+            updatedPrice,
             originalRowVersion);
 
-        // Act & Assert
-        // The handler does not catch generic InvalidOperationException, so it should be thrown
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => handler.Handle(command, CancellationToken.None));
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("modified by another user");
     }
 
-    [Fact]
-    public async Task Handle_UpdatesProductProperties()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenConcurrencyExceptionOccursAndProductStillExists_ReturnsModifiedByAnotherUserError(
+        string updatedName,
+        decimal updatedPrice)
+    {
+        // Arrange
+        var existingProduct = new ProductBuilder().Build();
+        var originalRowVersion = existingProduct.RowVersion;
+
+        var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithExistingProduct(existingProduct);
+
+        // Product still exists after concurrency exception
+        fixture.MockProductRepository
+            .Setup(r => r.ExistsAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        fixture.MockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TestHelpers.Exceptions.DbUpdateConcurrencyException("Race condition detected"));
+
+        var handler = fixture.CreateHandler();
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            updatedName,
+            updatedPrice,
+            originalRowVersion);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("The product was modified by another user. Please refresh and try again.");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenConcurrencyExceptionOccursAndProductWasDeleted_ReturnsProductNotFoundError(
+        string updatedName,
+        decimal updatedPrice)
+    {
+        // Arrange
+        var existingProduct = new ProductBuilder().Build();
+        var originalRowVersion = existingProduct.RowVersion;
+
+        var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithExistingProduct(existingProduct);
+
+        // Product was deleted during update operation (race condition)
+        fixture.MockProductRepository
+            .Setup(r => r.ExistsAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        fixture.MockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TestHelpers.Exceptions.DbUpdateConcurrencyException("Product was deleted"));
+
+        var handler = fixture.CreateHandler();
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            updatedName,
+            updatedPrice,
+            originalRowVersion);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("Product not found");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenConcurrencyExceptionAndProductDeleted_LogsWarning(
+        string updatedName,
+        decimal updatedPrice)
+    {
+        // Arrange
+        var existingProduct = new ProductBuilder().Build();
+        var originalRowVersion = existingProduct.RowVersion;
+
+        var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithExistingProduct(existingProduct);
+
+        fixture.MockProductRepository
+            .Setup(r => r.ExistsAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        fixture.MockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TestHelpers.Exceptions.DbUpdateConcurrencyException());
+
+        var handler = fixture.CreateHandler();
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            updatedName,
+            updatedPrice,
+            originalRowVersion);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        fixture.VerifyWarningLogged($"Product with ID {existingProduct.Id} was deleted during update operation");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenConcurrencyExceptionAndProductStillExists_LogsRaceConditionWarning(
+        string updatedName,
+        decimal updatedPrice)
+    {
+        // Arrange
+        var existingProduct = new ProductBuilder().Build();
+        var originalRowVersion = existingProduct.RowVersion;
+
+        var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithExistingProduct(existingProduct);
+
+        fixture.MockProductRepository
+            .Setup(r => r.ExistsAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        fixture.MockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TestHelpers.Exceptions.DbUpdateConcurrencyException());
+
+        var handler = fixture.CreateHandler();
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            updatedName,
+            updatedPrice,
+            originalRowVersion);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        fixture.VerifyWarningLogged($"Race condition detected: Product {existingProduct.Id} was modified between validation and save");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_UpdatesProductProperties(
+        string originalName,
+        decimal originalPrice,
+        string newName,
+        decimal newPrice)
     {
         // Arrange
         var existingProduct = new ProductBuilder()
-            .WithName("Original Name")
-            .WithPrice(50.00m)
+            .WithName(originalName)
+            .WithPrice(originalPrice)
             .Build();
 
         Product? updatedProduct = null;
@@ -199,15 +346,12 @@ public class UpdateProductCommandHandlerTests
             .Callback<Product, byte[], CancellationToken>((p, _, __) => updatedProduct = p)
             .Returns(Task.CompletedTask);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "New Name",
-            75.50m,
+            newName,
+            newPrice,
             existingProduct.RowVersion);
 
         // Act
@@ -215,27 +359,24 @@ public class UpdateProductCommandHandlerTests
 
         // Assert
         updatedProduct.Should().NotBeNull();
-        updatedProduct!.Name.Should().Be("New Name");
-        updatedProduct.Price.Should().Be(75.50m);
+        updatedProduct!.Name.Should().Be(newName);
+        updatedProduct.Price.Should().Be(newPrice);
     }
 
-    [Fact]
-    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException(
+        string invalidUserId,
+        Guid productId,
+        string productName,
+        decimal price,
+        byte[] rowVersion)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
-            .WithInvalidUserIdFormat("not-a-valid-guid");
+            .WithInvalidUserIdFormat(invalidUserId);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new UpdateProductCommand(
-            Guid.NewGuid(),
-            "Updated Name",
-            99.99m,
-            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        var handler = fixture.CreateHandler();
+        var command = new UpdateProductCommand(productId, productName, price, rowVersion);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
@@ -245,29 +386,25 @@ public class UpdateProductCommandHandlerTests
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData("invalid-guid-format")]
-    [InlineData("12345")]
-    [InlineData("not-a-guid-at-all")]
-    [InlineData("GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG")]
+    [InlineAutoMoqData("")]
+    [InlineAutoMoqData("   ")]
+    [InlineAutoMoqData("invalid-guid-format")]
+    [InlineAutoMoqData("12345")]
+    [InlineAutoMoqData("not-a-guid-at-all")]
+    [InlineAutoMoqData("GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG")]
     public async Task Handle_WhenUserIdHasInvalidFormat_ThrowsUnauthorizedAccessException(
-        string invalidUserId)
+        string invalidUserId,
+        Guid productId,
+        string productName,
+        decimal price,
+        byte[] rowVersion)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithInvalidUserIdFormat(invalidUserId);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new UpdateProductCommand(
-            Guid.NewGuid(),
-            "Updated Name",
-            99.99m,
-            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        var handler = fixture.CreateHandler();
+        var command = new UpdateProductCommand(productId, productName, price, rowVersion);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
@@ -276,23 +413,21 @@ public class UpdateProductCommandHandlerTests
         exception.Message.Should().Contain("User must be authenticated to update products");
     }
 
-    [Fact]
-    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException()
+    [Theory]
+    [InlineAutoMoqData("")]
+    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException(
+        string emptyUserId,
+        Guid productId,
+        string productName,
+        decimal price,
+        byte[] rowVersion)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
-            .WithInvalidUserIdFormat(string.Empty);
+            .WithInvalidUserIdFormat(emptyUserId);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new UpdateProductCommand(
-            Guid.NewGuid(),
-            "Updated Name",
-            99.99m,
-            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        var handler = fixture.CreateHandler();
+        var command = new UpdateProductCommand(productId, productName, price, rowVersion);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
@@ -301,25 +436,25 @@ public class UpdateProductCommandHandlerTests
         exception.Message.Should().Contain("User must be authenticated to update products");
     }
 
-    [Fact]
-    public async Task Handle_WhenUserIdIsValidGuid_DoesNotThrowForAuthentication()
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenUserIdIsValidGuid_DoesNotThrowForAuthentication(
+        string productName,
+        decimal price,
+        Guid userId)
     {
         // Arrange
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
-            .WithAuthenticatedUser()
+            .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "Updated Name",
-            99.99m,
+            productName,
+            price,
             existingProduct.RowVersion);
 
         // Act
@@ -331,26 +466,25 @@ public class UpdateProductCommandHandlerTests
 
     #region Logging Verification Tests
 
-    [Fact]
-    public async Task Handle_LogsInformation_WhenUpdatingProduct()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsInformation_WhenUpdatingProduct(
+        string productName,
+        decimal price,
+        Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "Updated Name",
-            99.99m,
+            productName,
+            price,
             existingProduct.RowVersion);
 
         // Act
@@ -360,26 +494,25 @@ public class UpdateProductCommandHandlerTests
         fixture.VerifyInformationLogged($"User {userId} updating product with ID: {existingProduct.Id}");
     }
 
-    [Fact]
-    public async Task Handle_LogsInformation_AfterProductUpdated()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsInformation_AfterProductUpdated(
+        string productName,
+        decimal price,
+        Guid userId)
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var existingProduct = new ProductBuilder().Build();
 
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithAuthenticatedUser(userId)
             .WithExistingProduct(existingProduct);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "Updated Name",
-            99.99m,
+            productName,
+            price,
             existingProduct.RowVersion);
 
         // Act
@@ -389,26 +522,20 @@ public class UpdateProductCommandHandlerTests
         fixture.VerifyInformationLogged($"Product with ID {existingProduct.Id} updated successfully");
     }
 
-    [Fact]
-    public async Task Handle_LogsWarning_WhenProductNotFound()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsWarning_WhenProductNotFound(
+        string productName,
+        decimal price,
+        Guid productId,
+        byte[] rowVersion)
     {
         // Arrange
-        var productId = Guid.NewGuid();
-
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithProductNotFound(productId);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new UpdateProductCommand(
-            productId,
-            "Updated Name",
-            99.99m,
-            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        var handler = fixture.CreateHandler();
+        var command = new UpdateProductCommand(productId, productName, price, rowVersion);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -417,29 +544,28 @@ public class UpdateProductCommandHandlerTests
         fixture.VerifyWarningLogged($"Product with ID {productId} not found");
     }
 
-    [Fact]
-    public async Task Handle_LogsWarning_WhenRowVersionMismatch()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsWarning_WhenRowVersionMismatch(
+        string updatedName,
+        decimal updatedPrice,
+        byte[] originalRowVersion,
+        byte[] differentRowVersion)
     {
         // Arrange
         var existingProduct = new ProductBuilder()
-            .WithRowVersion(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 })
+            .WithRowVersion(originalRowVersion)
             .Build();
-
-        var differentRowVersion = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
 
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithExistingProduct(existingProduct);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "Updated Name",
-            99.99m,
+            updatedName,
+            updatedPrice,
             differentRowVersion);
 
         // Act
@@ -449,8 +575,10 @@ public class UpdateProductCommandHandlerTests
         fixture.VerifyWarningLogged($"Concurrency conflict detected for product {existingProduct.Id}");
     }
 
-    [Fact]
-    public async Task Handle_LogsTwoInformationMessages_WhenSuccessful()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsTwoInformationMessages_WhenSuccessful(
+        string productName,
+        decimal price)
     {
         // Arrange
         var existingProduct = new ProductBuilder().Build();
@@ -459,15 +587,12 @@ public class UpdateProductCommandHandlerTests
             .WithAuthenticatedUser()
             .WithExistingProduct(existingProduct);
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         var command = new UpdateProductCommand(
             existingProduct.Id,
-            "Updated Name",
-            99.99m,
+            productName,
+            price,
             existingProduct.RowVersion);
 
         // Act
@@ -477,29 +602,116 @@ public class UpdateProductCommandHandlerTests
         fixture.VerifyLogCount(LogLevel.Information, 2);
     }
 
-    [Fact]
-    public async Task Handle_LogsError_WhenUserNotAuthenticated()
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsError_WhenUserNotAuthenticated(
+        Guid productId,
+        string productName,
+        decimal price,
+        byte[] rowVersion)
     {
         // Arrange
         var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new UpdateProductCommandHandler(
-            fixture.MockUnitOfWork.Object,
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
-
-        var command = new UpdateProductCommand(
-            Guid.NewGuid(),
-            "Updated Name",
-            99.99m,
-            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        var handler = fixture.CreateHandler();
+        var command = new UpdateProductCommand(productId, productName, price, rowVersion);
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.Handle(command, CancellationToken.None));
 
         fixture.VerifyErrorLogged("Cannot perform update products");
+    }
+
+    #endregion
+
+    #region Cancellation Token Flow Tests
+
+    [Theory, AutoMoqData]
+    public async Task Handle_PassesCancellationTokenToGetByIdAsync(
+        string productName,
+        decimal price)
+    {
+        // Arrange
+        var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
+        var existingProduct = new ProductBuilder().Build();
+
+        var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithExistingProduct(existingProduct);
+
+        var handler = fixture.CreateHandler();
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            productName,
+            price,
+            existingProduct.RowVersion);
+
+        // Act
+        await handler.Handle(command, cancellationToken);
+
+        // Assert
+        fixture.VerifyProductFetchedWithToken(existingProduct.Id, cancellationToken);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_PassesCancellationTokenToUpdateAsync(
+        string productName,
+        decimal price)
+    {
+        // Arrange
+        var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
+        var existingProduct = new ProductBuilder().Build();
+
+        var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithExistingProduct(existingProduct);
+
+        var handler = fixture.CreateHandler();
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            productName,
+            price,
+            existingProduct.RowVersion);
+
+        // Act
+        await handler.Handle(command, cancellationToken);
+
+        // Assert
+        fixture.VerifyProductUpdatedWithToken(cancellationToken);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_PassesCancellationTokenToSaveChangesAsync(
+        string productName,
+        decimal price)
+    {
+        // Arrange
+        var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
+        var existingProduct = new ProductBuilder().Build();
+
+        var fixture = new CommandHandlerTestFixture<UpdateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithExistingProduct(existingProduct);
+
+        var handler = fixture.CreateHandler();
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            productName,
+            price,
+            existingProduct.RowVersion);
+
+        // Act
+        await handler.Handle(command, cancellationToken);
+
+        // Assert
+        fixture.VerifySaveChangesCalledWithToken(cancellationToken);
     }
 
     #endregion
