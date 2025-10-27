@@ -56,13 +56,17 @@ public partial class ProductsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<PagedResult<ProductDto>>>> GetProducts(
-        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        // Enforce max page size
-        if (pageSize > 100) pageSize = 100;
-        if (pageNumber < 1) pageNumber = 1;
+        // Enforce page size bounds
+        if (pageSize < 1)
+            pageSize = 1;
+        if (pageSize > 100)
+            pageSize = 100;
+        if (pageNumber < 1)
+            pageNumber = 1;
 
         LogRetrievingProducts();
 
