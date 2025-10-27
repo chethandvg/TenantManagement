@@ -39,14 +39,14 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
-        Task<string> Next()
+        RequestHandlerDelegate<string> next = () =>
         {
             nextInvoked = true;
             return Task.FromResult("handled");
-        }
+        };
 
         // Act
-        var response = await behavior.Handle(request, Next, cancellationToken);
+        var response = await behavior.Handle(request, next, cancellationToken);
 
         // Assert
         response.Should().Be("handled");
@@ -77,14 +77,14 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
-        Task<string> Next()
+        RequestHandlerDelegate<string> next = () =>
         {
             nextInvoked = true;
             return Task.FromResult("handled");
-        }
+        };
 
         // Act
-        var act = async () => await behavior.Handle(request, Next, cancellationToken);
+        var act = async () => await behavior.Handle(request, next, cancellationToken);
 
         // Assert
         var exception = await Assert.ThrowsAsync<ValidationException>(act);
@@ -129,14 +129,14 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
-        Task<string> Next()
+        RequestHandlerDelegate<string> next = () =>
         {
             nextInvoked = true;
             return Task.FromResult("handled");
-        }
+        };
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => behavior.Handle(request, Next, cancellationToken));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => behavior.Handle(request, next, cancellationToken));
 
         nextInvoked.Should().BeFalse();
         loggerMock.VerifyNoOtherCalls();
