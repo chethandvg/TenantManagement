@@ -9,6 +9,7 @@ using AutoFixture.Xunit2;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace Archu.UnitTests.Application.Products.Commands;
 
@@ -379,4 +380,258 @@ public class UpdateProductCommandHandlerTests
         // Assert
         await act.Should().NotThrowAsync<UnauthorizedAccessException>();
     }
+
+    #region Logging Verification Tests
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsInformation_WhenUpdatingProduct(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<UpdateProductCommandHandler>> mockLogger,
+        UpdateProductCommandHandler handler)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var existingProduct = new ProductBuilder().Build();
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            "Updated Name",
+            99.99m,
+            existingProduct.RowVersion);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Verify update start log
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"User {userId} updating product with ID: {existingProduct.Id}")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsInformation_AfterProductUpdated(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<UpdateProductCommandHandler>> mockLogger,
+        UpdateProductCommandHandler handler)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var existingProduct = new ProductBuilder().Build();
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            "Updated Name",
+            99.99m,
+            existingProduct.RowVersion);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Verify success log
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Product with ID {existingProduct.Id} updated successfully")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsWarning_WhenProductNotFound(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<UpdateProductCommandHandler>> mockLogger,
+        UpdateProductCommandHandler handler)
+    {
+        // Arrange
+        var productId = Guid.NewGuid();
+        mockCurrentUser.Setup(x => x.UserId).Returns(Guid.NewGuid().ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Product?)null);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+
+        var command = new UpdateProductCommand(
+            productId,
+            "Updated Name",
+            99.99m,
+            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Verify warning log
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Product with ID {productId} not found")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsWarning_WhenRowVersionMismatch(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<UpdateProductCommandHandler>> mockLogger,
+        UpdateProductCommandHandler handler)
+    {
+        // Arrange
+        var existingProduct = new ProductBuilder()
+            .WithRowVersion(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 })
+            .Build();
+
+        var differentRowVersion = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(Guid.NewGuid().ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            "Updated Name",
+            99.99m,
+            differentRowVersion);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Verify concurrency warning log
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Concurrency conflict detected for product {existingProduct.Id}")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsTwoInformationMessages_WhenSuccessful(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<UpdateProductCommandHandler>> mockLogger,
+        UpdateProductCommandHandler handler)
+    {
+        // Arrange
+        var existingProduct = new ProductBuilder().Build();
+        mockCurrentUser.Setup(x => x.UserId).Returns(Guid.NewGuid().ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var command = new UpdateProductCommand(
+            existingProduct.Id,
+            "Updated Name",
+            99.99m,
+            existingProduct.RowVersion);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Should log exactly 2 Information level messages (start and success)
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Exactly(2));
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsError_WhenUserNotAuthenticated(
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<UpdateProductCommandHandler>> mockLogger,
+        UpdateProductCommandHandler handler)
+    {
+        // Arrange
+        mockCurrentUser.Setup(x => x.UserId).Returns((string?)null);
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
+
+        var command = new UpdateProductCommand(
+            Guid.NewGuid(),
+            "Updated Name",
+            99.99m,
+            new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        // Verify error log from BaseCommandHandler
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Cannot perform update products")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    #endregion
 }

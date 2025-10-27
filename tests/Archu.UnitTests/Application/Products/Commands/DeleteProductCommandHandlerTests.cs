@@ -8,6 +8,7 @@ using AutoFixture.Xunit2;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace Archu.UnitTests.Application.Products.Commands;
 
@@ -337,4 +338,280 @@ public class DeleteProductCommandHandlerTests
         // Assert
         await act.Should().NotThrowAsync<UnauthorizedAccessException>();
     }
+
+    #region Logging Verification Tests
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsInformation_WhenDeletingProduct(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<DeleteProductCommandHandler>> mockLogger,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var existingProduct = new ProductBuilder().Build();
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var command = new DeleteProductCommand(existingProduct.Id);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Verify delete start log
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"User {userId} deleting product with ID: {existingProduct.Id}")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsInformation_AfterProductDeleted(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<DeleteProductCommandHandler>> mockLogger,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var existingProduct = new ProductBuilder().Build();
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var command = new DeleteProductCommand(existingProduct.Id);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Verify success log
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Product with ID {existingProduct.Id} deleted successfully")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsWarning_WhenProductNotFound(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<DeleteProductCommandHandler>> mockLogger,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        var productId = Guid.NewGuid();
+        mockCurrentUser.Setup(x => x.UserId).Returns(Guid.NewGuid().ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Product?)null);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+
+        var command = new DeleteProductCommand(productId);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Verify warning log
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Product with ID {productId} not found")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsTwoInformationMessages_WhenSuccessful(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<DeleteProductCommandHandler>> mockLogger,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var existingProduct = new ProductBuilder().Build();
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var command = new DeleteProductCommand(existingProduct.Id);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Should log exactly 2 Information level messages (start and success)
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Exactly(2));
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_LogsError_WhenUserNotAuthenticated(
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<DeleteProductCommandHandler>> mockLogger,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        mockCurrentUser.Setup(x => x.UserId).Returns((string?)null);
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
+
+        var command = new DeleteProductCommand(Guid.NewGuid());
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        // Verify error log from BaseCommandHandler
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Cannot perform delete products")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_IncludesUserIdInLogs(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<DeleteProductCommandHandler>> mockLogger,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var existingProduct = new ProductBuilder().Build();
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var command = new DeleteProductCommand(existingProduct.Id);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - Both log messages should include user ID
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(userId.ToString())),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Exactly(2));
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_IncludesProductIdInAllLogs(
+        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
+        [Frozen] Mock<IProductRepository> mockProductRepository,
+        [Frozen] Mock<ICurrentUser> mockCurrentUser,
+        [Frozen] Mock<ILogger<DeleteProductCommandHandler>> mockLogger,
+        DeleteProductCommandHandler handler)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var existingProduct = new ProductBuilder().Build();
+
+        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
+        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+
+        mockProductRepository
+            .Setup(r => r.GetByIdAsync(existingProduct.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingProduct);
+
+        mockProductRepository
+            .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var command = new DeleteProductCommand(existingProduct.Id);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert - All log messages should include product ID
+        mockLogger.Verify(
+            x => x.Log(
+                It.IsAny<LogLevel>(),
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(existingProduct.Id.ToString())),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    #endregion
 }
