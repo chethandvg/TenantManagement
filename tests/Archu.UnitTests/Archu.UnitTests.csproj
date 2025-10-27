@@ -39,4 +39,8 @@
     <ProjectReference Include="..\..\src\Archu.Domain\Archu.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Application\Common\Behaviors\" />
+  </ItemGroup>
+
 </Project>

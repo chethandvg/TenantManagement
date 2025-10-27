@@ -28,13 +28,15 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
     {
         if (!_validators.Any())
         {
-            return await next();
+#pragma warning disable CA2016 // Forward cancellation token - RequestHandlerDelegate doesn't accept CancellationToken by design
+            return await next().ConfigureAwait(false);
+#pragma warning restore CA2016
         }
 
         var context = new ValidationContext<TRequest>(request);
 
         var validationResults = await Task.WhenAll(
-            _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+            _validators.Select(v => v.ValidateAsync(context, cancellationToken))).ConfigureAwait(false);
 
         var failures = validationResults
             .Where(r => !r.IsValid)
@@ -50,6 +52,8 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
             throw new ValidationException(failures);
         }
 
-        return await next();
+#pragma warning disable CA2016 // Forward cancellation token - RequestHandlerDelegate doesn't accept CancellationToken by design
+        return await next().ConfigureAwait(false);
+#pragma warning restore CA2016
     }
 }
