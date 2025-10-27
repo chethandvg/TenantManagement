@@ -49,7 +49,7 @@ public class DeleteProductCommandHandlerTests
     {
         // Arrange
         var productId = Guid.NewGuid();
-        
+
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithProductNotFound(productId);
@@ -179,7 +179,7 @@ public class DeleteProductCommandHandlerTests
     {
         // Arrange
         var productId = Guid.NewGuid();
-        
+
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithProductNotFound(productId);
@@ -275,7 +275,7 @@ public class DeleteProductCommandHandlerTests
     {
         // Arrange
         var existingProduct = new ProductBuilder().Build();
-        
+
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithExistingProduct(existingProduct);
@@ -351,7 +351,7 @@ public class DeleteProductCommandHandlerTests
     {
         // Arrange
         var productId = Guid.NewGuid();
-        
+
         var fixture = new CommandHandlerTestFixture<DeleteProductCommandHandler>()
             .WithAuthenticatedUser()
             .WithProductNotFound(productId);

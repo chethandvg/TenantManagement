@@ -72,17 +72,19 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
     {
         // Calculate how many products to return for this page
         var skip = (currentPage - 1) * pageSize;
-        var take = Math.Min(pageSize, totalCount - skip);
+        var take = Math.Max(0, Math.Min(pageSize, totalCount - skip));
 
-        var products = Enumerable.Range(skip, take)
-            .Select(i => new Product
-            {
-                Id = Guid.NewGuid(),
-                Name = $"Product {i + 1}",
-                Price = (i + 1) * 10.00m,
-                RowVersion = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }
-            })
-            .ToList();
+        var products = take > 0
+            ? Enumerable.Range(skip, take)
+                .Select(i => new Product
+                {
+                    Id = Guid.NewGuid(),
+                    Name = $"Product {i + 1}",
+                    Price = (i + 1) * 10.00m,
+                    RowVersion = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }
+                })
+                .ToList()
+            : new List<Product>();
 
         MockProductRepository
             .Setup(r => r.GetPagedAsync(currentPage, pageSize, It.IsAny<CancellationToken>()))
