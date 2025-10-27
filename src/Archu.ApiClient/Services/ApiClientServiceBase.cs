@@ -214,6 +214,13 @@ public abstract class ApiClientServiceBase
     private string BuildUri(string endpoint)
     {
         var trimmedEndpoint = endpoint.TrimStart('/');
+        
+        // If endpoint starts with query string, don't add separator slash
+        if (trimmedEndpoint.StartsWith('?'))
+        {
+            return $"{BasePath}{trimmedEndpoint}";
+        }
+        
         return string.IsNullOrWhiteSpace(trimmedEndpoint)
             ? BasePath
             : $"{BasePath}/{trimmedEndpoint}";

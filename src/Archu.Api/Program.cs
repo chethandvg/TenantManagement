@@ -395,3 +395,6 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 app.MapDefaultEndpoints();
 
 app.Run();
+
+// Make Program class accessible for integration tests
+public partial class Program { }

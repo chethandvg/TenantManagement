@@ -22,7 +22,7 @@ public abstract class BaseCommandHandler
     /// </summary>
     /// <param name="operationName">Optional name of the operation for logging purposes.</param>
     /// <returns>The user ID as a Guid.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the user is not authenticated or the user ID is invalid.</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the user is not authenticated or the user ID is invalid.</exception>
     protected Guid GetCurrentUserId(string? operationName = null)
     {
         var userId = _currentUser.UserId;
@@ -31,7 +31,7 @@ public abstract class BaseCommandHandler
         {
             var operation = string.IsNullOrEmpty(operationName) ? "this operation" : operationName;
             _logger.LogError("Cannot perform {Operation}: User ID not found or invalid", operation);
-            throw new InvalidOperationException($"User must be authenticated to perform {operation}");
+            throw new UnauthorizedAccessException($"User must be authenticated to {operation}");
         }
 
         return userIdGuid;
