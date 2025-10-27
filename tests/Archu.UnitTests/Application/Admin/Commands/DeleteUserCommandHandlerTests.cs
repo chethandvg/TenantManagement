@@ -145,6 +145,19 @@ public class DeleteUserCommandHandlerTests
         fixture.MockUnitOfWork.Setup(unit => unit.Users).Returns(userRepositoryMock.Object);
         fixture.MockUnitOfWork.Setup(unit => unit.Roles).Returns(roleRepositoryMock.Object);
 
+        // Ensure the target user exists so the self-deletion guard executes
+        var existingAdminUser = new ApplicationUser
+        {
+            Id = adminId,
+            UserName = "admin-user"
+        };
+
+        CancellationToken capturedGetToken = default;
+        userRepositoryMock
+            .Setup(repo => repo.GetByIdAsync(adminId, It.IsAny<CancellationToken>()))
+            .Callback<Guid, CancellationToken>((_, token) => capturedGetToken = token)
+            .ReturnsAsync(existingAdminUser);
+
         var handler = fixture.CreateHandler();
         var command = new DeleteUserCommand(adminId);
 
@@ -155,6 +168,8 @@ public class DeleteUserCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Contain("You cannot delete your own account");
 
+        capturedGetToken.Should().Be(CancellationToken.None);
+
         fixture.VerifyStructuredWarningLogged(
             new Dictionary<string, object?>
             {
@@ -162,6 +177,7 @@ public class DeleteUserCommandHandlerTests
             },
             Times.Once());
         fixture.MockUnitOfWork.Verify(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        userRepositoryMock.Verify(repo => repo.DeleteAsync(It.IsAny<ApplicationUser>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory, AutoMoqData]
