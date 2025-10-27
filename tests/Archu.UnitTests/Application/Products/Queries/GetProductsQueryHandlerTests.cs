@@ -1,51 +1,35 @@
-using Archu.Application.Abstractions;
-using Archu.Application.Abstractions.Repositories;
 using Archu.Application.Products.Queries.GetProducts;
-using Archu.Contracts.Common;
-using Archu.Contracts.Products;
 using Archu.Domain.Entities;
+using Archu.UnitTests.TestHelpers.Fixtures;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
 namespace Archu.UnitTests.Application.Products.Queries;
 
+[Trait("Category", "Unit")]
+[Trait("Feature", "Products")]
 public class GetProductsQueryHandlerTests
 {
-    private readonly Mock<IProductRepository> _mockRepository;
-    private readonly Mock<ILogger<GetProductsQueryHandler>> _mockLogger;
-    private readonly GetProductsQueryHandler _handler;
-
-    public GetProductsQueryHandlerTests()
-    {
-        _mockRepository = new Mock<IProductRepository>();
-        _mockLogger = new Mock<ILogger<GetProductsQueryHandler>>();
-        _handler = new GetProductsQueryHandler(_mockRepository.Object, _mockLogger.Object);
-    }
-
     [Fact]
     public async Task Handle_ShouldReturnPagedProducts_WhenProductsExist()
     {
         // Arrange
-        var products = new List<Product>
-        {
-            new() { Id = Guid.NewGuid(), Name = "Product 1", Price = 10.99m, RowVersion = new byte[] { 1, 2, 3 } },
-            new() { Id = Guid.NewGuid(), Name = "Product 2", Price = 20.99m, RowVersion = new byte[] { 4, 5, 6 } }
-        };
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>()
+            .WithPagedProducts(totalCount: 5, pageSize: 10, currentPage: 1);
 
-        _mockRepository
-            .Setup(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((products, 5));
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery(PageNumber: 1, PageSize: 10);
 
         // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.Items.Should().HaveCount(2);
+        result.Items.Should().HaveCount(5);
         result.PageNumber.Should().Be(1);
         result.PageSize.Should().Be(10);
         result.TotalCount.Should().Be(5);
@@ -56,14 +40,17 @@ public class GetProductsQueryHandlerTests
     public async Task Handle_ShouldReturnEmptyPagedResult_WhenNoProductsExist()
     {
         // Arrange
-        _mockRepository
-            .Setup(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((new List<Product>(), 0));
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>()
+            .WithEmptyProductList();
+
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery(PageNumber: 1, PageSize: 10);
 
         // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
@@ -88,14 +75,20 @@ public class GetProductsQueryHandlerTests
             }
         };
 
-        _mockRepository
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>();
+
+        fixture.MockProductRepository
             .Setup(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((products, 1));
+
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery(PageNumber: 1, PageSize: 10);
 
         // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
         var dto = result.Items.First();
@@ -112,53 +105,42 @@ public class GetProductsQueryHandlerTests
         var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        _mockRepository
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>();
+
+        fixture.MockProductRepository
             .Setup(r => r.GetPagedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
+
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery(PageNumber: 1, PageSize: 10);
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(
-            async () => await _handler.Handle(query, cts.Token));
+            async () => await handler.Handle(query, cts.Token));
     }
 
     [Fact]
     public async Task Handle_ShouldLogInformationMessages()
     {
         // Arrange
-        var products = new List<Product>
-        {
-            new() { Id = Guid.NewGuid(), Name = "Product 1", Price = 10m, RowVersion = new byte[] { 1 } }
-        };
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>()
+            .WithPagedProducts(totalCount: 15, pageSize: 10, currentPage: 1);
 
-        _mockRepository
-            .Setup(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((products, 15));
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery(PageNumber: 1, PageSize: 10);
 
         // Act
-        await _handler.Handle(query, CancellationToken.None);
+        await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Retrieving products")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Retrieved 1 products")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        fixture.VerifyInformationLogged("Retrieving products");
+        fixture.VerifyInformationLogged("Retrieved 10 products");
     }
 
     [Theory]
@@ -169,27 +151,20 @@ public class GetProductsQueryHandlerTests
     public async Task Handle_ShouldHandleDifferentPaginationParameters(int pageNumber, int pageSize, int totalCount)
     {
         // Arrange
-        var itemsToReturn = Math.Min(pageSize, Math.Max(0, totalCount - (pageNumber - 1) * pageSize));
-        var products = Enumerable.Range(0, itemsToReturn)
-            .Select(i => new Product
-            {
-                Id = Guid.NewGuid(),
-                Name = $"Product {i}",
-                Price = i * 10m,
-                RowVersion = new byte[] { (byte)i }
-            })
-            .ToList();
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>()
+            .WithPagedProducts(totalCount, pageSize, pageNumber);
 
-        _mockRepository
-            .Setup(r => r.GetPagedAsync(pageNumber, pageSize, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((products, totalCount));
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery(PageNumber: pageNumber, PageSize: pageSize);
 
         // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
+        var itemsToReturn = Math.Min(pageSize, Math.Max(0, totalCount - (pageNumber - 1) * pageSize));
         result.Items.Should().HaveCount(itemsToReturn);
         result.TotalCount.Should().Be(totalCount);
         result.PageNumber.Should().Be(pageNumber);
@@ -200,19 +175,17 @@ public class GetProductsQueryHandlerTests
     public async Task Handle_ShouldCalculateTotalPagesCorrectly()
     {
         // Arrange
-        var products = new List<Product>
-        {
-            new() { Id = Guid.NewGuid(), Name = "Product 1", Price = 10m, RowVersion = new byte[] { 1 } }
-        };
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>()
+            .WithPagedProducts(totalCount: 25, pageSize: 10, currentPage: 1);
 
-        _mockRepository
-            .Setup(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((products, 25));
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery(PageNumber: 1, PageSize: 10);
 
         // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
+        var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
         result.TotalPages.Should().Be(3);
@@ -224,33 +197,39 @@ public class GetProductsQueryHandlerTests
     public async Task Handle_ShouldCallRepositoryOnce()
     {
         // Arrange
-        _mockRepository
-            .Setup(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((new List<Product>(), 0));
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>()
+            .WithEmptyProductList();
+
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery(PageNumber: 1, PageSize: 10);
 
         // Act
-        await _handler.Handle(query, CancellationToken.None);
+        await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        _mockRepository.Verify(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()), Times.Once);
+        fixture.VerifyGetPagedCalled(1, 10);
     }
 
     [Fact]
     public async Task Handle_ShouldUseDefaultPaginationParameters()
     {
         // Arrange
-        _mockRepository
-            .Setup(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((new List<Product>(), 0));
+        var fixture = new QueryHandlerTestFixture<GetProductsQueryHandler>()
+            .WithEmptyProductList();
+
+        var handler = new GetProductsQueryHandler(
+            fixture.MockProductRepository.Object,
+            fixture.MockLogger.Object);
 
         var query = new GetProductsQuery();
 
         // Act
-        await _handler.Handle(query, CancellationToken.None);
+        await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        _mockRepository.Verify(r => r.GetPagedAsync(1, 10, It.IsAny<CancellationToken>()), Times.Once);
+        fixture.VerifyGetPagedCalled(1, 10);
     }
 }

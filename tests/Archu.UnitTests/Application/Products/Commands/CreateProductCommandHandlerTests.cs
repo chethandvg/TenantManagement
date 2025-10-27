@@ -1,13 +1,10 @@
-using Archu.Application.Abstractions;
 using Archu.Application.Products.Commands.CreateProduct;
-using Archu.Contracts.Products;
 using Archu.Domain.Entities;
 using Archu.UnitTests.TestHelpers.Fixtures;
-using AutoFixture.Xunit2;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using Microsoft.Extensions.Logging;
 
 namespace Archu.UnitTests.Application.Products.Commands;
 
@@ -15,93 +12,55 @@ namespace Archu.UnitTests.Application.Products.Commands;
 [Trait("Feature", "Products")]
 public class CreateProductCommandHandlerTests
 {
-    [Theory, AutoMoqData]
-    public async Task Handle_WhenRequestIsValid_CreatesProductSuccessfully(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler,
-        string productName,
-        decimal productPrice)
+    #region Happy Path Tests
+
+    [Fact]
+    public async Task Handle_WhenRequestIsValid_CreatesProductSuccessfully()
     {
         // Arrange
-        var userId = Guid.NewGuid();
-        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithProductRepositoryForAdd();
 
-        Product? capturedProduct = null;
-        mockProductRepository
-            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .Callback<Product, CancellationToken>((p, _) => capturedProduct = p)
-            .ReturnsAsync((Product p, CancellationToken _) => p);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork
-            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
-        var command = new CreateProductCommand(productName, productPrice);
+        var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
-        result.Name.Should().Be(productName);
-        result.Price.Should().Be(productPrice);
+        result.Name.Should().Be("Test Product");
+        result.Price.Should().Be(99.99m);
         result.Id.Should().NotBeEmpty();
 
-        capturedProduct.Should().NotBeNull();
-        capturedProduct!.Name.Should().Be(productName);
-        capturedProduct.Price.Should().Be(productPrice);
-        capturedProduct.OwnerId.Should().Be(userId);
-
-        mockProductRepository.Verify(
-            r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()),
-            Times.Once);
-        mockUnitOfWork.Verify(
-            u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+        fixture.VerifyProductAdded();
+        fixture.VerifySaveChangesCalled();
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_WhenUserIsNotAuthenticated_ThrowsException(
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
-    {
-        // Arrange
-        mockCurrentUser.Setup(x => x.UserId).Returns((string?)null);
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
-
-        var command = new CreateProductCommand("Test Product", 99.99m);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => handler.Handle(command, CancellationToken.None));
-    }
-
-    [Theory, AutoMoqData]
-    public async Task Handle_SetsOwnerIdFromCurrentUser(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_SetsOwnerIdFromCurrentUser()
     {
         // Arrange
         var expectedOwnerId = Guid.NewGuid();
-        mockCurrentUser.Setup(x => x.UserId).Returns(expectedOwnerId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser(expectedOwnerId)
+            .WithProductRepositoryForAdd();
 
         Product? capturedProduct = null;
-        mockProductRepository
+        fixture.MockProductRepository
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Callback<Product, CancellationToken>((p, _) => capturedProduct = p)
             .ReturnsAsync((Product p, CancellationToken _) => p);
 
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork
-            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -113,22 +72,19 @@ public class CreateProductCommandHandlerTests
         capturedProduct!.OwnerId.Should().Be(expectedOwnerId);
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_ReturnsProductDtoWithAllProperties(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_ReturnsProductDtoWithAllProperties()
     {
         // Arrange
         var userId = Guid.NewGuid();
         var productId = Guid.NewGuid();
         var rowVersion = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
 
-        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser(userId)
+            .WithProductRepositoryForAdd();
 
-        mockProductRepository
+        fixture.MockProductRepository
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product p, CancellationToken _) =>
             {
@@ -137,10 +93,10 @@ public class CreateProductCommandHandlerTests
                 return p;
             });
 
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork
-            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -154,73 +110,40 @@ public class CreateProductCommandHandlerTests
         result.RowVersion.Should().BeEquivalentTo(rowVersion);
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_RespectsCancellationToken(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
+    #endregion
+
+    #region Authentication & Authorization Tests
+
+    [Fact]
+    public async Task Handle_WhenUserIsNotAuthenticated_ThrowsException()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithUnauthenticatedUser();
 
-        mockCurrentUser.Setup(x => x.UserId).Returns(Guid.NewGuid().ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
-
-        mockProductRepository
-            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .Callback<Product, CancellationToken>((p, ct) =>
-            {
-                if (ct.IsCancellationRequested)
-                    throw new OperationCanceledException();
-            })
-            .ReturnsAsync((Product p, CancellationToken _) => p);
-
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
-            () => handler.Handle(command, cts.Token));
-    }
-
-    [Theory, AutoMoqData]
-    public async Task Handle_WhenSaveFails_ThrowsException(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
-    {
-        // Arrange
-        mockCurrentUser.Setup(x => x.UserId).Returns(Guid.NewGuid().ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
-
-        mockProductRepository
-            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product p, CancellationToken _) => p);
-
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork
-            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("Database error"));
-
-        var command = new CreateProductCommand("Test Product", 99.99m);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.Handle(command, CancellationToken.None));
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException(
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException()
     {
         // Arrange
-        mockCurrentUser.Setup(x => x.UserId).Returns("not-a-valid-guid");
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithInvalidUserIdFormat("not-a-valid-guid");
+
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -238,21 +161,16 @@ public class CreateProductCommandHandlerTests
     [InlineData("12345")]
     [InlineData("not-a-guid-at-all")]
     [InlineData("GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG")]
-    public async Task Handle_WhenUserIdHasInvalidFormat_ThrowsUnauthorizedAccessException(
-        string invalidUserId)
+    public async Task Handle_WhenUserIdHasInvalidFormat_ThrowsUnauthorizedAccessException(string invalidUserId)
     {
         // Arrange
-        var mockCurrentUser = new Mock<ICurrentUser>();
-        var mockUnitOfWork = new Mock<IUnitOfWork>();
-        var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<CreateProductCommandHandler>>();
-        
-        mockCurrentUser.Setup(x => x.UserId).Returns(invalidUserId);
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithInvalidUserIdFormat(invalidUserId);
 
         var handler = new CreateProductCommandHandler(
-            mockUnitOfWork.Object,
-            mockCurrentUser.Object,
-            mockLogger.Object);
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -263,14 +181,17 @@ public class CreateProductCommandHandlerTests
         exception.Message.Should().Contain("User must be authenticated to create products");
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException(
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException()
     {
         // Arrange
-        mockCurrentUser.Setup(x => x.UserId).Returns(string.Empty);
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithInvalidUserIdFormat(string.Empty);
+
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -281,14 +202,17 @@ public class CreateProductCommandHandlerTests
         exception.Message.Should().Contain("User must be authenticated to create products");
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_WhenUserIdIsWhitespace_ThrowsUnauthorizedAccessException(
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_WhenUserIdIsWhitespace_ThrowsUnauthorizedAccessException()
     {
         // Arrange
-        mockCurrentUser.Setup(x => x.UserId).Returns("   ");
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithInvalidUserIdFormat("   ");
+
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -299,26 +223,18 @@ public class CreateProductCommandHandlerTests
         exception.Message.Should().Contain("User must be authenticated to create products");
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_WhenUserIdIsValidGuid_DoesNotThrow(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_WhenUserIdIsValidGuid_DoesNotThrow()
     {
         // Arrange
-        var validGuid = Guid.NewGuid().ToString();
-        mockCurrentUser.Setup(x => x.UserId).Returns(validGuid);
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithProductRepositoryForAdd();
 
-        mockProductRepository
-            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product p, CancellationToken _) => p);
-
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork
-            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -329,63 +245,45 @@ public class CreateProductCommandHandlerTests
         await act.Should().NotThrowAsync<UnauthorizedAccessException>();
     }
 
+    #endregion
+
     #region Logging Verification Tests
 
-    [Theory, AutoMoqData]
-    public async Task Handle_LogsInformation_WhenCreatingProduct(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        [Frozen] Mock<ILogger<CreateProductCommandHandler>> mockLogger,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_LogsInformation_WhenCreatingProduct()
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var productName = "Test Product";
-        var productPrice = 99.99m;
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser(userId)
+            .WithProductRepositoryForAdd();
 
-        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
-        mockProductRepository
-            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product p, CancellationToken _) => p);
-
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var command = new CreateProductCommand(productName, productPrice);
+        var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
 
-        // Assert - Verify creation log
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"User {userId} creating product: {productName}")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        // Assert
+        fixture.VerifyInformationLogged($"User {userId} creating product: Test Product");
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_LogsInformation_AfterProductCreated(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        [Frozen] Mock<ILogger<CreateProductCommandHandler>> mockLogger,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_LogsInformation_AfterProductCreated()
     {
         // Arrange
         var userId = Guid.NewGuid();
         var productId = Guid.NewGuid();
 
-        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser(userId)
+            .WithProductRepositoryForAdd();
 
-        mockProductRepository
+        fixture.MockProductRepository
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product p, CancellationToken _) =>
             {
@@ -393,70 +291,53 @@ public class CreateProductCommandHandlerTests
                 return p;
             });
 
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
 
-        // Assert - Verify success log
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Product created with ID: {productId}")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        // Assert
+        fixture.VerifyInformationLogged($"Product created with ID: {productId}");
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_LogsTwoInformationMessages_WhenSuccessful(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        [Frozen] Mock<ILogger<CreateProductCommandHandler>> mockLogger,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_LogsTwoInformationMessages_WhenSuccessful()
     {
         // Arrange
-        var userId = Guid.NewGuid();
-        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithProductRepositoryForAdd();
 
-        mockProductRepository
-            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product p, CancellationToken _) => p);
-
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
 
-        // Assert - Should log exactly 2 Information level messages
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Exactly(2));
+        // Assert
+        fixture.VerifyLogCount(LogLevel.Information, 2);
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_LogsError_WhenUserNotAuthenticated(
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        [Frozen] Mock<ILogger<CreateProductCommandHandler>> mockLogger,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_LogsError_WhenUserNotAuthenticated()
     {
         // Arrange
-        mockCurrentUser.Setup(x => x.UserId).Returns((string?)null);
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithUnauthenticatedUser();
+
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
@@ -464,107 +345,65 @@ public class CreateProductCommandHandlerTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.Handle(command, CancellationToken.None));
 
-        // Verify error log from BaseCommandHandler
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Cannot perform create products")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        fixture.VerifyErrorLogged("Cannot perform create products");
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_IncludesUserIdInLogs(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        [Frozen] Mock<ILogger<CreateProductCommandHandler>> mockLogger,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_IncludesUserIdInLogs()
     {
         // Arrange
         var userId = Guid.NewGuid();
-        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser(userId)
+            .WithProductRepositoryForAdd();
 
-        mockProductRepository
-            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product p, CancellationToken _) => p);
-
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
 
-        // Assert - Both log messages should include user ID
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(userId.ToString())),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Exactly(2));
+        // Assert
+        fixture.VerifyInformationLogged(userId.ToString(), Times.Exactly(2));
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_IncludesProductNameInLog(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        [Frozen] Mock<ILogger<CreateProductCommandHandler>> mockLogger,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_IncludesProductNameInLog()
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var productName = "Special Product Name";
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithProductRepositoryForAdd();
 
-        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
-
-        mockProductRepository
-            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Product p, CancellationToken _) => p);
-
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand(productName, 99.99m);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
 
-        // Assert - Creation log should include product name
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(productName)),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
+        // Assert
+        fixture.VerifyInformationLogged(productName);
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_IncludesProductIdInSuccessLog(
-        [Frozen] Mock<IUnitOfWork> mockUnitOfWork,
-        [Frozen] Mock<IProductRepository> mockProductRepository,
-        [Frozen] Mock<ICurrentUser> mockCurrentUser,
-        [Frozen] Mock<ILogger<CreateProductCommandHandler>> mockLogger,
-        CreateProductCommandHandler handler)
+    [Fact]
+    public async Task Handle_IncludesProductIdInSuccessLog()
     {
         // Arrange
-        var userId = Guid.NewGuid();
         var productId = Guid.NewGuid();
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithProductRepositoryForAdd();
 
-        mockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
-        mockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
-
-        mockProductRepository
+        fixture.MockProductRepository
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product p, CancellationToken _) =>
             {
@@ -572,23 +411,78 @@ public class CreateProductCommandHandlerTests
                 return p;
             });
 
-        mockUnitOfWork.Setup(u => u.Products).Returns(mockProductRepository.Object);
-        mockUnitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
 
         var command = new CreateProductCommand("Test Product", 99.99m);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
 
-        // Assert - Success log should include product ID
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Product created with ID: {productId}")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        // Assert
+        fixture.VerifyInformationLogged($"Product created with ID: {productId}");
+    }
+
+    #endregion
+
+    #region Error Handling Tests
+
+    [Fact]
+    public async Task Handle_RespectsCancellationToken()
+    {
+        // Arrange
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithProductRepositoryForAdd();
+
+        fixture.MockProductRepository
+            .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
+            .Callback<Product, CancellationToken>((p, ct) =>
+            {
+                if (ct.IsCancellationRequested)
+                    throw new OperationCanceledException();
+            })
+            .ReturnsAsync((Product p, CancellationToken _) => p);
+
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
+
+        var command = new CreateProductCommand("Test Product", 99.99m);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => handler.Handle(command, cts.Token));
+    }
+
+    [Fact]
+    public async Task Handle_WhenSaveFails_ThrowsException()
+    {
+        // Arrange
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithAuthenticatedUser()
+            .WithProductRepositoryForAdd();
+
+        fixture.MockUnitOfWork
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Database error"));
+
+        var handler = new CreateProductCommandHandler(
+            fixture.MockUnitOfWork.Object,
+            fixture.MockCurrentUser.Object,
+            fixture.MockLogger.Object);
+
+        var command = new CreateProductCommand("Test Product", 99.99m);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => handler.Handle(command, CancellationToken.None));
     }
 
     #endregion
