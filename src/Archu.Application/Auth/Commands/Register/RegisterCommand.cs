@@ -7,30 +7,14 @@ namespace Archu.Application.Auth.Commands.Register;
 /// <summary>
 /// Command to register a new user in the system.
 /// </summary>
-public sealed record RegisterCommand : IRequest<Result<AuthenticationResult>>
-{
-    /// <summary>
-    /// The user's email address.
-    /// </summary>
-    public string Email { get; init; } = string.Empty;
-
-    /// <summary>
-    /// The user's password.
-    /// </summary>
-    public string Password { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Confirmation of the password.
-    /// </summary>
-    public string ConfirmPassword { get; init; } = string.Empty;
-
-    /// <summary>
-    /// The user's username.
-    /// </summary>
-    public string UserName { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Optional phone number.
-    /// </summary>
-    public string? PhoneNumber { get; init; }
-}
+/// <param name="Email">The user's email address.</param>
+/// <param name="Password">The user's password.</param>
+/// <param name="ConfirmPassword">Confirmation of the password.</param>
+/// <param name="UserName">The user's username.</param>
+/// <param name="PhoneNumber">Optional phone number.</param>
+public sealed record RegisterCommand(
+    string Email,
+    string Password,
+    string ConfirmPassword,
+    string UserName,
+    string? PhoneNumber = null) : IRequest<Result<AuthenticationResult>>;

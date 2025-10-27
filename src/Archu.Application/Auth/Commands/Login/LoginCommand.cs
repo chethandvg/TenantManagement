@@ -7,20 +7,10 @@ namespace Archu.Application.Auth.Commands.Login;
 /// <summary>
 /// Command to authenticate a user and obtain access tokens.
 /// </summary>
-public sealed record LoginCommand : IRequest<Result<AuthenticationResult>>
-{
-    /// <summary>
-    /// The user's email address.
-    /// </summary>
-    public string Email { get; init; } = string.Empty;
-
-    /// <summary>
-    /// The user's password.
-    /// </summary>
-    public string Password { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Optional flag to remember the user (extend refresh token lifetime).
-    /// </summary>
-    public bool RememberMe { get; init; }
-}
+/// <param name="Email">The user's email address.</param>
+/// <param name="Password">The user's password.</param>
+/// <param name="RememberMe">Optional flag to remember the user (extend refresh token lifetime).</param>
+public sealed record LoginCommand(
+    string Email,
+    string Password,
+    bool RememberMe = false) : IRequest<Result<AuthenticationResult>>;

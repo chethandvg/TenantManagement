@@ -1,4 +1,5 @@
 using Archu.Application.Abstractions;
+using Archu.Application.Abstractions.Authentication;
 using Archu.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -27,6 +28,7 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
 {
     public Mock<IProductRepository> MockProductRepository { get; }
     public Mock<ICurrentUser> MockCurrentUser { get; }
+    public Mock<IAuthenticationService> MockAuthenticationService { get; }
     public Mock<ILogger<THandler>> MockLogger { get; }
 
     private Func<IProductRepository, ICurrentUser, ILogger<THandler>, THandler>? _handlerFactory;
@@ -36,6 +38,7 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
     {
         MockProductRepository = new Mock<IProductRepository>();
         MockCurrentUser = new Mock<ICurrentUser>();
+        MockAuthenticationService = new Mock<IAuthenticationService>();
         MockLogger = new Mock<ILogger<THandler>>();
     }
 
@@ -76,6 +79,17 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
     {
         MockCurrentUser.Setup(x => x.UserId).Returns(invalidUserId);
         MockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the authentication service mock for query handler scenarios.
+    /// </summary>
+    /// <param name="configure">An optional callback to arrange authentication service behavior.</param>
+    public QueryHandlerTestFixture<THandler> WithAuthenticationService(
+        Action<Mock<IAuthenticationService>>? configure = null)
+    {
+        configure?.Invoke(MockAuthenticationService);
         return this;
     }
 
@@ -254,59 +268,61 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
                 MockLogger.Object);
         }
 
-        // Try constructor with ICurrentUser (ProductRepository, CurrentUser, Logger)
-        try
+        var constructorSignatures = new[]
         {
-            var constructorWithUser = typeof(THandler).GetConstructor(new[]
-            {
-                typeof(IProductRepository),
-                typeof(ICurrentUser),
-                typeof(ILogger<THandler>)
-            });
+            new[] { typeof(IProductRepository), typeof(ICurrentUser), typeof(ILogger<THandler>) },
+            new[] { typeof(IProductRepository), typeof(ILogger<THandler>) },
+            new[] { typeof(IAuthenticationService), typeof(ILogger<THandler>) },
+            new[] { typeof(IAuthenticationService), typeof(ICurrentUser), typeof(ILogger<THandler>) }
+        };
 
-            if (constructorWithUser != null)
+        foreach (var signature in constructorSignatures)
+        {
+            var constructor = typeof(THandler).GetConstructor(signature);
+
+            if (constructor != null)
             {
-                return (THandler)constructorWithUser.Invoke(new object[]
-                {
-                    MockProductRepository.Object,
-                    MockCurrentUser.Object,
-                    MockLogger.Object
-                });
+                var parameters = signature
+                    .Select(ResolveConstructorParameter)
+                    .ToArray();
+
+                return (THandler)constructor.Invoke(parameters);
             }
-        }
-        catch
-        {
-            // Try next constructor
-        }
-
-        // Try constructor without ICurrentUser (ProductRepository, Logger)
-        try
-        {
-            var simpleConstructor = typeof(THandler).GetConstructor(new[]
-            {
-                typeof(IProductRepository),
-                typeof(ILogger<THandler>)
-            });
-
-            if (simpleConstructor != null)
-            {
-                return (THandler)simpleConstructor.Invoke(new object[]
-                {
-                    MockProductRepository.Object,
-                    MockLogger.Object
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                $"Unable to create handler of type {typeof(THandler).Name}. " +
-                "Use WithHandlerFactory or WithSimpleHandlerFactory to provide a custom factory method.", ex);
         }
 
         throw new InvalidOperationException(
             $"No suitable constructor found for {typeof(THandler).Name}. " +
             "Use WithHandlerFactory or WithSimpleHandlerFactory to provide a custom factory method.");
+    }
+
+    /// <summary>
+    /// Resolves constructor dependencies for query handlers to the configured mocks.
+    /// </summary>
+    /// <param name="dependencyType">The dependency type requested by the handler constructor.</param>
+    private object ResolveConstructorParameter(Type dependencyType)
+    {
+        if (dependencyType == typeof(IProductRepository))
+        {
+            return MockProductRepository.Object;
+        }
+
+        if (dependencyType == typeof(IAuthenticationService))
+        {
+            return MockAuthenticationService.Object;
+        }
+
+        if (dependencyType == typeof(ICurrentUser))
+        {
+            return MockCurrentUser.Object;
+        }
+
+        if (dependencyType == typeof(ILogger<THandler>))
+        {
+            return MockLogger.Object;
+        }
+
+        throw new InvalidOperationException(
+            $"Unsupported dependency type {dependencyType.Name} for handler {typeof(THandler).Name}.");
     }
 
     #endregion
