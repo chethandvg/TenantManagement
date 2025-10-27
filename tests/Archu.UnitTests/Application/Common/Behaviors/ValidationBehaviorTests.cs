@@ -39,14 +39,16 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
-        RequestHandlerDelegate<string> next = () =>
-        {
-            nextInvoked = true;
-            return Task.FromResult("handled");
-        };
 
         // Act
-        var response = await behavior.Handle(request, next, cancellationToken);
+        var response = await behavior.Handle(
+            request,
+            () =>
+            {
+                nextInvoked = true;
+                return Task.FromResult("handled");
+            },
+            cancellationToken);
 
         // Assert
         response.Should().Be("handled");
@@ -77,14 +79,16 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
-        RequestHandlerDelegate<string> next = () =>
-        {
-            nextInvoked = true;
-            return Task.FromResult("handled");
-        };
 
         // Act
-        var act = async () => await behavior.Handle(request, next, cancellationToken);
+        var act = async () => await behavior.Handle(
+            request,
+            () =>
+            {
+                nextInvoked = true;
+                return Task.FromResult("handled");
+            },
+            cancellationToken);
 
         // Assert
         var exception = await Assert.ThrowsAsync<ValidationException>(act);
@@ -129,14 +133,17 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
-        RequestHandlerDelegate<string> next = () =>
-        {
-            nextInvoked = true;
-            return Task.FromResult("handled");
-        };
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => behavior.Handle(request, next, cancellationToken));
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => behavior.Handle(
+                request,
+                () =>
+                {
+                    nextInvoked = true;
+                    return Task.FromResult("handled");
+                },
+                cancellationToken));
 
         nextInvoked.Should().BeFalse();
         loggerMock.VerifyNoOtherCalls();
