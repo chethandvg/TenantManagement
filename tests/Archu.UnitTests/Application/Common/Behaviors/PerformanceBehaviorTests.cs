@@ -29,9 +29,10 @@ public class PerformanceBehaviorTests
         // Act
         var response = await behavior.Handle(
             request,
-            async () =>
+            async ct =>
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(550), cancellationToken);
+                ct.Should().Be(cancellationToken);
+                await Task.Delay(TimeSpan.FromMilliseconds(550), ct);
                 completionFlag = true;
                 return "handled";
             },
@@ -69,9 +70,10 @@ public class PerformanceBehaviorTests
         // Act
         var response = await behavior.Handle(
             request,
-            async () =>
+            async ct =>
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
+                ct.Should().Be(cancellationToken);
+                await Task.Delay(TimeSpan.FromMilliseconds(100), ct);
                 completionFlag = true;
                 return "handled";
             },
@@ -109,9 +111,10 @@ public class PerformanceBehaviorTests
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => behavior.Handle(
                 request,
-                async () =>
+                async ct =>
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                    ct.Should().Be(cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(5), ct);
                     return "handled";
                 },
                 cancellationToken));

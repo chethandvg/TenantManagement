@@ -28,9 +28,8 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
     {
         if (!_validators.Any())
         {
-#pragma warning disable CA2016 // Forward cancellation token - RequestHandlerDelegate doesn't accept CancellationToken by design
-            return await next().ConfigureAwait(false);
-#pragma warning restore CA2016
+            // RequestHandlerDelegate now flows cancellation tokens, so pass along the provided token.
+            return await next(cancellationToken).ConfigureAwait(false);
         }
 
         var context = new ValidationContext<TRequest>(request);
@@ -52,8 +51,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
             throw new ValidationException(failures);
         }
 
-#pragma warning disable CA2016 // Forward cancellation token - RequestHandlerDelegate doesn't accept CancellationToken by design
-        return await next().ConfigureAwait(false);
-#pragma warning restore CA2016
+        // Validation succeeded; continue executing the pipeline while preserving the cancellation token.
+        return await next(cancellationToken).ConfigureAwait(false);
     }
 }

@@ -43,8 +43,9 @@ public class ValidationBehaviorTests
         // Act
         var response = await behavior.Handle(
             request,
-            () =>
+            ct =>
             {
+                ct.Should().Be(cancellationToken);
                 nextInvoked = true;
                 return Task.FromResult("handled");
             },
@@ -83,7 +84,7 @@ public class ValidationBehaviorTests
         // Act
         var act = async () => await behavior.Handle(
             request,
-            () =>
+            ct =>
             {
                 nextInvoked = true;
                 return Task.FromResult("handled");
@@ -138,8 +139,9 @@ public class ValidationBehaviorTests
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => behavior.Handle(
                 request,
-                () =>
+                ct =>
                 {
+                    ct.Should().Be(cancellationToken);
                     nextInvoked = true;
                     return Task.FromResult("handled");
                 },
