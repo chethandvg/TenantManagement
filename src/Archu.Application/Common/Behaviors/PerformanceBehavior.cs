@@ -12,12 +12,10 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 {
     private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
 
-
     public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger)
     {
         _logger = logger;
     }
-
 
     public async Task<TResponse> Handle(
         TRequest request,
@@ -26,7 +24,9 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     {
         var timer = Stopwatch.StartNew();
 
-        var response = await next();
+#pragma warning disable CA2016 // Forward cancellation token - RequestHandlerDelegate doesn't accept CancellationToken by design
+        var response = await next().ConfigureAwait(false);
+#pragma warning restore CA2016
 
         timer.Stop();
 
