@@ -20,23 +20,23 @@ public class ValidationBehaviorTests
     public async Task Handle_ShouldInvokeNext_WhenValidationSucceeds()
     {
         // Arrange
-        var request = new TestRequest("value");
+        var request = new ValidationBehaviorTestRequest("value");
         var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
 
-        var validatorMock = new Mock<IValidator<TestRequest>>();
+        var validatorMock = new Mock<IValidator<ValidationBehaviorTestRequest>>();
         var validationResult = new ValidationResult();
 
         validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<TestRequest>>(), It.IsAny<CancellationToken>()))
-            .Returns<ValidationContext<TestRequest>, CancellationToken>((_, ct) =>
+            .Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationBehaviorTestRequest>>(), It.IsAny<CancellationToken>()))
+            .Returns<ValidationContext<ValidationBehaviorTestRequest>, CancellationToken>((_, ct) =>
             {
                 ct.Should().Be(cancellationToken);
                 return Task.FromResult(validationResult);
             });
 
-        var loggerMock = new Mock<ILogger<ValidationBehavior<TestRequest, string>>>();
-        var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
+        var loggerMock = new Mock<ILogger<ValidationBehavior<ValidationBehaviorTestRequest, string>>>();
+        var behavior = new ValidationBehavior<ValidationBehaviorTestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
 
@@ -55,7 +55,9 @@ public class ValidationBehaviorTests
         response.Should().Be("handled");
         nextInvoked.Should().BeTrue();
 
-        validatorMock.Verify(v => v.ValidateAsync(It.IsAny<ValidationContext<TestRequest>>(), cancellationToken), Times.Once);
+        validatorMock.Verify(
+            v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationBehaviorTestRequest>>(), cancellationToken),
+            Times.Once);
         loggerMock.VerifyNoOtherCalls();
     }
 
@@ -66,18 +68,18 @@ public class ValidationBehaviorTests
     public async Task Handle_ShouldThrowValidationException_WhenValidationFails()
     {
         // Arrange
-        var request = new TestRequest("invalid");
+        var request = new ValidationBehaviorTestRequest("invalid");
         var cancellationToken = CancellationToken.None;
 
-        var validatorMock = new Mock<IValidator<TestRequest>>();
+        var validatorMock = new Mock<IValidator<ValidationBehaviorTestRequest>>();
         var failures = new[] { new ValidationFailure("Property", "Error message") };
 
         validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<TestRequest>>(), cancellationToken))
+            .Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationBehaviorTestRequest>>(), cancellationToken))
             .ReturnsAsync(new ValidationResult(failures));
 
-        var loggerMock = new Mock<ILogger<ValidationBehavior<TestRequest, string>>>();
-        var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
+        var loggerMock = new Mock<ILogger<ValidationBehavior<ValidationBehaviorTestRequest, string>>>();
+        var behavior = new ValidationBehavior<ValidationBehaviorTestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
 
@@ -96,7 +98,7 @@ public class ValidationBehaviorTests
         exception.Errors.Should().Contain(f => f.PropertyName == "Property" && f.ErrorMessage == "Error message");
         nextInvoked.Should().BeFalse();
 
-        validatorMock.Verify(v => v.ValidateAsync(It.IsAny<ValidationContext<TestRequest>>(), cancellationToken), Times.Once);
+        validatorMock.Verify(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationBehaviorTestRequest>>(), cancellationToken), Times.Once);
 
         loggerMock.Verify(
             l => l.Log(
@@ -115,23 +117,23 @@ public class ValidationBehaviorTests
     public async Task Handle_ShouldRespectCancellationToken()
     {
         // Arrange
-        var request = new TestRequest("value");
+        var request = new ValidationBehaviorTestRequest("value");
         using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
         var cancellationToken = cancellationTokenSource.Token;
 
-        var validatorMock = new Mock<IValidator<TestRequest>>();
+        var validatorMock = new Mock<IValidator<ValidationBehaviorTestRequest>>();
 
         validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<TestRequest>>(), It.IsAny<CancellationToken>()))
-            .Returns<ValidationContext<TestRequest>, CancellationToken>(async (_, ct) =>
+            .Setup(v => v.ValidateAsync(It.IsAny<ValidationContext<ValidationBehaviorTestRequest>>(), It.IsAny<CancellationToken>()))
+            .Returns<ValidationContext<ValidationBehaviorTestRequest>, CancellationToken>(async (_, ct) =>
             {
                 ct.Should().Be(cancellationToken);
                 await Task.Delay(TimeSpan.FromSeconds(5), ct);
                 return new ValidationResult();
             });
 
-        var loggerMock = new Mock<ILogger<ValidationBehavior<TestRequest, string>>>();
-        var behavior = new ValidationBehavior<TestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
+        var loggerMock = new Mock<ILogger<ValidationBehavior<ValidationBehaviorTestRequest, string>>>();
+        var behavior = new ValidationBehavior<ValidationBehaviorTestRequest, string>(new[] { validatorMock.Object }, loggerMock.Object);
 
         var nextInvoked = false;
 
@@ -151,5 +153,6 @@ public class ValidationBehaviorTests
         loggerMock.VerifyNoOtherCalls();
     }
 
-    private sealed record TestRequest(string Value) : IRequest<string>;
 }
+
+public sealed record ValidationBehaviorTestRequest(string Value) : IRequest<string>;

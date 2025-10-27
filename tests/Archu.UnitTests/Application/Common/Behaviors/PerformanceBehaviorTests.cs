@@ -18,11 +18,11 @@ public class PerformanceBehaviorTests
     public async Task Handle_ShouldLogWarning_WhenRequestIsSlow()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<PerformanceBehavior<TestRequest, string>>>();
-        var behavior = new PerformanceBehavior<TestRequest, string>(loggerMock.Object);
+        var loggerMock = new Mock<ILogger<PerformanceBehavior<PerformanceBehaviorTestRequest, string>>>();
+        var behavior = new PerformanceBehavior<PerformanceBehaviorTestRequest, string>(loggerMock.Object);
 
         var completionFlag = false;
-        var request = new TestRequest();
+        var request = new PerformanceBehaviorTestRequest();
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
 
@@ -59,11 +59,11 @@ public class PerformanceBehaviorTests
     public async Task Handle_ShouldNotLogWarning_WhenRequestIsFast()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<PerformanceBehavior<TestRequest, string>>>();
-        var behavior = new PerformanceBehavior<TestRequest, string>(loggerMock.Object);
+        var loggerMock = new Mock<ILogger<PerformanceBehavior<PerformanceBehaviorTestRequest, string>>>();
+        var behavior = new PerformanceBehavior<PerformanceBehaviorTestRequest, string>(loggerMock.Object);
 
         var completionFlag = false;
-        var request = new TestRequest();
+        var request = new PerformanceBehaviorTestRequest();
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
 
@@ -100,10 +100,10 @@ public class PerformanceBehaviorTests
     public async Task Handle_ShouldRespectCancellationToken()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<PerformanceBehavior<TestRequest, string>>>();
-        var behavior = new PerformanceBehavior<TestRequest, string>(loggerMock.Object);
+        var loggerMock = new Mock<ILogger<PerformanceBehavior<PerformanceBehaviorTestRequest, string>>>();
+        var behavior = new PerformanceBehavior<PerformanceBehaviorTestRequest, string>(loggerMock.Object);
 
-        var request = new TestRequest();
+        var request = new PerformanceBehaviorTestRequest();
         using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
         var cancellationToken = cancellationTokenSource.Token;
 
@@ -129,5 +129,6 @@ public class PerformanceBehaviorTests
             Times.Never);
     }
 
-    private sealed record TestRequest : IRequest<string>;
 }
+
+public sealed record PerformanceBehaviorTestRequest : IRequest<string>;
