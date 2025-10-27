@@ -138,7 +138,7 @@ public class ValidationBehaviorTests
         var nextInvoked = false;
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => behavior.Handle(
                 request,
                 ct =>

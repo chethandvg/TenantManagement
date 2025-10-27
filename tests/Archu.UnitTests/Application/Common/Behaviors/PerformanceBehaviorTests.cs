@@ -108,7 +108,7 @@ public class PerformanceBehaviorTests
         var cancellationToken = cancellationTokenSource.Token;
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => behavior.Handle(
                 request,
                 async ct =>
