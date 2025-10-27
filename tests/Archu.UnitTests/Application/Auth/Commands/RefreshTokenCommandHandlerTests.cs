@@ -24,10 +24,7 @@ public class RefreshTokenCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Success(authResult)));
 
         var handler = fixture.CreateHandler();
-        var command = new RefreshTokenCommand
-        {
-            RefreshToken = refreshToken
-        };
+        var command = new RefreshTokenCommand(refreshToken);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -50,17 +47,14 @@ public class RefreshTokenCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Failure(errorMessage)));
 
         var handler = fixture.CreateHandler();
-        var command = new RefreshTokenCommand
-        {
-            RefreshToken = refreshToken
-        };
+        var command = new RefreshTokenCommand(refreshToken);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be(errorMessage);
+        result.Error.Should().Be("Invalid or expired refresh token");
         fixture.VerifyWarningLogged("Token refresh failed", Times.Once());
     }
 
@@ -76,10 +70,7 @@ public class RefreshTokenCommandHandlerTests
                     .ReturnsAsync(Result<AuthenticationResult>.Success(authResult)));
 
         var handler = fixture.CreateHandler();
-        var command = new RefreshTokenCommand
-        {
-            RefreshToken = refreshToken
-        };
+        var command = new RefreshTokenCommand(refreshToken);
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act

@@ -23,7 +23,7 @@ public class LogoutCommandHandlerTests
             .WithAuthenticatedUser(Guid.NewGuid());
 
         var handler = fixture.CreateHandler();
-        var command = new LogoutCommand { UserId = userId };
+        var command = new LogoutCommand(userId);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -49,7 +49,7 @@ public class LogoutCommandHandlerTests
             .WithAuthenticatedUser(Guid.NewGuid());
 
         var handler = fixture.CreateHandler();
-        var command = new LogoutCommand { UserId = userId };
+        var command = new LogoutCommand(userId);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -72,7 +72,7 @@ public class LogoutCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new LogoutCommand();
+        var command = new LogoutCommand(null);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -93,7 +93,7 @@ public class LogoutCommandHandlerTests
             .WithAuthenticationService();
 
         var handler = fixture.CreateHandler();
-        var command = new LogoutCommand();
+        var command = new LogoutCommand(null);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -119,7 +119,7 @@ public class LogoutCommandHandlerTests
             .WithAuthenticatedUser(Guid.NewGuid());
 
         var handler = fixture.CreateHandler();
-        var command = new LogoutCommand { UserId = userId };
+        var command = new LogoutCommand(userId);
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act

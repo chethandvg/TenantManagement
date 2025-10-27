@@ -24,12 +24,7 @@ public class ResetPasswordCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ResetPasswordCommand
-        {
-            Email = email,
-            Token = token,
-            NewPassword = newPassword
-        };
+        var command = new ResetPasswordCommand(email, token, newPassword, newPassword);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -53,12 +48,7 @@ public class ResetPasswordCommandHandlerTests
                     .ReturnsAsync(Result.Failure(errorMessage)));
 
         var handler = fixture.CreateHandler();
-        var command = new ResetPasswordCommand
-        {
-            Email = email,
-            Token = token,
-            NewPassword = newPassword
-        };
+        var command = new ResetPasswordCommand(email, token, newPassword, newPassword);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -82,12 +72,7 @@ public class ResetPasswordCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ResetPasswordCommand
-        {
-            Email = email,
-            Token = token,
-            NewPassword = newPassword
-        };
+        var command = new ResetPasswordCommand(email, token, newPassword, newPassword);
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act

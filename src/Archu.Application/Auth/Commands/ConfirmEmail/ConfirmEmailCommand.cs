@@ -6,15 +6,8 @@ namespace Archu.Application.Auth.Commands.ConfirmEmail;
 /// <summary>
 /// Command to confirm a user's email address using a confirmation token.
 /// </summary>
-public sealed record ConfirmEmailCommand : IRequest<Result>
-{
-    /// <summary>
-    /// The user's unique identifier.
-    /// </summary>
-    public string UserId { get; init; } = string.Empty;
-
-    /// <summary>
-    /// The email confirmation token.
-    /// </summary>
-    public string Token { get; init; } = string.Empty;
-}
+/// <param name="UserId">The user's unique identifier.</param>
+/// <param name="Token">The email confirmation token.</param>
+public sealed record ConfirmEmailCommand(
+    string UserId,
+    string Token) : IRequest<Result>;

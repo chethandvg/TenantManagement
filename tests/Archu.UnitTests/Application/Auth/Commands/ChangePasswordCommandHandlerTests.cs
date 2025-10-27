@@ -25,13 +25,11 @@ public class ChangePasswordCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ChangePasswordCommand
-        {
-            UserId = userId,
-            CurrentPassword = currentPassword,
-            NewPassword = newPassword,
-            ConfirmPassword = newPassword
-        };
+        var command = new ChangePasswordCommand(
+            userId,
+            currentPassword,
+            newPassword,
+            newPassword);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -59,13 +57,11 @@ public class ChangePasswordCommandHandlerTests
                     .ReturnsAsync(Result.Failure(errorMessage)));
 
         var handler = fixture.CreateHandler();
-        var command = new ChangePasswordCommand
-        {
-            UserId = userId,
-            CurrentPassword = currentPassword,
-            NewPassword = newPassword,
-            ConfirmPassword = newPassword
-        };
+        var command = new ChangePasswordCommand(
+            userId,
+            currentPassword,
+            newPassword,
+            newPassword);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -90,12 +86,11 @@ public class ChangePasswordCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ChangePasswordCommand
-        {
-            CurrentPassword = currentPassword,
-            NewPassword = newPassword,
-            ConfirmPassword = newPassword
-        };
+        var command = new ChangePasswordCommand(
+            null,
+            currentPassword,
+            newPassword,
+            newPassword);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -118,12 +113,11 @@ public class ChangePasswordCommandHandlerTests
             .WithAuthenticationService();
 
         var handler = fixture.CreateHandler();
-        var command = new ChangePasswordCommand
-        {
-            CurrentPassword = currentPassword,
-            NewPassword = newPassword,
-            ConfirmPassword = newPassword
-        };
+        var command = new ChangePasswordCommand(
+            null,
+            currentPassword,
+            newPassword,
+            newPassword);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -151,13 +145,11 @@ public class ChangePasswordCommandHandlerTests
                     .ReturnsAsync(Result.Success()));
 
         var handler = fixture.CreateHandler();
-        var command = new ChangePasswordCommand
-        {
-            UserId = userId,
-            CurrentPassword = currentPassword,
-            NewPassword = newPassword,
-            ConfirmPassword = newPassword
-        };
+        var command = new ChangePasswordCommand(
+            userId,
+            currentPassword,
+            newPassword,
+            newPassword);
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act

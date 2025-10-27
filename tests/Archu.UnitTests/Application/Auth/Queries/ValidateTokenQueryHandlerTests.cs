@@ -22,10 +22,7 @@ public class ValidateTokenQueryHandlerTests
                     .ReturnsAsync(Result<bool>.Success(true)));
 
         var handler = fixture.CreateHandler();
-        var query = new ValidateTokenQuery
-        {
-            RefreshToken = refreshToken
-        };
+        var query = new ValidateTokenQuery(refreshToken);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -48,10 +45,7 @@ public class ValidateTokenQueryHandlerTests
                     .ReturnsAsync(Result<bool>.Failure(errorMessage)));
 
         var handler = fixture.CreateHandler();
-        var query = new ValidateTokenQuery
-        {
-            RefreshToken = refreshToken
-        };
+        var query = new ValidateTokenQuery(refreshToken);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -73,10 +67,7 @@ public class ValidateTokenQueryHandlerTests
                     .ReturnsAsync(Result<bool>.Success(true)));
 
         var handler = fixture.CreateHandler();
-        var query = new ValidateTokenQuery
-        {
-            RefreshToken = refreshToken
-        };
+        var query = new ValidateTokenQuery(refreshToken);
         using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act
