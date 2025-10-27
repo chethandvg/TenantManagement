@@ -43,7 +43,7 @@ public sealed class ResultTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.IsFailure.Should().BeTrue();
-        result.Value.Should().BeNull();
+        result.Value.Should().Be(default(int));
         result.Error.Should().Be(error);
         result.Errors.Should().BeNull();
     }
