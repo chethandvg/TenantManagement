@@ -46,10 +46,10 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     public CommandHandlerTestFixture<THandler> WithAuthenticatedUser(Guid userId)
     {
         _authenticatedUserId = userId;
-        
+
         MockCurrentUser.Setup(x => x.UserId).Returns(userId.ToString());
         MockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
-        
+
         return this;
     }
 
@@ -66,10 +66,10 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     /// </summary>
     public CommandHandlerTestFixture<THandler> WithUnauthenticatedUser()
     {
-        
+
         MockCurrentUser.Setup(x => x.UserId).Returns((string?)null);
         MockCurrentUser.Setup(x => x.IsAuthenticated).Returns(false);
-        
+
         return this;
     }
 
@@ -80,7 +80,7 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     {
         MockCurrentUser.Setup(x => x.UserId).Returns(invalidUserId);
         MockCurrentUser.Setup(x => x.IsAuthenticated).Returns(true);
-        
+
         return this;
     }
 
