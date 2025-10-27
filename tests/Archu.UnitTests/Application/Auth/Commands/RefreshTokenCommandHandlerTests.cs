@@ -60,7 +60,7 @@ public class RefreshTokenCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be(errorMessage);
+        result.Error.Should().Be("Invalid or expired refresh token");
         fixture.VerifyWarningLogged("Token refresh failed", Times.Once());
     }
 
