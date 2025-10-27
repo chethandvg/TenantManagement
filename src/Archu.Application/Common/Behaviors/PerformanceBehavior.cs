@@ -24,9 +24,8 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     {
         var timer = Stopwatch.StartNew();
 
-#pragma warning disable CA2016 // Forward cancellation token - RequestHandlerDelegate doesn't accept CancellationToken by design
-        var response = await next().ConfigureAwait(false);
-#pragma warning restore CA2016
+        // Forward the cancellation token to downstream handlers to respect caller-requested cancellations.
+        var response = await next(cancellationToken).ConfigureAwait(false);
 
         timer.Stop();
 
