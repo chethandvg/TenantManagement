@@ -175,9 +175,9 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     /// Creates a handler instance using the configured mocks.
     /// If a custom factory was configured via WithHandlerFactory, it will be used.
     /// Otherwise, attempts to use one of the supported constructor signatures:
-    /// (IUnitOfWork, ICurrentUser, ILogger&lt;THandler&gt;), (IAuthenticationService, ILogger&lt;THandler&gt;),
-    /// (IAuthenticationService, ICurrentUser, ILogger&lt;THandler&gt;), (ICurrentUser, ILogger&lt;THandler&gt;),
-    /// (IUnitOfWork, ILogger&lt;THandler&gt;), or (ILogger).
+    /// (IUnitOfWork, ICurrentUser, ILogger<THandler>), (IAuthenticationService, ILogger<THandler>),
+    /// (IAuthenticationService, ICurrentUser, ILogger<THandler>), (ICurrentUser, ILogger<THandler>),
+    /// (IUnitOfWork, ILogger<THandler>), or (ILogger).
     /// This ensures handlers that rely on either generic or non-generic loggers can be resolved without
     /// additional test setup.
     /// </summary>
