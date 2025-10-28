@@ -238,11 +238,11 @@ public class ProductTests
     public void Product_EqualityComparison_BasedOnId(IFixture fixture, Guid id)
     {
         // Arrange
-        var uniqueId = Guid.NewGuid();
-        if (uniqueId == id)
+        Guid uniqueId;
+        do
         {
             uniqueId = Guid.NewGuid();
-        }
+        } while (uniqueId == id);
 
         var product1 = fixture.Build<Product>()
             .With(p => p.Id, id)
