@@ -1,9 +1,9 @@
 using Archu.Web;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using MudBlazor.Services;
 using Archu.ApiClient.Extensions;
 using Microsoft.AspNetCore.Components.Authorization;
+using Archu.Ui;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -34,7 +34,7 @@ builder.Services.AddApiClientForWasm(options =>
 // Add authorization for Blazor
 builder.Services.AddAuthorizationCore();
 
-// Add MudBlazor services
-builder.Services.AddMudServices();
+// Add shared UI component services from Archu.Ui
+builder.Services.AddArchuUi();
 
 await builder.Build().RunAsync();
