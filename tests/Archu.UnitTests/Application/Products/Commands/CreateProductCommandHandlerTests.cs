@@ -139,7 +139,7 @@ public class CreateProductCommandHandlerTests
     [MemberData(nameof(InvalidUserIds))]
     public async Task Handle_WhenUserIdIsInvalid_ThrowsUnauthorizedAccessException(string invalidUserId)
     {
-        await AssertUnauthorizedAccessForInvalidUserAsync(invalidUserId);
+        await AssertUnauthorizedAccessForInvalidUserAsync(invalidUserId, "Sample Product", 42.5m);
     }
 
     [Theory, AutoMoqData]
@@ -536,13 +536,13 @@ public class CreateProductCommandHandlerTests
     /// Ensures the invalid user configuration, command execution, and exception validation remain consistent.
     /// The helper verifies the handler reads the configured user ID while throwing the expected unauthorized error.
     /// </summary>
-    private static async Task AssertUnauthorizedAccessForInvalidUserAsync(string invalidUserId)
+    private static async Task AssertUnauthorizedAccessForInvalidUserAsync(string invalidUserId, string productName, decimal price)
     {
         var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
             .WithInvalidUserIdFormat(invalidUserId);
 
         var handler = fixture.CreateHandler();
-        var command = new CreateProductCommand("Sample Product", 42.5m);
+        var command = new CreateProductCommand(productName, price);
 
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));
 
