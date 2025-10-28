@@ -4,6 +4,9 @@ using MudBlazor;
 
 namespace Archu.Ui.Layouts;
 
+/// <summary>
+/// Provides the application-wide layout structure, including navigation drawer and authentication controls.
+/// </summary>
 public partial class MainLayout
 {
     private bool _drawerOpen = true;
