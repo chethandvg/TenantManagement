@@ -2,11 +2,11 @@
     <Router AppAssembly="@typeof(App).Assembly"
             AdditionalAssemblies="new[] { typeof(Archu.Ui.Pages.Index).Assembly }">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Archu.Ui.Layouts.MainLayout)">
                 <NotAuthorized>
                     @if (context.User.Identity?.IsAuthenticated != true)
                     {
-                        <RedirectToLogin />
+                        <Archu.Ui.Components.Routing.RedirectToLogin />
                     }
                     else
                     {
@@ -18,7 +18,7 @@
         </Found>
         <NotFound>
             <PageTitle>Not found</PageTitle>
-            <LayoutView Layout="@typeof(MainLayout)">
+            <LayoutView Layout="@typeof(Archu.Ui.Layouts.MainLayout)">
                 <p role="alert">Sorry, there's nothing at this address.</p>
             </LayoutView>
         </NotFound>

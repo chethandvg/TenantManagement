@@ -1,16 +1,15 @@
+using Archu.ApiClient.Extensions;
+using Archu.Ui;
 using Archu.Web;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using MudBlazor.Services;
-using Archu.ApiClient.Extensions;
-using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure API base URL from Aspire service discovery or configuration
-var apiUrl = builder.Configuration["services:api:https:0"] 
+var apiUrl = builder.Configuration["services:api:https:0"]
              ?? builder.Configuration["services:api:http:0"]
              ?? builder.Configuration["ApiClient:BaseUrl"]
              ?? "https://localhost:7123";
@@ -34,7 +33,7 @@ builder.Services.AddApiClientForWasm(options =>
 // Add authorization for Blazor
 builder.Services.AddAuthorizationCore();
 
-// Add MudBlazor services
-builder.Services.AddMudServices();
+// Add shared UI component services from Archu.Ui
+builder.Services.AddArchuUi();
 
 await builder.Build().RunAsync();
