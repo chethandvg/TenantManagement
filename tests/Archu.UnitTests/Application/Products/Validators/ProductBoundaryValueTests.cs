@@ -273,9 +273,31 @@ public class ProductBoundaryValueTests
         var result = await validator.ValidateAsync(command);
 
         // Assert
-        // Note: FluentValidation doesn't have built-in RowVersion validation
-        // This would typically be caught by the handler itself when comparing RowVersions
-        result.IsValid.Should().BeTrue(); // Validator only checks Name and Price
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(UpdateProductCommand.RowVersion) &&
+            e.ErrorMessage.Contains("least one byte"));
+    }
+
+    [Fact]
+    public async Task UpdateProduct_WithNullRowVersion_FailsValidation()
+    {
+        // Arrange
+        var validator = new UpdateProductCommandValidator();
+        var command = new UpdateProductCommand(
+            Guid.NewGuid(),
+            "Updated Product",
+            99.99m,
+            null!);
+
+        // Act
+        var result = await validator.ValidateAsync(command);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e =>
+            e.PropertyName == nameof(UpdateProductCommand.RowVersion) &&
+            e.ErrorMessage.Contains("required"));
     }
 
     [Fact]
