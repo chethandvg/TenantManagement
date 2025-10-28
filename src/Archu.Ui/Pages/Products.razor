@@ -1,7 +1,5 @@
 @page "/products"
 @attribute [Authorize]
-@inject IProductsApiClient ProductsClient
-@inject ISnackbar Snackbar
 
 <PageTitle>Products</PageTitle>
 
@@ -42,45 +40,4 @@ else
     <MudAlert Severity="Severity.Error" Class="mt-4">
         @errorMessage
     </MudAlert>
-}
-
-@code {
-    private IEnumerable<ProductDto>? products;
-    private bool isLoading = true;
-    private string? errorMessage;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadProductsAsync();
-    }
-
-    private async Task LoadProductsAsync()
-    {
-        isLoading = true;
-        errorMessage = null;
-
-        try
-        {
-            var response = await ProductsClient.GetProductsAsync(pageNumber: 1, pageSize: 50);
-
-            if (response.Success && response.Data != null)
-            {
-                products = response.Data.Items;
-            }
-            else
-            {
-                errorMessage = response.Message ?? "Failed to load products.";
-                Snackbar.Add(errorMessage, Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error loading products: {ex.Message}";
-            Snackbar.Add(errorMessage, Severity.Error);
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
 }
