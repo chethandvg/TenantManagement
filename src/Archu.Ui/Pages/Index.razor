@@ -7,13 +7,13 @@
     <Authorized>
         <MudText Typo="Typo.h3" GutterBottom="true">Welcome, @context.User.Identity?.Name!</MudText>
         <MudText Class="mb-8">You have successfully logged into Archu.</MudText>
-        
+
         <MudPaper Class="pa-4 mb-4">
             <MudText Typo="Typo.h6" GutterBottom="true">Your Profile</MudText>
             <MudText>Email: @context.User.FindFirst("email")?.Value</MudText>
             <MudText>Roles: @string.Join(", ", context.User.Claims.Where(c => c.Type == "role").Select(c => c.Value))</MudText>
         </MudPaper>
-        
+
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/products" StartIcon="@Icons.Material.Filled.ShoppingCart">
             View Products
         </MudButton>
