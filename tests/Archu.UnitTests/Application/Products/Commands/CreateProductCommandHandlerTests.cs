@@ -125,92 +125,21 @@ public class CreateProductCommandHandlerTests
             () => handler.Handle(command, CancellationToken.None));
     }
 
-    [Theory, AutoMoqData]
-    public async Task Handle_WhenUserIdIsInvalidGuid_ThrowsUnauthorizedAccessException(
-        string productName,
-        decimal price,
-        string invalidUserId)
+    public static TheoryData<string> InvalidUserIds => new()
     {
-        // Arrange
-        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
-            .WithInvalidUserIdFormat(invalidUserId);
-
-        var handler = fixture.CreateHandler();
-        var command = new CreateProductCommand(productName, price);
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => handler.Handle(command, CancellationToken.None));
-
-        exception.Message.Should().Contain("User must be authenticated to create products");
-    }
+        string.Empty,
+        "   ",
+        "invalid-guid-format",
+        "12345",
+        "not-a-guid-at-all",
+        "GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG"
+    };
 
     [Theory]
-    [InlineAutoMoqData("")]
-    [InlineAutoMoqData("   ")]
-    [InlineAutoMoqData("invalid-guid-format")]
-    [InlineAutoMoqData("12345")]
-    [InlineAutoMoqData("not-a-guid-at-all")]
-    [InlineAutoMoqData("GGGGGGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG")]
-    public async Task Handle_WhenUserIdHasInvalidFormat_ThrowsUnauthorizedAccessException(
-        string invalidUserId,
-        string productName,
-        decimal price)
+    [MemberData(nameof(InvalidUserIds))]
+    public async Task Handle_WhenUserIdIsInvalid_ThrowsUnauthorizedAccessException(string invalidUserId)
     {
-        // Arrange
-        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
-            .WithInvalidUserIdFormat(invalidUserId);
-
-        var handler = fixture.CreateHandler();
-        var command = new CreateProductCommand(productName, price);
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => handler.Handle(command, CancellationToken.None));
-
-        exception.Message.Should().Contain("User must be authenticated to create products");
-    }
-
-    [Theory]
-    [InlineAutoMoqData("")]
-    public async Task Handle_WhenUserIdIsEmptyString_ThrowsUnauthorizedAccessException(
-        string emptyUserId,
-        string productName,
-        decimal price)
-    {
-        // Arrange
-        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
-            .WithInvalidUserIdFormat(emptyUserId);
-
-        var handler = fixture.CreateHandler();
-        var command = new CreateProductCommand(productName, price);
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => handler.Handle(command, CancellationToken.None));
-
-        exception.Message.Should().Contain("User must be authenticated to create products");
-    }
-
-    [Theory]
-    [InlineAutoMoqData("   ")]
-    public async Task Handle_WhenUserIdIsWhitespace_ThrowsUnauthorizedAccessException(
-        string whitespaceUserId,
-        string productName,
-        decimal price)
-    {
-        // Arrange
-        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
-            .WithInvalidUserIdFormat(whitespaceUserId);
-
-        var handler = fixture.CreateHandler();
-        var command = new CreateProductCommand(productName, price);
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => handler.Handle(command, CancellationToken.None));
-
-        exception.Message.Should().Contain("User must be authenticated to create products");
+        await AssertUnauthorizedAccessForInvalidUserAsync(invalidUserId);
     }
 
     [Theory, AutoMoqData]
@@ -601,4 +530,24 @@ public class CreateProductCommandHandlerTests
     }
 
     #endregion
+
+    /// <summary>
+    /// Provides shared assertions for invalid user scenarios to avoid repetitive arrangements in tests.
+    /// Ensures the invalid user configuration, command execution, and exception validation remain consistent.
+    /// </summary>
+    private static async Task AssertUnauthorizedAccessForInvalidUserAsync(string invalidUserId)
+    {
+        var fixture = new CommandHandlerTestFixture<CreateProductCommandHandler>()
+            .WithInvalidUserIdFormat(invalidUserId);
+
+        var handler = fixture.CreateHandler();
+        var command = new CreateProductCommand("Sample Product", 42.5m);
+
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));
+
+        exception.Message.Should().Contain("User must be authenticated to create products");
+
+        fixture.MockCurrentUser.VerifyGet(user => user.UserId, Times.AtLeastOnce());
+        fixture.MockCurrentUser.VerifyGet(user => user.IsAuthenticated, Times.AtLeastOnce());
+    }
 }
