@@ -27,6 +27,6 @@ public class UpdateProductCommandValidator : AbstractValidator<UpdateProductComm
 
         RuleFor(x => x.RowVersion)
             .NotNull().WithMessage("Row version is required")
-            .Must(rv => rv == null || rv.Length > 0).WithMessage("Row version must contain at least one byte");
+            .Must(rv => (rv?.Length ?? 0) > 0).WithMessage("Row version must contain at least one byte");
     }
 }
