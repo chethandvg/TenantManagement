@@ -1,16 +1,15 @@
+using Archu.ApiClient.Extensions;
+using Archu.Ui;
 using Archu.Web;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Archu.ApiClient.Extensions;
-using Microsoft.AspNetCore.Components.Authorization;
-using Archu.Ui;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure API base URL from Aspire service discovery or configuration
-var apiUrl = builder.Configuration["services:api:https:0"] 
+var apiUrl = builder.Configuration["services:api:https:0"]
              ?? builder.Configuration["services:api:http:0"]
              ?? builder.Configuration["ApiClient:BaseUrl"]
              ?? "https://localhost:7123";
