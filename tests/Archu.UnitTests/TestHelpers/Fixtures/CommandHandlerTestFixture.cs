@@ -174,7 +174,12 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     /// <summary>
     /// Creates a handler instance using the configured mocks.
     /// If a custom factory was configured via WithHandlerFactory, it will be used.
-    /// Otherwise, attempts to use a standard three-parameter constructor.
+    /// Otherwise, attempts to use one of the supported constructor signatures:
+    /// (IUnitOfWork, ICurrentUser, ILogger<THandler>), (IAuthenticationService, ILogger<THandler>),
+    /// (IAuthenticationService, ICurrentUser, ILogger<THandler>), (ICurrentUser, ILogger<THandler>),
+    /// (IUnitOfWork, ILogger<THandler>), or (ILogger).
+    /// This ensures handlers that rely on either generic or non-generic loggers can be resolved without
+    /// additional test setup.
     /// </summary>
     /// <returns>A new handler instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown when handler cannot be created and no custom factory was provided.</exception>
@@ -207,7 +212,10 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
         {
             new[] { typeof(IUnitOfWork), typeof(ICurrentUser), typeof(ILogger<THandler>) },
             new[] { typeof(IAuthenticationService), typeof(ILogger<THandler>) },
-            new[] { typeof(IAuthenticationService), typeof(ICurrentUser), typeof(ILogger<THandler>) }
+            new[] { typeof(IAuthenticationService), typeof(ICurrentUser), typeof(ILogger<THandler>) },
+            new[] { typeof(ICurrentUser), typeof(ILogger<THandler>) },
+            new[] { typeof(IUnitOfWork), typeof(ILogger<THandler>) },
+            new[] { typeof(ILogger) }
         };
 
         foreach (var signature in constructorSignatures)
@@ -250,7 +258,7 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
             return MockCurrentUser.Object;
         }
 
-        if (dependencyType == typeof(ILogger<THandler>))
+        if (dependencyType == typeof(ILogger<THandler>) || dependencyType == typeof(ILogger))
         {
             return MockLogger.Object;
         }

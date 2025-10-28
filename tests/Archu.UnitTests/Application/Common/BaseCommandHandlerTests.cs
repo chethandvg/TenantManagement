@@ -16,6 +16,21 @@ namespace Archu.UnitTests.Application.Common;
 [Trait("Feature", "Common")]
 public class BaseCommandHandlerTests
 {
+    [Fact]
+    public void CreateHandler_WhenHandlerRequiresCurrentUserAndNonGenericLogger_ReturnsConfiguredHandler()
+    {
+        // Arrange
+        var expectedUserId = Guid.NewGuid();
+        var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
+            .WithAuthenticatedUser(expectedUserId);
+
+        // Act
+        var handler = fixture.CreateHandler();
+
+        // Assert
+        handler.TestGetCurrentUserId().Should().Be(expectedUserId);
+    }
+
     #region GetCurrentUserId Tests
 
     [Fact]
@@ -26,9 +41,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithAuthenticatedUser(expectedUserId);
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act
         var result = handler.TestGetCurrentUserId();
@@ -44,9 +57,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act & Assert
         var exception = Assert.Throws<UnauthorizedAccessException>(
@@ -62,9 +73,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act & Assert
         var exception = Assert.Throws<UnauthorizedAccessException>(
@@ -80,9 +89,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithInvalidUserIdFormat("not-a-valid-guid");
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act & Assert
         var exception = Assert.Throws<UnauthorizedAccessException>(
@@ -103,9 +110,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithInvalidUserIdFormat(invalidUserId);
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act & Assert
         var exception = Assert.Throws<UnauthorizedAccessException>(
@@ -121,9 +126,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act & Assert
         Assert.Throws<UnauthorizedAccessException>(
@@ -139,9 +142,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act & Assert
         Assert.Throws<UnauthorizedAccessException>(
@@ -162,9 +163,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithAuthenticatedUser(expectedUserId);
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act
         var result = handler.TestTryGetCurrentUserId(out var userId);
@@ -181,9 +180,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act
         var result = handler.TestTryGetCurrentUserId(out var userId);
@@ -200,9 +197,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithInvalidUserIdFormat("not-a-valid-guid");
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act
         var result = handler.TestTryGetCurrentUserId(out var userId);
@@ -219,9 +214,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithInvalidUserIdFormat(string.Empty);
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act
         var result = handler.TestTryGetCurrentUserId(out var userId);
@@ -238,9 +231,7 @@ public class BaseCommandHandlerTests
         var fixture = new CommandHandlerTestFixture<TestCommandHandler>()
             .WithUnauthenticatedUser();
 
-        var handler = new TestCommandHandler(
-            fixture.MockCurrentUser.Object,
-            fixture.MockLogger.Object);
+        var handler = fixture.CreateHandler();
 
         // Act
         var result = handler.TestTryGetCurrentUserId(out var _);
