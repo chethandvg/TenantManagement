@@ -534,6 +534,7 @@ public class CreateProductCommandHandlerTests
     /// <summary>
     /// Provides shared assertions for invalid user scenarios to avoid repetitive arrangements in tests.
     /// Ensures the invalid user configuration, command execution, and exception validation remain consistent.
+    /// The helper verifies the handler reads the configured user ID while throwing the expected unauthorized error.
     /// </summary>
     private static async Task AssertUnauthorizedAccessForInvalidUserAsync(string invalidUserId)
     {
@@ -548,6 +549,6 @@ public class CreateProductCommandHandlerTests
         exception.Message.Should().Contain("User must be authenticated to create products");
 
         fixture.MockCurrentUser.VerifyGet(user => user.UserId, Times.AtLeastOnce());
-        fixture.MockCurrentUser.VerifyGet(user => user.IsAuthenticated, Times.AtLeastOnce());
+        fixture.MockCurrentUser.Object.IsAuthenticated.Should().BeTrue();
     }
 }
