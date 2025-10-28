@@ -1,5 +1,6 @@
 using Archu.Domain.Entities.Identity;
-using Archu.UnitTests.TestHelpers.Builders;
+using Archu.UnitTests.TestHelpers.Fixtures;
+using AutoFixture;
 using FluentAssertions;
 using Xunit;
 
@@ -28,15 +29,14 @@ public sealed class ApplicationUserTests
     /// <summary>
     /// Ensures the lockout helper returns false when lockout is disabled.
     /// </summary>
-    [Fact]
-    public void IsLockedOut_WhenLockoutDisabled_ReturnsFalse()
+    [Theory, AutoMoqData]
+    public void IsLockedOut_WhenLockoutDisabled_ReturnsFalse(IFixture fixture)
     {
         // Arrange
-        var user = new UserBuilder()
-            .Build();
-
-        user.LockoutEnabled = false;
-        user.LockoutEnd = DateTime.UtcNow.AddMinutes(5);
+        var user = fixture.Build<ApplicationUser>()
+            .With(u => u.LockoutEnabled, false)
+            .With(u => u.LockoutEnd, DateTime.UtcNow.AddMinutes(5))
+            .Create();
 
         // Act
         var result = user.IsLockedOut;
@@ -48,15 +48,14 @@ public sealed class ApplicationUserTests
     /// <summary>
     /// Ensures the lockout helper returns false when the lockout period has expired.
     /// </summary>
-    [Fact]
-    public void IsLockedOut_WhenLockoutExpired_ReturnsFalse()
+    [Theory, AutoMoqData]
+    public void IsLockedOut_WhenLockoutExpired_ReturnsFalse(IFixture fixture)
     {
         // Arrange
-        var user = new UserBuilder()
-            .Build();
-
-        user.LockoutEnabled = true;
-        user.LockoutEnd = DateTime.UtcNow.AddMinutes(-1);
+        var user = fixture.Build<ApplicationUser>()
+            .With(u => u.LockoutEnabled, true)
+            .With(u => u.LockoutEnd, DateTime.UtcNow.AddMinutes(-1))
+            .Create();
 
         // Act
         var result = user.IsLockedOut;
@@ -68,15 +67,14 @@ public sealed class ApplicationUserTests
     /// <summary>
     /// Ensures the lockout helper returns true while the user is actively locked out.
     /// </summary>
-    [Fact]
-    public void IsLockedOut_WhenLockoutActive_ReturnsTrue()
+    [Theory, AutoMoqData]
+    public void IsLockedOut_WhenLockoutActive_ReturnsTrue(IFixture fixture)
     {
         // Arrange
-        var user = new UserBuilder()
-            .Build();
-
-        user.LockoutEnabled = true;
-        user.LockoutEnd = DateTime.UtcNow.AddMinutes(10);
+        var user = fixture.Build<ApplicationUser>()
+            .With(u => u.LockoutEnabled, true)
+            .With(u => u.LockoutEnd, DateTime.UtcNow.AddMinutes(10))
+            .Create();
 
         // Act
         var result = user.IsLockedOut;
@@ -88,17 +86,15 @@ public sealed class ApplicationUserTests
     /// <summary>
     /// Validates the overload accepting a custom timestamp for deterministic testing.
     /// </summary>
-    [Fact]
-    public void IsLockedOutAt_WithCustomTimestamp_UsesProvidedTime()
+    [Theory, AutoMoqData]
+    public void IsLockedOutAt_WithCustomTimestamp_UsesProvidedTime(IFixture fixture)
     {
         // Arrange
-        var user = new UserBuilder()
-            .Build();
-
-        var lockoutStarted = DateTime.UtcNow;
-        user.LockoutEnabled = true;
-        user.LockoutEnd = lockoutStarted.AddMinutes(5);
-        var evaluationTime = lockoutStarted.AddMinutes(1);
+        var evaluationTime = DateTime.UtcNow.AddMinutes(1);
+        var user = fixture.Build<ApplicationUser>()
+            .With(u => u.LockoutEnabled, true)
+            .With(u => u.LockoutEnd, evaluationTime.AddMinutes(4))
+            .Create();
 
         // Act
         var result = user.IsLockedOutAt(evaluationTime);
@@ -110,21 +106,20 @@ public sealed class ApplicationUserTests
     /// <summary>
     /// Confirms the navigation collection can accept user role assignments.
     /// </summary>
-    [Fact]
-    public void UserRoles_WhenAddingRole_AddsEntry()
+    [Theory, AutoMoqData]
+    public void UserRoles_WhenAddingRole_AddsEntry(IFixture fixture, DateTime assignedAtUtc)
     {
         // Arrange
-        var user = new UserBuilder().Build();
-        var role = new RoleBuilder().Build();
+        var user = fixture.Create<ApplicationUser>();
+        var role = fixture.Create<ApplicationRole>();
 
-        var userRole = new UserRole
-        {
-            UserId = user.Id,
-            RoleId = role.Id,
-            User = user,
-            Role = role,
-            AssignedAtUtc = DateTime.UtcNow
-        };
+        var userRole = fixture.Build<UserRole>()
+            .With(ur => ur.UserId, user.Id)
+            .With(ur => ur.RoleId, role.Id)
+            .With(ur => ur.User, user)
+            .With(ur => ur.Role, role)
+            .With(ur => ur.AssignedAtUtc, assignedAtUtc)
+            .Create();
 
         // Act
         user.UserRoles.Add(userRole);
