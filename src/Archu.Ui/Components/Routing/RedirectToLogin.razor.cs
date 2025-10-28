@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Components;
 
 namespace Archu.Ui.Components.Routing;
 
+/// <summary>
+/// This component handles redirecting unauthenticated users to the login page while preserving the return URL.
+/// </summary>
 public partial class RedirectToLogin : ComponentBase
 {
     [Inject]
