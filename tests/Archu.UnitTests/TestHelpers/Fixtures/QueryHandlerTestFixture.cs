@@ -574,8 +574,25 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
         return true;
     }
 
+    /// <summary>
+    /// Examines the structured log entry to compare the emitted message template against the
+    /// expected assertion, preserving backwards compatibility with simple string logs.
+    /// </summary>
     private static bool VerifyLogMessageContains(object state, string expectedMessage)
     {
+        if (state is IEnumerable<KeyValuePair<string, object?>> logValues)
+        {
+            var originalFormat = logValues
+                .FirstOrDefault(kv => string.Equals(kv.Key, "{OriginalFormat}", StringComparison.Ordinal))
+                .Value?
+                .ToString();
+
+            if (originalFormat is not null)
+            {
+                return originalFormat.Contains(expectedMessage, StringComparison.Ordinal);
+            }
+        }
+
         var formattedMessage = state?.ToString();
 
         if (formattedMessage is null)
