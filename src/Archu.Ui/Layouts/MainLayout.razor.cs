@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Archu.ApiClient.Authentication.Services;
 using Archu.Ui.Theming;
@@ -15,6 +16,18 @@ public partial class MainLayout : IDisposable
 {
     private bool _drawerOpen = true;
     private MudTheme _theme = default!;
+    private static readonly Dictionary<string, object> DrawerAccessibilityAttributes = new(StringComparer.Ordinal)
+    {
+        { "role", "presentation" }
+    };
+    private static readonly RenderFragment AccountMenuActivator = builder =>
+    {
+        builder.OpenComponent<MudIconButton>(0);
+        builder.AddAttribute(1, nameof(MudIconButton.Icon), Icons.Material.Filled.AccountCircle);
+        builder.AddAttribute(2, nameof(MudIconButton.Color), Color.Inherit);
+        builder.AddAttribute(3, "aria-label", "Open account menu");
+        builder.CloseComponent();
+    };
 
     [Inject]
     private IAuthenticationService AuthService { get; set; } = default!;
