@@ -93,10 +93,16 @@ public class CreateRoleCommandHandlerTests
             new Dictionary<string, object?>
             {
                 ["UserId"] = adminId.ToString(),
-                ["RoleName"] = roleName
+                ["RoleName"] = roleName,
+                ["{OriginalFormat}"] = "User {UserId} creating role: {RoleName}"
             },
             Times.Once());
-        fixture.VerifyInformationLogged("Role created with ID:", Times.Once());
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                ["{OriginalFormat}"] = "Role created with ID: {RoleId}"
+            },
+            Times.Once());
     }
 
     [Theory, AutoMoqData]
@@ -126,7 +132,7 @@ public class CreateRoleCommandHandlerTests
         await action.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage($"Role '{roleName}' already exists");
 
-        fixture.VerifyWarningLogged($"Role {roleName} already exists");
+        fixture.VerifyWarningLogged("Role {RoleName} already exists");
         fixture.MockUnitOfWork.Verify(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         roleRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<ApplicationRole>(), It.IsAny<CancellationToken>()), Times.Never);
     }

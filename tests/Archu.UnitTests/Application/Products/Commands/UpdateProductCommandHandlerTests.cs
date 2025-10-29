@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Archu.Application.Products.Commands.UpdateProduct;
 using Archu.Domain.Entities;
 using Archu.UnitTests.TestHelpers.Builders;
@@ -283,7 +284,7 @@ public class UpdateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyWarningLogged($"Product with ID {existingProduct.Id} was deleted during update operation");
+        fixture.VerifyWarningLogged("Product with ID {ProductId} was deleted during update operation");
     }
 
     [Theory, AutoMoqData]
@@ -319,7 +320,7 @@ public class UpdateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyWarningLogged($"Race condition detected: Product {existingProduct.Id} was modified between validation and save");
+        fixture.VerifyWarningLogged("Race condition detected: Product {ProductId} was modified between validation and save");
     }
 
     [Theory, AutoMoqData]
@@ -491,7 +492,12 @@ public class UpdateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"User {userId} updating product with ID: {existingProduct.Id}");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "UserId", userId },
+            { "ProductId", existingProduct.Id },
+            { "{OriginalFormat}", "User {UserId} updating product with ID: {ProductId}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -519,7 +525,12 @@ public class UpdateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"Product with ID {existingProduct.Id} updated successfully");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "ProductId", existingProduct.Id },
+            { "UserId", userId },
+            { "{OriginalFormat}", "Product with ID {ProductId} updated successfully by user {UserId}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -541,7 +552,7 @@ public class UpdateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyWarningLogged($"Product with ID {productId} not found");
+        fixture.VerifyWarningLogged("Product with ID {ProductId} not found");
     }
 
     [Theory, AutoMoqData]

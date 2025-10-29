@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Archu.Application.Products.Queries.GetProducts;
 using Archu.Domain.Entities;
 using Archu.UnitTests.TestHelpers.Fixtures;
@@ -229,7 +230,12 @@ public class GetProductsQueryHandlerTests
         await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged("Retrieving products");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "PageNumber", pageNumber },
+            { "PageSize", pageSize },
+            { "{OriginalFormat}", "Retrieving products - Page {PageNumber}, Size {PageSize}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -251,7 +257,12 @@ public class GetProductsQueryHandlerTests
         await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"Retrieved {itemsReturned} products");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "Count", itemsReturned },
+            { "TotalCount", totalCount },
+            { "{OriginalFormat}", "Retrieved {Count} products out of {TotalCount} total" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -353,8 +364,12 @@ public class GetProductsQueryHandlerTests
         await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"Page {pageNumber}");
-        fixture.VerifyInformationLogged($"Size {pageSize}");
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?> { { "PageNumber", pageNumber } },
+            Times.Once());
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?> { { "PageSize", pageSize } },
+            Times.Once());
     }
 
     #endregion

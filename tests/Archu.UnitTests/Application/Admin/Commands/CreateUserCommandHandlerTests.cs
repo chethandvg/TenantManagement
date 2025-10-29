@@ -132,11 +132,17 @@ public class CreateUserCommandHandlerTests
             new Dictionary<string, object?>
             {
                 ["UserId"] = adminId.ToString(),
-                ["UserName"] = userName
+                ["UserName"] = userName,
+                ["{OriginalFormat}"] = "Admin {UserId} creating user: {UserName}"
             },
             Times.Once());
 
-        fixture.VerifyInformationLogged("User created with ID:", Times.Once());
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                ["{OriginalFormat}"] = "User created with ID: {UserId}"
+            },
+            Times.Once());
     }
 
     [Theory, AutoMoqData]
@@ -174,7 +180,7 @@ public class CreateUserCommandHandlerTests
         await action.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage($"Username '{userName}' is already taken");
 
-        fixture.VerifyWarningLogged($"Username {userName} already exists");
+        fixture.VerifyWarningLogged("Username {UserName} already exists");
         fixture.MockUnitOfWork.Verify(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         passwordHasherMock.Verify(hasher => hasher.HashPassword(It.IsAny<string>()), Times.Never);
     }
@@ -221,7 +227,7 @@ public class CreateUserCommandHandlerTests
         await action.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage($"Email '{email}' is already registered");
 
-        fixture.VerifyWarningLogged($"Email {email} already exists");
+        fixture.VerifyWarningLogged("Email {Email} already exists");
         fixture.MockUnitOfWork.Verify(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         passwordHasherMock.Verify(hasher => hasher.HashPassword(It.IsAny<string>()), Times.Never);
     }

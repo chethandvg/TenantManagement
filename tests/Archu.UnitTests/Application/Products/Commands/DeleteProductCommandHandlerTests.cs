@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Archu.Application.Products.Commands.DeleteProduct;
 using Archu.Domain.Entities;
 using Archu.UnitTests.TestHelpers.Builders;
@@ -270,7 +271,12 @@ public class DeleteProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"User {userId} deleting product with ID: {existingProduct.Id}");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "UserId", userId },
+            { "ProductId", existingProduct.Id },
+            { "{OriginalFormat}", "User {UserId} deleting product with ID: {ProductId}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -290,7 +296,12 @@ public class DeleteProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"Product with ID {existingProduct.Id} deleted successfully");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "ProductId", existingProduct.Id },
+            { "UserId", userId },
+            { "{OriginalFormat}", "Product with ID {ProductId} deleted successfully by user {UserId}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -308,7 +319,7 @@ public class DeleteProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyWarningLogged($"Product with ID {productId} not found");
+        fixture.VerifyWarningLogged("Product with ID {ProductId} not found");
     }
 
     [Theory, AutoMoqData]
@@ -345,7 +356,11 @@ public class DeleteProductCommandHandlerTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.Handle(command, CancellationToken.None));
 
-        fixture.VerifyErrorLogged("Cannot perform delete products");
+        fixture.VerifyStructuredErrorLogged(new Dictionary<string, object?>
+        {
+            { "Operation", "delete products" },
+            { "{OriginalFormat}", "Cannot perform {Operation}: User ID not found or invalid" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -365,7 +380,12 @@ public class DeleteProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged(userId.ToString(), Times.Exactly(2));
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                { "UserId", userId }
+            },
+            Times.Exactly(2));
     }
 
     [Theory, AutoMoqData]
@@ -385,14 +405,12 @@ public class DeleteProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.MockLogger.Verify(
-            x => x.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(existingProduct.Id.ToString())),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                { "ProductId", existingProduct.Id }
+            },
+            Times.Exactly(2));
     }
 
     #endregion

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Domain.Entities;
@@ -427,7 +429,8 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
     #region Logging Verification Methods
 
     /// <summary>
-    /// Verifies that an Information level log was written containing the specified message.
+    /// Verifies that an Information level log was written using the provided message template.
+    /// Internally asserts on the structured <c>{OriginalFormat}</c> field to avoid brittle substring comparisons.
     /// </summary>
     public void VerifyInformationLogged(string expectedMessage, Times? times = null)
     {
@@ -435,14 +438,14 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogMessageContains(v, expectedMessage)),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
     }
 
     /// <summary>
-    /// Verifies that a Warning level log was written containing the specified message.
+    /// Verifies that a Warning level log was written using the provided message template.
     /// </summary>
     public void VerifyWarningLogged(string expectedMessage, Times? times = null)
     {
@@ -450,14 +453,14 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogMessageContains(v, expectedMessage)),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
     }
 
     /// <summary>
-    /// Verifies that an Error level log was written containing the specified message.
+    /// Verifies that an Error level log was written using the provided message template.
     /// </summary>
     public void VerifyErrorLogged(string expectedMessage, Times? times = null)
     {
@@ -465,7 +468,7 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogMessageContains(v, expectedMessage)),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
@@ -569,6 +572,37 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Examines the structured log entry to compare the emitted message template against the
+    /// expected assertion and falls back to formatted text when template comparison alone
+    /// cannot satisfy the verification.
+    /// </summary>
+    private static bool VerifyLogMessageContains(object state, string expectedMessage)
+    {
+        if (state is IEnumerable<KeyValuePair<string, object?>> logValues)
+        {
+            var originalFormat = logValues
+                .FirstOrDefault(kv => string.Equals(kv.Key, "{OriginalFormat}", StringComparison.Ordinal))
+                .Value?
+                .ToString();
+
+            if (originalFormat is not null &&
+                originalFormat.Contains(expectedMessage, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        var formattedMessage = state?.ToString();
+
+        if (formattedMessage is null)
+        {
+            return false;
+        }
+
+        return formattedMessage.Contains(expectedMessage, StringComparison.Ordinal);
     }
 
     #endregion
