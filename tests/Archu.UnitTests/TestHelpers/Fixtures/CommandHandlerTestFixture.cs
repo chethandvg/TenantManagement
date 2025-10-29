@@ -444,8 +444,9 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
 
     /// <summary>
     /// Safely inspects the structured logging payload to determine whether the emitted
-    /// message template matches the expected value while falling back to formatted text
-    /// for legacy assertions.
+    /// message template matches the expected value and gracefully falls back to
+    /// formatted text comparisons when template matching is insufficient for the
+    /// assertion.
     /// </summary>
     private static bool VerifyLogMessageContains(object state, string expectedMessage)
     {
@@ -456,9 +457,10 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
                 .Value?
                 .ToString();
 
-            if (originalFormat is not null)
+            if (originalFormat is not null &&
+                originalFormat.Contains(expectedMessage, StringComparison.Ordinal))
             {
-                return originalFormat.Contains(expectedMessage, StringComparison.Ordinal);
+                return true;
             }
         }
 

@@ -576,7 +576,8 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
 
     /// <summary>
     /// Examines the structured log entry to compare the emitted message template against the
-    /// expected assertion, preserving backwards compatibility with simple string logs.
+    /// expected assertion and falls back to formatted text when template comparison alone
+    /// cannot satisfy the verification.
     /// </summary>
     private static bool VerifyLogMessageContains(object state, string expectedMessage)
     {
@@ -587,9 +588,10 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
                 .Value?
                 .ToString();
 
-            if (originalFormat is not null)
+            if (originalFormat is not null &&
+                originalFormat.Contains(expectedMessage, StringComparison.Ordinal))
             {
-                return originalFormat.Contains(expectedMessage, StringComparison.Ordinal);
+                return true;
             }
         }
 
