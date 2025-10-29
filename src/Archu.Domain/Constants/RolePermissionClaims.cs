@@ -33,7 +33,7 @@ public static class RolePermissionClaims
         {
             PermissionNames.Products.Manage,
             PermissionNames.Users.Manage,
-            PermissionNames.Roles.Read
+            PermissionNames.Roles.Manage
         },
 
         [RoleNames.SuperAdmin] = new[]
@@ -44,16 +44,43 @@ public static class RolePermissionClaims
         }
     };
 
+    private static readonly Dictionary<string, string[]> _permissionImplications = new(StringComparer.Ordinal)
+    {
+        [PermissionNames.Products.Manage] = new[]
+        {
+            PermissionNames.Products.Read,
+            PermissionNames.Products.Create,
+            PermissionNames.Products.Update,
+            PermissionNames.Products.Delete
+        },
+        [PermissionNames.Users.Manage] = new[]
+        {
+            PermissionNames.Users.Read,
+            PermissionNames.Users.Create,
+            PermissionNames.Users.Update,
+            PermissionNames.Users.Delete
+        },
+        [PermissionNames.Roles.Manage] = new[]
+        {
+            PermissionNames.Roles.Read,
+            PermissionNames.Roles.Create,
+            PermissionNames.Roles.Update,
+            PermissionNames.Roles.Delete
+        }
+    };
+
     /// <summary>
     /// Gets the permission claim strings for a given role.
     /// These are the permission claims that should be added to the user's JWT token.
+    /// High-level permissions such as "manage" are expanded to include their
+    /// implied granular actions.
     /// </summary>
     /// <param name="roleName">The name of the role.</param>
     /// <returns>Array of permission claim strings for the role.</returns>
     public static string[] GetPermissionClaimsForRole(string roleName)
     {
         return _rolePermissionClaims.TryGetValue(roleName, out var permissions)
-            ? permissions
+            ? ExpandPermissions(permissions)
             : Array.Empty<string>();
     }
 
@@ -78,7 +105,7 @@ public static class RolePermissionClaims
     public static string[] GetAllPermissionClaims()
     {
         return _rolePermissionClaims.Values
-            .SelectMany(p => p)
+            .SelectMany(ExpandPermissions)
             .Distinct()
             .ToArray();
     }
@@ -103,8 +130,33 @@ public static class RolePermissionClaims
     public static string[] GetRolesWithPermissionClaim(string permissionClaim)
     {
         return _rolePermissionClaims
-            .Where(kvp => kvp.Value.Contains(permissionClaim, StringComparer.Ordinal))
+            .Where(kvp => ExpandPermissions(kvp.Value).Contains(permissionClaim, StringComparer.Ordinal))
             .Select(kvp => kvp.Key)
             .ToArray();
+    }
+
+    /// <summary>
+    /// Ensures that high-level permissions (e.g., manage) automatically confer
+    /// their granular CRUD counterparts so authorization policies such as
+    /// "products:read" succeed for administrators without duplicating claims.
+    /// </summary>
+    /// <param name="permissions">The base permission claims configured for a role.</param>
+    /// <returns>The expanded permission claim set.</returns>
+    private static string[] ExpandPermissions(IEnumerable<string> permissions)
+    {
+        var expanded = new HashSet<string>(permissions, StringComparer.Ordinal);
+
+        foreach (var permission in permissions)
+        {
+            if (_permissionImplications.TryGetValue(permission, out var impliedPermissions))
+            {
+                foreach (var implied in impliedPermissions)
+                {
+                    expanded.Add(implied);
+                }
+            }
+        }
+
+        return expanded.ToArray();
     }
 }

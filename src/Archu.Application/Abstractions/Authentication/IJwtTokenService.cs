@@ -15,12 +15,18 @@ public interface IJwtTokenService
     /// <param name="email">The user's email address.</param>
     /// <param name="userName">The user's username.</param>
     /// <param name="roles">The roles assigned to the user.</param>
+    /// <param name="additionalClaims">
+    /// Optional claims to append to the token. Use this to project custom claim
+    /// types such as permissions or email verification flags that are evaluated
+    /// by downstream authorization handlers.
+    /// </param>
     /// <returns>A JWT access token string.</returns>
     string GenerateAccessToken(
         string userId,
         string email,
         string userName,
-        IEnumerable<string> roles);
+        IEnumerable<string> roles,
+        IEnumerable<Claim>? additionalClaims = null);
 
     /// <summary>
     /// Generates a secure refresh token.
