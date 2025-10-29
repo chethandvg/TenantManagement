@@ -1,0 +1,31 @@
+/*
+ * Auto-generated design token surface for Archu.Ui.
+ * These variables mirror the defaults in ThemeOptions and can be overridden by consumers.
+ */
+:root {
+    /* Color tokens */
+    --archu-color-primary: #6750A4;
+    --archu-color-on-primary: #FFFFFF;
+    --archu-color-secondary: #625B71;
+    --archu-color-on-secondary: #FFFFFF;
+    --archu-color-background: #FFFBFE;
+    --archu-color-on-background: #1C1B1F;
+    --archu-color-surface: #FFFBFE;
+    --archu-color-surface-variant: #E7E0EC;
+    --archu-color-success: #0F7A4A;
+    --archu-color-warning: #FFB74D;
+    --archu-color-info: #2196F3;
+    --archu-color-error: #B3261E;
+    --archu-color-outline: #79747E;
+
+    /* Typography tokens */
+    --archu-typography-font-family: 'Roboto','Helvetica','Arial',sans-serif;
+    --archu-typography-heading-weight: 600;
+    --archu-typography-body-weight: 400;
+    --archu-typography-base-size: 16px;
+
+    /* Layout tokens */
+    --archu-layout-border-radius: 12px;
+    --archu-layout-shadow: 0 8px 16px rgba(17, 17, 26, 0.1);
+    --archu-layout-spacing-unit: 8px;
+}

@@ -1,4 +1,7 @@
+using System;
+using System.Threading.Tasks;
 using Archu.ApiClient.Authentication.Services;
+using Archu.Ui.Theming;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -7,9 +10,10 @@ namespace Archu.Ui.Layouts;
 /// <summary>
 /// Provides the application-wide layout structure, including navigation drawer and authentication controls.
 /// </summary>
-public partial class MainLayout
+public partial class MainLayout : IDisposable
 {
     private bool _drawerOpen = true;
+    private MudTheme _theme = default!;
 
     [Inject]
     private IAuthenticationService AuthService { get; set; } = default!;
@@ -19,6 +23,17 @@ public partial class MainLayout
 
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
+
+    [Inject]
+    private IThemeTokenService ThemeService { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _theme = ThemeService.GetMudTheme();
+        ThemeService.TokensChanged += HandleTokensChanged;
+    }
 
     /// <summary>
     /// Toggles the navigation drawer to switch between expanded and collapsed states
@@ -38,5 +53,24 @@ public partial class MainLayout
         await AuthService.LogoutAsync();
         Snackbar.Add("Logged out successfully", Severity.Info);
         Navigation.NavigateTo("/login", forceLoad: true);
+    }
+
+    /// <summary>
+    /// Refreshes the MudBlazor theme and triggers a render whenever the theme tokens change.
+    /// </summary>
+    /// <param name="sender">The event sender.</param>
+    /// <param name="args">The updated token snapshot, unused because the layout fetches the latest theme from the service.</param>
+    private void HandleTokensChanged(object? sender, ThemeTokensChangedEventArgs args)
+    {
+        _theme = ThemeService.GetMudTheme();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Disposes resources by unsubscribing from theme change notifications.
+    /// </summary>
+    public void Dispose()
+    {
+        ThemeService.TokensChanged -= HandleTokensChanged;
     }
 }

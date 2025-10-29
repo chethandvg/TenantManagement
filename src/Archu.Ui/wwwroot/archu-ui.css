@@ -1,14 +1,15 @@
 /* Archu.Ui - Global Styles */
 
 /* These styles are automatically included when you reference Archu.Ui */
+@import url('./archu-theme-tokens.css');
 
 :root {
-    --archu-primary: #1976d2;
-    --archu-secondary: #dc004e;
-    --archu-success: #4caf50;
-    --archu-error: #f44336;
-    --archu-warning: #ff9800;
-    --archu-info: #2196f3;
+    --archu-primary: var(--archu-color-primary);
+    --archu-secondary: var(--archu-color-secondary);
+    --archu-success: var(--archu-color-success);
+    --archu-error: var(--archu-color-error);
+    --archu-warning: var(--archu-color-warning);
+    --archu-info: var(--archu-color-info);
 }
 
 /* Utility classes */

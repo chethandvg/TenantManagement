@@ -14,6 +14,7 @@ A reusable Razor Class Library containing UI components built with MudBlazor. Th
 - ✔️ Easy service registration with `AddArchuUi()`
 - ✔️ Type-safe component parameters
 - ✔️ Accessibility-focused
+- 🎨 Runtime-accessible design tokens with MudBlazor integration
 
 ## Installation
 
@@ -29,9 +30,16 @@ In your `Program.cs` (works for Server, WASM, or MAUI):
 
 ```csharp
 using Archu.Ui;
+using Archu.Ui.Theming;
 
-builder.Services.AddArchuUi();
+builder.Services.AddArchuUi(options =>
+{
+    options.Tokens.Colors.Primary = "#1D4ED8"; // Customize the primary color
+});
 ```
+
+The optional callback exposes `ThemeOptions`, allowing you to override the default design tokens before they are registered.
+Tokens map directly to the generated CSS variables in `wwwroot/archu-theme-tokens.css`.
 
 ### 3. Add to _Imports.razor
 
@@ -54,6 +62,43 @@ builder.Services.AddArchuUi();
 
 <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 ```
+
+## Theming and Design Tokens
+
+Archu.Ui ships with a theming service that bridges runtime token access and MudBlazor's `MudThemeProvider`.
+The theming service is registered with a scoped lifetime so every Blazor Server circuit receives
+its own isolated token snapshot, while WebAssembly and Hybrid apps retain the expected
+singleton-per-client behavior.
+
+- Access the current tokens or apply overrides by injecting `IThemeTokenService`:
+
+  ```csharp
+  using Archu.Ui.Theming;
+
+  public class ThemeController
+  {
+      private readonly IThemeTokenService _theme;
+
+      public ThemeController(IThemeTokenService theme)
+      {
+          _theme = theme;
+      }
+
+      public void SwitchToDarkMode()
+      {
+          _theme.ApplyOverrides(tokens =>
+          {
+              tokens.Colors.Background = "#1C1B1F";
+              tokens.Colors.OnBackground = "#E6E1E5";
+              tokens.Colors.Surface = "#1C1B1F";
+          });
+      }
+  }
+  ```
+
+- CSS consumers can import `_content/Archu.Ui/archu-theme-tokens.css` to reuse the same variables in custom styles.
+
+- The default layout (`Layouts/MainLayout.razor`) consumes the theming service automatically, so updates immediately flow through MudBlazor components.
 
 ## Component Overview
 
