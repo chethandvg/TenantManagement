@@ -1,3 +1,5 @@
+@inject IClientFeatureService ClientFeatureService
+
 <nav role="navigation" aria-label="Primary navigation">
     <MudNavMenu TabIndex="0">
         <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" TabIndex="0">Home</MudNavLink>
@@ -5,7 +7,10 @@
         <AuthorizeView>
             <Authorized>
                 <MudNavLink Href="/products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ShoppingCart" TabIndex="0">Products</MudNavLink>
-                <MudNavLink Href="/counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add" TabIndex="0">Counter</MudNavLink>
+                @if (isPreviewEnabled)
+                {
+                    <MudNavLink Href="/counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add" TabIndex="0">Counter</MudNavLink>
+                }
                 <MudNavLink Href="/fetchdata" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List" TabIndex="0">Fetch data</MudNavLink>
             </Authorized>
             <NotAuthorized>
@@ -15,3 +20,15 @@
         </AuthorizeView>
     </MudNavMenu>
 </nav>
+
+@code {
+    private bool isPreviewEnabled;
+
+    /// <summary>
+    /// Loads feature flag state so navigation items reflect the current configuration.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        isPreviewEnabled = await ClientFeatureService.IsEnabledAsync(ClientFeatureFlags.PreviewComponents);
+    }
+}
