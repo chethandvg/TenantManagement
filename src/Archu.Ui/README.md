@@ -66,6 +66,9 @@ Tokens map directly to the generated CSS variables in `wwwroot/archu-theme-token
 ## Theming and Design Tokens
 
 Archu.Ui ships with a theming service that bridges runtime token access and MudBlazor's `MudThemeProvider`.
+The theming service is registered with a scoped lifetime so every Blazor Server circuit receives
+its own isolated token snapshot, while WebAssembly and Hybrid apps retain the expected
+singleton-per-client behavior.
 
 - Access the current tokens or apply overrides by injecting `IThemeTokenService`:
 
