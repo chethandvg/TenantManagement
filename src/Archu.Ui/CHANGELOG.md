@@ -3,135 +3,80 @@
 ## Initial Release (v1.0.0)
 
 ### Project Structure
-- ? Created new Razor Class Library targeting .NET 9.0
-- ? Configured for platform-agnostic usage (Blazor Server, WASM, MAUI)
-- ? Added MudBlazor 8.0.0 as core UI framework
-- ? Reference to Archu.Contracts for ProductDto
+- ✅ Razor Class Library targeting .NET 9.0
+- ✅ Platform-agnostic design that works for Blazor Server, WebAssembly, and MAUI hybrid hosts
+- ✅ MudBlazor 8.0.0 as the underlying UI framework
+- ✅ Shared contracts via `Archu.Contracts`
 
-### Components Created
+### Components Included
 
-#### Layout Components
-- **MainLayout.razor** - Complete app layout with app bar, drawer, and main content
-  - Configurable app title
-  - Customizable top bar content
-  - Customizable drawer content
-  - Responsive drawer toggle
+#### Layouts
+- **MainLayout.razor** – Application shell with MudBlazor providers, drawer navigation, and authentication-aware toolbar
+  - Handles theme updates through `IThemeTokenService`
+  - Provides toggleable navigation drawer and snackbar notifications
 
-#### Typography Components
-- **ArchuText.razor** - Flexible text wrapper around MudText
-- **PageHeading.razor** - Consistent page heading component
-  - CSS isolation for styling
+#### Navigation & Routing
+- **Components/Navigation/NavMenu** – Drawer menu that shows authenticated or anonymous links using `AuthorizeView`
+- **Components/Routing/RedirectToLogin** – Redirect helper that preserves the requested URL when unauthenticated users hit protected pages
 
-#### Input Components
-- **ArchuTextField<T>.razor** - Generic text input field
-  - Validation support
-  - Adornment icons
-  - Helper text and error messages
-- **ArchuNumericField<T>.razor** - Type-safe numeric input
-  - Min/Max validation
-  - Step configuration
-  - Hide/show spin buttons
-- **ArchuButton.razor** - Styled button component
-  - Icon support (start/end)
-  - Multiple variants and colors
-  - Size options
-
-#### Product Components
-- **ProductCard.razor** - Single product display card
-  - Optional action buttons (edit, delete)
-  - Optional view details button
-  - Hover effects with CSS isolation
-- **ProductGrid.razor** - Responsive product grid
-  - Responsive breakpoints (xs, sm, md, lg)
-  - Empty state message
-  - Event callbacks for actions
-
-#### Common Components
-- **LoadingContainer.razor** - Loading state wrapper
-  - Customizable loading message
-  - Shows progress indicator while loading
-- **ArchuAlert.razor** - Alert/notification component
-  - Multiple severity levels
-  - Optional close button
-  - Customizable variant
-
-#### Form Components
-- **ArchuForm<TModel>.razor** - Complete form wrapper
-  - Built-in validation support
-  - Submitting state handling
-  - Optional cancel button
-  - Custom form actions support
-  - Validation summary
+#### Pages
+- **Pages/Index** – Landing page for authenticated users
+- **Pages/Login** – Email/password login workflow with snackbar feedback and return URL support
+- **Pages/Register** – Registration form with password confirmation
+- **Pages/Products** – Authenticated data listing that calls `IProductsApiClient`
+- **Pages/Counter** – Sample counter to validate the template
+- **Pages/FetchData** – Weather forecast demo using `HttpClient`
 
 ### Service Extensions
-- **UiServiceCollectionExtensions.cs**
-  - `AddArchuUi()` method for service registration
-  - Configures MudBlazor with sensible defaults
-  - Platform-agnostic (no ASP.NET Core dependencies)
+- **UiServiceCollectionExtensions.cs** – `AddArchuUi()` registers theming services, MudBlazor defaults, and static asset manifest
 
 ### Styling
-- **CSS Isolation** - All components have scoped styles
-- **wwwroot/archu-ui.css** - Global utility styles and CSS variables
+- **wwwroot/archu-ui.css** – Entry point that imports the generated theme token CSS and styles shared elements
 
 ### Documentation
-- **README.md** - Complete component documentation with examples
-- **INTEGRATION.md** - Platform-specific integration guides
-  - Blazor Server setup
-  - Blazor WebAssembly setup
-  - MAUI Blazor Hybrid setup
-- **Examples/ProductsExamplePage.razor** - Working example page
-
-### Features
-- ? Platform-agnostic design
-- ? Type-safe generic components
-- ? EventCallback-based event handling
-- ? CSS isolation for all components
-- ? Fully documented with examples
-- ? MudBlazor integration
-- ? No platform-specific dependencies
-- ? Works with Blazor Server, WASM, and MAUI
+- **README.md** – Component overview and integration walkthrough
+- **INTEGRATION.md** – Platform-specific setup instructions and usage notes
+- **docs/archu-ui/** – DocFX configuration for generating API documentation directly from XML comments
 
 ### Dependencies
 - Microsoft.AspNetCore.Components.Web 9.0.1
 - MudBlazor 8.0.0
 - Archu.Contracts (project reference)
 
-### File Structure
+### File Structure (Excerpt)
 ```
 src/Archu.Ui/
-??? Archu.Ui.csproj
-??? _Imports.razor
-??? UiServiceCollectionExtensions.cs
-??? README.md
-??? INTEGRATION.md
-??? Layouts/
-?   ??? MainLayout.razor
-?   ??? MainLayout.razor.css
-??? Components/
-?   ??? Typography/
-?   ?   ??? ArchuText.razor
-?   ?   ??? PageHeading.razor
-?   ?   ??? PageHeading.razor.css
-?   ??? Inputs/
-?   ?   ??? ArchuTextField.razor
-?   ?   ??? ArchuNumericField.razor
-?   ?   ??? ArchuButton.razor
-?   ??? Products/
-?   ?   ??? ProductCard.razor
-?   ?   ??? ProductCard.razor.css
-?   ?   ??? ProductGrid.razor
-?   ?   ??? ProductGrid.razor.css
-?   ??? Common/
-?   ?   ??? LoadingContainer.razor
-?   ?   ??? LoadingContainer.razor.css
-?   ?   ??? ArchuAlert.razor
-?   ??? Forms/
-?       ??? ArchuForm.razor
-?       ??? ArchuForm.razor.css
-??? Examples/
-?   ??? ProductsExamplePage.razor
-??? wwwroot/
-    ??? archu-ui.css
+├── Archu.Ui.csproj
+├── _Imports.razor
+├── UiServiceCollectionExtensions.cs
+├── README.md
+├── INTEGRATION.md
+├── CHANGELOG.md
+├── Layouts/
+│   ├── MainLayout.razor
+│   └── MainLayout.razor.cs
+├── Components/
+│   ├── Navigation/
+│   │   ├── NavMenu.razor
+│   │   └── NavMenu.razor.cs
+│   └── Routing/
+│       ├── RedirectToLogin.razor
+│       └── RedirectToLogin.razor.cs
+├── Pages/
+│   ├── Counter.razor
+│   ├── Counter.razor.cs
+│   ├── FetchData.razor
+│   ├── FetchData.razor.cs
+│   ├── Index.razor
+│   ├── Index.razor.cs
+│   ├── Login.razor
+│   ├── Login.razor.cs
+│   ├── Products.razor
+│   ├── Products.razor.cs
+│   ├── Register.razor
+│   └── Register.razor.cs
+└── wwwroot/
+    └── archu-ui.css
 ```
 
 ### Usage Example
@@ -141,25 +86,27 @@ builder.Services.AddArchuUi();
 ```
 
 ```razor
-@* YourPage.razor *@
-@using Archu.Ui.Components.Products
-
-<PageHeading>Products</PageHeading>
-<ProductGrid Products="@products" OnEdit="HandleEdit" OnDelete="HandleDelete" />
+@* App.razor *@
+<CascadingAuthenticationState>
+    <Router AppAssembly="typeof(Program).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+                <NotAuthorized>
+                    <RedirectToLogin />
+                </NotAuthorized>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <LayoutView Layout="typeof(MainLayout)">
+                <p role="alert">Sorry, there's nothing here.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
 ```
 
-### Next Steps / Roadmap
-- [ ] Add dialog components
-- [ ] Add table component with sorting/filtering
-- [ ] Add pagination component
-- [ ] Add breadcrumb navigation
-- [ ] Add theme customization
-- [ ] Unit tests for components
-- [ ] Storybook/component showcase
-- [ ] NuGet package publication
-
----
-
-**Author:** Archu Development Team  
-**Date:** 2024  
-**License:** See parent project license
+### Roadmap
+- [ ] Expand the component set beyond layout/navigation helpers
+- [ ] Add dedicated documentation samples for each page
+- [ ] Publish Storybook-style gallery or playground
+- [ ] Package for NuGet distribution

@@ -1,327 +1,192 @@
 # Archu.Ui Integration Guide
 
-## Quick Start for Different Platforms
+Archu.Ui ships as a Razor Class Library so it can be reused by Blazor Server, WebAssembly, and MAUI hybrid hosts. The following guide walks through the minimal setup required for each platform and highlights how to take advantage of the provided layout, navigation menu, and redirect helper.
 
-### Blazor Server Integration
+## Quick Start by Host Type
 
-#### 1. Add Project Reference
-```bash
-dotnet add reference ../Archu.Ui/Archu.Ui.csproj
-```
+### Blazor Server
 
-#### 2. Program.cs
-```csharp
-using Archu.Ui;
+1. **Reference the project**
+   ```bash
+   dotnet add reference ../Archu.Ui/Archu.Ui.csproj
+   ```
+2. **Register services** in `Program.cs`
+   ```csharp
+   using Archu.Ui;
 
-var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
-builder.Services.AddArchuUi(); // ? Add this line
+   var builder = WebApplication.CreateBuilder(args);
+   builder.Services.AddRazorPages();
+   builder.Services.AddServerSideBlazor();
+   builder.Services.AddArchuUi();
 
-var app = builder.Build();
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
-app.Run();
-```
+   var app = builder.Build();
+   app.MapBlazorHub();
+   app.MapFallbackToPage("/_Host");
+   app.Run();
+   ```
+3. **Bring in the styles/scripts** in `_Host.cshtml`
+   ```html
+   <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+   <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+   <link href="_content/Archu.Ui/archu-ui.css" rel="stylesheet" />
 
-#### 3. _Host.cshtml or App.razor
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    <link href="_content/Archu.Ui/archu-ui.css" rel="stylesheet" />
-</head>
-<body>
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-</body>
-</html>
-```
+   <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+   ```
 
----
+### Blazor WebAssembly
 
-### Blazor WebAssembly Integration
+1. **Reference the project in the Client app**
+   ```bash
+   dotnet add reference ../Archu.Ui/Archu.Ui.csproj
+   ```
+2. **Register services** in `Program.cs`
+   ```csharp
+   using Archu.Ui;
 
-#### 1. Add Project Reference (in Client project)
-```bash
-dotnet add reference ../Archu.Ui/Archu.Ui.csproj
-```
+   var builder = WebAssemblyHostBuilder.CreateDefault(args);
+   builder.RootComponents.Add<App>("#app");
+   builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+   builder.Services.AddArchuUi();
 
-#### 2. Program.cs
-```csharp
-using Archu.Ui;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+   await builder.Build().RunAsync();
+   ```
+3. **Update `wwwroot/index.html`**
+   ```html
+   <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+   <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+   <link href="_content/Archu.Ui/archu-ui.css" rel="stylesheet" />
 
-var builder = WebAssemblyHostBuilder.CreateDefault(args);
-builder.RootComponents.Add<App>("#app");
-builder.RootComponents.Add<HeadOutlet>("head::after");
+   <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+   ```
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-builder.Services.AddArchuUi(); // ? Add this line
+### MAUI Blazor Hybrid
 
-await builder.Build().RunAsync();
-```
+1. **Reference the project**
+   ```bash
+   dotnet add reference ../Archu.Ui/Archu.Ui.csproj
+   ```
+2. **Configure `MauiProgram.cs`**
+   ```csharp
+   using Archu.Ui;
 
-#### 3. wwwroot/index.html
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    <link href="_content/Archu.Ui/archu-ui.css" rel="stylesheet" />
-</head>
-<body>
-    <div id="app">Loading...</div>
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-    <script src="_framework/blazor.webassembly.js"></script>
-</body>
-</html>
-```
+   public static class MauiProgram
+   {
+       public static MauiApp CreateMauiApp()
+       {
+           var builder = MauiApp.CreateBuilder();
+           builder
+               .UseMauiApp<App>()
+               .ConfigureFonts(fonts =>
+               {
+                   fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+               });
 
----
+           builder.Services.AddMauiBlazorWebView();
+#if DEBUG
+           builder.Services.AddBlazorWebViewDeveloperTools();
+#endif
+           builder.Services.AddArchuUi();
 
-### MAUI Blazor Hybrid Integration
+           return builder.Build();
+       }
+   }
+   ```
+3. **Ensure the web view layout imports the CSS**
+   ```html
+   <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+   <link href="_content/Archu.Ui/archu-ui.css" rel="stylesheet" />
+   ```
 
-#### 1. Add Project Reference
-```bash
-dotnet add reference ../Archu.Ui/Archu.Ui.csproj
-```
+## Common `_Imports.razor`
 
-#### 2. MauiProgram.cs
-```csharp
-using Archu.Ui;
-
-public static class MauiProgram
-{
-    public static MauiApp CreateMauiApp()
-    {
-        var builder = MauiApp.CreateBuilder();
-        builder
-            .UseMauiApp<App>()
-            .ConfigureFonts(fonts =>
-            {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-            });
-
-        builder.Services.AddMauiBlazorWebView();
-        
-        #if DEBUG
-        builder.Services.AddBlazorWebViewDeveloperTools();
-        #endif
-        
-        builder.Services.AddArchuUi(); // Add this line
-        
-        return builder.Build();
-    }
-}
-```
-
-#### 3. wwwroot/index.html
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Your MAUI App</title>
-    <base href="/" />
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    <link href="_content/Archu.Ui/archu-ui.css" rel="stylesheet" />
-    <link href="css/app.css" rel="stylesheet" />
-</head>
-<body>
-    <div id="app">Loading...</div>
-    <script src="_framework/blazor.webview.js" autostart="false"></script>
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-</body>
-</html>
-```
-
----
-
-## Common _Imports.razor Setup
-
-Add these to your `_Imports.razor` file:
+Add these namespaces so components resolve cleanly:
 
 ```razor
 @using Archu.Ui
-@using Archu.Ui.Components
-@using Archu.Ui.Components.Common
-@using Archu.Ui.Components.Forms
-@using Archu.Ui.Components.Inputs
-@using Archu.Ui.Components.Products
-@using Archu.Ui.Components.Typography
+@using Archu.Ui.Components.Navigation
+@using Archu.Ui.Components.Routing
 @using Archu.Ui.Layouts
 @using MudBlazor
 ```
 
----
-
 ## Layout Setup
 
-### Option 1: Use MainLayout directly
+### Use the Built-in `MainLayout`
 
-In your `MainLayout.razor`:
+The simplest approach is to adopt the provided layout across your app:
 
 ```razor
-@inherits LayoutComponentBase
-@using Archu.Ui.Layouts
-
-<Archu.Ui.Layouts.MainLayout AppTitle="My Application">
-    <TopBarContent>
-        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
-    </TopBarContent>
-    
-    <DrawerContent>
-        <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-            <MudNavLink Href="/products" Icon="@Icons.Material.Filled.ShoppingCart">Products</MudNavLink>
-        </MudNavMenu>
-    </DrawerContent>
-    
-    @Body
-</Archu.Ui.Layouts.MainLayout>
+@layout MainLayout
 ```
 
-### Option 2: Create Custom Layout
+`MainLayout` already renders `NavMenu`, wires MudBlazor providers, and displays authentication-aware controls. Set the directive in `_Imports.razor` or in individual pages depending on your needs.
+
+### Custom Layout With Archu Services
+
+If you need a bespoke shell you can still take advantage of the registered services:
 
 ```razor
 @inherits LayoutComponentBase
 
 <MudThemeProvider />
-<MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<MudPopoverProvider />
 
 <MudLayout>
-    <!-- Your custom layout -->
-    @Body
+    <MudAppBar>
+        <!-- custom content -->
+    </MudAppBar>
+    <MudDrawer Open="true">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
 </MudLayout>
 ```
 
----
+## Protecting Routes
 
-## API Integration Example
+For pages that require authentication, pair the standard `[Authorize]` attribute with the redirect helper so anonymous visitors are sent to the login screen with their original destination preserved:
 
 ```razor
-@page "/products"
-@inject HttpClient Http
-@inject ISnackbar Snackbar
+@page "/secure-page"
+@attribute [Authorize]
 
-<PageHeading>Products</PageHeading>
-
-<LoadingContainer IsLoading="@loading">
-    <ProductGrid Products="@products"
-                ShowActions="true"
-                OnEdit="EditProduct"
-                OnDelete="DeleteProduct" />
-</LoadingContainer>
-
-@code {
-    private bool loading = true;
-    private List<ProductDto> products = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            products = await Http.GetFromJsonAsync<List<ProductDto>>("api/products") ?? new();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error loading products: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            loading = false;
-        }
-    }
-
-    private async Task EditProduct(ProductDto product)
-    {
-        // Navigate to edit page or show dialog
-    }
-
-    private async Task DeleteProduct(ProductDto product)
-    {
-        bool? confirm = await DialogService.ShowMessageBox(
-            "Confirm Delete",
-            $"Are you sure you want to delete '{product.Name}'?",
-            yesText: "Delete",
-            cancelText: "Cancel");
-
-        if (confirm == true)
-        {
-            await Http.DeleteAsync($"api/products/{product.Id}");
-            products.Remove(product);
-            Snackbar.Add("Product deleted successfully", Severity.Success);
-        }
-    }
-}
+<AuthorizeView>
+    <Authorized>
+        <!-- secure content -->
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
 ```
 
----
+## Products Page Example
+
+The library includes a concrete `Products` page that calls `IProductsApiClient`, displays a loading indicator, and reports any errors through MudBlazor snackbars. Use it as a reference implementation when wiring your own data-driven pages. The backing logic lives in `Pages/Products.razor.cs` and demonstrates:
+
+- Injecting API clients and snackbar services via `[Inject]`
+- Using XML documentation comments so DocFX can surface the component API
+- Managing loading and error state with nullable fields
 
 ## Troubleshooting
 
-### Issue: MudBlazor styles not loading
+### MudBlazor styles are missing
+Ensure the MudBlazor CSS link is present before `_content/Archu.Ui/archu-ui.css` so the Archu styles can piggyback on MudBlazor variables.
 
-**Solution:** Ensure MudBlazor CSS is referenced before Archu.Ui CSS:
-```html
-<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-<link href="_content/Archu.Ui/archu-ui.css" rel="stylesheet" />
-```
+### Components fail to resolve
+Run `dotnet add reference` to include the project and confirm the namespaces above are imported in `_Imports.razor`.
 
-### Issue: Components not found
-
-**Solution:** Check that `AddArchuUi()` is called and namespaces are imported in `_Imports.razor`.
-
-### Issue: MAUI hot reload not working
-
-**Solution:** Rebuild the Archu.Ui project and restart the MAUI app.
-
----
-
-## Advanced Configuration
-
-### Custom MudBlazor Theme
-
-```csharp
-services.AddMudServices(config =>
-{
-    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopCenter;
-    config.SnackbarConfiguration.PreventDuplicates = false;
-    config.SnackbarConfiguration.NewestOnTop = true;
-    config.SnackbarConfiguration.ShowCloseIcon = true;
-    config.SnackbarConfiguration.VisibleStateDuration = 5000;
-});
-```
-
-### Override Component Styles
-
-Use CSS isolation in your consuming project:
-
-```css
-/* In your component's .razor.css file */
-::deep .product-card {
-    border: 2px solid var(--mud-palette-primary);
-    border-radius: 16px;
-}
-```
-
----
+### Redirect loop when anonymous
+Double-check that the hosting app exposes a `/login` endpoint (the provided login page in Archu.Ui can be registered with `MapFallbackToPage` in Server apps or included via routing for WebAssembly/Hybrid).
 
 ## Next Steps
 
-1. ? Reference the Archu.Ui project
-2. ? Call `AddArchuUi()` in your startup
-3. ? Add CSS/JS references
-4. ? Import namespaces in `_Imports.razor`
-5. ? Start using components!
-
-Check out `Examples/ProductsExamplePage.razor` for a complete working example.
+1. Call `AddArchuUi()` during startup.
+2. Import the namespaces listed above.
+3. Set the default layout to `MainLayout` and drop `<NavMenu />` where appropriate.
+4. Use `<RedirectToLogin />` inside `NotAuthorized` views to streamline authentication.
+5. Document any new public parameters so the DocFX pipeline surfaces them automatically.
