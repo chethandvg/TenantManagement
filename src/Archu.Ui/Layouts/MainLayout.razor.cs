@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Archu.ApiClient.Authentication.Services;
 using Archu.Ui.Theming;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Archu.Ui.Layouts;
@@ -42,6 +43,19 @@ public partial class MainLayout : IDisposable
     private void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    /// <summary>
+    /// Handles keyboard interactions within the navigation drawer so pressing Escape
+    /// closes it and prevents keyboard users from getting trapped inside the menu.
+    /// </summary>
+    /// <param name="args">The keyboard event triggered from the drawer element.</param>
+    private void HandleDrawerKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape" && _drawerOpen)
+        {
+            _drawerOpen = false;
+        }
     }
 
     /// <summary>

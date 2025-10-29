@@ -1,42 +1,50 @@
 @inherits LayoutComponentBase
 
+<a class="archu-skip-link" href="#main-content">Skip to main content</a>
+
 <MudThemeProvider Theme="@_theme" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="DrawerToggle" />
-        <MudText Typo="Typo.h6">Archu</MudText>
-        <MudSpacer />
+    <header role="banner">
+        <MudAppBar Elevation="1">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="DrawerToggle" AriaLabel="Toggle navigation menu" Title="Toggle navigation menu" />
+            <MudText Typo="Typo.h6">Archu</MudText>
+            <MudSpacer />
 
-        <AuthorizeView>
-            <Authorized>
-                <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                    <MudText Class="px-4 py-2">@context.User.Identity?.Name</MudText>
-                    <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="/profile">Profile</MudMenuItem>
-                    <MudMenuItem Icon="@Icons.Material.Filled.Settings" Href="/settings">Settings</MudMenuItem>
-                    <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="HandleLogoutAsync">Logout</MudMenuItem>
-                </MudMenu>
-            </Authorized>
-            <NotAuthorized>
-                <MudButton Href="/login" Variant="Variant.Text" Color="Color.Inherit">Login</MudButton>
-                <MudButton Href="/register" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
-            </NotAuthorized>
-        </AuthorizeView>
-    </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Navigation</MudText>
-        </MudDrawerHeader>
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="my-16 pt-16">
-            @Body
-        </MudContainer>
-    </MudMainContent>
+            <AuthorizeView>
+                <Authorized>
+                    <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <MudText Class="px-4 py-2">@context.User.Identity?.Name</MudText>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="/profile">Profile</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Settings" Href="/settings">Settings</MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="HandleLogoutAsync">Logout</MudMenuItem>
+                    </MudMenu>
+                </Authorized>
+                <NotAuthorized>
+                    <MudButton Href="/login" Variant="Variant.Text" Color="Color.Inherit">Login</MudButton>
+                    <MudButton Href="/register" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
+                </NotAuthorized>
+            </AuthorizeView>
+        </MudAppBar>
+    </header>
+    <nav aria-labelledby="drawer-title">
+        <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" aria-labelledby="drawer-title" @onkeydown="HandleDrawerKeyDown">
+            <MudDrawerHeader>
+                <MudText id="drawer-title" Typo="Typo.h6">Navigation</MudText>
+            </MudDrawerHeader>
+            <NavMenu />
+        </MudDrawer>
+    </nav>
+    <main id="main-content" role="main" tabindex="-1">
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.Large" Class="my-16 pt-16">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </main>
 </MudLayout>
