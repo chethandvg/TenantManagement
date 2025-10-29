@@ -1,4 +1,6 @@
 - name: Overview
   href: index.md
+- name: Busy & Error Workflow
+  href: loading-boundaries.md
 - name: API Reference
   href: api/index.md

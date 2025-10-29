@@ -1,5 +1,7 @@
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
+using Archu.Ui.State;
 using Microsoft.AspNetCore.Components;
 
 namespace Archu.Ui.Pages;
@@ -18,12 +20,40 @@ public partial class FetchData : ComponentBase
     public HttpClient Http { get; set; } = default!;
 
     /// <summary>
+    /// Gets or sets the shared UI state container that coordinates the busy and error workflow for the page.
+    /// </summary>
+    [Inject]
+    public UiState UiState { get; set; } = default!;
+
+    /// <summary>
     /// Loads the weather forecast data when the component is initialized.
     /// </summary>
     /// <returns>A task that completes after the forecast data has been loaded.</returns>
     protected override async Task OnInitializedAsync()
     {
-        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
+        await LoadForecastsAsync();
+    }
+
+    /// <summary>
+    /// Fetches the weather forecast data while updating the busy state so the UI can render loading and retry affordances.
+    /// </summary>
+    /// <returns>A task that completes when the forecast request has succeeded or its error has been recorded.</returns>
+    private async Task LoadForecastsAsync()
+    {
+        using var busyScope = UiState.Busy.Begin("Loading forecast data...");
+        UiState.Busy.ClearError();
+
+        try
+        {
+            var result = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
+            forecasts = result ?? Array.Empty<WeatherForecast>();
+            UiState.Busy.ClearError();
+        }
+        catch (Exception ex)
+        {
+            UiState.Busy.SetError($"Error loading forecasts: {ex.Message}");
+            forecasts = null;
+        }
     }
 
     private sealed class WeatherForecast

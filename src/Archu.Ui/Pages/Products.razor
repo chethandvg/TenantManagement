@@ -5,39 +5,29 @@
 
 <MudText Typo="Typo.h3" GutterBottom="true">Products</MudText>
 
-@if (isLoading)
-{
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-    <MudText>Loading products...</MudText>
-}
-else if (products == null || !products.Any())
-{
-    <MudAlert Severity="Severity.Info">No products found.</MudAlert>
-}
-else
-{
-    <MudGrid>
-        @foreach (var product in products)
-        {
-            <MudItem xs="12" sm="6" md="4">
-                <MudCard>
-                    <MudCardContent>
-                        <MudText Typo="Typo.h6">@product.Name</MudText>
-                        <MudText Typo="Typo.body2">Price: @product.Price.ToString("C")</MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Text" Color="Color.Primary">View</MudButton>
-                        <MudButton Variant="Variant.Text" Color="Color.Secondary">Edit</MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-        }
-    </MudGrid>
-}
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <MudAlert Severity="Severity.Error" Class="mt-4">
-        @errorMessage
-    </MudAlert>
-}
+<BusyBoundary Retry="LoadProductsAsync">
+    @if (products == null || !products.Any())
+    {
+        <MudAlert Severity="Severity.Info">No products found.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var product in products)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6">@product.Name</MudText>
+                            <MudText Typo="Typo.body2">Price: @product.Price.ToString("C")</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary">View</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Secondary">Edit</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</BusyBoundary>

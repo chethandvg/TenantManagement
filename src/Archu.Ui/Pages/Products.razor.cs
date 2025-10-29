@@ -1,5 +1,6 @@
 using Archu.ApiClient.Services;
 using Archu.Contracts.Products;
+using Archu.Ui.State;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -11,8 +12,6 @@ namespace Archu.Ui.Pages;
 public partial class Products : ComponentBase
 {
     private IEnumerable<ProductDto>? products;
-    private bool isLoading = true;
-    private string? errorMessage;
 
     /// <summary>
     /// Gets or sets the API client used to retrieve product data.
@@ -27,6 +26,12 @@ public partial class Products : ComponentBase
     public ISnackbar Snackbar { get; set; } = default!;
 
     /// <summary>
+    /// Gets or sets the shared UI state container that coordinates busy and error messaging for the page.
+    /// </summary>
+    [Inject]
+    public UiState UiState { get; set; } = default!;
+
+    /// <summary>
     /// Invoked by the framework when the component is initialized to start the product loading workflow.
     /// </summary>
     /// <returns>A task that completes once product loading has started and finished.</returns>
@@ -36,7 +41,7 @@ public partial class Products : ComponentBase
     }
 
     /// <summary>
-    /// Retrieves the product list and updates UI state, showing success information or error notifications as needed.
+    /// Retrieves the product list while updating the shared busy state so the UI can communicate progress and outcomes.
     /// </summary>
     /// <remarks>
     /// Populates the product grid when the API returns data, but records the server-provided message and surfaces an
@@ -45,8 +50,9 @@ public partial class Products : ComponentBase
     /// <returns>A task that completes when the products have been loaded or an error has been handled.</returns>
     private async Task LoadProductsAsync()
     {
-        isLoading = true;
-        errorMessage = null;
+        using var busyScope = UiState.Busy.Begin("Loading products...");
+        UiState.Busy.ClearError();
+        products = null;
 
         try
         {
@@ -55,21 +61,20 @@ public partial class Products : ComponentBase
             if (response.Success && response.Data != null)
             {
                 products = response.Data.Items;
+                UiState.Busy.ClearError();
             }
             else
             {
-                errorMessage = response.Message ?? "Failed to load products.";
-                Snackbar.Add(errorMessage, Severity.Error);
+                var message = response.Message ?? "Failed to load products.";
+                UiState.Busy.SetError(message);
+                Snackbar.Add(message, Severity.Error);
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading products: {ex.Message}";
-            Snackbar.Add(errorMessage, Severity.Error);
-        }
-        finally
-        {
-            isLoading = false;
+            var message = $"Error loading products: {ex.Message}";
+            UiState.Busy.SetError(message);
+            Snackbar.Add(message, Severity.Error);
         }
     }
 }
