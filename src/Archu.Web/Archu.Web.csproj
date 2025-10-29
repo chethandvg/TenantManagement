@@ -21,7 +21,7 @@
         </ItemGroup>
 
         <ItemGroup>
-          <Content Include="wwwroot\appsettings*.json">
+          <Content Update="wwwroot\appsettings*.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
           </Content>
         </ItemGroup>
