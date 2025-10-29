@@ -1,4 +1,5 @@
 using System;
+using Archu.Ui.State;
 using Archu.Ui.Theming;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -34,7 +35,10 @@ public static class UiServiceCollectionExtensions
         // Register theming services that surface design tokens and MudBlazor theme instances
         services.AddArchuTheming(configureTheme);
 
-        // Add any custom UI services here in the future
+        // Register shared UI state containers that power busy and error workflows
+        services.AddScoped<BusyState>();
+        services.AddScoped<UiState>();
+
         return services;
     }
 }

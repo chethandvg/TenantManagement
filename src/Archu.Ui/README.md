@@ -8,6 +8,7 @@ Archu.Ui is a Razor Class Library that delivers the layout, navigation, and rout
 - ✅ Navigation menu that adapts to authorization state
 - ✅ Login redirection helper to simplify protecting pages
 - ✅ Ready-to-use sample pages that demonstrate authentication and data loading patterns
+- ✅ Busy and error boundaries that wrap MudBlazor primitives for consistent loading workflows
 - ✅ Runtime theme token service that keeps MudBlazor styling in sync across components
 
 ## Component Inventory
@@ -26,6 +27,7 @@ The catalog below reflects the components that currently ship in the library.
 |-----------|------|-------------|
 | `NavMenu` | `Components/Navigation/NavMenu.razor`<br/>`Components/Navigation/NavMenu.razor.cs` | Drawer navigation that exposes authenticated and anonymous links through `AuthorizeView`. |
 | `RedirectToLogin` | `Components/Routing/RedirectToLogin.razor`<br/>`Components/Routing/RedirectToLogin.razor.cs` | Redirects unauthenticated visitors to the login page while preserving their requested URL. |
+| `BusyBoundary` | `Components/State/BusyBoundary.razor`<br/>`Components/State/BusyBoundary.razor.cs` | Displays a standardized busy indicator, error alert, and retry affordance that can be reused across pages. |
 
 ### Application Pages
 
@@ -37,6 +39,13 @@ The catalog below reflects the components that currently ship in the library.
 | `Products` | `/products` | `Pages/Products.razor`<br/>`Pages/Products.razor.cs` | Authenticated catalog view that fetches products from `IProductsApiClient` and reports load/error states. |
 | `Counter` | `/counter` | `Pages/Counter.razor`<br/>`Pages/Counter.razor.cs` | Sample counter experience used for diagnostics and template parity. |
 | `FetchData` | `/fetchdata` | `Pages/FetchData.razor`<br/>`Pages/FetchData.razor.cs` | Weather forecast sample that demonstrates basic API calls through `HttpClient`. |
+
+### State Containers
+
+| Service | File | Description |
+|---------|------|-------------|
+| `UiState` | `State/UiState.cs` | Aggregates reusable UI state services for pages, including the busy workflow container. |
+| `BusyState` | `State/BusyState.cs` | Tracks in-flight operations, busy messages, and errors so components can react to standardized notifications. |
 
 ## Getting Started
 

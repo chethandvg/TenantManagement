@@ -1,0 +1,40 @@
+@using Archu.Ui.State
+@using MudBlazor
+
+<CascadingValue Value="State">
+    @if (State.Busy.IsBusy)
+    {
+        <MudStack Class="@BusyCssClass" AlignItems="Alignment.Center" Justify="Justify.Center" Spacing="2">
+            <MudProgressCircular Color="BusyColor" Size="BusySize" Indeterminate="true" />
+            @if (!string.IsNullOrWhiteSpace(State.Busy.BusyMessage))
+            {
+                <MudText Typo="Typo.body1">@State.Busy.BusyMessage</MudText>
+            }
+        </MudStack>
+    }
+    else if (!string.IsNullOrWhiteSpace(State.Busy.ErrorMessage))
+    {
+        if (ErrorContent is not null)
+        {
+            @ErrorContent(State.Busy.ErrorMessage!)
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Error">
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.body1">@State.Busy.ErrorMessage</MudText>
+                    @if (Retry.HasDelegate)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Retry">
+                            @RetryLabel
+                        </MudButton>
+                    }
+                </MudStack>
+            </MudAlert>
+        }
+    }
+    else
+    {
+        @ChildContent
+    }
+</CascadingValue>
