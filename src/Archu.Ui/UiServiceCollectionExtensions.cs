@@ -1,3 +1,5 @@
+using System;
+using Archu.Ui.Theming;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
@@ -10,11 +12,12 @@ namespace Archu.Ui;
 public static class UiServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers MudBlazor and Archu.Ui services without platform-specific dependencies.
+    /// Registers MudBlazor, theming, and Archu.Ui services without platform-specific dependencies.
     /// </summary>
     /// <param name="services">The service collection.</param>
+    /// <param name="configureTheme">Optional callback used to override default Archu design tokens.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddArchuUi(this IServiceCollection services)
+    public static IServiceCollection AddArchuUi(this IServiceCollection services, Action<ThemeOptions>? configureTheme = null)
     {
         // Register MudBlazor services
         services.AddMudServices(config =>
@@ -27,6 +30,9 @@ public static class UiServiceCollectionExtensions
             config.SnackbarConfiguration.HideTransitionDuration = 500;
             config.SnackbarConfiguration.ShowTransitionDuration = 500;
         });
+
+        // Register theming services that surface design tokens and MudBlazor theme instances
+        services.AddArchuTheming(configureTheme);
 
         // Add any custom UI services here in the future
         return services;
