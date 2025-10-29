@@ -142,3 +142,28 @@ When adding new components or pages:
 2. Add XML documentation for public parameters and services so DocFX can emit accurate API docs.
 3. Update the inventory tables above to reflect the new functionality.
 4. Prefer MudBlazor primitives and keep application-specific logic inside the host app.
+
+## Accessibility Guidelines
+
+The Archu UI library ships reusable building blocks, so we hold them to a strict accessibility bar. When contributing components or layout updates, follow the practices below.
+
+### Required Practices
+- **Define page and component landmarks.** Surface semantic containers (`<header>`, `<nav>`, `<main>`, `<footer>`) or `role` attributes so assistive tech can locate core regions. Ensure every layout exposes a single `<main>` landmark and that dialogs/popovers receive the appropriate `role`. Reference the [WCAG 2.2 landmark guidance](https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11).
+- **Label non-text affordances.** All icon-only buttons, inputs rendered without visible labels, and composite widgets must provide `aria-label`, `aria-labelledby`, or `aria-describedby` values that describe their purpose. Avoid redundant labels that could create duplicate announcements. Review the [MudBlazor accessibility recommendations](https://mudblazor.com/documents/features/accessibility) to see how the underlying controls expose labeling hooks.
+- **Guarantee keyboard support.** Every interactive element must be reachable with `Tab`/`Shift+Tab`, maintain a visible focus indicator, and respond to the expected keys (e.g., `Enter`/`Space` to activate buttons, arrow keys to navigate menus). Follow the [WCAG Keyboard Accessible success criterion](https://www.w3.org/WAI/WCAG22/Understanding/keyboard-accessible.html) and wire up roving tabindex patterns where MudBlazor components require it.
+- **Document accessibility behaviors.** Update XML doc comments or README sections when you introduce new interaction patterns so consumers know what keyboard shortcuts and landmarks to expect.
+
+### Testing Workflow
+1. **Run the automated bUnit + axe suite.** Execute `dotnet test Archana.sln --filter "Category=Accessibility"` to render shared components with bUnit and assert against axe rules. The suite fails if new regressions are introduced, so run it locally before pushing.
+2. **Verify keyboard navigation manually.** Launch the host application that references the library (for example, `dotnet run --project src/Archu.Web/Archu.Web.csproj`) and tab through shared components:
+   - `NavMenu` – ensure the toggle button, each menu item, and focus trap inside the drawer honor the arrow/escape key patterns.
+   - `BusyBoundary` – confirm the retry button is reachable and announced when busy/error states change.
+   - `RedirectToLogin` and other routing helpers – verify focus management returns users to the first actionable control after navigation.
+   Record observations in the PR description so reviewers can follow the manual walkthrough.
+3. **Track findings.** If axe highlights violations that require MudBlazor upstream fixes, file an issue with the `accessibility` label so the team can triage and coordinate with upstream maintainers.
+
+### Additional Resources
+- [Deque axe for Blazor quickstart](https://dequeuniversity.com/assets/html/jquery-summit/html5/slides/axe-core-api/index.html) – explains how axe assertions work inside component tests.
+- [WAI-ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/) – reference keyboard patterns for custom widgets.
+- [WCAG 2.2 Quick Reference](https://www.w3.org/WAI/WCAG22/quickref/) – searchable map of applicable success criteria.
+
