@@ -1,4 +1,6 @@
-using Archu.UnitTests.TestHelpers.Builders;
+using Archu.Domain.Entities.Identity;
+using Archu.UnitTests.TestHelpers.Fixtures;
+using AutoFixture;
 using FluentAssertions;
 using Xunit;
 
@@ -11,17 +13,20 @@ public sealed class EmailConfirmationTokenTests
     /// <summary>
     /// Ensures tokens remain valid when unused, not revoked, and not expired.
     /// </summary>
-    [Fact]
-    public void IsValid_WhenTokenActive_ReturnsTrue()
+    [Theory, AutoMoqData]
+    public void IsValid_WhenTokenActive_ReturnsTrue(IFixture fixture, DateTime currentTimeUtc)
     {
         // Arrange
-        var currentTime = DateTime.UtcNow;
-        var token = new UserTokenBuilder()
-            .WithExpiration(currentTime.AddHours(2))
-            .BuildEmailConfirmationToken();
+        var normalizedTime = DateTime.SpecifyKind(currentTimeUtc, DateTimeKind.Utc);
+        var token = fixture.Build<EmailConfirmationToken>()
+            .With(t => t.ExpiresAtUtc, normalizedTime.AddHours(2))
+            .With(t => t.IsUsed, false)
+            .With(t => t.IsRevoked, false)
+            .With(t => t.IsDeleted, false)
+            .Create();
 
         // Act
-        var result = token.IsValid(currentTime);
+        var result = token.IsValid(normalizedTime);
 
         // Assert
         result.Should().BeTrue();
@@ -30,18 +35,22 @@ public sealed class EmailConfirmationTokenTests
     /// <summary>
     /// Ensures validation fails once the token is used.
     /// </summary>
-    [Fact]
-    public void IsValid_WhenTokenUsed_ReturnsFalse()
+    [Theory, AutoMoqData]
+    public void IsValid_WhenTokenUsed_ReturnsFalse(IFixture fixture, DateTime currentTimeUtc)
     {
         // Arrange
-        var currentTime = DateTime.UtcNow;
-        var token = new UserTokenBuilder()
-            .WithExpiration(currentTime.AddHours(2))
-            .AsUsed(currentTime.AddMinutes(-5))
-            .BuildEmailConfirmationToken();
+        var normalizedTime = DateTime.SpecifyKind(currentTimeUtc, DateTimeKind.Utc);
+        var usedAtUtc = normalizedTime.AddMinutes(-5);
+        var token = fixture.Build<EmailConfirmationToken>()
+            .With(t => t.ExpiresAtUtc, normalizedTime.AddHours(2))
+            .With(t => t.IsUsed, true)
+            .With(t => t.UsedAtUtc, usedAtUtc)
+            .With(t => t.IsRevoked, false)
+            .With(t => t.IsDeleted, false)
+            .Create();
 
         // Act
-        var result = token.IsValid(currentTime);
+        var result = token.IsValid(normalizedTime);
 
         // Assert
         result.Should().BeFalse();
@@ -50,18 +59,20 @@ public sealed class EmailConfirmationTokenTests
     /// <summary>
     /// Ensures validation fails once the token is revoked.
     /// </summary>
-    [Fact]
-    public void IsValid_WhenTokenRevoked_ReturnsFalse()
+    [Theory, AutoMoqData]
+    public void IsValid_WhenTokenRevoked_ReturnsFalse(IFixture fixture, DateTime currentTimeUtc)
     {
         // Arrange
-        var currentTime = DateTime.UtcNow;
-        var token = new UserTokenBuilder()
-            .WithExpiration(currentTime.AddHours(2))
-            .AsRevoked()
-            .BuildEmailConfirmationToken();
+        var normalizedTime = DateTime.SpecifyKind(currentTimeUtc, DateTimeKind.Utc);
+        var token = fixture.Build<EmailConfirmationToken>()
+            .With(t => t.ExpiresAtUtc, normalizedTime.AddHours(2))
+            .With(t => t.IsUsed, false)
+            .With(t => t.IsRevoked, true)
+            .With(t => t.IsDeleted, false)
+            .Create();
 
         // Act
-        var result = token.IsValid(currentTime);
+        var result = token.IsValid(normalizedTime);
 
         // Assert
         result.Should().BeFalse();
@@ -70,17 +81,20 @@ public sealed class EmailConfirmationTokenTests
     /// <summary>
     /// Ensures validation fails when the token expires.
     /// </summary>
-    [Fact]
-    public void IsValid_WhenTokenExpired_ReturnsFalse()
+    [Theory, AutoMoqData]
+    public void IsValid_WhenTokenExpired_ReturnsFalse(IFixture fixture, DateTime currentTimeUtc)
     {
         // Arrange
-        var currentTime = DateTime.UtcNow;
-        var token = new UserTokenBuilder()
-            .WithExpiration(currentTime.AddMinutes(-30))
-            .BuildEmailConfirmationToken();
+        var normalizedTime = DateTime.SpecifyKind(currentTimeUtc, DateTimeKind.Utc);
+        var token = fixture.Build<EmailConfirmationToken>()
+            .With(t => t.ExpiresAtUtc, normalizedTime.AddMinutes(-30))
+            .With(t => t.IsUsed, false)
+            .With(t => t.IsRevoked, false)
+            .With(t => t.IsDeleted, false)
+            .Create();
 
         // Act
-        var result = token.IsValid(currentTime);
+        var result = token.IsValid(normalizedTime);
 
         // Assert
         result.Should().BeFalse();
@@ -89,18 +103,23 @@ public sealed class EmailConfirmationTokenTests
     /// <summary>
     /// Ensures validation fails when the token has been soft deleted.
     /// </summary>
-    [Fact]
-    public void IsValid_WhenTokenDeleted_ReturnsFalse()
+    [Theory, AutoMoqData]
+    public void IsValid_WhenTokenDeleted_ReturnsFalse(IFixture fixture, DateTime currentTimeUtc, string deletedBy)
     {
         // Arrange
-        var currentTime = DateTime.UtcNow;
-        var token = new UserTokenBuilder()
-            .WithExpiration(currentTime.AddHours(2))
-            .AsDeleted(currentTime.AddMinutes(-1), "Admin")
-            .BuildEmailConfirmationToken();
+        var normalizedTime = DateTime.SpecifyKind(currentTimeUtc, DateTimeKind.Utc);
+        var deletedAtUtc = normalizedTime.AddMinutes(-1);
+        var token = fixture.Build<EmailConfirmationToken>()
+            .With(t => t.ExpiresAtUtc, normalizedTime.AddHours(2))
+            .With(t => t.IsUsed, false)
+            .With(t => t.IsRevoked, false)
+            .With(t => t.IsDeleted, true)
+            .With(t => t.DeletedAtUtc, deletedAtUtc)
+            .With(t => t.DeletedBy, deletedBy)
+            .Create();
 
         // Act
-        var result = token.IsValid(currentTime);
+        var result = token.IsValid(normalizedTime);
 
         // Assert
         result.Should().BeFalse();

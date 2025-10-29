@@ -1,5 +1,6 @@
 using Archu.Domain.Entities;
-using Archu.UnitTests.TestHelpers.Builders;
+using Archu.UnitTests.TestHelpers.Fixtures;
+using AutoFixture;
 using FluentAssertions;
 using Xunit;
 
@@ -69,14 +70,16 @@ public class ProductTests
         product.RowVersion.Should().BeEquivalentTo(rowVersion);
     }
 
-    [Fact]
-    public void IsOwnedBy_WhenUserIdMatches_ReturnsTrue()
+    /// <summary>
+    /// Ensures ownership checks succeed when the provided identifier matches the product's owner.
+    /// </summary>
+    [Theory, AutoMoqData]
+    public void IsOwnedBy_WhenUserIdMatches_ReturnsTrue(Guid userId, IFixture fixture)
     {
         // Arrange
-        var userId = Guid.NewGuid();
-        var product = new ProductBuilder()
-            .WithOwnerId(userId)
-            .Build();
+        var product = fixture.Build<Product>()
+            .With(p => p.OwnerId, userId)
+            .Create();
 
         // Act
         var result = product.IsOwnedBy(userId);
@@ -85,15 +88,21 @@ public class ProductTests
         result.Should().BeTrue();
     }
 
-    [Fact]
-    public void IsOwnedBy_WhenUserIdDoesNotMatch_ReturnsFalse()
+    /// <summary>
+    /// Ensures ownership checks fail when the identifier differs from the product's owner.
+    /// </summary>
+    [Theory, AutoMoqData]
+    public void IsOwnedBy_WhenUserIdDoesNotMatch_ReturnsFalse(Guid ownerId, Guid differentUserId, IFixture fixture)
     {
         // Arrange
-        var ownerId = Guid.NewGuid();
-        var differentUserId = Guid.NewGuid();
-        var product = new ProductBuilder()
-            .WithOwnerId(ownerId)
-            .Build();
+        while (ownerId == differentUserId)
+        {
+            differentUserId = Guid.NewGuid();
+        }
+
+        var product = fixture.Build<Product>()
+            .With(p => p.OwnerId, ownerId)
+            .Create();
 
         // Act
         var result = product.IsOwnedBy(differentUserId);
@@ -102,37 +111,34 @@ public class ProductTests
         result.Should().BeFalse();
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(0.01)]
-    [InlineData(1.00)]
-    [InlineData(99.99)]
-    [InlineData(9999.99)]
-    public void Product_CanStoreVariousPrices(decimal price)
+    /// <summary>
+    /// Verifies that price assignments persist regardless of the generated value.
+    /// </summary>
+    [Theory, AutoMoqData]
+    public void Product_CanStoreVariousPrices(decimal price, IFixture fixture)
     {
         // Arrange & Act
-        var product = new ProductBuilder()
-            .WithPrice(price)
-            .Build();
+        var product = fixture.Build<Product>()
+            .With(p => p.Price, price)
+            .Create();
 
         // Assert
         product.Price.Should().Be(price);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("A")]
-    [InlineData("Short Name")]
-    [InlineData("Very Long Product Name That Contains Many Characters And Describes The Product In Detail")]
-    public void Product_CanStoreVariousNameLengths(string name)
+    /// <summary>
+    /// Verifies that name assignments persist for any generated string.
+    /// </summary>
+    [Theory, AutoMoqData]
+    public void Product_CanStoreVariousNameLengths(string name, IFixture fixture)
     {
         // Arrange & Act
-        var product = new ProductBuilder()
-            .WithName(name)
-            .Build();
+        var product = fixture.Build<Product>()
+            .With(p => p.Name, name ?? string.Empty)
+            .Create();
 
         // Assert
-        product.Name.Should().Be(name);
+        product.Name.Should().Be(name ?? string.Empty);
     }
 
     [Fact]
@@ -169,60 +175,84 @@ public class ProductTests
         product.OwnerId.Should().NotBeEmpty();
     }
 
-    [Fact]
-    public void Product_WhenDeleted_HasDeletionInformation()
+    /// <summary>
+    /// Ensures deleted metadata is preserved when the product is soft deleted.
+    /// </summary>
+    [Theory, AutoMoqData]
+    public void Product_WhenDeleted_HasDeletionInformation(IFixture fixture, DateTime deletedAt, string deletedBy)
     {
         // Arrange
-        var deletedAt = DateTime.UtcNow;
-        var deletedBy = "TestUser";
-        var product = new ProductBuilder()
-            .AsDeleted(deletedAt, deletedBy)
-            .Build();
+        var deletedByValue = deletedBy ?? string.Empty;
+        var product = fixture.Build<Product>()
+            .With(p => p.IsDeleted, true)
+            .With(p => p.DeletedAtUtc, deletedAt)
+            .With(p => p.DeletedBy, deletedByValue)
+            .Create();
 
         // Assert
         product.IsDeleted.Should().BeTrue();
         product.DeletedAtUtc.Should().Be(deletedAt);
-        product.DeletedBy.Should().Be(deletedBy);
+        product.DeletedBy.Should().Be(deletedByValue);
     }
 
-    [Fact]
-    public void Product_CanBeModified()
+    /// <summary>
+    /// Ensures modified metadata is captured when updates occur.
+    /// </summary>
+    [Theory, AutoMoqData]
+    public void Product_CanBeModified(IFixture fixture, DateTime modifiedAt, string modifiedBy)
     {
         // Arrange
-        var modifiedAt = DateTime.UtcNow;
-        var modifiedBy = "TestUser";
-        var product = new ProductBuilder()
-            .WithModifiedInfo(modifiedAt, modifiedBy)
-            .Build();
+        var modifiedByValue = modifiedBy ?? string.Empty;
+        var product = fixture.Build<Product>()
+            .With(p => p.ModifiedAtUtc, modifiedAt)
+            .With(p => p.ModifiedBy, modifiedByValue)
+            .Create();
 
         // Assert
         product.ModifiedAtUtc.Should().Be(modifiedAt);
-        product.ModifiedBy.Should().Be(modifiedBy);
+        product.ModifiedBy.Should().Be(modifiedByValue);
     }
 
-    [Fact]
-    public void Product_HasCreationInformation()
+    /// <summary>
+    /// Ensures creation metadata is recorded when products are instantiated.
+    /// </summary>
+    [Theory, AutoMoqData]
+    public void Product_HasCreationInformation(IFixture fixture, DateTime createdAt, string createdBy)
     {
         // Arrange
-        var createdAt = DateTime.UtcNow;
-        var createdBy = "TestUser";
-        var product = new ProductBuilder()
-            .WithCreatedInfo(createdAt, createdBy)
-            .Build();
+        var createdByValue = createdBy ?? string.Empty;
+        var product = fixture.Build<Product>()
+            .With(p => p.CreatedAtUtc, createdAt)
+            .With(p => p.CreatedBy, createdByValue)
+            .Create();
 
         // Assert
         product.CreatedAtUtc.Should().Be(createdAt);
-        product.CreatedBy.Should().Be(createdBy);
+        product.CreatedBy.Should().Be(createdByValue);
     }
 
-    [Fact]
-    public void Product_EqualityComparison_BasedOnId()
+    /// <summary>
+    /// Confirms equality semantics rely on the identifier value.
+    /// </summary>
+    [Theory, AutoMoqData]
+    public void Product_EqualityComparison_BasedOnId(IFixture fixture, Guid id)
     {
         // Arrange
-        var id = Guid.NewGuid();
-        var product1 = new ProductBuilder().WithId(id).Build();
-        var product2 = new ProductBuilder().WithId(id).Build();
-        var product3 = new ProductBuilder().WithId(Guid.NewGuid()).Build();
+        Guid uniqueId;
+        do
+        {
+            uniqueId = Guid.NewGuid();
+        } while (uniqueId == id);
+
+        var product1 = fixture.Build<Product>()
+            .With(p => p.Id, id)
+            .Create();
+        var product2 = fixture.Build<Product>()
+            .With(p => p.Id, id)
+            .Create();
+        var product3 = fixture.Build<Product>()
+            .With(p => p.Id, uniqueId)
+            .Create();
 
         // Act & Assert
         (product1.Id == product2.Id).Should().BeTrue();

@@ -1,11 +1,14 @@
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using AutoFixture.Kernel;
 using AutoFixture.Xunit2;
+using Archu.Application.Products.Commands.CreateProduct;
+using Archu.Application.Products.Commands.DeleteProduct;
+using Archu.Application.Products.Commands.UpdateProduct;
 using Archu.Domain.Entities;
 using Archu.Domain.Entities.Identity;
-using Archu.Application.Products.Commands.CreateProduct;
-using Archu.Application.Products.Commands.UpdateProduct;
-using Archu.Application.Products.Commands.DeleteProduct;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Archu.UnitTests.TestHelpers.Fixtures;
 
@@ -30,11 +33,27 @@ namespace Archu.UnitTests.TestHelpers.Fixtures;
 public class AutoMoqDataAttribute : AutoDataAttribute
 {
     public AutoMoqDataAttribute()
-        : base(() => new Fixture()
-            .Customize(new AutoMoqCustomization())
-            .Customize(new ProductCustomization())
-            .Customize(new UserCustomization())
-            .Customize(new CommandCustomization()))
+        : base(() =>
+        {
+            var fixture = new Fixture();
+
+            // Replace the default recursion behavior with an omit strategy so entity graphs
+            // that loop back on themselves (e.g., user-role relationships) do not throw.
+            foreach (var behavior in fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList())
+            {
+                fixture.Behaviors.Remove(behavior);
+            }
+
+            fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+
+            fixture.Customize(new AutoMoqCustomization());
+            fixture.Customize(new ProductCustomization());
+            fixture.Customize(new UserCustomization());
+            fixture.Customize(new RoleCustomization());
+            fixture.Customize(new CommandCustomization());
+
+            return fixture;
+        })
     {
     }
 }
@@ -68,13 +87,31 @@ public class UserCustomization : ICustomization
             composer
                 .With(u => u.RowVersion, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 })
                 .With(u => u.Email, () => $"{fixture.Create<string>()}@test.com")
-                .With(u => u.NormalizedEmail, (ApplicationUser u) => u.Email.ToUpperInvariant())
+                .Do(u => u.NormalizedEmail = u.Email.ToUpperInvariant())
                 .With(u => u.UserName, () => fixture.Create<string>())
+                .With(u => u.PasswordHash, () => fixture.Create<string>())
                 .With(u => u.SecurityStamp, () => Guid.NewGuid().ToString())
                 .With(u => u.EmailConfirmed, true)
                 .With(u => u.IsDeleted, false)
                 .With(u => u.CreatedAtUtc, () => DateTime.UtcNow)
-                .With(u => u.ModifiedAtUtc, (DateTime?)null));
+                .With(u => u.ModifiedAtUtc, (DateTime?)null)
+                .With(u => u.UserRoles, () => new List<UserRole>()));
+    }
+}
+
+/// <summary>
+/// Customization for ApplicationRole to provide empty navigation collections during generation.
+/// </summary>
+public class RoleCustomization : ICustomization
+{
+    /// <summary>
+    /// Configures the <see cref="ApplicationRole"/> generator to avoid recursive user role creation.
+    /// </summary>
+    /// <param name="fixture">Fixture that orchestrates specimen creation for tests.</param>
+    public void Customize(IFixture fixture)
+    {
+        fixture.Customize<ApplicationRole>(composer =>
+            composer.With(r => r.UserRoles, () => new List<UserRole>()));
     }
 }
 
