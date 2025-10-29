@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Archu.Application.Products.Queries.GetProductById;
 using Archu.Domain.Entities;
 using Archu.UnitTests.TestHelpers.Builders;
@@ -115,7 +116,11 @@ public class GetProductByIdQueryHandlerTests
         await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"Retrieving product with ID: {productId}");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "ProductId", productId },
+            { "{OriginalFormat}", "Retrieving product with ID: {ProductId}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -132,7 +137,7 @@ public class GetProductByIdQueryHandlerTests
         await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        fixture.VerifyWarningLogged($"Product with ID {productId} not found");
+        fixture.VerifyWarningLogged("Product with ID {ProductId} not found");
     }
 
     [Theory, AutoMoqData]

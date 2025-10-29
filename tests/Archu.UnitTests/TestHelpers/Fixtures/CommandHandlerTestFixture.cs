@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Domain.Entities;
@@ -9,7 +10,7 @@ namespace Archu.UnitTests.TestHelpers.Fixtures;
 
 /// <summary>
 /// Test fixture for command handler tests that provides common mock setup and helper methods.
-/// Reduces duplicate setup code and improves test maintainability.
+/// Reduces duplicate setup code, improves test maintainability, and centralises structured logging assertions.
 /// </summary>
 /// <typeparam name="THandler">The type of command handler being tested.</typeparam>
 /// <example>
@@ -18,11 +19,15 @@ namespace Archu.UnitTests.TestHelpers.Fixtures;
 /// var fixture = new CommandHandlerTestFixture&lt;CreateProductCommandHandler&gt;()
 ///     .WithAuthenticatedUser(userId)
 ///     .WithProductRepository();
-/// 
+///
 /// var handler = fixture.CreateHandler();
 /// var result = await handler.Handle(command, CancellationToken.None);
-/// 
-/// fixture.VerifyInformationLogged("Product created");
+///
+/// fixture.VerifyStructuredInformationLogged(new Dictionary&lt;string, object?&gt;
+/// {
+///     { "UserId", userId },
+///     { "{OriginalFormat}", "Product created with ID: {ProductId} by User: {UserId}" }
+/// });
 /// </code>
 /// </example>
 public class CommandHandlerTestFixture<THandler> where THandler : class
@@ -273,22 +278,22 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     public Guid AuthenticatedUserId => _authenticatedUserId;
 
     /// <summary>
-    /// Verifies that an Information level log was written containing the specified message.
+    /// Verifies that an Information level log was written using the provided message template.
+    /// Uses structured logging verification behind the scenes so tests assert on the <c>{OriginalFormat}</c> entry.
     /// </summary>
     public void VerifyInformationLogged(string expectedMessage, Times? times = null)
     {
-        MockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            times ?? Times.Once());
+        VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                { "{OriginalFormat}", expectedMessage }
+            },
+            times);
     }
 
     /// <summary>
     /// Verifies that structured log fields exist in an Information level log.
+    /// Prefer this helper over substring matching when validating logging behaviour.
     /// </summary>
     /// <param name="expectedFields">Dictionary of field names and their expected values.</param>
     public void VerifyStructuredInformationLogged(Dictionary<string, object?> expectedFields, Times? times = null)
@@ -304,7 +309,7 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     }
 
     /// <summary>
-    /// Verifies that a Warning level log was written containing the specified message.
+    /// Verifies that a Warning level log was written using the provided message template.
     /// </summary>
     public void VerifyWarningLogged(string expectedMessage, Times? times = null)
     {
@@ -312,7 +317,10 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogState(v, new Dictionary<string, object?>
+                {
+                    { "{OriginalFormat}", expectedMessage }
+                })),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
@@ -335,18 +343,16 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
     }
 
     /// <summary>
-    /// Verifies that an Error level log was written containing the specified message.
+    /// Verifies that an Error level log was written using the provided message template.
     /// </summary>
     public void VerifyErrorLogged(string expectedMessage, Times? times = null)
     {
-        MockLogger.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            times ?? Times.Once());
+        VerifyStructuredErrorLogged(
+            new Dictionary<string, object?>
+            {
+                { "{OriginalFormat}", expectedMessage }
+            },
+            times);
     }
 
     /// <summary>
@@ -361,7 +367,10 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogState(v, new Dictionary<string, object?>
+                {
+                    { "{OriginalFormat}", expectedMessage }
+                })),
                 It.Is<Exception?>(ex => ReferenceEquals(ex, expectedException)),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
@@ -369,6 +378,7 @@ public class CommandHandlerTestFixture<THandler> where THandler : class
 
     /// <summary>
     /// Verifies that structured log fields exist in an Error level log.
+    /// Prefer this helper over the string-based overload when validating log payloads.
     /// </summary>
     /// <param name="expectedFields">Dictionary of field names and their expected values.</param>
     public void VerifyStructuredErrorLogged(Dictionary<string, object?> expectedFields, Times? times = null)

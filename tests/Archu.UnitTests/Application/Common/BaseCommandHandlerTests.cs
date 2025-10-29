@@ -1,5 +1,6 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Common;
+using System.Collections.Generic;
 using Archu.UnitTests.TestHelpers.Fixtures;
 using FluentAssertions;
 using MediatR;
@@ -132,7 +133,11 @@ public class BaseCommandHandlerTests
         Assert.Throws<UnauthorizedAccessException>(
             () => handler.TestGetCurrentUserId());
 
-        fixture.VerifyErrorLogged("Cannot perform this operation");
+        fixture.VerifyStructuredErrorLogged(new Dictionary<string, object?>
+        {
+            { "Operation", "this operation" },
+            { "{OriginalFormat}", "Cannot perform {Operation}: User ID not found or invalid" }
+        });
     }
 
     [Fact]
@@ -148,7 +153,11 @@ public class BaseCommandHandlerTests
         Assert.Throws<UnauthorizedAccessException>(
             () => handler.TestGetCurrentUserIdWithOperation("create products"));
 
-        fixture.VerifyErrorLogged("Cannot perform create products");
+        fixture.VerifyStructuredErrorLogged(new Dictionary<string, object?>
+        {
+            { "Operation", "create products" },
+            { "{OriginalFormat}", "Cannot perform {Operation}: User ID not found or invalid" }
+        });
     }
 
     #endregion

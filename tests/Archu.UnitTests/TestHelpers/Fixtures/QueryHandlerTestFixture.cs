@@ -1,5 +1,6 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
+using System.Collections.Generic;
 using Archu.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -427,22 +428,21 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
     #region Logging Verification Methods
 
     /// <summary>
-    /// Verifies that an Information level log was written containing the specified message.
+    /// Verifies that an Information level log was written using the provided message template.
+    /// Internally asserts on the structured <c>{OriginalFormat}</c> field to avoid brittle substring comparisons.
     /// </summary>
     public void VerifyInformationLogged(string expectedMessage, Times? times = null)
     {
-        MockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            times ?? Times.Once());
+        VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                { "{OriginalFormat}", expectedMessage }
+            },
+            times);
     }
 
     /// <summary>
-    /// Verifies that a Warning level log was written containing the specified message.
+    /// Verifies that a Warning level log was written using the provided message template.
     /// </summary>
     public void VerifyWarningLogged(string expectedMessage, Times? times = null)
     {
@@ -450,14 +450,17 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogState(v, new Dictionary<string, object?>
+                {
+                    { "{OriginalFormat}", expectedMessage }
+                })),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
     }
 
     /// <summary>
-    /// Verifies that an Error level log was written containing the specified message.
+    /// Verifies that an Error level log was written using the provided message template.
     /// </summary>
     public void VerifyErrorLogged(string expectedMessage, Times? times = null)
     {
@@ -465,7 +468,10 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogState(v, new Dictionary<string, object?>
+                {
+                    { "{OriginalFormat}", expectedMessage }
+                })),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());

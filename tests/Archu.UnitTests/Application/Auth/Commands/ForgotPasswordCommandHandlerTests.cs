@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Archu.Application.Auth.Commands.ForgotPassword;
 using Archu.Application.Common;
 using Archu.UnitTests.TestHelpers.Fixtures;
@@ -29,7 +30,11 @@ public class ForgotPasswordCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        fixture.VerifyInformationLogged("Password reset email processed successfully", Times.Once());
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "Email", email },
+            { "{OriginalFormat}", "Password reset email processed successfully for: {Email}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -52,7 +57,12 @@ public class ForgotPasswordCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Be("Unable to process password reset request at this time. Please try again later.");
-        fixture.VerifyErrorLogged("Password reset failed", Times.Once());
+        fixture.VerifyStructuredErrorLogged(new Dictionary<string, object?>
+        {
+            { "Email", email },
+            { "Error", errorMessage },
+            { "{OriginalFormat}", "Password reset failed for email: {Email}. Error: {Error}" }
+        });
     }
 
     [Theory, AutoMoqData]
