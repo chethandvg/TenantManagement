@@ -4,7 +4,7 @@
 <CascadingValue Value="State">
     @if (State.Busy.IsBusy)
     {
-        <MudStack Class="@BusyCssClass" AlignItems="Alignment.Center" Justify="Justify.Center" Spacing="2">
+        <MudStack Class="@BusyCssClass" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
             <MudProgressCircular Color="BusyColor" Size="BusySize" Indeterminate="true" />
             @if (!string.IsNullOrWhiteSpace(State.Busy.BusyMessage))
             {
