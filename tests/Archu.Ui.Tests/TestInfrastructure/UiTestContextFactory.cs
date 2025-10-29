@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Archu.ApiClient.Authentication.Models;
 using Archu.ApiClient.Authentication.Services;
+using Archu.Ui.Services;
 using Archu.Ui.Theming;
 using Bunit;
 using Microsoft.AspNetCore.Authorization;
@@ -36,6 +37,7 @@ public static class UiTestContextFactory
         context.Services.AddSingleton<IAuthorizationService, AllowAllAuthorizationService>();
         context.Services.AddSingleton<IAuthenticationService, NoopAuthenticationService>();
         context.Services.AddSingleton<IThemeTokenService>(new TestThemeTokenService());
+        context.Services.AddSingleton<IClientFeatureService>(new TestClientFeatureService());
         var authenticationStateProvider = new FixedAuthenticationStateProvider();
         context.Services.AddSingleton<AuthenticationStateProvider>(authenticationStateProvider);
         context.Services.AddSingleton(authenticationStateProvider);
@@ -127,6 +129,16 @@ public static class UiTestContextFactory
             configure(tokens);
             TokensChanged?.Invoke(this, new ThemeTokensChangedEventArgs(tokens));
         }
+    }
+
+    private sealed class TestClientFeatureService : IClientFeatureService
+    {
+        /// <summary>
+        /// Always reports features as disabled because component accessibility exercises do not require flag variations.
+        /// </summary>
+        /// <param name="featureName">The identifier of the feature flag under evaluation.</param>
+        /// <returns>A completed task whose result is <c>false</c> to keep rendering deterministic in tests.</returns>
+        public Task<bool> IsEnabledAsync(string featureName) => Task.FromResult(false);
     }
 
     private sealed class FixedAuthenticationStateProvider : AuthenticationStateProvider
