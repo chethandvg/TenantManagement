@@ -26,7 +26,7 @@ internal sealed class ThemeTokenService : IThemeTokenService
     }
 
     /// <inheritdoc />
-    public event EventHandler<DesignTokens>? TokensChanged;
+    public event EventHandler<ThemeTokensChangedEventArgs>? TokensChanged;
 
     /// <inheritdoc />
     public DesignTokens GetTokens()
@@ -64,7 +64,7 @@ internal sealed class ThemeTokenService : IThemeTokenService
             snapshot = updatedTokens.Clone();
         }
 
-        TokensChanged?.Invoke(this, snapshot);
+        TokensChanged?.Invoke(this, new ThemeTokensChangedEventArgs(snapshot));
     }
 
     /// <summary>
@@ -97,28 +97,28 @@ internal sealed class ThemeTokenService : IThemeTokenService
             },
             Typography = new Typography
             {
-                Default = new Default
+                Default = new DefaultTypography
                 {
                     FontFamily = tokens.Typography.FontFamily,
                     FontWeight = tokens.Typography.BodyFontWeight,
                     FontSize = tokens.Typography.BaseFontSize,
                 },
-                H1 = new H1
+                H1 = new H1Typography
                 {
                     FontFamily = tokens.Typography.FontFamily,
                     FontWeight = tokens.Typography.HeadingFontWeight,
                 },
-                H2 = new H2
+                H2 = new H2Typography
                 {
                     FontFamily = tokens.Typography.FontFamily,
                     FontWeight = tokens.Typography.HeadingFontWeight,
                 },
-                H3 = new H3
+                H3 = new H3Typography
                 {
                     FontFamily = tokens.Typography.FontFamily,
                     FontWeight = tokens.Typography.HeadingFontWeight,
                 },
-                Button = new Button
+                Button = new ButtonTypography
                 {
                     FontFamily = tokens.Typography.FontFamily,
                     FontWeight = tokens.Typography.HeadingFontWeight,

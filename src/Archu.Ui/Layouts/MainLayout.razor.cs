@@ -59,8 +59,8 @@ public partial class MainLayout : IDisposable
     /// Refreshes the MudBlazor theme and triggers a render whenever the theme tokens change.
     /// </summary>
     /// <param name="sender">The event sender.</param>
-    /// <param name="_">The updated token snapshot, unused because the layout fetches the latest theme from the service.</param>
-    private void HandleTokensChanged(object? sender, DesignTokens _)
+    /// <param name="args">The updated token snapshot, unused because the layout fetches the latest theme from the service.</param>
+    private void HandleTokensChanged(object? sender, ThemeTokensChangedEventArgs args)
     {
         _theme = ThemeService.GetMudTheme();
         _ = InvokeAsync(StateHasChanged);

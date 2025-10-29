@@ -12,7 +12,7 @@ public interface IThemeTokenService
     /// <summary>
     /// Occurs when the design tokens have been updated and a new theme snapshot is available.
     /// </summary>
-    event EventHandler<DesignTokens>? TokensChanged;
+    event EventHandler<ThemeTokensChangedEventArgs>? TokensChanged;
 
     /// <summary>
     /// Gets a copy of the current design token set.
@@ -32,4 +32,24 @@ public interface IThemeTokenService
     /// </summary>
     /// <param name="configure">The callback that can modify the cloned token set.</param>
     void ApplyOverrides(Action<DesignTokens> configure);
+}
+
+/// <summary>
+/// Provides event data for <see cref="IThemeTokenService"/> token change notifications.
+/// </summary>
+public sealed class ThemeTokensChangedEventArgs : EventArgs
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThemeTokensChangedEventArgs"/> class.
+    /// </summary>
+    /// <param name="tokens">The updated design tokens associated with the event.</param>
+    public ThemeTokensChangedEventArgs(DesignTokens tokens)
+    {
+        Tokens = tokens ?? throw new ArgumentNullException(nameof(tokens));
+    }
+
+    /// <summary>
+    /// Gets the updated design tokens representing the current theme snapshot.
+    /// </summary>
+    public DesignTokens Tokens { get; }
 }
