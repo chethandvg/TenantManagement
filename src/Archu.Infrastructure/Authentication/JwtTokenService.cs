@@ -50,7 +50,8 @@ public sealed class JwtTokenService : IJwtTokenService
         string userId,
         string email,
         string userName,
-        IEnumerable<string> roles)
+        IEnumerable<string> roles,
+        IEnumerable<Claim>? additionalClaims = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
         ArgumentException.ThrowIfNullOrWhiteSpace(email, nameof(email));
@@ -78,6 +79,19 @@ public sealed class JwtTokenService : IJwtTokenService
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
                 claims.Add(new Claim("role", role)); // OIDC standard claim
+            }
+        }
+
+        // ✅ Workflow-aligned comment: ensure optional claims (permissions, flags, etc.)
+        // are appended so downstream authorization handlers receive the required data.
+        if (additionalClaims is not null)
+        {
+            foreach (var claim in additionalClaims)
+            {
+                if (claim is not null)
+                {
+                    claims.Add(claim);
+                }
             }
         }
 

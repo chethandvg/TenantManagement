@@ -139,14 +139,3 @@ public static class Permissions
     public const string RolesManage = "roles:manage";
 }
 
-/// <summary>
-/// Defines custom claim types used in the application.
-/// </summary>
-public static class CustomClaimTypes
-{
-    public const string Permission = "permission";
-    public const string EmailVerified = "email_verified";
-    public const string TwoFactorEnabled = "two_factor_enabled";
-    public const string Department = "department";
-    public const string EmployeeId = "employee_id";
-}

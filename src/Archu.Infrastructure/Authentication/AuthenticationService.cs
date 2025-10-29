@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Common;
+using Archu.Domain.Constants;
 using Archu.Domain.Entities.Identity;
 using Microsoft.Extensions.Logging;
 
@@ -552,12 +554,27 @@ public class AuthenticationService : IAuthenticationService
                 user.Id);
         }
 
+        // ✅ Workflow comment: enrich the JWT with claim-based state that downstream
+        // authorization handlers depend on (permissions, email verification, MFA).
+        var additionalClaims = new List<Claim>
+        {
+            new(CustomClaimTypes.EmailVerified, user.EmailConfirmed.ToString()),
+            new(CustomClaimTypes.TwoFactorEnabled, user.TwoFactorEnabled.ToString())
+        };
+
+        var permissionClaims = RolePermissionClaims
+            .GetPermissionClaimsForRoles(userRoles)
+            .Select(permission => new Claim(CustomClaimTypes.Permission, permission));
+
+        additionalClaims.AddRange(permissionClaims);
+
         // Generate JWT access token
         var accessToken = _jwtTokenService.GenerateAccessToken(
             user.Id.ToString(),
             user.Email,
             user.UserName,
-            userRoles);
+            userRoles,
+            additionalClaims);
 
         // Generate refresh token
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
