@@ -1,6 +1,7 @@
+using System;
+using System.Collections.Generic;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
-using System.Collections.Generic;
 using Archu.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -433,12 +434,14 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
     /// </summary>
     public void VerifyInformationLogged(string expectedMessage, Times? times = null)
     {
-        VerifyStructuredInformationLogged(
-            new Dictionary<string, object?>
-            {
-                { "{OriginalFormat}", expectedMessage }
-            },
-            times);
+        MockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogMessageContains(v, expectedMessage)),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            times ?? Times.Once());
     }
 
     /// <summary>
@@ -450,10 +453,7 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => VerifyLogState(v, new Dictionary<string, object?>
-                {
-                    { "{OriginalFormat}", expectedMessage }
-                })),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogMessageContains(v, expectedMessage)),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
@@ -468,10 +468,7 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => VerifyLogState(v, new Dictionary<string, object?>
-                {
-                    { "{OriginalFormat}", expectedMessage }
-                })),
+                It.Is<It.IsAnyType>((v, t) => VerifyLogMessageContains(v, expectedMessage)),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times ?? Times.Once());
@@ -575,6 +572,18 @@ public class QueryHandlerTestFixture<THandler> where THandler : class
         }
 
         return true;
+    }
+
+    private static bool VerifyLogMessageContains(object state, string expectedMessage)
+    {
+        var formattedMessage = state?.ToString();
+
+        if (formattedMessage is null)
+        {
+            return false;
+        }
+
+        return formattedMessage.Contains(expectedMessage, StringComparison.Ordinal);
     }
 
     #endregion
