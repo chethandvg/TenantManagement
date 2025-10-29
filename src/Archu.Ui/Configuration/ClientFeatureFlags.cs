@@ -1,4 +1,4 @@
-namespace Archu.Web.Configuration;
+namespace Archu.Ui.Configuration;
 
 /// <summary>
 /// Strongly typed constants for client-side feature flag names.

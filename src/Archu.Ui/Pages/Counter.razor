@@ -2,6 +2,22 @@
 
 <PageTitle>Counter</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Counter</MudText>
-<MudText Class="mb-4">Current count: @currentCount</MudText>
-<MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="IncrementCount">Click me</MudButton>
+@if (isLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" Class="my-6" />
+}
+else if (!isPreviewEnabled)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4">
+        The Counter page is currently unavailable because preview features are disabled.
+    </MudAlert>
+}
+else
+{
+    <MudText Typo="Typo.h3" GutterBottom="true">Counter</MudText>
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Icon="@Icons.Material.Filled.NewReleases" Elevation="0" Class="mb-4">
+        This experience is offered as a preview and may change before general availability.
+    </MudAlert>
+    <MudText Class="mb-4">Current count: @currentCount</MudText>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="IncrementCount">Click me</MudButton>
+}
