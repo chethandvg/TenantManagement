@@ -203,7 +203,12 @@ public class InitializeSystemCommandHandlerTests
         fixture.MockUnitOfWork.Verify(unit => unit.CommitTransactionAsync(cancellationTokenSource.Token), Times.Once());
         fixture.MockUnitOfWork.Verify(unit => unit.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
 
-        fixture.VerifyInformationLogged("Starting system initialization", Times.Once());
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                ["{OriginalFormat}"] = "Starting system initialization..."
+            },
+            Times.Once());
         fixture.VerifyStructuredInformationLogged(
             new Dictionary<string, object?>
             {

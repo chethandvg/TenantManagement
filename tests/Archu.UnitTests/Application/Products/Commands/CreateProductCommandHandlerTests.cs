@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Archu.Application.Products.Commands.CreateProduct;
 using Archu.Domain.Entities;
 using Archu.UnitTests.TestHelpers.Fixtures;
@@ -185,7 +186,12 @@ public class CreateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"User {userId} creating product: {productName}");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "UserId", userId },
+            { "ProductName", productName },
+            { "{OriginalFormat}", "User {UserId} creating product: {ProductName}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -215,7 +221,12 @@ public class CreateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"Product created with ID: {productId}");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "ProductId", productId },
+            { "UserId", userId },
+            { "{OriginalFormat}", "Product created with ID: {ProductId} by User: {UserId}" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -255,7 +266,11 @@ public class CreateProductCommandHandlerTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => handler.Handle(command, CancellationToken.None));
 
-        fixture.VerifyErrorLogged("Cannot perform create products");
+        fixture.VerifyStructuredErrorLogged(new Dictionary<string, object?>
+        {
+            { "Operation", "create products" },
+            { "{OriginalFormat}", "Cannot perform {Operation}: User ID not found or invalid" }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -276,7 +291,12 @@ public class CreateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged(userId.ToString(), Times.Exactly(2));
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                { "UserId", userId }
+            },
+            Times.Exactly(2));
     }
 
     [Theory]
@@ -300,7 +320,10 @@ public class CreateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged(productName);
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "ProductName", productName }
+        });
     }
 
     [Theory, AutoMoqData]
@@ -330,7 +353,10 @@ public class CreateProductCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        fixture.VerifyInformationLogged($"Product created with ID: {productId}");
+        fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
+        {
+            { "ProductId", productId }
+        });
     }
 
     #endregion
