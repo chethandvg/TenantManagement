@@ -1,24 +1,46 @@
-# Archu.Ui - Platform-Agnostic Blazor Component Library
+# Archu.Ui – Blazor UI Package
 
-A reusable Razor Class Library containing UI components built with MudBlazor. This library is designed to be platform-agnostic and works seamlessly with:
+Archu.Ui is a Razor Class Library that delivers the layout, navigation, and routing helpers used by the Archu front-end. The project is intentionally lightweight and focuses on opinionated experiences that wrap MudBlazor primitives so that the host applications stay consistent.
 
-- **Blazor Server**
-- **Blazor WebAssembly**
-- **Blazor Hybrid (MAUI)**
+## Feature Highlights
 
-## Features
+- ✅ Application layout with authenticated navigation chrome (`Layouts/MainLayout`)
+- ✅ Navigation menu that adapts to authorization state
+- ✅ Login redirection helper to simplify protecting pages
+- ✅ Ready-to-use sample pages that demonstrate authentication and data loading patterns
+- ✅ Runtime theme token service that keeps MudBlazor styling in sync across components
 
-- ✔️ Pre-styled components with CSS isolation
-- ✔️ MudBlazor-based components for consistent design
-- ✔️ Platform-agnostic (no ASP.NET Core dependencies)
-- ✔️ Easy service registration with `AddArchuUi()`
-- ✔️ Type-safe component parameters
-- ✔️ Accessibility-focused
-- 🎨 Runtime-accessible design tokens with MudBlazor integration
+## Component Inventory
 
-## Installation
+The catalog below reflects the components that currently ship in the library.
 
-### 1. Add Project Reference
+### Layouts
+
+| Component | File | Description |
+|-----------|------|-------------|
+| `MainLayout` | `Layouts/MainLayout.razor`<br/>`Layouts/MainLayout.razor.cs` | Provides the global shell (app bar, navigation drawer, snackbar/menu providers) and wires the runtime theming service into MudBlazor. |
+
+### Reusable Components
+
+| Component | File | Description |
+|-----------|------|-------------|
+| `NavMenu` | `Components/Navigation/NavMenu.razor`<br/>`Components/Navigation/NavMenu.razor.cs` | Drawer navigation that exposes authenticated and anonymous links through `AuthorizeView`. |
+| `RedirectToLogin` | `Components/Routing/RedirectToLogin.razor`<br/>`Components/Routing/RedirectToLogin.razor.cs` | Redirects unauthenticated visitors to the login page while preserving their requested URL. |
+
+### Application Pages
+
+| Page | Route | Files | Purpose |
+|------|-------|-------|---------|
+| `Index` | `/` | `Pages/Index.razor`<br/>`Pages/Index.razor.cs` | Landing page that greets signed-in users and expects anonymous users to be redirected. |
+| `Login` | `/login` | `Pages/Login.razor`<br/>`Pages/Login.razor.cs` | Email/password login form that surfaces snackbar notifications and respects a `returnUrl` query parameter. |
+| `Register` | `/register` | `Pages/Register.razor`<br/>`Pages/Register.razor.cs` | Registration form with confirmation validation and navigation back to the login screen. |
+| `Products` | `/products` | `Pages/Products.razor`<br/>`Pages/Products.razor.cs` | Authenticated catalog view that fetches products from `IProductsApiClient` and reports load/error states. |
+| `Counter` | `/counter` | `Pages/Counter.razor`<br/>`Pages/Counter.razor.cs` | Sample counter experience used for diagnostics and template parity. |
+| `FetchData` | `/fetchdata` | `Pages/FetchData.razor`<br/>`Pages/FetchData.razor.cs` | Weather forecast sample that demonstrates basic API calls through `HttpClient`. |
+
+## Getting Started
+
+### 1. Add the Project Reference
 
 ```bash
 dotnet add reference ..\Archu.Ui\Archu.Ui.csproj
@@ -26,7 +48,7 @@ dotnet add reference ..\Archu.Ui\Archu.Ui.csproj
 
 ### 2. Register Services
 
-In your `Program.cs` (works for Server, WASM, or MAUI):
+In your `Program.cs` (Blazor Server, WebAssembly, or Hybrid):
 
 ```csharp
 using Archu.Ui;
@@ -38,23 +60,18 @@ builder.Services.AddArchuUi(options =>
 });
 ```
 
-The optional callback exposes `ThemeOptions`, allowing you to override the default design tokens before they are registered.
-Tokens map directly to the generated CSS variables in `wwwroot/archu-theme-tokens.css`.
+The optional callback receives `ThemeOptions` so you can override design tokens before the MudBlazor theme is materialized.
 
-### 3. Add to _Imports.razor
+### 3. Update `_Imports.razor`
 
 ```razor
 @using Archu.Ui
-@using Archu.Ui.Components
-@using Archu.Ui.Components.Common
-@using Archu.Ui.Components.Forms
-@using Archu.Ui.Components.Inputs
-@using Archu.Ui.Components.Products
-@using Archu.Ui.Components.Typography
+@using Archu.Ui.Components.Navigation
+@using Archu.Ui.Components.Routing
 @using Archu.Ui.Layouts
 ```
 
-### 4. Add MudBlazor CSS and JS (in your host/index.html or App.razor)
+### 4. Include MudBlazor Assets
 
 ```html
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
@@ -63,292 +80,56 @@ Tokens map directly to the generated CSS variables in `wwwroot/archu-theme-token
 <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 ```
 
-## Theming and Design Tokens
+## Theming and Layout Integration
 
-Archu.Ui ships with a theming service that bridges runtime token access and MudBlazor's `MudThemeProvider`.
-The theming service is registered with a scoped lifetime so every Blazor Server circuit receives
-its own isolated token snapshot, while WebAssembly and Hybrid apps retain the expected
-singleton-per-client behavior.
+`MainLayout` automatically registers `MudThemeProvider`, dialog/snackbar/popover services, and the `NavMenu`. It listens for `IThemeTokenService.TokensChanged` so runtime edits to design tokens immediately refresh the MudBlazor theme.
 
-- Access the current tokens or apply overrides by injecting `IThemeTokenService`:
-
-  ```csharp
-  using Archu.Ui.Theming;
-
-  public class ThemeController
-  {
-      private readonly IThemeTokenService _theme;
-
-      public ThemeController(IThemeTokenService theme)
-      {
-          _theme = theme;
-      }
-
-      public void SwitchToDarkMode()
-      {
-          _theme.ApplyOverrides(tokens =>
-          {
-              tokens.Colors.Background = "#1C1B1F";
-              tokens.Colors.OnBackground = "#E6E1E5";
-              tokens.Colors.Surface = "#1C1B1F";
-          });
-      }
-  }
-  ```
-
-- CSS consumers can import `_content/Archu.Ui/archu-theme-tokens.css` to reuse the same variables in custom styles.
-
-- The default layout (`Layouts/MainLayout.razor`) consumes the theming service automatically, so updates immediately flow through MudBlazor components.
-
-## Component Overview
-
-### Layout Components
-
-#### MainLayout
-A complete application layout with app bar, drawer, and main content area.
-
-```razor
-@inherits LayoutComponentBase
-@layout Archu.Ui.Layouts.MainLayout
-
-<MainLayout AppTitle="My Application">
-    <TopBarContent>
-        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
-    </TopBarContent>
-    
-    <DrawerContent>
-        <MudNavMenu>
-            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-            <MudNavLink Href="/products" Icon="@Icons.Material.Filled.ShoppingCart">Products</MudNavLink>
-        </MudNavMenu>
-    </DrawerContent>
-    
-    @Body
-</MainLayout>
-```
-
-### Typography Components
-
-#### PageHeading
-Displays a consistent page heading.
-
-```razor
-<PageHeading Color="Color.Primary">Products</PageHeading>
-```
-
-#### ArchuText
-A flexible text component wrapper around MudText.
-
-```razor
-<ArchuText Typo="Typo.h6" Color="Color.Secondary">
-    This is some text
-</ArchuText>
-```
-
-### Input Components
-
-#### ArchuTextField
-Generic text input field.
-
-```razor
-<ArchuTextField @bind-Value="model.Name" 
-                Label="Product Name" 
-                Required="true" />
-```
-
-#### ArchuNumericField
-Numeric input field with type safety.
-
-```razor
-<ArchuNumericField @bind-Value="model.Price" 
-                   Label="Price" 
-                   Min="0M"
-                   Step="0.01M" />
-```
-
-#### ArchuButton
-Styled button component.
-
-```razor
-<ArchuButton Color="Color.Primary" 
-             StartIcon="@Icons.Material.Filled.Add"
-             OnClick="HandleClick">
-    Add Product
-</ArchuButton>
-```
-
-### Product Components
-
-#### ProductCard
-Displays a single product with optional actions.
-
-```razor
-<ProductCard Product="@product"
-            ShowActions="true"
-            OnEdit="HandleEdit"
-            OnDelete="HandleDelete" />
-```
-
-#### ProductGrid
-Displays a responsive grid of products.
-
-```razor
-<ProductGrid Products="@products"
-            ShowActions="true"
-            OnEdit="HandleEdit"
-            OnDelete="HandleDelete"
-            EmptyMessage="No products found." />
-```
-
-### Common Components
-
-#### LoadingContainer
-Shows loading indicator or content.
-
-```razor
-<LoadingContainer IsLoading="@isLoading" Message="Loading products...">
-    <ProductGrid Products="@products" />
-</LoadingContainer>
-```
-
-#### ArchuAlert
-Display alerts and messages.
-
-```razor
-<ArchuAlert Severity="Severity.Success" Message="Product saved successfully!" />
-```
-
-### Form Components
-
-#### ArchuForm
-Complete form wrapper with validation.
-
-```razor
-<ArchuForm Model="@createRequest"
-          Title="Create Product"
-          OnValidSubmit="HandleSubmit"
-          IsSubmitting="@isSubmitting"
-          ShowCancelButton="true"
-          OnCancel="HandleCancel">
-    
-    <ArchuTextField @bind-Value="createRequest.Name" Label="Name" Required="true" />
-    <ArchuNumericField @bind-Value="createRequest.Price" Label="Price" Required="true" />
-    
-</ArchuForm>
-```
-
-## Example Usage in Blazor Server/WASM
-
-```razor
-@page "/products"
-@using Archu.Contracts.Products
-@inject HttpClient Http
-
-<PageHeading>Products</PageHeading>
-
-<LoadingContainer IsLoading="@loading">
-    <ProductGrid Products="@products"
-                ShowActions="true"
-                OnEdit="EditProduct"
-                OnDelete="DeleteProduct" />
-</LoadingContainer>
-
-@code {
-    private bool loading = true;
-    private List<ProductDto> products = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        products = await Http.GetFromJsonAsync<List<ProductDto>>("api/products") ?? new();
-        loading = false;
-    }
-
-    private void EditProduct(ProductDto product)
-    {
-        // Handle edit
-    }
-
-    private void DeleteProduct(ProductDto product)
-    {
-        // Handle delete
-    }
-}
-```
-
-## Example Usage in MAUI Blazor Hybrid
-
-The same components work in MAUI! Just register services in `MauiProgram.cs`:
+To override tokens at runtime:
 
 ```csharp
-using Archu.Ui;
+using Archu.Ui.Theming;
 
-public static class MauiProgram
+public sealed class ThemeController
 {
-    public static MauiApp CreateMauiApp()
-    {
-        var builder = MauiApp.CreateBuilder();
-        builder
-            .UseMauiApp<App>()
-            .ConfigureFonts(fonts =>
-            {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-            });
+    private readonly IThemeTokenService _theme;
 
-        builder.Services.AddMauiBlazorWebView();
-        builder.Services.AddArchuUi(); // ? Same registration!
-        
-        return builder.Build();
+    public ThemeController(IThemeTokenService theme)
+    {
+        _theme = theme;
+    }
+
+    public void SwitchToDarkMode()
+    {
+        _theme.ApplyOverrides(tokens =>
+        {
+            tokens.Colors.Background = "#1C1B1F";
+            tokens.Colors.OnBackground = "#E6E1E5";
+            tokens.Colors.Surface = "#1C1B1F";
+        });
     }
 }
 ```
 
-## Customization
+## API Documentation Automation
 
-### Override MudBlazor Configuration
+XML documentation comments throughout the components are used to generate API reference material. The repository includes a DocFX configuration under `docs/archu-ui` so you can produce browsable docs directly from the source.
 
-You can customize MudBlazor configuration by calling `AddMudServices` separately:
+1. Restore the local dotnet tools (DocFX is pinned in `.config/dotnet-tools.json`):
+   ```bash
+   dotnet tool restore
+   ```
+2. Generate the API site:
+   ```bash
+   dotnet docfx docs/archu-ui/docfx.json
+   ```
 
-```csharp
-builder.Services.AddMudServices(config =>
-{
-    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopRight;
-});
-```
-
-### CSS Isolation
-
-All components use CSS isolation (scoped styles). To override styles:
-
-```css
-/* In your wwwroot/css/app.css */
-::deep .product-card {
-    border-radius: 12px;
-}
-```
-
-## Dependencies
-
-- **Microsoft.AspNetCore.Components.Web** (9.0.1)
-- **MudBlazor** (8.0.0)
-- **Archu.Contracts** (project reference)
-
-## Architecture Notes
-
-- ? No platform-specific dependencies (works everywhere)
-- ? No HTTP or API logic (purely presentational)
-- ? Components accept data via parameters
-- ? Events are exposed via `EventCallback`
-- ? Follows separation of concerns
+DocFX builds metadata from `Archu.Ui.csproj` and outputs a static site to `docs/archu-ui/_site`. The generated pages surface the XML comments for every public component, parameter, and service.
 
 ## Contributing
 
-When adding new components:
-1. Place them in appropriate namespace folders
-2. Add CSS isolation files (`.razor.css`)
-3. Use `EditorRequired` for mandatory parameters
-4. Expose events via `EventCallback`
-5. Keep components platform-agnostic
+When adding new components or pages:
 
-## License
-
-Same as parent project.
+1. Place them in the appropriate namespace folder (`Components`, `Layouts`, or `Pages`).
+2. Add XML documentation for public parameters and services so DocFX can emit accurate API docs.
+3. Update the inventory tables above to reflect the new functionality.
+4. Prefer MudBlazor primitives and keep application-specific logic inside the host app.
