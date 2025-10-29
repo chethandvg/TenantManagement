@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using MudBlazor;
 
 namespace Archu.Ui.Theming;
@@ -99,28 +100,28 @@ internal sealed class ThemeTokenService : IThemeTokenService
             {
                 Default = new DefaultTypography
                 {
-                    FontFamily = tokens.Typography.FontFamily,
+                    FontFamily = ParseFontFamilies(tokens.Typography.FontFamily),
                     FontWeight = tokens.Typography.BodyFontWeight,
                     FontSize = tokens.Typography.BaseFontSize,
                 },
                 H1 = new H1Typography
                 {
-                    FontFamily = tokens.Typography.FontFamily,
+                    FontFamily = ParseFontFamilies(tokens.Typography.FontFamily),
                     FontWeight = tokens.Typography.HeadingFontWeight,
                 },
                 H2 = new H2Typography
                 {
-                    FontFamily = tokens.Typography.FontFamily,
+                    FontFamily = ParseFontFamilies(tokens.Typography.FontFamily),
                     FontWeight = tokens.Typography.HeadingFontWeight,
                 },
                 H3 = new H3Typography
                 {
-                    FontFamily = tokens.Typography.FontFamily,
+                    FontFamily = ParseFontFamilies(tokens.Typography.FontFamily),
                     FontWeight = tokens.Typography.HeadingFontWeight,
                 },
                 Button = new ButtonTypography
                 {
-                    FontFamily = tokens.Typography.FontFamily,
+                    FontFamily = ParseFontFamilies(tokens.Typography.FontFamily),
                     FontWeight = tokens.Typography.HeadingFontWeight,
                 },
             },
@@ -132,5 +133,25 @@ internal sealed class ThemeTokenService : IThemeTokenService
 
         options.ConfigureMudTheme?.Invoke(theme);
         return theme;
+    }
+
+    /// <summary>
+    /// Converts the CSS-style font family token into an array compatible with MudBlazor typography settings.
+    /// </summary>
+    /// <param name="fontFamily">The raw font family token value, typically a comma-separated list.</param>
+    /// <returns>An array of font family names ordered by preference.</returns>
+    private static string[] ParseFontFamilies(string fontFamily)
+    {
+        if (string.IsNullOrWhiteSpace(fontFamily))
+        {
+            return Array.Empty<string>();
+        }
+
+        // Split on commas, trim whitespace and surrounding quotes so CSS-style values map to MudBlazor expectations.
+        return fontFamily
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(value => value.Trim().Trim('\'', '"'))
+            .Where(value => value.Length > 0)
+            .ToArray();
     }
 }
