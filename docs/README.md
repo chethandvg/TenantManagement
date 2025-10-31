@@ -9,14 +9,14 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 ### Essential Guides (Start Here)
 
 1. **[Getting Started Guide](GETTING_STARTED.md)** ⚡ **START HERE**
-   - Complete setup in 10 minutes
+ - Complete setup in 10 minutes
    - JWT configuration
    - Database seeding
    - Testing your setup
 
 2. **[Architecture Guide](ARCHITECTURE.md)**
- - Clean Architecture explained
-   - Project structure
+   - Clean Architecture explained
+ - Project structure
    - Design patterns
 
 3. **[Application & Infrastructure Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)**
@@ -30,23 +30,23 @@ Welcome to the Archu documentation! This hub provides links to all documentation
    - All endpoints documented
    - Authentication flows
    - Common workflows
-- Error handling
+   - Error handling
 
 5. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
    - JWT configuration
    - Token management
-- Security best practices
+   - Security best practices
    - Troubleshooting
 
 6. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
    - Role-based access control
- - Security restrictions
+   - Security restrictions
    - Policy configuration
 
 7. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
    - Password policies
    - Complexity rules
-- Validation implementation
+   - Validation implementation
 
 8. **[Database Guide](DATABASE_GUIDE.md)**
    - Database setup
@@ -57,7 +57,7 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 9. **[Development Guide](DEVELOPMENT_GUIDE.md)**
    - Development workflow
    - Code patterns
-   - Best practices
+- Best practices
    - Testing
 
 10. **[Project Structure](PROJECT_STRUCTURE.md)**
@@ -110,6 +110,12 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 2. ✅ **[Development Guide](DEVELOPMENT_GUIDE.md)** - Migrations and patterns
 3. ✅ **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Repository implementations
 
+### I want to test the application... ⭐ NEW
+1. ✅ **[Integration Tests](../tests/Archu.IntegrationTests/README.md)** - API integration testing
+2. ✅ **[API Client Tests](../tests/Archu.ApiClient.Tests/README.md)** - HTTP client unit tests
+3. ✅ **[UI Tests](../tests/Archu.Ui.Tests/README.md)** - Accessibility & component tests
+4. ✅ **[Unit Tests](../tests/Archu.UnitTests/README.md)** - Business logic tests (if exists)
+
 ---
 
 ## 📖 Documentation by Audience
@@ -148,6 +154,13 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 10. **[Archu.AppHost](../src/Archu.AppHost/README.md)** - Orchestration with Aspire ⭐ NEW
 11. **[Archu.ServiceDefaults](../src/Archu.ServiceDefaults/README.md)** - Shared configuration ⭐ NEW
 
+### For Test Engineers ⭐ NEW
+**Testing strategy and infrastructure:**
+1. **[Integration Tests](../tests/Archu.IntegrationTests/README.md)** - API integration testing (17 tests)
+2. **[API Client Tests](../tests/Archu.ApiClient.Tests/README.md)** - HTTP client unit tests (11 tests)
+3. **[UI Tests](../tests/Archu.Ui.Tests/README.md)** - Accessibility testing (2 tests)
+4. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Testing best practices
+
 ### For Administrators
 **System management:**
 1. **[Getting Started Guide](GETTING_STARTED.md)** - Initial setup
@@ -178,27 +191,27 @@ Archu/
 │   ├── API_GUIDE.md    # Complete API reference
 │   ├── AUTHENTICATION_GUIDE.md    # JWT and authentication
 │   ├── AUTHORIZATION_GUIDE.md # Role-based access control
-│   ├── PASSWORD_SECURITY_GUIDE.md        # Password policies
+│   ├── PASSWORD_SECURITY_GUIDE.md # Password policies
 │   ├── DATABASE_GUIDE.md        # Database and migrations
 │   ├── DEVELOPMENT_GUIDE.md          # Development workflow
 │   └── ARCHIVE.md  # Historical documentation
 ├── src/
-│ ├── Archu.Api/   # 🌐 Main REST API
-│   │   ├── Archu.Api.http           # 40+ HTTP examples
+│   ├── Archu.Api/   # 🌐 Main REST API
+│   │   ├── Archu.Api.http         # 40+ HTTP examples
 │   │   └── README.md       # API project documentation
 │   ├── Archu.AdminApi/   # 🛡️ Admin API
 │   │   ├── Archu.AdminApi.http   # 31 HTTP examples
-│   │   └── README.md        # Admin API documentation
+│ │   └── README.md        # Admin API documentation
 │   ├── Archu.Domain/      # 💼 Business logic
 │   │   └── README.md   # Complete Domain layer guide
-│├── Archu.Application/           # 🎯 Use cases & CQRS
+│   ├── Archu.Application/           # 🎯 Use cases & CQRS
 │   │   └── README.md# Complete Application layer guide
 │   ├── Archu.Infrastructure/    # 🔌 Data access & repositories
 │   │   └── README.md      # Complete Infrastructure layer guide
 │   ├── Archu.Contracts/         # 📝 API DTOs
 │   │   └── README.md# Complete Contracts layer guide
-│   ├── Archu.ApiClient/    # 📡 HTTP client library
-│   │   ├── README.md          # Complete client documentation
+│   ├── Archu.ApiClient/  # 📡 HTTP client library
+│   │   ├── README.md    # Complete client documentation
 │   │   ├── RESILIENCE.md   # Resilience & error handling
 │   │   └── Authentication/
 │   │       └── README.md# ⭐ Authentication framework guide
@@ -208,11 +221,18 @@ Archu/
 │   │   └── INTEGRATION.md # Platform-specific integration guide
 │   ├── Archu.Web/   # 🌐 Blazor WebAssembly app
 │   │   └── README.md ⭐ WebAssembly application guide
-│   ├── Archu.ServiceDefaults/      # ⚙️ Aspire shared configuration
+│   ├── Archu.ServiceDefaults/ # ⚙️ Aspire shared configuration
 │   │   └── README.md ⭐ NEW - Service defaults documentation
 │   ├── Archu.AppHost/    # 🚀 Aspire orchestrator
-│ │   └── README.md ⭐ NEW - Orchestration guide
+│   │   └── README.md ⭐ NEW - Orchestration guide
 │   └── README_NEW_ENTITY.md # Development tutorial
+├── tests/  # 🧪 Test Projects ⭐ NEW
+│   ├── Archu.IntegrationTests/  # API integration tests
+│   │   └── README.md    # 17 integration tests
+│   ├── Archu.ApiClient.Tests/   # API client unit tests
+│   │   └── README.md    # 11 unit tests
+│   └── Archu.Ui.Tests/     # UI accessibility tests
+│       └── README.md       # 2 accessibility tests
 └── README.md        # Project overview
 ```
 
@@ -274,6 +294,16 @@ Archu/
 **[Resilience Guide →](../src/Archu.ApiClient/RESILIENCE.md)**  
 **[Authentication Guide →](../src/Archu.ApiClient/Authentication/README.md)** ⭐ NEW
 
+### Testing Strategy ⭐ NEW
+- **Integration Tests**: API endpoints with real SQL Server containers (17 tests)
+- **API Client Tests**: HTTP client behavior and resilience (11 tests)
+- **UI Tests**: Accessibility and WCAG 2.1 compliance (2 tests)
+- **Unit Tests**: Business logic and command/query handlers
+
+**[Integration Tests →](../tests/Archu.IntegrationTests/README.md)**  
+**[API Client Tests →](../tests/Archu.ApiClient.Tests/README.md)**  
+**[UI Tests →](../tests/Archu.Ui.Tests/README.md)**
+
 ---
 
 ## 🛠️ Common Tasks
@@ -315,6 +345,23 @@ https://localhost:7290/scalar/v1  # Admin API
 
 **[Full guide →](API_GUIDE.md)**
 
+### Running Tests ⭐ NEW
+
+```bash
+# Run all tests
+dotnet test
+
+# Run specific test project
+dotnet test tests/Archu.IntegrationTests
+dotnet test tests/Archu.ApiClient.Tests
+dotnet test tests/Archu.Ui.Tests
+
+# Run with code coverage
+dotnet test /p:CollectCoverage=true
+```
+
+**[Test Documentation →](#i-want-to-test-the-application-)**
+
 ### Creating a Migration
 
 ```bash
@@ -335,29 +382,32 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 | Metric | Value |
 |--------|-------|
-| **Total Documentation Files** | 18 essential docs ⬆️ (+2 new) |
+| **Total Documentation Files** | 21 essential docs ⬆️ (+3 new) |
 | **Quick Start Time** | 10 minutes |
 | **Full Onboarding Time** | 45 minutes |
 | **HTTP Request Examples** | 71+ examples |
 | **API Endpoints** | 28 total (16 Main + 12 Admin) |
 | **Project READMEs** | 13 ⬆️ (+2 new) |
+| **Test Project READMEs** | 3 ⭐ NEW |
+| **Total Tests** | 30+ tests ⭐ NEW |
 
 ### Recent Updates ⭐ NEW
 
-**Date**: 2025-01-23
+**Date**: 2025-01-24
 
 **New Documentation:**
-- ✅ [Archu.AppHost README](../src/Archu.AppHost/README.md) - Complete orchestration guide ⭐ NEW
-- ✅ [Archu.ServiceDefaults README](../src/Archu.ServiceDefaults/README.md) - Service defaults guide ⭐ NEW
-- ✅ [Archu.Web README](../src/Archu.Web/README.md) - Complete Blazor WebAssembly guide
-- ✅ [Authentication Framework](../src/Archu.ApiClient/Authentication/README.md) - JWT client authentication
-
-**Removed Documentation:**
-- ❌ `src/Archu.AppHost/INTEGRATION.md` - Consolidated into AppHost README
-- ❌ `tests/Archu.UnitTests/PHASE1_CLEANUP_SUMMARY.md` - Historical, removed
+- ✅ [Archu.IntegrationTests README](../tests/Archu.IntegrationTests/README.md) - Complete integration testing guide ⭐ NEW
+- ✅ [Archu.ApiClient.Tests README](../tests/Archu.ApiClient.Tests/README.md) - API client unit tests ⭐ NEW
+- ✅ [Archu.Ui.Tests README](../tests/Archu.Ui.Tests/README.md) - Accessibility testing guide ⭐ NEW
 
 **Updated Documentation:**
-- ✅ [docs/README.md](README.md) - Updated project structure and statistics
+- ✅ [docs/README.md](README.md) - Added test documentation section
+- ✅ [docs/ARCHIVE.md](ARCHIVE.md) - Consolidated historical documentation
+
+**Test Coverage:**
+- ✅ Integration Tests: 17 tests (API endpoints)
+- ✅ API Client Tests: 11 tests (HTTP client behavior)
+- ✅ UI Tests: 2 tests (accessibility & WCAG 2.1)
 
 ---
 
@@ -374,6 +424,10 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 | **Entity Framework Core** | [Microsoft Docs](https://learn.microsoft.com/en-us/ef/core/) |
 | **Blazor WebAssembly** | [Microsoft Docs](https://learn.microsoft.com/en-us/aspnet/core/blazor/hosting-models#blazor-webassembly) |
 | **MudBlazor** | [Official Docs](https://mudblazor.com/) |
+| **xUnit** | [Official Docs](https://xunit.net/) |
+| **bUnit** | [Official Docs](https://bunit.dev/) |
+| **Testcontainers** | [Official Docs](https://dotnet.testcontainers.org/) |
+| **WCAG 2.1** | [Quick Reference](https://www.w3.org/WAI/WCAG21/quickref/) |
 
 ---
 
@@ -388,6 +442,7 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 - **Database questions**: See [DATABASE_GUIDE.md](DATABASE_GUIDE.md)
 - **Frontend questions**: See [Archu.Web README](../src/Archu.Web/README.md) ⭐ NEW
 - **Client library questions**: See [Archu.ApiClient README](../src/Archu.ApiClient/README.md)
+- **Testing questions**: See [Integration Tests](../tests/Archu.IntegrationTests/README.md), [API Client Tests](../tests/Archu.ApiClient.Tests/README.md), [UI Tests](../tests/Archu.Ui.Tests/README.md) ⭐ NEW
 
 ---
 
@@ -395,6 +450,7 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.3 | 2025-01-24 | **Added test documentation** (3 new test project READMEs) |
 | 4.2 | 2025-01-23 | **Added Aspire documentation** (AppHost, ServiceDefaults READMEs) |
 | 4.1 | 2025-01-23 | **Added frontend documentation** (Archu.Web, Authentication Framework) |
 | 4.0 | 2025-01-22 | **Major consolidation** (51 files → 12 files, 76% reduction) |
@@ -407,7 +463,7 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 ---
 
-**Last Updated**: 2025-01-23  
-**Version**: 4.2 ⚡ **ASPIRE DOCS ADDED**  
+**Last Updated**: 2025-01-24  
+**Version**: 4.3 ⚡ **TEST DOCUMENTATION ADDED**  
 **Maintainer**: Archu Development Team  
 **Questions?** Open an issue on [GitHub](https://github.com/chethandvg/archu/issues)
