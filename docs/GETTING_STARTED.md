@@ -71,25 +71,38 @@ dotnet user-secrets set "DatabaseSeeding:AdminPassword" "Admin@123"
 
 ## 🔐 JWT Authentication Setup (Detailed)
 
-### Automated Setup Script
+### Manual JWT Configuration
 
-**Windows:**
+The repository no longer includes automated setup scripts, so use the manual commands below (they mirror the quick start instructions above).
+
+**Windows (PowerShell):**
 ```powershell
-.\scripts\setup-jwt-secrets.ps1
+cd ../Archu.Api
+dotnet user-secrets init
+dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKeyForJWTTokenGeneration1234567890"
+dotnet user-secrets set "Jwt:Issuer" "https://localhost:7123"
+dotnet user-secrets set "Jwt:Audience" "https://localhost:7123"
+dotnet user-secrets set "Jwt:AccessTokenExpirationMinutes" "60"
+dotnet user-secrets set "Jwt:RefreshTokenExpirationDays" "7"
 ```
 
-**Linux/macOS:**
+**Linux/macOS (bash):**
 ```bash
-chmod +x ./scripts/setup-jwt-secrets.sh
-./scripts/setup-jwt-secrets.sh
+cd ../Archu.Api
+dotnet user-secrets init
+dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKeyForJWTTokenGeneration1234567890"
+dotnet user-secrets set "Jwt:Issuer" "https://localhost:7123"
+dotnet user-secrets set "Jwt:Audience" "https://localhost:7123"
+dotnet user-secrets set "Jwt:AccessTokenExpirationMinutes" "60"
+dotnet user-secrets set "Jwt:RefreshTokenExpirationDays" "7"
 ```
 
 ### What Gets Configured
 
-The script automatically:
-- ✅ Initializes User Secrets
-- ✅ Generates a secure 256-bit JWT secret
-- ✅ Configures JWT settings (Issuer, Audience, Expiration)
+These commands:
+- ✅ Initialize User Secrets
+- ✅ Store a secure 256-bit JWT secret
+- ✅ Configure JWT settings (Issuer, Audience, Expiration)
 
 ### Verify Configuration
 
@@ -175,26 +188,28 @@ After seeding completes:
 
 The Admin API needs the **SAME JWT secret** as the Main API for tokens to work across both APIs.
 
-**Option A: Automated Setup (Recommended)**
+Follow the same manual process for the Admin API:
 
-**Windows:**
+**Windows (PowerShell):**
 ```powershell
-.\scripts\setup-jwt-secrets-all.ps1
-```
-
-**Linux/macOS:**
-```bash
-chmod +x ./scripts/setup-jwt-secrets-all.sh
-./scripts/setup-jwt-secrets-all.sh
-```
-
-**Option B: Manual Setup**
-
-```bash
-# 1. Navigate to Admin API
-cd Archu.AdminApi
+cd ../Archu.AdminApi
 dotnet user-secrets init
-dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKeyForJWTTokenGeneration1234567890"
+dotnet user-secrets list --project ../Archu.Api
+# Copy the Jwt:Secret value from the output above and paste it below
+dotnet user-secrets set "Jwt:Secret" "<paste-secret-from-main-api>"
+dotnet user-secrets set "Jwt:Issuer" "https://localhost:7123"
+dotnet user-secrets set "Jwt:Audience" "https://localhost:7123"
+dotnet user-secrets set "Jwt:AccessTokenExpirationMinutes" "60"
+dotnet user-secrets set "Jwt:RefreshTokenExpirationDays" "7"
+```
+
+**Linux/macOS (bash):**
+```bash
+cd ../Archu.AdminApi
+dotnet user-secrets init
+dotnet user-secrets list --project ../Archu.Api
+# Copy the Jwt:Secret value from the output above and paste it below
+dotnet user-secrets set "Jwt:Secret" "<paste-secret-from-main-api>"
 dotnet user-secrets set "Jwt:Issuer" "https://localhost:7123"
 dotnet user-secrets set "Jwt:Audience" "https://localhost:7123"
 dotnet user-secrets set "Jwt:AccessTokenExpirationMinutes" "60"
@@ -336,7 +351,7 @@ dotnet user-secrets set "Jwt:Secret" "<secure-secret>"
 
 ### Production Environment
 
-✅ **Use Azure Key Vault** for secrets (see [JWT Configuration Guide](JWT_CONFIGURATION_GUIDE.md))
+✅ **Use Azure Key Vault** for secrets (see [Authentication Guide](AUTHENTICATION_GUIDE.md))
 
 ✅ **Change default credentials** immediately
 
