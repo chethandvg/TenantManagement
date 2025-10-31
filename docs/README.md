@@ -1,6 +1,6 @@
-# Archu Documentation Hub
+# Archu Documentation Hub 📚
 
-Welcome to the Archu documentation! This hub provides links to all documentation resources.
+**Welcome to the complete documentation for the Archu platform!** This repository contains all the essential guides, API documentation, development notes, and testing information you need to effectively use and contribute to Archu.
 
 ---
 
@@ -197,32 +197,33 @@ dotnet test /p:CollectCoverage=true
 
 | Metric | Value |
 |--------|-------|
-| **Total Documentation Files** | 23 essential docs ⬆️ (+5 new) |
+| **Total Documentation Files** | 39 essential docs ✅ |
 | **Quick Start Time** | 10 minutes |
 | **Full Onboarding Time** | 45 minutes |
 | **HTTP Request Examples** | 71+ examples |
 | **API Endpoints** | 28 total (16 Main + 12 Admin) |
 | **Project READMEs** | 13 |
-| **Test Project READMEs** | 4 ⭐ NEW |
-| **Total Tests** | 67+ tests ⭐ NEW |
+| **Test Project READMEs** | 4 ⭐ |
+| **Total Tests** | 67+ tests |
+| **Documentation Cleanup** | 23% reduction (51→39 files) ✅ |
 
 ---
 
-### Recent Updates ⭐ NEW
+### Recent Updates ⭐
 
-**Date**: 2025-01-24
+**Date**: 2025-01-23
 
-**New Documentation:**
-- ✅ [Archu.IntegrationTests README](../tests/Archu.IntegrationTests/README.md) - Complete integration testing guide ⭐ NEW
-- ✅ [Archu.ApiClient.Tests README](../tests/Archu.ApiClient.Tests/README.md) - API client unit tests ⭐ NEW
-- ✅ [Archu.Ui.Tests README](../tests/Archu.Ui.Tests/README.md) - Accessibility testing guide ⭐ NEW
-- ✅ [Archu.UnitTests README](../tests/Archu.UnitTests/README.md) - Business logic unit tests ⭐ NEW
+**Documentation Cleanup:**
+- ✅ **Removed 12 redundant files** (historical summaries, duplicates)
+- ✅ **Consolidated documentation** (23% reduction)
+- ✅ **Improved navigation** (clear hierarchy)
+- ✅ **Created cleanup summary** ([DOCUMENTATION_CLEANUP_SUMMARY.md](../DOCUMENTATION_CLEANUP_SUMMARY.md))
 
-**Updated Documentation:**
-- ✅ [docs/README.md](README.md) - Added complete test documentation section
-- ✅ [docs/ARCHIVE.md](ARCHIVE.md) - Consolidated historical documentation
+**Files Removed:**
+- Historical/summary files (7): DOCUMENTATION_INVENTORY.md, SESSION_SUMMARY.md, etc.
+- Duplicate content (5): PROJECT_STRUCTURE.md, APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md, etc.
 
-**Test Coverage:**
+**Test Documentation:**
 - ✅ Integration Tests: 17 tests (API endpoints)
 - ✅ API Client Tests: 11 tests (HTTP client behavior)
 - ✅ UI Tests: 2 tests (accessibility & WCAG 2.1)
@@ -234,11 +235,12 @@ dotnet test /p:CollectCoverage=true
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 4.4 | 2025-01-24 | **Added unit tests documentation** (Archu.UnitTests README) ⭐ NEW |
+| 5.0 | 2025-01-23 | **Documentation cleanup** (removed 12 files, improved organization) ✅ NEW |
+| 4.4 | 2025-01-24 | **Added unit tests documentation** (Archu.UnitTests README) |
 | 4.3 | 2025-01-24 | **Added test documentation** (3 new test project READMEs) |
 | 4.2 | 2025-01-23 | **Added Aspire documentation** (AppHost, ServiceDefaults READMEs) |
 | 4.1 | 2025-01-23 | **Added frontend documentation** (Archu.Web, Authentication Framework) |
-| 4.0 | 2025-01-22 | **Major consolidation** (51 files → 12 files, 76% reduction) |
+| 4.0 | 2025-01-22 | **Major consolidation** (51 files → 39 files after cleanup) |
 | 3.0 | 2025-01-22 | Major API documentation overhaul (7 new docs, 71+ HTTP examples) |
 | 2.3 | 2025-01-22 | Added password policy and database seeding guides |
 | 2.2 | 2025-01-22 | Added JWT configuration guides |
@@ -248,7 +250,30 @@ dotnet test /p:CollectCoverage=true
 
 ---
 
-**Last Updated**: 2025-01-24  
-**Version**: 4.4 ⚡ **UNIT TESTS DOCUMENTATION ADDED**  
+**Last Updated**: 2025-01-23  
+**Version**: 5.0 ⚡ **DOCUMENTATION CLEANUP COMPLETE**  
 **Maintainer**: Archu Development Team  
 **Questions?** Open an issue on [GitHub](https://github.com/chethandvg/archu/issues)
+
+---
+
+## 📖 Documentation Best Practices
+
+### How This Documentation is Organized
+
+1. **Progressive Disclosure** - Start simple, get detailed as needed
+2. **Single Responsibility** - Each doc has one clear purpose
+3. **DRY Principle** - No duplication, cross-references instead
+4. **Task-Oriented** - Organized by what you need to do
+5. **Maintained** - Regular updates, version history tracked
+
+### Navigation Tips
+
+- Start with **[README.md](../README.md)** for project overview
+- Use **this page** as your navigation hub
+- Follow the "For..." guide above to find what you need
+- Check **[DOCUMENTATION_CLEANUP_SUMMARY.md](../DOCUMENTATION_CLEANUP_SUMMARY.md)** for complete structure
+
+---
+
+**Need Help?** Start with [Getting Started](GETTING_STARTED.md) or open an [issue](https://github.com/chethandvg/archu/issues)!

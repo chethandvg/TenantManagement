@@ -1,4 +1,4 @@
-# Archu
+# Archu - Modern .NET Platform
 
 A modern, cloud-native application built with Clean Architecture and .NET Aspire.
 
@@ -22,11 +22,26 @@ The Aspire Dashboard will open automatically, showing all running services.
 
 ## 📚 Documentation
 
-### Essential Reading
-- **[Documentation Hub](docs/README.md)** - Start here for all documentation
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - Understanding the solution structure
-- **[Concurrency Guide](docs/CONCURRENCY_GUIDE.md)** - Data integrity and optimistic concurrency
-- **[Adding New Entities](src/README_NEW_ENTITY.md)** - Step-by-step development guide
+### 🎯 Quick Navigation
+
+| For... | Start Here | Then Read |
+|--------|------------|-----------|
+| **New Developers** | [QUICKSTART.md](QUICKSTART.md) | [Getting Started](docs/GETTING_STARTED.md) → [Architecture](docs/ARCHITECTURE.md) |
+| **Understanding the System** | [Architecture Guide](docs/ARCHITECTURE.md) | [Development Guide](docs/DEVELOPMENT_GUIDE.md) |
+| **Adding Features** | [Adding New Entity](docs/getting-started/ADDING_NEW_ENTITY.md) | [Development Guide](docs/DEVELOPMENT_GUIDE.md) |
+| **API Development** | [API Guide](docs/API_GUIDE.md) | [Database Guide](docs/DATABASE_GUIDE.md) |
+| **Authentication/Security** | [Authentication Guide](docs/AUTHENTICATION_GUIDE.md) | [Authorization Guide](docs/AUTHORIZATION_GUIDE.md) |
+| **Testing** | [Testing Guide](tests/TESTING_GUIDE.md) | [Integration Tests](tests/INTEGRATION_TESTING_GUIDE.md) |
+| **All Documentation** | [📖 Documentation Hub](docs/README.md) | Browse all guides |
+
+### 📁 Essential Documents
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Get running in 5 minutes
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System design & patterns
+- **[docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md)** - Development workflow
+- **[docs/getting-started/ADDING_NEW_ENTITY.md](docs/getting-started/ADDING_NEW_ENTITY.md)** - Step-by-step feature development
+- **[docs/database/CONCURRENCY_GUIDE.md](docs/database/CONCURRENCY_GUIDE.md)** - Data integrity & concurrency
+- **[tests/TESTING_GUIDE.md](tests/TESTING_GUIDE.md)** - Testing strategy
 
 ### Quick Links
 | Topic | Document |
@@ -119,14 +134,16 @@ dotnet test
 # Run specific test projects
 dotnet test tests/Archu.IntegrationTests  # API integration tests (17 tests)
 dotnet test tests/Archu.ApiClient.Tests   # HTTP client tests (11 tests)
-dotnet test tests/Archu.Ui.Tests        # Accessibility tests (2 tests)
-dotnet test tests/Archu.UnitTests    # Business logic tests (37 test classes)
+dotnet test tests/Archu.Ui.Tests       # Accessibility tests (2 tests)
+dotnet test tests/Archu.UnitTests      # Business logic tests (37 test classes)
 
 # Run with coverage
 dotnet test /p:CollectCoverage=true
 ```
 
 **Test Documentation**:
+- 📖 **[Testing Guide](tests/TESTING_GUIDE.md)** - Comprehensive testing strategy
+- 📖 **[Integration Testing](tests/INTEGRATION_TESTING_GUIDE.md)** - API integration tests
 - 📖 **[Integration Tests](tests/Archu.IntegrationTests/README.md)** - API endpoint testing
 - 📖 **[API Client Tests](tests/Archu.ApiClient.Tests/README.md)** - HTTP client testing
 - 📖 **[UI Tests](tests/Archu.Ui.Tests/README.md)** - Accessibility testing
@@ -142,7 +159,7 @@ dotnet ef database update
 ```
 
 ### Add a New Entity
-Follow the guide: [src/README_NEW_ENTITY.md](src/README_NEW_ENTITY.md)
+Follow the guide: **[docs/getting-started/ADDING_NEW_ENTITY.md](docs/getting-started/ADDING_NEW_ENTITY.md)**
 
 1. Create entity in `Archu.Domain`
 2. Create repository interface in `Archu.Application`
@@ -171,30 +188,54 @@ dotnet publish --os linux --arch x64 -p:PublishProfile=DefaultContainer
 
 ```
 Archu/
-├── docs/       # All documentation
-│   ├── README.md        # Documentation hub
-│   ├── ARCHITECTURE.md            # Architecture guide
-│   └── CONCURRENCY_GUIDE.md       # Data integrity guide
+├── docs/         # 📚 All documentation
+│   ├── README.md    # Documentation hub & navigation
+│   ├── ARCHITECTURE.md  # System architecture & design
+│   ├── DEVELOPMENT_GUIDE.md    # Development workflow
+│   ├── GETTING_STARTED.md# Detailed setup guide
+│   ├── API_GUIDE.md            # API documentation
+│   ├── DATABASE_GUIDE.md       # Database guide
+│   ├── AUTHENTICATION_GUIDE.md # Authentication & security
+│   ├── AUTHORIZATION_GUIDE.md  # Authorization & permissions
+│   ├── authentication/     # Detailed auth documentation
+│   ├── database/               # Database-specific guides
+│   │   └── CONCURRENCY_GUIDE.md # Data integrity & concurrency
+│   ├── getting-started/
+│   │   └── ADDING_NEW_ENTITY.md # Entity creation guide
+│   └── archu-ui/         # UI documentation
 ├── src/
-│   ├── Archu.Domain/            # Business logic (no dependencies)
-│   │   └── README.md          # ⭐ Domain layer documentation
-│   ├── Archu.Application/         # Use cases, CQRS handlers
-│   │   └── README.md        # Application layer documentation
-│   ├── Archu.Infrastructure/  # EF Core, repositories
-│   │   └── README.md      # Infrastructure layer documentation
-│   ├── Archu.Contracts/  # API DTOs
-│   │   └── README.md           # ⭐ Contracts layer documentation
-│   ├── Archu.Api/      # REST API
-│   ├── Archu.Ui/               # Blazor components
+│   ├── Archu.Domain/       # Business logic (no dependencies)
+│ │   └── README.md      # ⭐ Domain layer documentation
+│   ├── Archu.Application/      # Use cases, CQRS handlers
+│   │   └── README.md    # Application layer documentation
+│   ├── Archu.Infrastructure/   # EF Core, repositories
+│   │   └── README.md         # Infrastructure layer documentation
+│   ├── Archu.Contracts/        # API DTOs
+│   │   └── README.md      # ⭐ Contracts layer documentation
+│   ├── Archu.Api/     # REST API
+│   │   └── README.md           # API project documentation
+│   ├── Archu.AdminApi/         # Admin API
+│   │   └── README.md           # Admin API documentation
+│   ├── Archu.ApiClient/        # HTTP client library
+│   │   └── README.md        # API client documentation
+│├── Archu.Ui/ # Blazor components
+│   │   └── README.md         # UI project documentation
+│   ├── Archu.Web/       # Web project
+│ │   └── README.md    # Web project documentation
 │   ├── Archu.ServiceDefaults/  # Aspire defaults
-│   ├── Archu.AppHost/       # Aspire orchestrator
-│   └── README_NEW_ENTITY.md    # Development guide
-├── tests/  # Test projects
-│   ├── Archu.IntegrationTests/  # API integration tests (17 tests)
-│   ├── Archu.ApiClient.Tests/   # HTTP client tests (11 tests)
-│   ├── Archu.Ui.Tests/   # Accessibility tests (2 tests)
-│   └── Archu.UnitTests/ # Business logic tests (37 test classes)
-└── README.md  # This file
+│   │   └── README.md     # Service defaults documentation
+│   └── Archu.AppHost/          # Aspire orchestrator
+│└── README.md # App host documentation
+├── tests/          # 🧪 Test projects
+│   ├── README.md          # Testing overview
+│   ├── TESTING_GUIDE.md        # Comprehensive testing guide
+│   ├── INTEGRATION_TESTING_GUIDE.md # Integration testing guide
+│   ├── Archu.IntegrationTests/ # API integration tests (17 tests)
+│   ├── Archu.ApiClient.Tests/  # HTTP client tests (11 tests)
+│   ├── Archu.Ui.Tests/         # Accessibility tests (2 tests)
+│   └── Archu.UnitTests/# Business logic tests (37 test classes)
+├── README.md       # This file - project overview
+└── QUICKSTART.md               # Fast setup guide
 ```
 
 ## 🤝 Contributing
@@ -205,7 +246,7 @@ Archu/
 4. Update documentation
 5. Use consistent patterns from existing code
 
-See [docs/README.md](docs/README.md) for detailed contribution guidelines.
+See **[docs/README.md](docs/README.md)** for detailed contribution guidelines and **[docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md)** for development workflow.
 
 ## 📄 License
 
@@ -213,12 +254,18 @@ See [docs/README.md](docs/README.md) for detailed contribution guidelines.
 
 ## 🙋 Support
 
-- **Documentation**: Start with [docs/README.md](docs/README.md)
-- **Issues**: Report on [GitHub Issues](https://github.com/chethandvg/archu/issues)
-- **Architecture Questions**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Concurrency Questions**: See [docs/CONCURRENCY_GUIDE.md](docs/CONCURRENCY_GUIDE.md)
+- **📚 Documentation**: Start with **[docs/README.md](docs/README.md)** - your navigation hub
+- **🐛 Issues**: Report on [GitHub Issues](https://github.com/chethandvg/archu/issues)
+- **🏗️ Architecture**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **🔐 Authentication**: See [docs/AUTHENTICATION_GUIDE.md](docs/AUTHENTICATION_GUIDE.md)
+- **🗄️ Database & Concurrency**: See [docs/database/CONCURRENCY_GUIDE.md](docs/database/CONCURRENCY_GUIDE.md)
+- **🧪 Testing**: See [tests/TESTING_GUIDE.md](tests/TESTING_GUIDE.md)
+
+### 📖 Documentation Status
+
+This project maintains clean, organized documentation. See **[DOCUMENTATION_CLEANUP_SUMMARY.md](DOCUMENTATION_CLEANUP_SUMMARY.md)** for the complete documentation structure and recent improvements.
 
 ---
 
 **Maintained by**: Archu Development Team  
-**Last Updated**: 2025-01-22
+**Last Updated**: 2025-01-23
