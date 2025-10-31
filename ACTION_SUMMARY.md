@@ -41,20 +41,24 @@
 
 | Metric | Before | After | Change |
 |--------|--------|-------|--------|
-| Total .md files | 51 | 40 | **-21.6%** ✅ |
-| Root level files | 8 | 3 | **-62.5%** ✅ |
+| Total .md files | 51 | 42 | **-17.6%** ✅ |
+| Root level files | 8 | 5 | **-37.5%** ✅ |
 | Historical files | 12 | 0 | **-100%** ✅ |
+
+> ℹ️ Metrics last refreshed on **2025-10-31**.
 
 ---
 
-## 📁 Current Structure (40 Files)
+## 📁 Current Structure (42 Files)
 
-### Root (3)
+### Root (5)
 - `README.md`
 - `QUICKSTART.md`
 - `DOCUMENTATION_CLEANUP_SUMMARY.md`
+- `DOCUMENTATION_CLEANUP_COMPLETE.md`
+- `ACTION_SUMMARY.md`
 
-### docs/ (11)
+### docs/ (16)
 - Core guides (9)
 - Authentication subfolder (3)
 - Database subfolder (1)
@@ -72,7 +76,7 @@
 
 ## ✅ Benefits
 
-1. **Cleaner Repository**: 21.6% fewer markdown files
+1. **Cleaner Repository**: 17.6% fewer markdown files
 2. **Better Organization**: Clear hierarchical structure
 3. **Easier Navigation**: Documentation hub at `docs/README.md`
 4. **No Duplication**: Single source of truth for each topic
