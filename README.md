@@ -47,8 +47,8 @@ The Aspire Dashboard will open automatically, showing all running services.
 | Topic | Document |
 |-------|----------|
 | 🏗️ Architecture & Design | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| 🔒 Concurrency & Data | [docs/CONCURRENCY_GUIDE.md](docs/CONCURRENCY_GUIDE.md) |
-| ➕ Adding Features | [src/README_NEW_ENTITY.md](src/README_NEW_ENTITY.md) |
+| 🔒 Concurrency & Data | [docs/database/CONCURRENCY_GUIDE.md](docs/database/CONCURRENCY_GUIDE.md) |
+| ➕ Adding Features | [docs/getting-started/ADDING_NEW_ENTITY.md](docs/getting-started/ADDING_NEW_ENTITY.md) |
 | 📖 API Reference | [src/Archu.Api/README.md](src/Archu.Api/README.md) |
 
 ## 🏗️ Architecture
