@@ -296,24 +296,24 @@ dotnet ef database update
 ```
 Archu/
 ├── src/
-│   ├── Archu.AppHost/          # Aspire orchestration
-│   │   ├── Program.cs          # Service configuration
-│   │   └── INTEGRATION.md      # Detailed docs
-│   │
-│   ├── Archu.Api/              # Backend API
-│   │   ├── Controllers/        # API endpoints
-│   │   └── appsettings.json
-│   │
-│   ├── Archu.Web/              # Blazor WebAssembly
-│   │   ├── Pages/              # UI pages
-│   │   ├── Layout/             # Layout components
-│   │   └── AUTHENTICATION.md   # Auth docs
-│   │
-│   ├── Archu.ApiClient/        # HTTP client library
-│   ├── Archu.Application/      # Business logic
-│   ├── Archu.Domain/           # Domain entities
-│   ├── Archu.Infrastructure/   # Data access
-│   └── Archu.Contracts/        # DTOs
+│   ├── Archu.AppHost/          # Aspire orchestration & hosting
+│   ├── Archu.Api/              # Public REST API
+│   ├── Archu.AdminApi/         # Administrative REST API
+│   ├── Archu.Web/              # Blazor WebAssembly frontend
+│   ├── Archu.ApiClient/        # Typed HTTP client library
+│   ├── Archu.Application/      # CQRS handlers & business logic
+│   ├── Archu.Contracts/        # Shared request/response DTOs
+│   ├── Archu.Domain/           # Domain entities and value objects
+│   ├── Archu.Infrastructure/   # Persistence and external integrations
+│   ├── Archu.ServiceDefaults/  # Shared Aspire configuration
+│   └── Archu.Ui/               # Shared UI components
+├── tests/
+│   ├── Archu.IntegrationTests/ # API integration test suite
+│   ├── Archu.ApiClient.Tests/  # API client unit tests
+│   ├── Archu.Ui.Tests/         # UI accessibility tests
+│   └── Archu.UnitTests/        # Domain & application unit tests
+├── docs/                       # Comprehensive documentation hub
+└── README.md                   # Solution overview and quick links
 ```
 
 ## Next Steps
@@ -329,14 +329,14 @@ Archu/
    - Extend the domain model
 
 3. **Deploy**
-   - See [INTEGRATION.md](src/Archu.AppHost/INTEGRATION.md) for deployment guide
+   - See [Archu.AppHost README](src/Archu.AppHost/README.md) for deployment and orchestration guidance
    - Azure Container Apps ready
    - Docker compose support
 
 ## Documentation
 
-- **Integration Guide**: [src/Archu.AppHost/INTEGRATION.md](src/Archu.AppHost/INTEGRATION.md)
-- **Authentication**: [src/Archu.Web/AUTHENTICATION.md](src/Archu.Web/AUTHENTICATION.md)
+- **AppHost Orchestration**: [src/Archu.AppHost/README.md](src/Archu.AppHost/README.md)
+- **Authentication**: [docs/AUTHENTICATION_GUIDE.md](docs/AUTHENTICATION_GUIDE.md)
 - **API Client**: [src/Archu.ApiClient/README.md](src/Archu.ApiClient/README.md)
 
 ## Getting Help
