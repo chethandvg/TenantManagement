@@ -125,12 +125,14 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 ### For Backend Developers
 **Implementation and architecture:**
 1. **[Architecture Guide](ARCHITECTURE.md)** - System design
-2. **[Application Layer](../src/Archu.Application/README.md)** - Use cases & CQRS
-3. **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Repositories & EF Core
-4. **[Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)** - Layer cheat sheet
-5. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Code patterns
-6. **[Database Guide](DATABASE_GUIDE.md)** - Data access
-7. **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Feature development
+2. **[Domain Layer](../src/Archu.Domain/README.md)** - ⭐ NEW - Business entities & logic
+3. **[Application Layer](../src/Archu.Application/README.md)** - Use cases & CQRS
+4. **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Repositories & EF Core
+5. **[Contracts Layer](../src/Archu.Contracts/README.md)** - ⭐ NEW - API DTOs & contracts
+6. **[Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)** - Layer cheat sheet
+7. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Code patterns
+8. **[Database Guide](DATABASE_GUIDE.md)** - Data access
+9. **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Feature development
 
 ### For Administrators
 **System management:**
@@ -169,18 +171,19 @@ Archu/
 ├── src/
 │   ├── Archu.Api/   # 🌐 Main REST API
 │   │   ├── Archu.Api.http           # 40+ HTTP examples
-│ │   └── README.md          # API project documentation
+│   │   └── README.md       # API project documentation
 │   ├── Archu.AdminApi/   # 🛡️ Admin API
-│ │   ├── Archu.AdminApi.http             # 31 HTTP examples
+│   │   ├── Archu.AdminApi.http   # 31 HTTP examples
 │   │   └── README.md              # Admin API documentation
-│   ├── Archu.Domain/               # 💼 Business logic
-│   │   └── README.md
+│   ├── Archu.Domain/      # 💼 Business logic
+│   │   └── README.md             # ⭐ NEW - Complete Domain layer guide
 │   ├── Archu.Application/           # 🎯 Use cases & CQRS
-│   │   └── README.md  # ⭐ NEW - Complete Application layer guide
+│   │   └── README.md# ⭐ Complete Application layer guide
 │   ├── Archu.Infrastructure/    # 🔌 Data access & repositories
-│   │   └── README.md      # ⭐ NEW - Complete Infrastructure layer guide
+│   │   └── README.md      # ⭐ Complete Infrastructure layer guide
 │   ├── Archu.Contracts/                 # 📝 API DTOs
-│   ├── Archu.Ui/          # 🎨 Blazor components
+│   │   └── README.md# ⭐ NEW - Complete Contracts layer guide
+│   ├── Archu.Ui/       # 🎨 Blazor components
 │   ├── Archu.ServiceDefaults/      # ⚙️ Aspire defaults
 │   ├── Archu.AppHost/    # 🚀 Aspire orchestrator
 │   └── README_NEW_ENTITY.md # Development tutorial
@@ -198,8 +201,10 @@ Archu/
 - **API**: REST endpoints and presentation
 
 **[Learn more →](ARCHITECTURE.md)**  
+**[Domain Layer Details →](../src/Archu.Domain/README.md)** ⭐ NEW  
 **[Application Layer Details →](../src/Archu.Application/README.md)**  
-**[Infrastructure Layer Details →](../src/Archu.Infrastructure/README.md)**
+**[Infrastructure Layer Details →](../src/Archu.Infrastructure/README.md)**  
+**[Contracts Layer Details →](../src/Archu.Contracts/README.md)** ⭐ NEW
 
 ### CQRS Pattern
 - **Commands**: Create, Update, Delete operations

@@ -42,19 +42,19 @@ Archu follows **Clean Architecture** principles with clear separation of concern
 
 ```
 ┌─────────────────────────┐
-│   Archu.AppHost         │  .NET Aspire orchestration
+│   Archu.AppHost    │  .NET Aspire orchestration
 └────────┬────────────────┘
-         │
+  │
     ┌────▼─────┐
     │ Archu.Api│  ASP.NET Core Web API
     └────┬─────┘
-         │
+   │
          ├─ Archu.Infrastructure  (EF Core, Repositories)
          │     └─ Archu.Application  (CQRS, Use Cases)
-         │           └─ Archu.Domain  (Entities, Business Logic)
-         │
+     │      └─ Archu.Domain  (Entities, Business Logic)
+       │
          ├─ Archu.Contracts  (DTOs)
-         └─ Archu.ServiceDefaults  (Aspire defaults)
+    └─ Archu.ServiceDefaults  (Aspire defaults)
 ```
 
 **Key Principles:**
@@ -64,6 +64,12 @@ Archu follows **Clean Architecture** principles with clear separation of concern
 - ✅ Soft delete for data preservation
 - ✅ Automatic audit tracking
 - ✅ .NET Aspire for cloud-native development
+
+**Layer Documentation:**
+- **[Domain Layer](src/Archu.Domain/README.md)** - Business entities and logic (zero dependencies)
+- **[Application Layer](src/Archu.Application/README.md)** - Use cases and CQRS handlers
+- **[Infrastructure Layer](src/Archu.Infrastructure/README.md)** - Data access and repositories
+- **[Contracts Layer](src/Archu.Contracts/README.md)** - API DTOs and request/response models
 
 ## 🛠️ Tech Stack
 
@@ -151,21 +157,25 @@ dotnet publish --os linux --arch x64 -p:PublishProfile=DefaultContainer
 
 ```
 Archu/
-├── docs/                          # All documentation
-│   ├── README.md                  # Documentation hub
+├── docs/       # All documentation
+│   ├── README.md        # Documentation hub
 │   ├── ARCHITECTURE.md            # Architecture guide
 │   └── CONCURRENCY_GUIDE.md       # Data integrity guide
 ├── src/
-│   ├── Archu.Domain/              # Business logic (no dependencies)
+│   ├── Archu.Domain/            # Business logic (no dependencies)
+│   │   └── README.md          # ⭐ Domain layer documentation
 │   ├── Archu.Application/         # Use cases, CQRS handlers
-│   ├── Archu.Infrastructure/      # EF Core, repositories
-│   ├── Archu.Contracts/           # API DTOs
-│   ├── Archu.Api/                 # REST API
-│   ├── Archu.Ui/                  # Blazor components
-│   ├── Archu.ServiceDefaults/     # Aspire defaults
-│   ├── Archu.AppHost/             # Aspire orchestrator
-│   └── README_NEW_ENTITY.md       # Development guide
-└── README.md                      # This file
+│   │   └── README.md        # Application layer documentation
+│   ├── Archu.Infrastructure/  # EF Core, repositories
+│   │   └── README.md      # Infrastructure layer documentation
+│   ├── Archu.Contracts/  # API DTOs
+│   │   └── README.md           # ⭐ Contracts layer documentation
+│   ├── Archu.Api/      # REST API
+│ ├── Archu.Ui/               # Blazor components
+│   ├── Archu.ServiceDefaults/  # Aspire defaults
+│   ├── Archu.AppHost/       # Aspire orchestrator
+│   └── README_NEW_ENTITY.md    # Development guide
+└── README.md  # This file
 ```
 
 ## 🤝 Contributing
