@@ -1,6 +1,6 @@
 # Archu Authorization Guide
 
-Complete guide to role-based authorization, security restrictions, and access control in Archu.
+Complete guide to role-based authorization, permission-based policies, security restrictions, and access control in Archu.
 
 ---
 
@@ -8,10 +8,12 @@ Complete guide to role-based authorization, security restrictions, and access co
 
 - [Overview](#overview)
 - [Role System](#role-system)
+- [Permission System](#permission-system)
 - [Authorization Policies](#authorization-policies)
-- [Security Restrictions](#security-restrictions)
 - [Implementation](#implementation)
+- [Usage Examples](#usage-examples)
 - [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -19,19 +21,30 @@ Complete guide to role-based authorization, security restrictions, and access co
 
 ### Authorization vs Authentication
 
-| Concept | Purpose | Question |
-|---------|---------|----------|
-| **Authentication** | Verify identity | "Who are you?" |
-| **Authorization** | Control access | "What can you do?" |
+| Concept | Purpose | Question | Layer |
+|---------|---------|----------|-------|
+| **Authentication** | Verify identity | "Who are you?" | Handled first |
+| **Authorization** | Control access | "What can you do?" | Handled second |
 
 ### Authorization System
 
-Archu uses **role-based authorization** with:
-- ✅ ASP.NET Core Identity roles
-- ✅ Policy-based authorization
-- ✅ Attribute-based access control (`[Authorize]`)
-- ✅ Custom security restrictions
-- ✅ Hierarchical role system
+Archu uses a **two-tier authorization system**:
+- ✅ **Role-Based Access Control (RBAC)** - Coarse-grained access based on user roles
+- ✅ **Permission-Based Policies** - Fine-grained access based on specific permissions
+- ✅ **Custom Requirements** - Email verification, 2FA, resource ownership
+- ✅ **Hierarchical Roles** - SuperAdmin > Administrator > Manager > User > Guest
+- ✅ **Policy-Based Authorization** - Declarative access control with `[Authorize]`
+
+### Key Components
+
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| **PolicyNames** | Authorization policy constants | `Archu.Api/Authorization/PolicyNames.cs` |
+| **AuthorizationPolicyExtensions** | Policy configuration | `Archu.Api/Authorization/AuthorizationPolicyExtensions.cs` |
+| **AuthorizationRequirements** | Custom authorization requirements | `Archu.Api/Authorization/Requirements/` |
+| **AuthorizationHandlers** | Requirement validation logic | `Archu.Api/Authorization/Handlers/` |
+| **RoleNames** | Role constants | `Archu.Domain/Constants/RoleNames.cs` |
+| **PermissionNames** | Permission constants | `Archu.Domain/Constants/PermissionNames.cs` |
 
 ---
 
@@ -39,524 +52,1037 @@ Archu uses **role-based authorization** with:
 
 ### System Roles
 
-Archu defines 5 built-in roles:
+Archu defines **5 built-in roles** in a hierarchical structure:
 
-| Role | Level | Description | Default Permissions |
+| Role | Level | Description | Typical Permissions |
 |------|-------|-------------|---------------------|
-| **Guest** | 0 | Unverified user | Read-only, limited access |
-| **User** | 1 | Standard user | Full read, limited write |
-| **Manager** | 2 | Team manager | Create/update resources |
-| **Administrator** | 3 | System admin | User management, most operations |
-| **SuperAdmin** | 4 | Super admin | Full system access, no restrictions |
+| **SuperAdmin** | 4 | System administrator | Full system access, all operations |
+| **Administrator** | 3 | Application admin | User management, most operations |
+| **Manager** | 2 | Team manager | Create/update resources, team management |
+| **User** | 1 | Standard user | Read access, modify own data |
+| **Guest** | 0 | Unauthenticated | Public access only |
 
 ### Role Hierarchy
 
 ```
-SuperAdmin (4)
-    ↓ Can do everything Administrator can do, plus:
-    - Assign SuperAdmin role
-    - Delete last SuperAdmin (with checks)
-    
-Administrator (3)
-    ↓ Can do everything Manager can do, plus:
-    - Manage users (create, delete)
-    - Assign User/Manager roles
-    - Cannot assign SuperAdmin role
-    
-Manager (2)
-    ↓ Can do everything User can do, plus:
-    - Create/update products
-    - View all users (read-only)
-    
-User (1)
-    ↓ Can do everything Guest can do, plus:
-    - Access protected resources
-    - Modify own account
-    
-Guest (0)
-    - Public access only
-    - Registration/login
+SuperAdmin (Level 4)
+  ↓ Includes all Administrator permissions, plus:
+  ├─ Can assign SuperAdmin role
+  ├─ Can manage system configuration
+  ├─ Full audit log access
+  └─ No restrictions
+
+Administrator (Level 3)
+  ↓ Includes all Manager permissions, plus:
+  ├─ Create/delete users
+  ├─ Assign User/Manager roles (NOT SuperAdmin)
+  ├─ Manage application settings
+  └─ View system logs
+
+Manager (Level 2)
+  ↓ Includes all User permissions, plus:
+  ├─ Create/update products
+  ├─ View all users (read-only)
+  └─ Manage team resources
+
+User (Level 1)
+  ↓ Includes all Guest permissions, plus:
+  ├─ Access protected resources
+  ├─ Modify own account
+  ├─ View products
+  └─ Basic CRUD on own data
+
+Guest (Level 0)
+  ├─ Public access only
+  ├─ Registration
+  └─ Login
 ```
 
-### Role Assignment
+### Role Constants
 
-**Who can assign roles**:
+**Location:** `src/Archu.Domain/Constants/RoleNames.cs`
 
-| Admin Role | Can Assign |
-|------------|------------|
+```csharp
+public static class RoleNames
+{
+    public const string Guest = "Guest";
+    public const string User = "User";
+    public const string Manager = "Manager";
+    public const string Administrator = "Administrator";
+    public const string SuperAdmin = "SuperAdmin";
+
+    // Helper arrays
+  public static readonly string[] All = 
+    [
+        Guest, User, Manager, Administrator, SuperAdmin
+    ];
+
+    public static readonly string[] AdminRoles = 
+    [
+        Administrator, SuperAdmin
+    ];
+
+    public static readonly string[] ManagerAndAbove = 
+    [
+        Manager, Administrator, SuperAdmin
+    ];
+}
+```
+
+### Role Assignment Rules
+
+**Who can assign roles:**
+
+| Assigner Role | Can Assign Roles |
+|---------------|------------------|
 | **SuperAdmin** | All roles (Guest, User, Manager, Administrator, SuperAdmin) |
-| **Administrator** | Guest, User, Manager |
-| **Manager** | Cannot assign roles |
+| **Administrator** | Guest, User, Manager (NOT Administrator or SuperAdmin) |
+| **Manager** | None (cannot assign roles) |
+| **User** | None |
+| **Guest** | None |
 
-**Security rules**:
-- ❌ Administrators cannot assign SuperAdmin role
-- ❌ Administrators cannot assign Administrator role (to prevent privilege escalation)
-- ❌ Cannot remove your own privileged roles (SuperAdmin, Administrator)
-- ❌ Cannot delete the last SuperAdmin
+**Security Restrictions:**
+- ❌ Administrators **cannot** assign Administrator or SuperAdmin roles (prevents privilege escalation)
+- ❌ Users **cannot** remove their own SuperAdmin or Administrator role
+- ❌ **Cannot** delete the last SuperAdmin in the system
+- ❌ **Cannot** assign roles to deleted users
+- ✅ Users can have **multiple roles** simultaneously
 
 ---
 
-## 🔐 Authorization Policies
+## 🔐 Permission System
 
-### Built-in Policies
+### Permission Structure
 
-Archu defines several authorization policies:
+Permissions follow the pattern: `{resource}:{action}`
 
-#### 1. **RequireUser**
+**Example:** `products:create`, `users:delete`, `roles:read`
+
+### Permission Categories
+
+#### 1. Product Permissions
+
+**Location:** `PermissionNames.Products`
+
+| Permission | Value | Description |
+|------------|-------|-------------|
+| **Read** | `products:read` | View products |
+| **Create** | `products:create` | Create new products |
+| **Update** | `products:update` | Update existing products |
+| **Delete** | `products:delete` | Delete products |
+| **Manage** | `products:manage` | All product operations |
+
+#### 2. User Management Permissions
+
+**Location:** `PermissionNames.Users`
+
+| Permission | Value | Description |
+|------------|-------|-------------|
+| **Read** | `users:read` | View users |
+| **Create** | `users:create` | Create new users |
+| **Update** | `users:update` | Update existing users |
+| **Delete** | `users:delete` | Delete users |
+| **Manage** | `users:manage` | All user operations |
+
+#### 3. Role Management Permissions
+
+**Location:** `PermissionNames.Roles`
+
+| Permission | Value | Description |
+|------------|-------|-------------|
+| **Read** | `roles:read` | View roles |
+| **Create** | `roles:create` | Create new roles |
+| **Update** | `roles:update` | Update existing roles |
+| **Delete** | `roles:delete` | Delete roles |
+| **Manage** | `roles:manage` | All role operations |
+
+### Permission Constants
+
+**Location:** `src/Archu.Domain/Constants/PermissionNames.cs`
+
 ```csharp
-policy.RequireRole("User", "Manager", "Administrator", "SuperAdmin");
+public static class PermissionNames
+{
+    public static class Products
+    {
+        public const string Read = "products:read";
+        public const string Create = "products:create";
+        public const string Update = "products:update";
+        public const string Delete = "products:delete";
+        public const string Manage = "products:manage";
+    }
+
+    public static class Users
+    {
+        public const string Read = "users:read";
+        public const string Create = "users:create";
+        public const string Update = "users:update";
+        public const string Delete = "users:delete";
+    public const string Manage = "users:manage";
+    }
+
+    public static class Roles
+{
+        public const string Read = "roles:read";
+     public const string Create = "roles:create";
+        public const string Update = "roles:update";
+        public const string Delete = "roles:delete";
+  public const string Manage = "roles:manage";
+    }
+
+    // Helper methods
+    public static string[] GetAllProductPermissions() => new[]
+    {
+        Products.Read, Products.Create, Products.Update, 
+        Products.Delete, Products.Manage
+    };
+
+    public static string[] GetAllPermissions()
+    {
+        return GetAllProductPermissions()
+            .Concat(GetAllUserPermissions())
+   .Concat(GetAllRolePermissions())
+            .ToArray();
+    }
+}
 ```
 
-**Purpose**: Basic authenticated user  
-**Usage**: Most protected endpoints
+---
 
-#### 2. **RequireManager**
+## 📋 Authorization Policies
+
+### Policy Overview
+
+**Location:** `src/Archu.Api/Authorization/PolicyNames.cs`
+
+Archu defines **11 authorization policies**:
+
+| Policy Category | Policy Name | Description |
+|-----------------|-------------|-------------|
+| **Email & MFA** | EmailVerified | Requires email confirmation |
+| **Email & MFA** | TwoFactorEnabled | Requires 2FA enabled |
+| **Role-Based** | RequireUserRole | Requires User role or higher |
+| **Role-Based** | RequireManagerRole | Requires Manager role or higher |
+| **Role-Based** | RequireAdminRole | Requires Administrator role or higher |
+| **Role-Based** | RequireSuperAdminRole | Requires SuperAdmin role |
+| **Ownership** | ResourceOwner | User owns the resource |
+| **Products** | Products.View | Can view products |
+| **Products** | Products.Create | Can create products |
+| **Products** | Products.Update | Can update products |
+| **Products** | Products.Delete | Can delete products |
+
+### Policy Constants
+
+**Location:** `src/Archu.Api/Authorization/PolicyNames.cs`
+
 ```csharp
-policy.RequireRole("Manager", "Administrator", "SuperAdmin");
+public static class PolicyNames
+{
+    // Email & MFA policies
+    public const string EmailVerified = "EmailVerified";
+    public const string TwoFactorEnabled = "TwoFactorEnabled";
+
+  // Role-based policies
+    public const string RequireUserRole = "RequireUserRole";
+    public const string RequireManagerRole = "RequireManagerRole";
+    public const string RequireAdminRole = "RequireAdminRole";
+    public const string RequireSuperAdminRole = "RequireSuperAdminRole";
+
+    // Resource ownership policy
+    public const string ResourceOwner = "ResourceOwner";
+
+    // Product policies (permission-based)
+    public static class Products
+    {
+        public const string View = "Products.View";
+    public const string Create = "Products.Create";
+        public const string Update = "Products.Update";
+        public const string Delete = "Products.Delete";
+    }
+}
 ```
-
-**Purpose**: Management operations  
-**Usage**: Create/update resources
-
-#### 3. **RequireAdministrator**
-```csharp
-policy.RequireRole("Administrator", "SuperAdmin");
-```
-
-**Purpose**: Administrative operations  
-**Usage**: User management, system settings
-
-#### 4. **RequireSuperAdmin**
-```csharp
-policy.RequireRole("SuperAdmin");
-```
-
-**Purpose**: Critical system operations  
-**Usage**: Role assignment, system initialization
 
 ### Policy Configuration
 
-**Registration** (`Program.cs`):
+**Location:** `src/Archu.Api/Authorization/AuthorizationPolicyExtensions.cs`
+
 ```csharp
+public static void ConfigureArchuPolicies(this AuthorizationOptions options)
+{
+    // Email verification policy
+    options.AddPolicy(PolicyNames.EmailVerified, policy =>
+    {
+    policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new EmailVerifiedRequirement());
+    });
+
+    // Two-factor authentication policy
+    options.AddPolicy(PolicyNames.TwoFactorEnabled, policy =>
+    {
+    policy.RequireAuthenticatedUser();
+   policy.Requirements.Add(new TwoFactorEnabledRequirement());
+    });
+
+    // Role-based policies (hierarchical)
+    options.AddPolicy(PolicyNames.RequireUserRole, policy =>
+    {
+   policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.User));
+    });
+
+  options.AddPolicy(PolicyNames.RequireManagerRole, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Manager));
+    });
+
+    options.AddPolicy(PolicyNames.RequireAdminRole, policy =>
+    {
+  policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Administrator));
+    });
+
+    options.AddPolicy(PolicyNames.RequireSuperAdminRole, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.SuperAdmin));
+    });
+
+    // Resource ownership policy
+options.AddPolicy(PolicyNames.ResourceOwner, policy =>
+    {
+   policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new ResourceOwnerRequirement());
+    });
+
+    // Permission-based product policies
+    options.AddPolicy(PolicyNames.Products.View, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Read));
+    });
+
+    options.AddPolicy(PolicyNames.Products.Create, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Create));
+    });
+
+    options.AddPolicy(PolicyNames.Products.Update, policy =>
+    {
+     policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Update));
+    });
+
+    options.AddPolicy(PolicyNames.Products.Delete, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+    policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Delete));
+    });
+}
+```
+
+### Custom Requirements
+
+#### EmailVerifiedRequirement
+
+**Purpose:** Ensures user's email is confirmed
+
+**Implementation:**
+```csharp
+public class EmailVerifiedRequirement : IAuthorizationRequirement { }
+
+public class EmailVerifiedRequirementHandler 
+    : AuthorizationHandler<EmailVerifiedRequirement>
+{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+      EmailVerifiedRequirement requirement)
+    {
+        var emailConfirmed = context.User.FindFirst("email_verified")?.Value;
+
+    if (emailConfirmed == "true")
+        {
+     context.Succeed(requirement);
+        }
+
+        return Task.CompletedTask;
+    }
+}
+```
+
+#### MinimumRoleRequirement
+
+**Purpose:** Hierarchical role checking
+
+**Implementation:**
+```csharp
+public class MinimumRoleRequirement : IAuthorizationRequirement
+{
+    public string MinimumRole { get; }
+    
+    public MinimumRoleRequirement(string minimumRole)
+    {
+        MinimumRole = minimumRole;
+    }
+}
+
+public class MinimumRoleRequirementHandler 
+    : AuthorizationHandler<MinimumRoleRequirement>
+{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        MinimumRoleRequirement requirement)
+    {
+   var userRoles = context.User.FindAll(ClaimTypes.Role)
+            .Select(c => c.Value)
+      .ToList();
+
+   // Check if user has minimum required role or higher
+     if (HasMinimumRole(userRoles, requirement.MinimumRole))
+     {
+ context.Succeed(requirement);
+}
+
+        return Task.CompletedTask;
+    }
+
+    private bool HasMinimumRole(List<string> userRoles, string minimumRole)
+    {
+     var roleHierarchy = new Dictionary<string, int>
+ {
+            [RoleNames.Guest] = 0,
+      [RoleNames.User] = 1,
+      [RoleNames.Manager] = 2,
+            [RoleNames.Administrator] = 3,
+            [RoleNames.SuperAdmin] = 4
+        };
+
+        var minimumLevel = roleHierarchy[minimumRole];
+        return userRoles.Any(role => 
+   roleHierarchy.TryGetValue(role, out var level) && level >= minimumLevel);
+    }
+}
+```
+
+#### PermissionRequirement
+
+**Purpose:** Fine-grained permission checking
+
+**Implementation:**
+```csharp
+public class PermissionRequirement : IAuthorizationRequirement
+{
+    public string Permission { get; }
+    
+    public PermissionRequirement(string permission)
+    {
+      Permission = permission;
+    }
+}
+
+public class PermissionRequirementHandler 
+    : AuthorizationHandler<PermissionRequirement>
+{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        PermissionRequirement requirement)
+    {
+        var permissions = context.User.FindAll("permission")
+      .Select(c => c.Value)
+.ToList();
+
+        if (permissions.Contains(requirement.Permission))
+   {
+            context.Succeed(requirement);
+        }
+
+        return Task.CompletedTask;
+    }
+}
+```
+
+#### ResourceOwnerRequirement
+
+**Purpose:** Verify user owns the resource
+
+**Implementation:**
+```csharp
+public class ResourceOwnerRequirement : IAuthorizationRequirement { }
+
+public class ResourceOwnerRequirementHandler 
+    : AuthorizationHandler<ResourceOwnerRequirement>
+{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        ResourceOwnerRequirement requirement)
+    {
+        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+   
+        // Get resource from context
+      if (context.Resource is IHasOwner resource)
+        {
+  if (resource.OwnerId.ToString() == userId)
+    {
+                context.Succeed(requirement);
+          }
+        }
+
+        return Task.CompletedTask;
+    }
+}
+```
+
+---
+
+## 🛠️ Implementation
+
+### 1. Service Registration
+
+**Location:** `src/Archu.Api/Program.cs`
+
+```csharp
+// Register authorization handlers
+builder.Services.AddAuthorizationHandlers();
+
+// Configure authorization policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequireUser", policy => 
-        policy.RequireRole("User", "Manager", "Administrator", "SuperAdmin"));
-    
-    options.AddPolicy("RequireManager", policy => 
-        policy.RequireRole("Manager", "Administrator", "SuperAdmin"));
-    
-    options.AddPolicy("RequireAdministrator", policy => 
-        policy.RequireRole("Administrator", "SuperAdmin"));
-    
-    options.AddPolicy("RequireSuperAdmin", policy => 
-        policy.RequireRole("SuperAdmin"));
+    options.ConfigureArchuPolicies();
 });
 ```
 
-### Applying Policies
+### 2. Handler Registration
 
-#### Controller-Level Authorization
+**Location:** `src/Archu.Api/Authorization/AuthorizationHandlerExtensions.cs`
+
 ```csharp
-[Authorize(Policy = "RequireAdministrator")]
-[ApiController]
-[Route("api/v1/admin/users")]
-public class UsersController : ControllerBase
+public static class AuthorizationHandlerExtensions
 {
-    // All actions require Administrator or SuperAdmin role
+    public static IServiceCollection AddAuthorizationHandlers(
+        this IServiceCollection services)
+    {
+        services.AddScoped<IAuthorizationHandler, EmailVerifiedRequirementHandler>();
+    services.AddScoped<IAuthorizationHandler, TwoFactorEnabledRequirementHandler>();
+    services.AddScoped<IAuthorizationHandler, MinimumRoleRequirementHandler>();
+        services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
+        services.AddScoped<IAuthorizationHandler, ResourceOwnerRequirementHandler>();
+
+        return services;
+  }
 }
 ```
 
-#### Action-Level Authorization
-```csharp
-[HttpPost]
-[Authorize(Policy = "RequireManager")]
-public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
-{
-    // Only Manager, Administrator, or SuperAdmin can create products
-}
+### 3. Middleware Configuration
 
-[HttpDelete("{id}")]
-[Authorize(Policy = "RequireAdministrator")]
-public async Task<IActionResult> DeleteProduct(Guid id)
-{
-    // Only Administrator or SuperAdmin can delete products
-}
+**Order matters!**
+
+```csharp
+// src/Archu.Api/Program.cs
+app.UseAuthentication(); // 1. FIRST - Validates JWT, populates User claims
+app.UseAuthorization();  // 2. SECOND - Checks policies and roles
 ```
 
-#### Multiple Policies
+---
+
+## 💼 Usage Examples
+
+### 1. Role-Based Authorization
+
+**Controller Level:**
 ```csharp
-[Authorize(Policy = "RequireUser")]
+// Require Manager role or higher
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
 public class ProductsController : ControllerBase
 {
+    // All actions require Manager role
+}
+```
+
+**Action Level:**
+```csharp
+[ApiController]
+[Route("api/v1/[controller]")]
+public class ProductsController : ControllerBase
+{
+    // Public - no auth required
+    [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> GetProducts()
-    {
-        // Any authenticated user
-    }
+    public async Task<IActionResult> GetPublicProducts() { }
 
+    // Requires authentication (any role)
+    [Authorize]
+    [HttpGet("my")]
+  public async Task<IActionResult> GetMyProducts() { }
+
+    // Requires User role or higher
+    [Authorize(Policy = PolicyNames.RequireUserRole)]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetProduct(Guid id) { }
+
+  // Requires Manager role or higher
+    [Authorize(Policy = PolicyNames.RequireManagerRole)]
     [HttpPost]
-    [Authorize(Policy = "RequireManager")] // Overrides controller policy
-    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
-    {
-        // Requires Manager or higher
-    }
+    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request) { }
+
+    // Requires Administrator role or higher
+    [Authorize(Policy = PolicyNames.RequireAdminRole)]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProduct(Guid id) { }
 }
 ```
 
----
-
-## 🛡️ Security Restrictions
-
-### Role Assignment Restrictions
-
-#### Restriction 1: SuperAdmin-Only Role Assignment
-
-**Rule**: Only SuperAdmin can assign SuperAdmin or Administrator roles
-
-**Implementation**:
-```csharp
-public async Task<Result> AssignRoleAsync(string userId, string roleId, string adminUserId)
-{
-    var role = await _roleManager.FindByIdAsync(roleId);
-    var admin = await _userManager.FindByIdAsync(adminUserId);
-    var adminRoles = await _userManager.GetRolesAsync(admin);
-
-    // Check if trying to assign privileged role
-    if (role.Name is "SuperAdmin" or "Administrator")
-    {
-        if (!adminRoles.Contains("SuperAdmin"))
-        {
-            return Result.Failure(
-                "Only SuperAdmin can assign SuperAdmin or Administrator roles");
-        }
-    }
-
-    // Proceed with assignment
-    var user = await _userManager.FindByIdAsync(userId);
-    await _userManager.AddToRoleAsync(user, role.Name);
-    return Result.Success();
-}
-```
-
-**Error Response** (403 Forbidden):
-```json
-{
-  "success": false,
-  "message": "Only SuperAdmin can assign SuperAdmin or Administrator roles"
-}
-```
-
-#### Restriction 2: Cannot Remove Own Privileged Roles
-
-**Rule**: Cannot remove SuperAdmin or Administrator role from yourself
-
-**Implementation**:
-```csharp
-public async Task<Result> RemoveRoleAsync(string userId, string roleId, string adminUserId)
-{
-    if (userId == adminUserId)
-    {
-        var role = await _roleManager.FindByIdAsync(roleId);
-        if (role.Name is "SuperAdmin" or "Administrator")
-        {
-            return Result.Failure(
-                "You cannot remove your own SuperAdmin or Administrator role");
-        }
-    }
-
-    // Proceed with removal
-    var user = await _userManager.FindByIdAsync(userId);
-    await _userManager.RemoveFromRoleAsync(user, role.Name);
-    return Result.Success();
-}
-```
-
-**Error Response** (400 Bad Request):
-```json
-{
-  "success": false,
-  "message": "You cannot remove your own SuperAdmin or Administrator role"
-}
-```
-
-#### Restriction 3: Cannot Delete Last SuperAdmin
-
-**Rule**: System must always have at least one SuperAdmin
-
-**Implementation**:
-```csharp
-public async Task<Result> DeleteUserAsync(string userId)
-{
-    var user = await _userManager.FindByIdAsync(userId);
-    var userRoles = await _userManager.GetRolesAsync(user);
-
-    if (userRoles.Contains("SuperAdmin"))
-    {
-        var superAdminCount = await _userManager.GetUsersInRoleAsync("SuperAdmin").Count();
-        if (superAdminCount <= 1)
-        {
-            return Result.Failure(
-                "Cannot delete the last SuperAdmin. System must have at least one SuperAdmin.");
-        }
-    }
-
-    await _userManager.DeleteAsync(user);
-    return Result.Success();
-}
-```
-
-**Error Response** (400 Bad Request):
-```json
-{
-  "success": false,
-  "message": "Cannot delete the last SuperAdmin. System must have at least one SuperAdmin."
-}
-```
-
-#### Restriction 4: Cannot Delete Yourself
-
-**Rule**: Users cannot delete their own account via Admin API
-
-**Implementation**:
-```csharp
-public async Task<Result> DeleteUserAsync(string userId, string adminUserId)
-{
-    if (userId == adminUserId)
-    {
-        return Result.Failure("You cannot delete your own account");
-    }
-
-    var user = await _userManager.FindByIdAsync(userId);
-    await _userManager.DeleteAsync(user);
-    return Result.Success();
-}
-```
-
-**Error Response** (400 Bad Request):
-```json
-{
-  "success": false,
-  "message": "You cannot delete your own account"
-}
-```
-
-### Summary of Security Restrictions
-
-| Operation | Restriction | Enforced By |
-|-----------|-------------|-------------|
-| Assign SuperAdmin/Administrator role | Only SuperAdmin can do this | Role check |
-| Remove SuperAdmin/Administrator role | Cannot remove from yourself | User ID check |
-| Delete user | Cannot delete yourself | User ID check |
-| Delete user with SuperAdmin role | Cannot delete last SuperAdmin | Count check |
-
----
-
-## 🏗️ Implementation
-
-### Command Handler with Authorization
-
-```csharp
-public class AssignRoleCommandHandler : IRequestHandler<AssignRoleCommand, Result>
-{
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly ICurrentUser _currentUser;
-
-    public async Task<Result> Handle(AssignRoleCommand request, CancellationToken ct)
-    {
-        // Get current admin user
-        var adminUserId = _currentUser.UserId;
-        var admin = await _userManager.FindByIdAsync(adminUserId);
-        var adminRoles = await _userManager.GetRolesAsync(admin);
-
-        // Get target role
-        var role = await _roleManager.FindByIdAsync(request.RoleId);
-        if (role == null)
-            return Result.Failure("Role not found");
-
-        // SECURITY CHECK: Only SuperAdmin can assign privileged roles
-        if (role.Name is "SuperAdmin" or "Administrator")
-        {
-            if (!adminRoles.Contains("SuperAdmin"))
-            {
-                return Result.Failure(
-                    "Only SuperAdmin can assign SuperAdmin or Administrator roles");
-            }
-        }
-
-        // Get target user
-        var user = await _userManager.FindByIdAsync(request.UserId);
-        if (user == null)
-            return Result.Failure("User not found");
-
-        // Check if user already has role
-        if (await _userManager.IsInRoleAsync(user, role.Name))
-            return Result.Failure("User already has this role");
-
-        // Assign role
-        var result = await _userManager.AddToRoleAsync(user, role.Name);
-        if (!result.Succeeded)
-            return Result.Failure("Failed to assign role");
-
-        return Result.Success();
-    }
-}
-```
-
-### Controller with Authorization
+### 2. Permission-Based Authorization
 
 ```csharp
 [ApiController]
-[Route("api/v1/admin/user-roles")]
-[Authorize(Policy = "RequireAdministrator")] // Base policy
-public class UserRolesController : ControllerBase
+[Route("api/v1/[controller]")]
+public class ProductsController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    // Requires products:read permission
+    [Authorize(Policy = PolicyNames.Products.View)]
+    [HttpGet]
+    public async Task<IActionResult> GetProducts() { }
 
-    [HttpPost("assign")]
-    [Authorize(Policy = "RequireSuperAdmin")] // Override with stricter policy
-    public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
+    // Requires products:create permission
+    [Authorize(Policy = PolicyNames.Products.Create)]
+    [HttpPost]
+    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request) { }
+
+    // Requires products:update permission
+    [Authorize(Policy = PolicyNames.Products.Update)]
+  [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request) { }
+
+    // Requires products:delete permission
+    [Authorize(Policy = PolicyNames.Products.Delete)]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProduct(Guid id) { }
+}
+```
+
+### 3. Multiple Policies
+
+```csharp
+// Require BOTH email verification AND Manager role
+[Authorize(Policy = PolicyNames.EmailVerified)]
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
+[HttpPost("sensitive-operation")]
+public async Task<IActionResult> SensitiveOperation() { }
+```
+
+### 4. Programmatic Authorization Check
+
+```csharp
+public class ProductService
+{
+    private readonly IAuthorizationService _authorizationService;
+
+    public async Task<bool> CanDeleteProduct(ClaimsPrincipal user, Product product)
     {
-        var command = new AssignRoleCommand(request.UserId, request.RoleId);
-        var result = await _mediator.Send(command);
+// Check permission-based policy
+     var authResult = await _authorizationService.AuthorizeAsync(
+            user, 
+     product, 
+            PolicyNames.Products.Delete);
 
-        if (!result.IsSuccess)
-            return BadRequest(new { success = false, message = result.Error });
-
-        return Ok(new { success = true, message = "Role assigned successfully" });
+        return authResult.Succeeded;
     }
 
-    [HttpDelete("{userId}/roles/{roleId}")]
-    public async Task<IActionResult> RemoveRole(string userId, string roleId)
+    public async Task DeleteProduct(Guid productId, ClaimsPrincipal user)
     {
-        var command = new RemoveRoleCommand(userId, roleId);
-        var result = await _mediator.Send(command);
+ var product = await _repository.GetByIdAsync(productId);
 
-        if (!result.IsSuccess)
-            return BadRequest(new { success = false, message = result.Error });
+        if (product == null)
+     throw new NotFoundException("Product not found");
 
-        return Ok(new { success = true, message = "Role removed successfully" });
-    }
+      // Check authorization
+     var authResult = await _authorizationService.AuthorizeAsync(
+            user, 
+       product, 
+            PolicyNames.Products.Delete);
 
-    [HttpGet("{userId}")]
-    public async Task<IActionResult> GetUserRoles(string userId)
-    {
-        var query = new GetUserRolesQuery(userId);
-        var result = await _mediator.Send(query);
+        if (!authResult.Succeeded)
+            throw new ForbiddenException("You don't have permission to delete this product");
 
-        return Ok(result);
+   await _repository.DeleteAsync(productId);
     }
 }
 ```
 
-### ICurrentUser Service
+### 5. Resource Ownership Check
 
-**Interface**:
 ```csharp
-public interface ICurrentUser
+public class ProductsController : ControllerBase
 {
-    string? UserId { get; }
-    string? UserName { get; }
-    bool IsAuthenticated { get; }
-    bool IsInRole(string role);
-    IEnumerable<string> Roles { get; }
-}
-```
-
-**Implementation**:
-```csharp
-public class CurrentUser : ICurrentUser
-{
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public CurrentUser(IHttpContextAccessor httpContextAccessor)
+    // Only product owner can update
+    [Authorize(Policy = PolicyNames.ResourceOwner)]
+    [HttpPut("{id}")]
+  public async Task<IActionResult> UpdateMyProduct(
+        Guid id, 
+   [FromBody] UpdateProductRequest request)
     {
-        _httpContextAccessor = httpContextAccessor;
+        var product = await _repository.GetByIdAsync(id);
+
+        if (product == null)
+    return NotFound();
+
+        // Authorization service checks if user owns the product
+        var authResult = await _authorizationService.AuthorizeAsync(
+      User, 
+      product, 
+        PolicyNames.ResourceOwner);
+
+        if (!authResult.Succeeded)
+      return Forbid();
+
+        // User owns the product - proceed with update
+        await _productService.UpdateAsync(id, request);
+     return Ok();
     }
-
-    public string? UserId => 
-        _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-    public string? UserName => 
-        _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
-
-    public bool IsAuthenticated => 
-        _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
-
-    public bool IsInRole(string role) => 
-        _httpContextAccessor.HttpContext?.User?.IsInRole(role) ?? false;
-
-    public IEnumerable<string> Roles => 
-        _httpContextAccessor.HttpContext?.User?.Claims
-            .Where(c => c.Type == ClaimTypes.Role)
-            .Select(c => c.Value) ?? Enumerable.Empty<string>();
 }
 ```
 
 ---
 
-## ✅ Best Practices
+## 📋 Best Practices
 
-### Authorization
+### ✅ DO
 
-✅ **DO**:
-- Use policy-based authorization
-- Apply `[Authorize]` to controllers/actions
-- Check authorization in business logic
-- Use hierarchical roles
-- Implement security restrictions
-- Log authorization failures
-- Test authorization rules
+**1. Use Policy Names Constants:**
+```csharp
+// ✅ GOOD - Type-safe, refactorable
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
 
-❌ **DON'T**:
-- Rely on client-side authorization only
-- Hard-code role names everywhere
-- Skip authorization checks
-- Allow privilege escalation
-- Ignore security restrictions
+// ❌ BAD - Magic strings, error-prone
+[Authorize(Policy = "RequireManagerRole")]
+```
 
-### Role Management
+**2. Use Hierarchical Roles:**
+```csharp
+// ✅ GOOD - Manager includes User permissions
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
 
-✅ **DO**:
-- Use descriptive role names
-- Document role permissions
-- Assign minimal required roles
-- Audit role assignments
-- Protect privileged roles
-- Maintain at least one SuperAdmin
+// ❌ BAD - Repeating role checks
+[Authorize(Roles = "Manager,Administrator,SuperAdmin")]
+```
 
-❌ **DON'T**:
-- Give everyone Administrator role
-- Allow users to assign their own roles
-- Delete the last SuperAdmin
-- Skip security checks
+**3. Separate Concerns:**
+```csharp
+// ✅ GOOD - Clear separation
+[Authorize(Policy = PolicyNames.RequireManagerRole)]  // Role check
+[Authorize(Policy = PolicyNames.EmailVerified)]       // Email check
 
-### Security
+// ❌ BAD - Mixed concerns
+[Authorize(Policy = "ManagerAndEmailVerified")]
+```
 
-✅ **DO**:
-- Validate all authorization decisions server-side
-- Use `ICurrentUser` service for user context
-- Implement defense in depth
-- Log security events
-- Review authorization policies regularly
+**4. Use Permission-Based for Fine-Grained Control:**
+```csharp
+// ✅ GOOD - Specific permission
+[Authorize(Policy = PolicyNames.Products.Delete)]
 
-❌ **DON'T**:
-- Trust client-side role claims
-- Skip business-level authorization checks
-- Expose sensitive operations to unauthorized users
+// ❌ BAD - Too broad
+[Authorize(Policy = PolicyNames.RequireAdminRole)]
+```
+
+**5. Check Authorization Programmatically When Needed:**
+```csharp
+// ✅ GOOD - Dynamic authorization
+var authResult = await _authorizationService.AuthorizeAsync(
+    user, 
+    resource, 
+    PolicyNames.ResourceOwner);
+
+if (!authResult.Succeeded)
+    return Forbid();
+```
+
+### ❌ DON'T
+
+**1. Don't Use Magic Strings:**
+```csharp
+// ❌ BAD
+[Authorize(Roles = "Manager")]
+[Authorize(Policy = "Products.View")]
+
+// ✅ GOOD
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
+[Authorize(Policy = PolicyNames.Products.View)]
+```
+
+**2. Don't Hardcode Role Names:**
+```csharp
+// ❌ BAD
+if (user.IsInRole("Manager")) { }
+
+// ✅ GOOD
+if (user.IsInRole(RoleNames.Manager)) { }
+```
+
+**3. Don't Bypass Authorization:**
+```csharp
+// ❌ BAD - No authorization check
+[HttpDelete("{id}")]
+public async Task<IActionResult> DeleteProduct(Guid id)
+{
+    await _repository.DeleteAsync(id);
+    return Ok();
+}
+
+// ✅ GOOD - Authorization required
+[Authorize(Policy = PolicyNames.Products.Delete)]
+[HttpDelete("{id}")]
+public async Task<IActionResult> DeleteProduct(Guid id)
+{
+    await _repository.DeleteAsync(id);
+    return Ok();
+}
+```
+
+**4. Don't Implement Authorization in Domain Layer:**
+```csharp
+// ❌ BAD - Authorization in domain
+public class Product
+{
+    public bool CanBeDeletedBy(string userRole)
+    {
+        return userRole == "Admin";
+  }
+}
+
+// ✅ GOOD - Authorization in API/Application layer
+[Authorize(Policy = PolicyNames.RequireAdminRole)]
+public async Task<IActionResult> DeleteProduct(Guid id) { }
+```
+
+**5. Don't Skip Email Verification for Sensitive Operations:**
+```csharp
+// ❌ BAD - No email verification
+[Authorize(Policy = PolicyNames.RequireAdminRole)]
+[HttpPost("sensitive")]
+public async Task<IActionResult> SensitiveOperation() { }
+
+// ✅ GOOD - Require email verification
+[Authorize(Policy = PolicyNames.EmailVerified)]
+[Authorize(Policy = PolicyNames.RequireAdminRole)]
+[HttpPost("sensitive")]
+public async Task<IActionResult> SensitiveOperation() { }
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Issue 1: "403 Forbidden" - User Has Correct Role
+
+**Symptoms:**
+- User is authenticated (not 401)
+- User has the required role
+- Still getting 403 Forbidden
+
+**Diagnostic Steps:**
+
+1. **Verify Role Claims:**
+```csharp
+// In controller, log user claims
+var roles = User.Claims
+    .Where(c => c.Type == ClaimTypes.Role)
+    .Select(c => c.Value)
+    .ToList();
+    
+_logger.LogInformation("User roles: {Roles}", string.Join(", ", roles));
+```
+
+2. **Check Policy Configuration:**
+```csharp
+// Verify policy exists
+// src/Archu.Api/Program.cs
+builder.Services.AddAuthorization(options =>
+{
+    options.ConfigureArchuPolicies(); // Must be called
+});
+```
+
+3. **Verify Authorization Handler Registration:**
+```csharp
+// src/Archu.Api/Program.cs
+builder.Services.AddAuthorizationHandlers(); // Must be registered
+```
+
+4. **Check Middleware Order:**
+```csharp
+app.UseAuthentication(); // MUST be before UseAuthorization
+app.UseAuthorization();
+```
+
+---
+
+### Issue 2: Custom Requirement Always Fails
+
+**Symptoms:**
+- Custom authorization requirement never succeeds
+- Always returns 403
+
+**Common Causes:**
+
+1. **Handler Not Registered:**
+```csharp
+// ✅ MUST register handler
+services.AddScoped<IAuthorizationHandler, MyCustomRequirementHandler>();
+```
+
+2. **Requirement Not Added to Policy:**
+```csharp
+// ✅ MUST add requirement to policy
+options.AddPolicy("MyPolicy", policy =>
+{
+    policy.Requirements.Add(new MyCustomRequirement());
+});
+```
+
+3. **Handler Doesn't Call Succeed:**
+```csharp
+// ❌ BAD - Requirement never succeeds
+protected override Task HandleRequirementAsync(...)
+{
+    if (condition)
+    {
+        // Missing context.Succeed(requirement);
+    }
+    return Task.CompletedTask;
+}
+
+// ✅ GOOD
+protected override Task HandleRequirementAsync(...)
+{
+    if (condition)
+    {
+        context.Succeed(requirement); // Must call
+    }
+    return Task.CompletedTask;
+}
+```
+
+---
+
+### Issue 3: Role Hierarchy Not Working
+
+**Symptoms:**
+- Manager role cannot access User-level endpoints
+- Need to specify all roles explicitly
+
+**Solution:**
+
+Use `MinimumRoleRequirement` instead of direct role checking:
+
+```csharp
+// ❌ BAD - Doesn't support hierarchy
+[Authorize(Roles = "User")]
+
+// ✅ GOOD - Supports hierarchy (User, Manager, Admin, SuperAdmin)
+[Authorize(Policy = PolicyNames.RequireUserRole)]
+```
+
+---
+
+### Issue 4: Permission Claims Not Found
+
+**Symptoms:**
+- Permission-based policies always fail
+- No "permission" claims in token
+
+**Solution:**
+
+Ensure permissions are added to JWT claims during login:
+
+```csharp
+// In AuthenticationService or JwtTokenService
+var claims = new List<Claim>
+{
+    new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+    new(ClaimTypes.Email, user.Email),
+    new(ClaimTypes.Name, user.UserName),
+};
+
+// Add role claims
+foreach (var role in userRoles)
+{
+    claims.Add(new Claim(ClaimTypes.Role, role));
+}
+
+// ✅ Add permission claims
+foreach (var permission in userPermissions)
+{
+    claims.Add(new Claim("permission", permission));
+}
+
+var token = _jwtTokenService.GenerateAccessToken(claims);
+```
+
+---
+
+### Issue 5: Resource Ownership Check Fails
+
+**Symptoms:**
+- `ResourceOwnerRequirement` always returns 403
+- User should own the resource
+
+**Diagnostic Steps:**
+
+1. **Verify Resource Implements IHasOwner:**
+```csharp
+public class Product : BaseEntity, IHasOwner
+{
+    public Guid OwnerId { get; set; }
+    
+    public bool IsOwnedBy(Guid userId) => OwnerId == userId;
+}
+```
+
+2. **Pass Resource to Authorization:**
+```csharp
+// ✅ CORRECT - Pass resource as second parameter
+var authResult = await _authorizationService.AuthorizeAsync(
+    User,   // ClaimsPrincipal
+    product,   // Resource (IHasOwner)
+    PolicyNames.ResourceOwner);
+
+// ❌ WRONG - Missing resource
+var authResult = await _authorizationService.AuthorizeAsync(
+    User, 
+    PolicyNames.ResourceOwner);
+```
+
+3. **Check User ID Claim:**
+```csharp
+var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+_logger.LogInformation("User ID: {UserId}, Owner ID: {OwnerId}", userId, product.OwnerId);
+```
 
 ---
 
 ## 📚 Related Documentation
 
-- **[AUTHENTICATION_GUIDE.md](AUTHENTICATION_GUIDE.md)** - JWT and authentication
-- **[API_GUIDE.md](API_GUIDE.md)** - API endpoints and requirements
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Initial setup
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture
+- **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT authentication, login, tokens
+- **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)** - Password policies
+- **[API Guide](API_GUIDE.md)** - Complete API reference
+- **[Getting Started](GETTING_STARTED.md)** - Initial setup
+- **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development workflow
 
 ---
 
-**Last Updated**: 2025-01-22  
-**Version**: 1.0  
+## 🔄 Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0 | 2025-01-24 | ✅ **Complete verification** against codebase: Added all 11 policies, verified PolicyNames.cs, added permission system from PermissionNames.cs, complete examples and troubleshooting |
+| 1.0 | 2025-01-22 | Initial authorization guide |
+
+---
+
+**Last Updated**: 2025-01-24  
+**Version**: 2.0 ✅ **VERIFIED**  
 **Maintainer**: Archu Development Team
+
+**Questions?** See [docs/README.md](README.md) or open an [issue](https://github.com/chethandvg/archu/issues)
