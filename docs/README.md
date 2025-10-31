@@ -19,46 +19,52 @@ Welcome to the Archu documentation! This hub provides links to all documentation
    - Project structure
    - Design patterns
 
-3. **[API Guide](API_GUIDE.md)**
+3. **[Application & Infrastructure Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)**
+   - Layer comparison and dependency flow
+   - Key abstractions & implementations
+   - CQRS flow examples
+   - Quick command reference
+
+4. **[API Guide](API_GUIDE.md)**
    - Complete API reference for both Main API and Admin API
    - All endpoints documented
    - Authentication flows
    - Common workflows
    - Error handling
 
-4. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
+5. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
    - JWT configuration
    - Token management
    - Security best practices
    - Troubleshooting
 
-5. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
+6. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
    - Role-based access control
    - Security restrictions
    - Policy configuration
 
-6. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
+7. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
    - Password policies
    - Complexity rules
    - Validation implementation
 
-7. **[Database Guide](DATABASE_GUIDE.md)**
+8. **[Database Guide](DATABASE_GUIDE.md)**
    - Database setup
    - Migrations
    - Seeding
    - Retry strategy
 
-8. **[Development Guide](DEVELOPMENT_GUIDE.md)**
+9. **[Development Guide](DEVELOPMENT_GUIDE.md)**
    - Development workflow
    - Code patterns
    - Best practices
    - Testing
 
-9. **[Project Structure](PROJECT_STRUCTURE.md)**
-   - Directory organization
-   - File conventions
+10. **[Project Structure](PROJECT_STRUCTURE.md)**
+    - Directory organization
+    - File conventions
 
-10. **[Archive](ARCHIVE.md)**
+11. **[Archive](ARCHIVE.md)**
     - Historical documentation
     - Implementation summaries
     - Migration guides
@@ -81,6 +87,9 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 1. ✅ **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development workflow
 2. ✅ **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Step-by-step tutorial
 3. ✅ **[Architecture Guide](ARCHITECTURE.md)** - Design patterns
+4. ✅ **[Application Layer](../src/Archu.Application/README.md)** - CQRS & use cases
+5. ✅ **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Data access & repositories
+6. ✅ **[Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)** - Layer comparison
 
 ### I want to manage security...
 1. ✅ **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT setup
@@ -90,6 +99,7 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 ### I want to work with the database...
 1. ✅ **[Database Guide](DATABASE_GUIDE.md)** - Complete database guide
 2. ✅ **[Development Guide](DEVELOPMENT_GUIDE.md)** - Migrations and patterns
+3. ✅ **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Repository implementations
 
 ---
 
@@ -99,8 +109,9 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 **Start here to understand the project:**
 1. **[Getting Started Guide](GETTING_STARTED.md)** - Get running in 10 minutes ⚡
 2. **[Architecture Guide](ARCHITECTURE.md)** - Understand the structure
-3. **[API Guide](API_GUIDE.md)** - Learn the APIs
-4. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development patterns
+3. **[Application & Infrastructure Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)** - Core layers overview
+4. **[API Guide](API_GUIDE.md)** - Learn the APIs
+5. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development patterns
 
 **Total onboarding time**: ~45 minutes
 
@@ -114,9 +125,12 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 ### For Backend Developers
 **Implementation and architecture:**
 1. **[Architecture Guide](ARCHITECTURE.md)** - System design
-2. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Code patterns
-3. **[Database Guide](DATABASE_GUIDE.md)** - Data access
-4. **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Feature development
+2. **[Application Layer](../src/Archu.Application/README.md)** - Use cases & CQRS
+3. **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Repositories & EF Core
+4. **[Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)** - Layer cheat sheet
+5. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Code patterns
+6. **[Database Guide](DATABASE_GUIDE.md)** - Data access
+7. **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Feature development
 
 ### For Administrators
 **System management:**
@@ -131,6 +145,7 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 2. **[Authorization Guide](AUTHORIZATION_GUIDE.md)** - Access control
 3. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)** - Password policies
 4. **[API Guide](API_GUIDE.md)** - Security restrictions
+5. **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Authentication implementation
 
 ---
 
@@ -138,34 +153,38 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 
 ```
 Archu/
-├── docs/                                   # 📚 Documentation (12 files)
-│   ├── README.md                           # This file - Documentation hub
-│   ├── GETTING_STARTED.md                  # ⚡ Start here - Complete setup guide
-│   ├── ARCHITECTURE.md                     # System architecture
-│   ├── PROJECT_STRUCTURE.md                # Directory organization
-│   ├── API_GUIDE.md                        # Complete API reference
+├── docs/      # 📚 Documentation
+│   ├── README.md         # This file - Documentation hub
+│   ├── GETTING_STARTED.md      # ⚡ Start here - Complete setup guide
+│   ├── ARCHITECTURE.md         # System architecture
+│   ├── PROJECT_STRUCTURE.md    # Directory organization
+│   ├── APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md  # Layer comparison
+│   ├── API_GUIDE.md           # Complete API reference
 │   ├── AUTHENTICATION_GUIDE.md             # JWT and authentication
-│   ├── AUTHORIZATION_GUIDE.md              # Role-based access control
-│   ├── PASSWORD_SECURITY_GUIDE.md          # Password policies
-│   ├── DATABASE_GUIDE.md                   # Database and migrations
+│   ├── AUTHORIZATION_GUIDE.md       # Role-based access control
+│   ├── PASSWORD_SECURITY_GUIDE.md        # Password policies
+│   ├── DATABASE_GUIDE.md        # Database and migrations
 │   ├── DEVELOPMENT_GUIDE.md                # Development workflow
-│   └── ARCHIVE.md                          # Historical documentation
+│   └── ARCHIVE.md  # Historical documentation
 ├── src/
-│   ├── Archu.Api/                          # 🌐 Main REST API
-│   │   ├── Archu.Api.http                  # 40+ HTTP examples
-│   │   └── README.md                       # API project documentation
-│   ├── Archu.AdminApi/                     # 🛡️ Admin API
-│   │   ├── Archu.AdminApi.http             # 31 HTTP examples
-│   │   └── README.md                       # Admin API documentation
-│   ├── Archu.Domain/                       # 💼 Business logic
-│   ├── Archu.Application/                  # 🎯 Use cases
-│   ├── Archu.Infrastructure/               # 🔌 Data access
-│   ├── Archu.Contracts/                    # 📝 API DTOs
-│   ├── Archu.Ui/                           # 🎨 Blazor components
-│   ├── Archu.ServiceDefaults/              # ⚙️ Aspire defaults
-│   ├── Archu.AppHost/                      # 🚀 Aspire orchestrator
-│   └── README_NEW_ENTITY.md                # Development tutorial
-└── README.md                               # Project overview
+│   ├── Archu.Api/   # 🌐 Main REST API
+│   │   ├── Archu.Api.http           # 40+ HTTP examples
+│ │   └── README.md          # API project documentation
+│   ├── Archu.AdminApi/   # 🛡️ Admin API
+│ │   ├── Archu.AdminApi.http             # 31 HTTP examples
+│   │   └── README.md              # Admin API documentation
+│   ├── Archu.Domain/               # 💼 Business logic
+│   │   └── README.md
+│   ├── Archu.Application/           # 🎯 Use cases & CQRS
+│   │   └── README.md  # ⭐ NEW - Complete Application layer guide
+│   ├── Archu.Infrastructure/    # 🔌 Data access & repositories
+│   │   └── README.md      # ⭐ NEW - Complete Infrastructure layer guide
+│   ├── Archu.Contracts/                 # 📝 API DTOs
+│   ├── Archu.Ui/          # 🎨 Blazor components
+│   ├── Archu.ServiceDefaults/      # ⚙️ Aspire defaults
+│   ├── Archu.AppHost/    # 🚀 Aspire orchestrator
+│   └── README_NEW_ENTITY.md # Development tutorial
+└── README.md          # Project overview
 ```
 
 ---
@@ -174,25 +193,36 @@ Archu/
 
 ### Clean Architecture
 - **Domain**: Business entities and logic (no dependencies)
-- **Application**: Use cases and abstractions
+- **Application**: Use cases and abstractions (CQRS with MediatR)
 - **Infrastructure**: Database, authentication, external services
 - **API**: REST endpoints and presentation
 
-**[Learn more →](ARCHITECTURE.md)**
+**[Learn more →](ARCHITECTURE.md)**  
+**[Application Layer Details →](../src/Archu.Application/README.md)**  
+**[Infrastructure Layer Details →](../src/Archu.Infrastructure/README.md)**
 
 ### CQRS Pattern
 - **Commands**: Create, Update, Delete operations
 - **Queries**: Read operations
 - Uses MediatR for request handling
 
-**[Learn more →](DEVELOPMENT_GUIDE.md)**
+**[Learn more →](DEVELOPMENT_GUIDE.md)**  
+**[Application Layer Guide →](../src/Archu.Application/README.md)**
+
+### Repository Pattern
+- **Abstractions**: Defined in Application layer
+- **Implementations**: Provided in Infrastructure layer
+- **Base Repository**: Common CRUD operations with concurrency support
+
+**[Infrastructure Layer Guide →](../src/Archu.Infrastructure/README.md)**
 
 ### JWT Authentication
 - Access tokens for API requests (short-lived: 15-60 min)
 - Refresh tokens for re-authentication (long-lived: 7-30 days)
 - Secure secret management with User Secrets or Azure Key Vault
 
-**[Learn more →](AUTHENTICATION_GUIDE.md)**
+**[Learn more →](AUTHENTICATION_GUIDE.md)**  
+**[Infrastructure Implementation →](../src/Archu.Infrastructure/README.md)**
 
 ### Role-Based Authorization
 - 5 system roles: Guest, User, Manager, Administrator, SuperAdmin
