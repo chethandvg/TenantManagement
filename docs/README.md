@@ -9,21 +9,20 @@
 ### Essential Guides (Start Here)
 
 1. **[Getting Started Guide](GETTING_STARTED.md)** ⚡ **START HERE**
- - Complete setup in 10 minutes
+   - Complete setup in 10 minutes
    - JWT configuration
    - Database seeding
    - Testing your setup
 
 2. **[Architecture Guide](ARCHITECTURE.md)**
    - Clean Architecture explained
- - Project structure
-   - Design patterns
-
-3. **[Application & Infrastructure Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)**
    - Layer comparison and dependency flow
-   - Key abstractions & implementations
-   - CQRS flow examples
-   - Quick command reference
+   - Project structure & design patterns
+
+3. **[Development Guide](DEVELOPMENT_GUIDE.md)**
+   - Development workflow
+   - Solution conventions & best practices
+   - Testing guidance
 
 4. **[API Guide](API_GUIDE.md)**
    - Complete API reference for both Main API and Admin API
@@ -54,20 +53,10 @@
    - Seeding
    - Retry strategy
 
-9. **[Development Guide](DEVELOPMENT_GUIDE.md)**
-   - Development workflow
-   - Code patterns
-- Best practices
-   - Testing
-
-10. **[Project Structure](PROJECT_STRUCTURE.md)**
-    - Directory organization
-    - File conventions
-
-11. **[Archive](ARCHIVE.md)**
-    - Historical documentation
-    - Implementation summaries
-    - Migration guides
+9. **[Testing Guide](../tests/TESTING_GUIDE.md)**
+   - Unified testing strategy
+   - Integration, unit, and UI testing workflows
+   - Tooling and environment setup
 
 ---
 
@@ -92,13 +81,12 @@
 
 ### I want to develop features...
 1. ✅ **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development workflow
-2. ✅ **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Step-by-step tutorial
-3. ✅ **[Architecture Guide](ARCHITECTURE.md)** - Design patterns
+2. ✅ **[New Entity Guide](getting-started/ADDING_NEW_ENTITY.md)** - Step-by-step tutorial
+3. ✅ **[Architecture Guide](ARCHITECTURE.md)** - Design patterns & layer responsibilities
 4. ✅ **[Application Layer](../src/Archu.Application/README.md)** - CQRS & use cases
 5. ✅ **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Data access & repositories
-6. ✅ **[Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)** - Layer comparison
-7. ✅ **[Archu.AppHost](../src/Archu.AppHost/README.md)** - Local development orchestration ⭐ NEW
-8. ✅ **[Archu.ServiceDefaults](../src/Archu.ServiceDefaults/README.md)** - Shared configuration ⭐ NEW
+6. ✅ **[Archu.AppHost](../src/Archu.AppHost/README.md)** - Local development orchestration ⭐ NEW
+7. ✅ **[Archu.ServiceDefaults](../src/Archu.ServiceDefaults/README.md)** - Shared configuration ⭐ NEW
 
 ### I want to manage security...
 1. ✅ **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT setup
