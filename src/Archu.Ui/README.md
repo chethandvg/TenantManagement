@@ -1,55 +1,59 @@
-# Archu.Ui – Blazor UI Package
+# Archu.Ui – Blazor Component Library
 
-Archu.Ui is a Razor Class Library that delivers the layout, navigation, and routing helpers used by the Archu front-end. The project is intentionally lightweight and focuses on opinionated experiences that wrap MudBlazor primitives so that the host applications stay consistent.
+Archu.Ui is a Razor Class Library that provides reusable Blazor components, layouts, and pages for the Archu platform. Built with **MudBlazor**, it delivers a consistent, modern UI experience across Blazor Server, WebAssembly, and Hybrid applications.
 
-## Feature Highlights
+## ✨ Features
 
-- ✅ Application layout with authenticated navigation chrome (`Layouts/MainLayout`)
-- ✅ Navigation menu that adapts to authorization state
-- ✅ Login redirection helper to simplify protecting pages
-- ✅ Ready-to-use sample pages that demonstrate authentication and data loading patterns
-- ✅ Busy and error boundaries that wrap MudBlazor primitives for consistent loading workflows
-- ✅ Runtime theme token service that keeps MudBlazor styling in sync across components
+- ✅ **Platform-Agnostic** - Works with Blazor Server, WebAssembly, and Hybrid (MAUI)
+- ✅ **MudBlazor Integration** - Built on Material Design components
+- ✅ **Authentication-Aware** - Components adapt to user authentication state
+- ✅ **Reusable Layouts** - Pre-built application shell with navigation
+- ✅ **State Management** - Built-in busy/error state handling
+- ✅ **Theme Customization** - Runtime theme token service
+- ✅ **Sample Pages** - Login, registration, products, and more
 
-## Component Inventory
-
-The catalog below reflects the components that currently ship in the library.
+## 📦 Component Inventory
 
 ### Layouts
 
-| Component | File | Description |
-|-----------|------|-------------|
-| `MainLayout` | `Layouts/MainLayout.razor`<br/>`Layouts/MainLayout.razor.cs` | Provides the global shell (app bar, navigation drawer, snackbar/menu providers) and wires the runtime theming service into MudBlazor. |
+| Component | Description |
+|-----------|-------------|
+| **MainLayout** | Application shell with app bar, navigation drawer, and MudBlazor providers |
 
-### Reusable Components
+### Navigation
 
-| Component | File | Description |
-|-----------|------|-------------|
-| `NavMenu` | `Components/Navigation/NavMenu.razor`<br/>`Components/Navigation/NavMenu.razor.cs` | Drawer navigation that exposes authenticated and anonymous links through `AuthorizeView`. |
-| `RedirectToLogin` | `Components/Routing/RedirectToLogin.razor`<br/>`Components/Routing/RedirectToLogin.razor.cs` | Redirects unauthenticated visitors to the login page while preserving their requested URL. |
-| `BusyBoundary` | `Components/State/BusyBoundary.razor`<br/>`Components/State/BusyBoundary.razor.cs` | Displays a standardized busy indicator, error alert, and retry affordance that can be reused across pages. |
+| Component | Description |
+|-----------|-------------|
+| **NavMenu** | Responsive navigation drawer with authentication-aware links |
+| **RedirectToLogin** | Automatic login redirection for unauthenticated users |
+
+### State Management
+
+| Component | Description |
+|-----------|-------------|
+| **BusyBoundary** | Displays loading indicators, error alerts, and retry affordances |
 
 ### Application Pages
 
-| Page | Route | Files | Purpose |
-|------|-------|-------|---------|
-| `Index` | `/` | `Pages/Index.razor`<br/>`Pages/Index.razor.cs` | Landing page that greets signed-in users and expects anonymous users to be redirected. |
-| `Login` | `/login` | `Pages/Login.razor`<br/>`Pages/Login.razor.cs` | Email/password login form that surfaces snackbar notifications and respects a `returnUrl` query parameter. |
-| `Register` | `/register` | `Pages/Register.razor`<br/>`Pages/Register.razor.cs` | Registration form with confirmation validation and navigation back to the login screen. |
-| `Products` | `/products` | `Pages/Products.razor`<br/>`Pages/Products.razor.cs` | Authenticated catalog view that fetches products from `IProductsApiClient` and reports load/error states. |
-| `Counter` | `/counter` | `Pages/Counter.razor`<br/>`Pages/Counter.razor.cs` | Sample counter experience used for diagnostics and template parity. |
-| `FetchData` | `/fetchdata` | `Pages/FetchData.razor`<br/>`Pages/FetchData.razor.cs` | Weather forecast sample that demonstrates basic API calls through `HttpClient`. |
+| Page | Route | Purpose |
+|------|-------|---------|
+| **Index** | `/` | Landing page (requires authentication) |
+| **Login** | `/login` | Email/password login form |
+| **Register** | `/register` | User registration form |
+| **Products** | `/products` | Product catalog with CRUD operations (requires authentication) |
+| **Counter** | `/counter` | Sample counter page for testing |
+| **FetchData** | `/fetchdata` | Sample weather forecast page |
 
-### State Containers
+### State Services
 
-| Service | File | Description |
-|---------|------|-------------|
-| `UiState` | `State/UiState.cs` | Aggregates reusable UI state services for pages, including the busy workflow container. |
-| `BusyState` | `State/BusyState.cs` | Tracks in-flight operations, busy messages, and errors so components can react to standardized notifications. |
+| Service | Description |
+|---------|-------------|
+| **UiState** | Aggregates UI state services (busy state, theme, etc.) |
+| **BusyState** | Tracks in-flight operations, loading messages, and errors |
 
-## Getting Started
+## 🚀 Getting Started
 
-### 1. Add the Project Reference
+### 1. Add Project Reference
 
 ```bash
 dotnet add reference ..\Archu.Ui\Archu.Ui.csproj
@@ -65,11 +69,11 @@ using Archu.Ui.Theming;
 
 builder.Services.AddArchuUi(options =>
 {
-    options.Tokens.Colors.Primary = "#1D4ED8"; // Customize the primary color
+    // Optional: Customize theme tokens
+ options.Tokens.Colors.Primary = "#1D4ED8";
+    options.Tokens.Colors.Secondary = "#10B981";
 });
 ```
-
-The optional callback receives `ThemeOptions` so you can override design tokens before the MudBlazor theme is materialized.
 
 ### 3. Update `_Imports.razor`
 
@@ -77,93 +81,319 @@ The optional callback receives `ThemeOptions` so you can override design tokens 
 @using Archu.Ui
 @using Archu.Ui.Components.Navigation
 @using Archu.Ui.Components.Routing
+@using Archu.Ui.Components.State
 @using Archu.Ui.Layouts
+@using Archu.Ui.Pages
+@using MudBlazor
 ```
 
 ### 4. Include MudBlazor Assets
 
+Add to your `index.html` (WebAssembly) or `_Host.cshtml` (Server):
+
 ```html
+<!-- In <head> -->
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
 <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
 
+<!-- Before closing </body> -->
 <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 ```
 
-## Theming and Layout Integration
+### 5. Use MainLayout
 
-`MainLayout` automatically registers `MudThemeProvider`, dialog/snackbar/popover services, and the `NavMenu`. It listens for `IThemeTokenService.TokensChanged` so runtime edits to design tokens immediately refresh the MudBlazor theme.
+In your `App.razor`:
 
-To override tokens at runtime:
+```razor
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+    <p>Sorry, there's nothing at this address.</p>
+      </LayoutView>
+    </NotFound>
+</Router>
+```
+
+## 🎨 Theming
+
+### Default Theme
+
+MainLayout automatically configures MudBlazor theme with:
+- Primary color: `#594AE2` (purple)
+- Material Design 3 palette
+- Dark mode support (via `MudThemeProvider`)
+
+### Customizing Theme Tokens
+
+Override design tokens at startup:
 
 ```csharp
-using Archu.Ui.Theming;
-
-public sealed class ThemeController
+builder.Services.AddArchuUi(options =>
 {
-    private readonly IThemeTokenService _theme;
+    options.Tokens.Colors.Primary = "#1D4ED8";
+    options.Tokens.Colors.Background = "#F9FAFB";
+    options.Tokens.Typography.FontFamily = "Inter, sans-serif";
+});
+```
 
-    public ThemeController(IThemeTokenService theme)
+### Runtime Theme Changes
+
+Use `IThemeTokenService` to change theme at runtime:
+
+```csharp
+@inject IThemeTokenService ThemeService
+
+private void SwitchToDarkMode()
+{
+    ThemeService.ApplyOverrides(tokens =>
     {
-        _theme = theme;
+        tokens.Colors.Background = "#1C1B1F";
+        tokens.Colors.Surface = "#1C1B1F";
+        tokens.Colors.OnBackground = "#E6E1E5";
+    });
+}
+```
+
+The `MainLayout` automatically listens for `IThemeTokenService.TokensChanged` and updates the MudBlazor theme.
+
+## 🔐 Authentication Integration
+
+Components adapt to authentication state using Blazor's `AuthorizeView`:
+
+### NavMenu Example
+
+```razor
+<AuthorizeView>
+    <Authorized>
+        <MudNavLink Href="/products" Icon="@Icons.Material.Filled.ShoppingCart">
+            Products
+        </MudNavLink>
+        <MudNavLink @onclick="LogoutAsync" Icon="@Icons.Material.Filled.Logout">
+            Logout
+        </MudNavLink>
+    </Authorized>
+    <NotAuthorized>
+        <MudNavLink Href="/login" Icon="@Icons.Material.Filled.Login">
+    Login
+        </MudNavLink>
+  <MudNavLink Href="/register" Icon="@Icons.Material.Filled.PersonAdd">
+         Register
+        </MudNavLink>
+    </NotAuthorized>
+</AuthorizeView>
+```
+
+### Protecting Pages
+
+Use `[Authorize]` attribute and `RedirectToLogin`:
+
+```razor
+@page "/protected"
+@attribute [Authorize]
+
+<AuthorizeView>
+    <Authorized>
+        <h3>Protected Content</h3>
+    </Authorized>
+<NotAuthorized>
+ <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+```
+
+## 🛠️ State Management
+
+### Using BusyState
+
+The `BusyState` service provides centralized loading and error state management:
+
+```csharp
+@inject UiState State
+
+private async Task LoadDataAsync()
+{
+    State.Busy.SetBusy("Loading products...");
+    
+    try
+    {
+        var products = await ProductsClient.GetProductsAsync();
+   State.Busy.SetSuccess("Products loaded successfully!");
     }
-
-    public void SwitchToDarkMode()
+    catch (Exception ex)
     {
-        _theme.ApplyOverrides(tokens =>
-        {
-            tokens.Colors.Background = "#1C1B1F";
-            tokens.Colors.OnBackground = "#E6E1E5";
-            tokens.Colors.Surface = "#1C1B1F";
-        });
+        State.Busy.SetError("Failed to load products", ex.Message);
     }
 }
 ```
 
-## API Documentation Automation
+### Using BusyBoundary Component
 
-XML documentation comments throughout the components are used to generate API reference material. The repository includes a DocFX configuration under `docs/archu-ui` so you can produce browsable docs directly from the source.
+Wrap your content with `BusyBoundary` to display loading/error states:
 
-1. Restore the local dotnet tools (DocFX is pinned in `.config/dotnet-tools.json`):
-   ```bash
-   dotnet tool restore
-   ```
-2. Generate the API site:
-   ```bash
-   dotnet docfx docs/archu-ui/docfx.json
-   ```
+```razor
+<BusyBoundary OnRetry="LoadDataAsync">
+    @if (products.Any())
+    {
+        <ProductList Items="@products" />
+  }
+</BusyBoundary>
+```
 
-DocFX builds metadata from `Archu.Ui.csproj` and outputs a static site to `docs/archu-ui/_site`. The generated pages surface the XML comments for every public component, parameter, and service.
+**Features:**
+- Displays loading spinner when `BusyState.IsBusy`
+- Shows error alert when `BusyState.HasError`
+- Provides retry button that calls `OnRetry` callback
 
-## Contributing
+## 📋 Component API Reference
 
-When adding new components or pages:
+### MainLayout
 
-1. Place them in the appropriate namespace folder (`Components`, `Layouts`, or `Pages`).
-2. Add XML documentation for public parameters and services so DocFX can emit accurate API docs.
-3. Update the inventory tables above to reflect the new functionality.
-4. Prefer MudBlazor primitives and keep application-specific logic inside the host app.
+**Parameters:** None
 
-## Accessibility Guidelines
+**Features:**
+- MudThemeProvider with runtime theme support
+- MudDialogProvider for dialogs
+- MudSnackbarProvider for notifications
+- MudPopoverProvider for popovers
+- Responsive navigation drawer
+- App bar with title and menu toggle
 
-The Archu UI library ships reusable building blocks, so we hold them to a strict accessibility bar. When contributing components or layout updates, follow the practices below.
+### NavMenu
+
+**Parameters:** None
+
+**Features:**
+- Adapts links based on authentication state
+- Home, Counter, Products, Login/Logout links
+- Icons from Material Design
+- Mobile-responsive
+
+### RedirectToLogin
+
+**Parameters:**
+- `ReturnUrl` (string, optional) - URL to redirect to after login
+
+**Usage:**
+```razor
+<RedirectToLogin ReturnUrl="/products" />
+```
+
+### BusyBoundary
+
+**Parameters:**
+- `OnRetry` (EventCallback, optional) - Callback for retry button
+
+**Usage:**
+```razor
+<BusyBoundary OnRetry="@LoadDataAsync">
+    <ChildContent>
+        <!-- Your content here -->
+    </ChildContent>
+</BusyBoundary>
+```
+
+## ♿ Accessibility
+
+The library follows accessibility best practices:
 
 ### Required Practices
-- **Define page and component landmarks.** Surface semantic containers (`<header>`, `<nav>`, `<main>`, `<footer>`) or `role` attributes so assistive tech can locate core regions. Ensure every layout exposes a single `<main>` landmark and that dialogs/popovers receive the appropriate `role`. Reference the [WCAG 2.2 landmark guidance](https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA11).
-- **Label non-text affordances.** All icon-only buttons, inputs rendered without visible labels, and composite widgets must provide `aria-label`, `aria-labelledby`, or `aria-describedby` values that describe their purpose. Avoid redundant labels that could create duplicate announcements. Review the [MudBlazor accessibility recommendations](https://mudblazor.com/documents/features/accessibility) to see how the underlying controls expose labeling hooks.
-- **Guarantee keyboard support.** Every interactive element must be reachable with `Tab`/`Shift+Tab`, maintain a visible focus indicator, and respond to the expected keys (e.g., `Enter`/`Space` to activate buttons, arrow keys to navigate menus). Follow the [WCAG Keyboard Accessible success criterion](https://www.w3.org/WAI/WCAG22/Understanding/keyboard-accessible.html) and wire up roving tabindex patterns where MudBlazor components require it.
-- **Document accessibility behaviors.** Update XML doc comments or README sections when you introduce new interaction patterns so consumers know what keyboard shortcuts and landmarks to expect.
 
-### Testing Workflow
-1. **Run the automated bUnit + axe suite.** Execute `dotnet test Archana.sln --filter "Category=Accessibility"` to render shared components with bUnit and assert against axe rules. The suite fails if new regressions are introduced, so run it locally before pushing.
-2. **Verify keyboard navigation manually.** Launch the host application that references the library (for example, `dotnet run --project src/Archu.Web/Archu.Web.csproj`) and tab through shared components:
-   - `NavMenu` – ensure the toggle button, each menu item, and focus trap inside the drawer honor the arrow/escape key patterns.
-   - `BusyBoundary` – confirm the retry button is reachable and announced when busy/error states change.
-   - `RedirectToLogin` and other routing helpers – verify focus management returns users to the first actionable control after navigation.
-   Record observations in the PR description so reviewers can follow the manual walkthrough.
-3. **Track findings.** If axe highlights violations that require MudBlazor upstream fixes, file an issue with the `accessibility` label so the team can triage and coordinate with upstream maintainers.
+- ✅ **Semantic HTML** - Proper landmarks (`<header>`, `<nav>`, `<main>`)
+- ✅ **ARIA Labels** - All icon buttons have `aria-label`
+- ✅ **Keyboard Navigation** - Full keyboard support via MudBlazor
+- ✅ **Focus Management** - Visible focus indicators
 
-### Additional Resources
-- [Deque axe for Blazor quickstart](https://dequeuniversity.com/assets/html/jquery-summit/html5/slides/axe-core-api/index.html) – explains how axe assertions work inside component tests.
-- [WAI-ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/) – reference keyboard patterns for custom widgets.
-- [WCAG 2.2 Quick Reference](https://www.w3.org/WAI/WCAG22/quickref/) – searchable map of applicable success criteria.
+### Testing
+
+**Manual Testing:**
+1. Navigate with Tab/Shift+Tab
+2. Activate with Enter/Space
+3. Test with screen reader (NVDA, JAWS, VoiceOver)
+
+**Automated Testing:**
+```bash
+cd tests/Archu.Ui.Tests
+dotnet test --filter "Category=Accessibility"
+```
+
+## 🧪 Testing
+
+### Unit Tests
+
+The library includes bUnit tests for all components:
+
+```bash
+cd tests/Archu.Ui.Tests
+dotnet test
+```
+
+**Test Coverage:**
+- Component rendering
+- Authentication state changes
+- Theme customization
+- Busy state management
+- Navigation behavior
+
+## 📦 Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `Microsoft.AspNetCore.Components.Web` | 9.0.10 | Blazor component model |
+| `Microsoft.AspNetCore.Components.Authorization` | 9.0.10 | Authentication/authorization |
+| `MudBlazor` | 8.0.0 | Material Design components |
+| `Archu.ApiClient` | - | API client with authentication |
+| `Archu.Contracts` | - | Shared DTOs |
+
+## 🤝 Contributing
+
+When adding new components:
+
+1. **Place in appropriate folder:**
+   - `Components/` - Reusable components
+   - `Layouts/` - Layout components
+   - `Pages/` - Routable pages
+
+2. **Add XML documentation:**
+   ```csharp
+   /// <summary>
+   /// Displays a list of products with pagination.
+   /// </summary>
+   ```
+
+3. **Follow MudBlazor patterns:**
+   - Use MudBlazor components as building blocks
+   - Maintain consistent styling
+   - Support dark mode
+
+4. **Update inventory:**
+   - Add component to this README
+   - Include description and usage example
+
+5. **Write tests:**
+   - Add bUnit test in `Archu.Ui.Tests`
+   - Test component rendering and interactions
+
+## 🔗 Related Projects
+
+- **[Archu.Web](../Archu.Web/README.md)** - Blazor WebAssembly application
+- **[Archu.ApiClient](../Archu.ApiClient/README.md)** - HTTP client library
+- **[Archu.Api](../Archu.Api/README.md)** - Backend API
+
+## 📚 Additional Resources
+
+- **[MudBlazor Documentation](https://mudblazor.com/)**
+- **[Blazor Documentation](https://learn.microsoft.com/en-us/aspnet/core/blazor/)**
+- **[Material Design 3](https://m3.material.io/)**
+- **[WCAG 2.2 Guidelines](https://www.w3.org/WAI/WCAG22/quickref/)**
+
+---
+
+**Platform Support**: Blazor Server, WebAssembly, Hybrid  
+**Target Framework**: .NET 9.0  
+**Version**: 1.0  
+**Last Updated**: 2025-01-23  
+**Maintainer**: Archu Development Team
 
