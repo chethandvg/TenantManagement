@@ -97,6 +97,8 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 4. ✅ **[Application Layer](../src/Archu.Application/README.md)** - CQRS & use cases
 5. ✅ **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Data access & repositories
 6. ✅ **[Quick Reference](APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md)** - Layer comparison
+7. ✅ **[Archu.AppHost](../src/Archu.AppHost/README.md)** - Local development orchestration ⭐ NEW
+8. ✅ **[Archu.ServiceDefaults](../src/Archu.ServiceDefaults/README.md)** - Shared configuration ⭐ NEW
 
 ### I want to manage security...
 1. ✅ **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT setup
@@ -143,6 +145,8 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 7. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Code patterns
 8. **[Database Guide](DATABASE_GUIDE.md)** - Data access
 9. **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Feature development
+10. **[Archu.AppHost](../src/Archu.AppHost/README.md)** - Orchestration with Aspire ⭐ NEW
+11. **[Archu.ServiceDefaults](../src/Archu.ServiceDefaults/README.md)** - Shared configuration ⭐ NEW
 
 ### For Administrators
 **System management:**
@@ -168,18 +172,18 @@ Archu/
 ├── docs/      # 📚 Documentation
 │   ├── README.md  # This file - Documentation hub
 │   ├── GETTING_STARTED.md   # ⚡ Start here - Complete setup guide
-│   ├── ARCHITECTURE.md         # System architecture
+│   ├── ARCHITECTURE.md  # System architecture
 │   ├── PROJECT_STRUCTURE.md    # Directory organization
 │   ├── APPLICATION_INFRASTRUCTURE_QUICK_REFERENCE.md  # Layer comparison
-│   ├── API_GUIDE.md           # Complete API reference
-│   ├── AUTHENTICATION_GUIDE.md      # JWT and authentication
-│   ├── AUTHORIZATION_GUIDE.md       # Role-based access control
+│   ├── API_GUIDE.md    # Complete API reference
+│   ├── AUTHENTICATION_GUIDE.md    # JWT and authentication
+│   ├── AUTHORIZATION_GUIDE.md # Role-based access control
 │   ├── PASSWORD_SECURITY_GUIDE.md        # Password policies
 │   ├── DATABASE_GUIDE.md        # Database and migrations
-│   ├── DEVELOPMENT_GUIDE.md            # Development workflow
+│   ├── DEVELOPMENT_GUIDE.md          # Development workflow
 │   └── ARCHIVE.md  # Historical documentation
 ├── src/
-│   ├── Archu.Api/   # 🌐 Main REST API
+│ ├── Archu.Api/   # 🌐 Main REST API
 │   │   ├── Archu.Api.http           # 40+ HTTP examples
 │   │   └── README.md       # API project documentation
 │   ├── Archu.AdminApi/   # 🛡️ Admin API
@@ -187,23 +191,27 @@ Archu/
 │   │   └── README.md        # Admin API documentation
 │   ├── Archu.Domain/      # 💼 Business logic
 │   │   └── README.md   # Complete Domain layer guide
-│   ├── Archu.Application/           # 🎯 Use cases & CQRS
+│├── Archu.Application/           # 🎯 Use cases & CQRS
 │   │   └── README.md# Complete Application layer guide
 │   ├── Archu.Infrastructure/    # 🔌 Data access & repositories
 │   │   └── README.md      # Complete Infrastructure layer guide
-│   ├── Archu.Contracts/                 # 📝 API DTOs
+│   ├── Archu.Contracts/         # 📝 API DTOs
 │   │   └── README.md# Complete Contracts layer guide
 │   ├── Archu.ApiClient/    # 📡 HTTP client library
-│   │   ├── README.md              # Complete client documentation
+│   │   ├── README.md          # Complete client documentation
 │   │   ├── RESILIENCE.md   # Resilience & error handling
 │   │   └── Authentication/
-│   │       └── README.md# ⭐ NEW - Authentication framework guide
-│   ├── Archu.Ui/       # 🎨 Blazor components
-│   │   └── README.md      # Component library documentation
+│   │       └── README.md# ⭐ Authentication framework guide
+│   ├── Archu.Ui/   # 🎨 Blazor components
+│   │   ├── README.md      # Component library documentation
+│   │   ├── CHANGELOG.md   # Version history
+│   │   └── INTEGRATION.md # Platform-specific integration guide
 │   ├── Archu.Web/   # 🌐 Blazor WebAssembly app
-│   │   └── README.md ⭐ NEW - WebAssembly application guide
-│ ├── Archu.ServiceDefaults/      # ⚙️ Aspire defaults
+│   │   └── README.md ⭐ WebAssembly application guide
+│   ├── Archu.ServiceDefaults/      # ⚙️ Aspire shared configuration
+│   │   └── README.md ⭐ NEW - Service defaults documentation
 │   ├── Archu.AppHost/    # 🚀 Aspire orchestrator
+│ │   └── README.md ⭐ NEW - Orchestration guide
 │   └── README_NEW_ENTITY.md # Development tutorial
 └── README.md        # Project overview
 ```
@@ -327,26 +335,29 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 | Metric | Value |
 |--------|-------|
-| **Total Documentation Files** | 16 essential docs ⬆️ (+4 new) |
+| **Total Documentation Files** | 18 essential docs ⬆️ (+2 new) |
 | **Quick Start Time** | 10 minutes |
 | **Full Onboarding Time** | 45 minutes |
 | **HTTP Request Examples** | 71+ examples |
 | **API Endpoints** | 28 total (16 Main + 12 Admin) |
-| **Project READMEs** | 11 ⬆️ (+2 new) |
+| **Project READMEs** | 13 ⬆️ (+2 new) |
 
 ### Recent Updates ⭐ NEW
 
 **Date**: 2025-01-23
 
 **New Documentation:**
+- ✅ [Archu.AppHost README](../src/Archu.AppHost/README.md) - Complete orchestration guide ⭐ NEW
+- ✅ [Archu.ServiceDefaults README](../src/Archu.ServiceDefaults/README.md) - Service defaults guide ⭐ NEW
 - ✅ [Archu.Web README](../src/Archu.Web/README.md) - Complete Blazor WebAssembly guide
 - ✅ [Authentication Framework](../src/Archu.ApiClient/Authentication/README.md) - JWT client authentication
 
-**Updated Documentation:**
-- ✅ [Archu.ApiClient README](../src/Archu.ApiClient/README.md) - Corrected structure, added missing services
-- ✅ [Archu.Ui README](../src/Archu.Ui/README.md) - Removed DocFX references, updated dependencies
+**Removed Documentation:**
+- ❌ `src/Archu.AppHost/INTEGRATION.md` - Consolidated into AppHost README
+- ❌ `tests/Archu.UnitTests/PHASE1_CLEANUP_SUMMARY.md` - Historical, removed
 
-**See**: [Documentation Update Summary](../DOCUMENTATION_UPDATE_SUMMARY_2025-01-23.md) for full details
+**Updated Documentation:**
+- ✅ [docs/README.md](README.md) - Updated project structure and statistics
 
 ---
 
@@ -384,6 +395,7 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.2 | 2025-01-23 | **Added Aspire documentation** (AppHost, ServiceDefaults READMEs) |
 | 4.1 | 2025-01-23 | **Added frontend documentation** (Archu.Web, Authentication Framework) |
 | 4.0 | 2025-01-22 | **Major consolidation** (51 files → 12 files, 76% reduction) |
 | 3.0 | 2025-01-22 | Major API documentation overhaul (7 new docs, 71+ HTTP examples) |
@@ -396,6 +408,6 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 ---
 
 **Last Updated**: 2025-01-23  
-**Version**: 4.1 ⚡ **FRONTEND DOCS ADDED**  
+**Version**: 4.2 ⚡ **ASPIRE DOCS ADDED**  
 **Maintainer**: Archu Development Team  
 **Questions?** Open an issue on [GitHub](https://github.com/chethandvg/archu/issues)

@@ -70,6 +70,8 @@ Archu follows **Clean Architecture** principles with clear separation of concern
 - **[Application Layer](src/Archu.Application/README.md)** - Use cases and CQRS handlers
 - **[Infrastructure Layer](src/Archu.Infrastructure/README.md)** - Data access and repositories
 - **[Contracts Layer](src/Archu.Contracts/README.md)** - API DTOs and request/response models
+- **[AppHost](src/Archu.AppHost/README.md)** - .NET Aspire orchestration and service management ⭐ NEW
+- **[ServiceDefaults](src/Archu.ServiceDefaults/README.md)** - Shared observability and resilience configuration ⭐ NEW
 
 ## 🛠️ Tech Stack
 
