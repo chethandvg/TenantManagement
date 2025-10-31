@@ -116,9 +116,21 @@ Archu follows **Clean Architecture** principles with clear separation of concern
 # Run all tests
 dotnet test
 
+# Run specific test projects
+dotnet test tests/Archu.IntegrationTests  # API integration tests (17 tests)
+dotnet test tests/Archu.ApiClient.Tests   # HTTP client tests (11 tests)
+dotnet test tests/Archu.Ui.Tests        # Accessibility tests (2 tests)
+dotnet test tests/Archu.UnitTests    # Business logic tests (37 test classes)
+
 # Run with coverage
 dotnet test /p:CollectCoverage=true
 ```
+
+**Test Documentation**:
+- 📖 **[Integration Tests](tests/Archu.IntegrationTests/README.md)** - API endpoint testing
+- 📖 **[API Client Tests](tests/Archu.ApiClient.Tests/README.md)** - HTTP client testing
+- 📖 **[UI Tests](tests/Archu.Ui.Tests/README.md)** - Accessibility testing
+- 📖 **[Unit Tests](tests/Archu.UnitTests/README.md)** - Domain & Application logic testing
 
 ## 🔧 Common Tasks
 
@@ -173,10 +185,15 @@ Archu/
 │   ├── Archu.Contracts/  # API DTOs
 │   │   └── README.md           # ⭐ Contracts layer documentation
 │   ├── Archu.Api/      # REST API
-│ ├── Archu.Ui/               # Blazor components
+│   ├── Archu.Ui/               # Blazor components
 │   ├── Archu.ServiceDefaults/  # Aspire defaults
 │   ├── Archu.AppHost/       # Aspire orchestrator
 │   └── README_NEW_ENTITY.md    # Development guide
+├── tests/  # Test projects
+│   ├── Archu.IntegrationTests/  # API integration tests (17 tests)
+│   ├── Archu.ApiClient.Tests/   # HTTP client tests (11 tests)
+│   ├── Archu.Ui.Tests/   # Accessibility tests (2 tests)
+│   └── Archu.UnitTests/ # Business logic tests (37 test classes)
 └── README.md  # This file
 ```
 
