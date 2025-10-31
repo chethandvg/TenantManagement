@@ -1,383 +1,218 @@
-# Archu.AdminApi
+# Archu Admin API
 
-Administrative API for managing users, roles, and system initialization in the Archu application.
+Administrative API for managing users, roles, and system configuration in the Archu application.
 
 ## Overview
 
-The Admin API provides endpoints for:
-- **System Initialization** - One-time setup of roles and super admin user
-- **User Management** - Create, list, and manage application users
-- **Role Management** - Create and manage system roles
-- **User-Role Assignment** - Assign and remove roles from users
+The Admin API provides secure endpoints for system administration tasks:
 
-## 🚀 Getting Started
+- **🚀 System Initialization** - Bootstrap system with roles and super admin
+- **👥 User Management** - Create, read, update, and delete users
+- **🎭 Role Management** - Manage system roles and permissions
+- **🔗 Role Assignment** - Assign and remove roles from users with security restrictions
+- **🔐 JWT Authentication** - Secure token-based authentication
+- **🛡️ Security Controls** - Privilege escalation protection and role hierarchy enforcement
+
+## Getting Started
 
 ### Prerequisites
 
-1. .NET 9 SDK installed
-2. SQL Server (local or Docker)
-3. Completed database migrations
-4. **JWT Secret configured** (already done in appsettings.Development.json)
+- .NET 9 SDK
+- SQL Server (local or Docker)
+- Completed database migrations
+- JWT secret configured (shared with Archu.Api)
 
-### Step 1: Run Database Migrations
+### Quick Start
 
-Before initializing the system, ensure the database schema is created:
+1. **Run Database Migrations**
 
-```bash
-cd src/Archu.Infrastructure
-dotnet ef database update --startup-project ../../Archu.AdminApi
-```
-
-Or let the application create it automatically on startup if using EF migrations.
-
-### Step 2: Verify JWT Configuration
-
-**✅ Already Configured!** The AdminApi is pre-configured with JWT settings in `appsettings.Development.json`.
-
-If you need to change the JWT secret or understand configuration options, see: **[JWT Configuration Guide](../docs/ADMINAPI_JWT_CONFIGURATION.md)**
-
-**Quick Check:**
-```bash
-cd Archu.AdminApi
-dotnet run
-```
-
-If it starts without errors, JWT is configured correctly!
-
-### Step 3: Initialize the System
-
-**IMPORTANT**: This step must be performed **ONCE** before any other operations.
-
-#### Option A: Using Scalar UI (Recommended for Development)
-
-1. Start the AdminApi:
    ```bash
-   cd Archu.AdminApi
+   cd src/Archu.Infrastructure
+   dotnet ef database update --startup-project ../Archu.AdminApi
+   ```
+
+2. **Verify JWT Configuration**
+
+   Check `appsettings.Development.json` (already configured):
+   ```json
+   {
+     "Jwt": {
+       "Secret": "ArchuDevelopmentSecretKeyForJwtTokensThisIsAtLeast32CharactersLong!",
+       "Issuer": "https://localhost:7001",
+       "Audience": "https://localhost:7001",
+       "AccessTokenExpirationMinutes": 15,
+       "RefreshTokenExpirationDays": 7
+     }
+   }
+   ```
+
+3. **Start the Admin API**
+
+   ```bash
+   cd src/Archu.AdminApi
    dotnet run
    ```
 
-2. Open Scalar UI in your browser: `https://localhost:7002/scalar/v1` (or the port shown in console)
+4. **Initialize the System**
 
-3. Navigate to the **Initialization** section
+   Use Scalar UI at `https://localhost:7290/scalar/v1` or HTTP request:
 
-4. Execute the `POST /api/v1/admin/initialization/initialize` endpoint with your super admin credentials:
+   ```bash
+   POST /api/v1/admin/initialization/initialize
+   Content-Type: application/json
 
-```json
-{
-  "userName": "superadmin",
-  "email": "admin@yourcompany.com",
-  "password": "YourSecurePassword123!"
-}
-```
+   {
+     "userName": "superadmin",
+     "email": "admin@yourcompany.com",
+     "password": "YourSecurePassword123!"
+   }
+   ```
 
-#### Option B: Using curl
+   **What gets created:**
+   - ✅ 5 System Roles (Guest, User, Manager, Administrator, SuperAdmin)
+   - ✅ Super admin user with provided credentials
+   - ✅ SuperAdmin role assigned to the user
 
-```bash
-curl -X POST https://localhost:7002/api/v1/admin/initialization/initialize \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userName": "superadmin",
-    "email": "admin@yourcompany.com",
-    "password": "YourSecurePassword123!"
-  }' -k
-```
+5. **Get JWT Token**
 
-#### Option C: Using PowerShell
+   Login via Archu.Api to get access token:
 
-```powershell
-$body = @{
-    userName = "superadmin"
-    email = "admin@yourcompany.com"
-    password = "YourSecurePassword123!"
-} | ConvertTo-Json
+   ```bash
+   POST https://localhost:7123/api/v1/authentication/login
+   Content-Type: application/json
 
-Invoke-RestMethod -Uri "https://localhost:7002/api/v1/admin/initialization/initialize" `
-    -Method POST `
-    -ContentType "application/json" `
-    -Body $body `
-    -SkipCertificateCheck
-```
+   {
+     "email": "admin@yourcompany.com",
+     "password": "YourSecurePassword123!"
+   }
+   ```
 
-#### Initialization Response
+   Use the returned `accessToken` for all Admin API requests.
 
-On success, you'll receive:
+## API Endpoints
 
-```json
-{
-  "success": true,
-  "data": {
-    "rolesCreated": true,
-    "rolesCount": 5,
-    "userCreated": true,
-    "userId": "guid-of-created-user",
-    "message": "System initialized successfully. Created 5 roles and super admin user 'superadmin'."
-  },
-  "message": "System initialized successfully. You can now login with the super admin credentials.",
-  "timestamp": "2025-01-22T10:00:00Z"
-}
-```
-
-**What gets created during initialization:**
-
-✅ **5 System Roles:**
-- `Guest` - Minimal read-only access
-- `User` - Basic application access
-- `Manager` - Elevated permissions for team management
-- `Administrator` - Full system access
-- `SuperAdmin` - Unrestricted access (for system administration)
-
-✅ **1 Super Admin User** with the credentials you provided
-
-✅ **Role Assignment** - SuperAdmin role assigned to the created user
-
-### Step 4: Login and Get Access Token
-
-After initialization, login using the super admin credentials to get a JWT token:
-
-```bash
-curl -X POST https://localhost:7001/api/v1/authentication/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@yourcompany.com",
-    "password": "YourSecurePassword123!"
-  }' -k
-```
-
-Response:
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "...",
-    "expiresAt": "2025-01-22T10:15:00Z"
-  }
-}
-```
-
-**Store the `accessToken` securely** - you'll need it for all subsequent Admin API calls.
-
-## 📚 API Endpoints
-
-All endpoints (except initialization) require authentication and SuperAdmin or Administrator role.
-
-### Authorization Header
-
-Include the JWT token in all requests:
-
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
+All endpoints (except initialization) require JWT authentication.
 
 ### Initialization
 
-#### POST `/api/v1/admin/initialization/initialize`
-- **Auth**: None (Anonymous) - Only works when no users exist
-- **Purpose**: Initialize system with roles and super admin
-- **Use Once**: Can only be called when the database has no users
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|---------------|-------------|
+| POST | `/api/v1/admin/initialization/initialize` | ❌ No | Initialize system (one-time only) |
 
-### Roles Management
+### User Management
 
-#### GET `/api/v1/admin/roles`
-- **Auth**: SuperAdmin, Administrator
-- **Purpose**: List all system roles
+| Method | Endpoint | Required Role | Description |
+|--------|----------|---------------|-------------|
+| GET | `/api/v1/admin/users` | Admin+ | List all users (paginated) |
+| POST | `/api/v1/admin/users` | Admin+ | Create new user |
+| DELETE | `/api/v1/admin/users/{id}` | SuperAdmin+ | Delete user |
 
-#### POST `/api/v1/admin/roles`
-- **Auth**: SuperAdmin, Administrator
-- **Purpose**: Create a new role
-- **Body**:
-  ```json
-  {
-    "name": "CustomRole",
-    "description": "Description of the role"
-  }
-  ```
+### Role Management
 
-### Users Management
-
-#### GET `/api/v1/admin/users?pageNumber=1&pageSize=10`
-- **Auth**: SuperAdmin, Administrator
-- **Purpose**: List all users with pagination
-- **Query Parameters**:
-  - `pageNumber` (optional, default: 1)
-  - `pageSize` (optional, default: 10)
-
-#### POST `/api/v1/admin/users`
-- **Auth**: SuperAdmin, Administrator
-- **Purpose**: Create a new user
-- **Body**:
-  ```json
-  {
-    "userName": "johndoe",
-    "email": "john@example.com",
-    "password": "SecurePassword123!",
-    "phoneNumber": "+1234567890",
-    "emailConfirmed": false,
-    "twoFactorEnabled": false
-  }
-  ```
+| Method | Endpoint | Required Role | Description |
+|--------|----------|---------------|-------------|
+| GET | `/api/v1/admin/roles` | Admin+ | List all roles |
+| POST | `/api/v1/admin/roles` | Admin+ | Create custom role |
 
 ### User-Role Assignment
 
-#### POST `/api/v1/admin/userroles/assign`
-- **Auth**: SuperAdmin, Administrator
-- **Purpose**: Assign a role to a user
-- **Body**:
-  ```json
-  {
-    "userId": "user-guid",
-    "roleId": "role-guid"
-  }
-  ```
+| Method | Endpoint | Required Role | Description |
+|--------|----------|---------------|-------------|
+| POST | `/api/v1/admin/userroles/assign` | Admin+ | Assign role to user |
+| DELETE | `/api/v1/admin/userroles/{userId}/roles/{roleId}` | Admin+ | Remove role from user |
 
-#### DELETE `/api/v1/admin/userroles/{userId}/roles/{roleId}`
-- **Auth**: SuperAdmin, Administrator
-- **Purpose**: Remove a role from a user
+### Health Monitoring
 
-## 🔐 Configuration
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Full health status |
+| GET | `/health/ready` | Readiness probe |
+| GET | `/health/live` | Liveness probe |
 
-### JWT Settings (Already Configured)
+## Authentication
 
-The AdminApi shares JWT configuration with the Main API for token compatibility:
+Include JWT token in all requests (except initialization):
 
-```json
-{
-  "Jwt": {
-    "Secret": "ArchuDevelopmentSecretKeyForJwtTokensThisIsAtLeast32CharactersLong!",
-    "Issuer": "https://localhost:7001",
-    "Audience": "https://localhost:7001",
-    "AccessTokenExpirationMinutes": 15,
-    "RefreshTokenExpirationDays": 7
-  }
-}
+```bash
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-**For production or alternative configuration options**, see: **[JWT Configuration Guide](../docs/ADMINAPI_JWT_CONFIGURATION.md)**
+## Role Hierarchy & Security
 
-## 🔒 Security Best Practices
+### Role Levels
 
-### 1. Protect Super Admin Credentials
+| Role | Level | Permissions |
+|------|-------|-------------|
+| **SuperAdmin** | 5 | Full system access, can assign any role |
+| **Administrator** | 4 | Can manage users, assign User/Manager/Guest roles only |
+| **Manager** | 3 | Read-only access to users and roles |
+| **User** | 2 | Standard application access |
+| **Guest** | 1 | Read-only access |
 
-- **Never commit** super admin credentials to source control
-- **Store securely** in a password manager
-- **Rotate regularly** - Change the password periodically
-- **Use strong passwords** - Minimum 12 characters with complexity
+### Security Restrictions
 
-### 2. JWT Secret Management
+1. **Privilege Escalation Protection**
+   - SuperAdmin role can only be assigned by another SuperAdmin
+   - Administrator role can only be assigned by SuperAdmin
+   - Cannot elevate your own privileges
 
-- ✅ **Development**: Use appsettings.Development.json (already configured)
-- ✅ **Production**: Use Azure Key Vault, AWS Secrets Manager, or environment variables
-- ⚠️ **Never commit production secrets** to source control
+2. **Self-Modification Protection**
+   - Cannot delete yourself
+   - Cannot remove your own privileged roles (SuperAdmin/Administrator)
 
-See **[JWT Configuration Guide](../docs/ADMINAPI_JWT_CONFIGURATION.md)** for detailed options.
+3. **Last SuperAdmin Protection**
+   - Cannot delete the last SuperAdmin in the system
+   - Ensures system always has at least one administrator
 
-### 3. Restrict Admin API Access
-
-In production, consider:
-
-```csharp
-// Add IP whitelisting
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add(new IpWhitelistFilter(new[] 
-    { 
-        "192.168.1.0/24",  // Internal network
-        "10.0.0.0/8"       // VPN range
-    }));
-});
-
-// Or use API Gateway with IP restrictions
-```
-
-### 4. Audit All Admin Actions
-
-All admin operations are logged. Monitor logs for:
-- User creation/deletion
-- Role assignments
-- Failed authorization attempts
-
-### 5. Limit SuperAdmin Accounts
-
-- Only create SuperAdmin accounts when absolutely necessary
-- Most admin tasks can be done with the Administrator role
-- Consider using temporary elevated access instead of permanent SuperAdmin
-
-### 6. Disable Initialization Endpoint in Production
-
-After initial setup, consider removing or securing the initialization endpoint:
-
-```csharp
-// In Program.cs
-if (app.Environment.IsProduction())
-{
-    // Map only non-initialization controllers
-    app.MapControllers();
-}
-```
-
-## 🎯 Common Workflows
+## Common Workflows
 
 ### Creating Additional Administrators
 
-1. **Login as SuperAdmin**
-2. **Create the user** via POST `/api/v1/admin/users`
-3. **Get the Administrator role ID** via GET `/api/v1/admin/roles`
-4. **Assign the role** via POST `/api/v1/admin/userroles/assign`
-
-Example:
-
 ```bash
-# 1. Login (get token)
-TOKEN=$(curl -X POST https://localhost:7001/api/v1/authentication/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@yourcompany.com","password":"YourSecurePassword123!"}' -k \
-  | jq -r '.data.accessToken')
+# 1. Login as SuperAdmin (get token from Archu.Api)
+POST https://localhost:7123/api/v1/authentication/login
 
 # 2. Create user
-USER_RESPONSE=$(curl -X POST https://localhost:7002/api/v1/admin/users \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userName": "newadmin",
-    "email": "newadmin@yourcompany.com",
-    "password": "SecurePassword123!",
-    "emailConfirmed": true
-  }' -k)
+POST /api/v1/admin/users
+Authorization: Bearer <token>
 
-USER_ID=$(echo $USER_RESPONSE | jq -r '.data.id')
+{
+  "userName": "newadmin",
+  "email": "newadmin@company.com",
+  "password": "SecurePassword123!",
+  "emailConfirmed": true
+}
 
 # 3. Get Administrator role ID
-ROLES=$(curl -X GET https://localhost:7002/api/v1/admin/roles \
-  -H "Authorization: Bearer $TOKEN" -k)
+GET /api/v1/admin/roles
+Authorization: Bearer <token>
 
-ADMIN_ROLE_ID=$(echo $ROLES | jq -r '.data[] | select(.name=="Administrator") | .id')
+# 4. Assign Administrator role
+POST /api/v1/admin/userroles/assign
+Authorization: Bearer <token>
 
-# 4. Assign role
-curl -X POST https://localhost:7002/api/v1/admin/userroles/assign \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"userId\": \"$USER_ID\",
-    \"roleId\": \"$ADMIN_ROLE_ID\"
-  }" -k
+{
+  "userId": "<user-id-from-step-2>",
+  "roleId": "<admin-role-id-from-step-3>"
+}
 ```
 
-### Setting Up Standard Users
+### Creating Standard Users
 
-For regular application users, assign them to the `User` role instead of `Administrator`.
+Same workflow as above, but assign "User" role instead of "Administrator".
 
-## 🏗️ Architecture
+## Architecture
 
-The Admin API follows Clean Architecture principles:
+Follows Clean Architecture with CQRS pattern:
 
 ```
-AdminApi (Presentation)
-    ↓
-Application Layer (CQRS Commands/Queries)
-    ↓
-Infrastructure Layer (Repositories, DbContext)
-    ↓
-Domain Layer (Entities)
+Archu.AdminApi (Presentation)
+    ↓ Controllers
+Archu.Application (Business Logic)
+    ↓ CQRS Commands/Queries
+Archu.Infrastructure (Data Access)
+    ↓ Repositories, DbContext
+Archu.Domain (Core Entities)
 ```
 
 ### Project Structure
@@ -386,111 +221,170 @@ Domain Layer (Entities)
 Archu.AdminApi/
 ├── Controllers/
 │   ├── InitializationController.cs    # System setup
-│   ├── RolesController.cs             # Role management
-│   ├── UsersController.cs             # User management
-│   └── UserRolesController.cs         # Role assignment
+│   ├── UsersController.cs       # User CRUD
+│   ├── RolesController.cs     # Role management
+│   └── UserRolesController.cs  # Role assignment
+├── Authorization/
+│   ├── AdminAuthorizationHandlerExtensions.cs
+│   ├── AdminAuthorizationPolicyExtensions.cs
+│   ├── AdminPolicyNames.cs
+│   ├── Requirements/
+│   │   └── AdminRoleRequirement.cs
+│   └── Handlers/
+│       └── AdminRoleRequirementHandler.cs
 ├── Middleware/
 │   └── GlobalExceptionHandlerMiddleware.cs
-└── Program.cs
+├── Program.cs
+├── appsettings.json
+├── Archu.AdminApi.http         # HTTP request examples
+└── README.md    # This file
 ```
 
-### Related Projects
+## Testing the API
 
-- `Archu.Contracts/Admin/` - DTOs and request models
-- `Archu.Application/Admin/` - CQRS commands and queries
-- `Archu.Infrastructure/` - Repository implementations
-- `Archu.Domain/Entities/Identity/` - User and role entities
+### Using Scalar UI
 
-## 🔧 Configuration Files
+1. Navigate to `https://localhost:7290/scalar/v1`
+2. Click "Authorize" and paste JWT token
+3. Test endpoints interactively
 
-### appsettings.json
+### Using HTTP Files
+
+The repository includes `Archu.AdminApi.http` with example requests:
+
+```bash
+# Open in Visual Studio
+# File location: src/Archu.AdminApi/Archu.AdminApi.http
+# Execute requests using "Send Request"
+```
+
+## Configuration
+
+### JWT Settings
+
+Located in `appsettings.json` (shared with Archu.Api):
 
 ```json
 {
-  "ConnectionStrings": {
-    "archudb": "",
-    "Sql": ""
-  },
   "Jwt": {
-    "Issuer": "https://localhost:7002",
-    "Audience": "https://localhost:7002",
-    "AccessTokenExpirationMinutes": 15,
-    "RefreshTokenExpirationDays": 7
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
+    "Secret": "your-secret-key-at-least-32-characters",
+    "Issuer": "https://localhost:7001",
+    "Audience": "https://localhost:7001"
   }
 }
 ```
 
-### Environment Variables (Production)
-
+**Production:** Use Azure Key Vault or environment variables:
 ```bash
-export ConnectionStrings__archudb="Server=prod-db;Database=ArchuDb;..."
-export Jwt__Secret="your-production-secret-here"
+export Jwt__Secret="production-secret-here"
+export ConnectionStrings__archudb="production-connection-string"
 ```
 
-## 🚨 Troubleshooting
+## Security Best Practices
+
+### 1. Protect Super Admin Credentials
+- Never commit credentials to source control
+- Store in password manager
+- Use strong passwords (minimum 12 characters)
+- Rotate passwords regularly
+
+### 2. Limit SuperAdmin Accounts
+- Only create when absolutely necessary
+- Most admin tasks can be done with Administrator role
+- Consider temporary elevated access patterns
+
+### 3. Production Deployment
+- Use HTTPS only
+- Store secrets in Azure Key Vault
+- Implement IP whitelisting
+- Enable audit logging
+- Monitor failed authorization attempts
+
+### 4. Disable Initialization in Production
+
+After setup, secure or disable the initialization endpoint:
+
+```csharp
+// In Program.cs
+if (app.Environment.IsProduction())
+{
+    // Don't map initialization controller
+}
+```
+
+## Troubleshooting
 
 ### "System is already initialized"
 
-**Problem**: Initialization endpoint returns error saying users already exist.
+**Cause:** Initialization endpoint already called (users exist in database).
 
-**Solution**: The system is already initialized. Use the super admin credentials to login.
+**Solution:** Use super admin credentials to login. Initialization is one-time only.
 
 ### "JWT Secret is not configured"
 
-**Problem**: Application fails to start with JWT configuration error.
+**Cause:** Missing JWT secret in configuration.
 
-**Solution**: See **[JWT Configuration Guide](../docs/ADMINAPI_JWT_CONFIGURATION.md)** for setup options.
+**Solution:** Verify `appsettings.Development.json` has JWT secret configured (should be preset).
 
-The error should already be fixed as JWT secret is in `appsettings.Development.json`.
+### "401 Unauthorized"
 
-### "Unauthorized" on Admin Endpoints
+**Solutions:**
+1. Include JWT token in Authorization header
+2. Verify token hasn't expired (15 minutes default)
+3. Get new token via Archu.Api login endpoint
 
-**Problem**: 401 Unauthorized error when calling admin endpoints.
+### "403 Forbidden"
 
-**Solutions**:
-1. Ensure you're including the JWT token in the Authorization header
-2. Verify the token hasn't expired (15 minutes default)
-3. Refresh the token if needed
+**Cause:** User lacks required role (SuperAdmin or Administrator).
 
-### "Forbidden" on Admin Endpoints
+**Solution:** Verify role assignment via `/api/v1/admin/userroles/{userId}`.
 
-**Problem**: 403 Forbidden error when calling admin endpoints.
+## API Response Format
 
-**Solution**: The logged-in user doesn't have SuperAdmin or Administrator role. Verify role assignment.
+Standard response wrapper:
 
-### Cannot Connect to Database
+```json
+{
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": {
+    // Response data
+  }
+}
+```
 
-**Problem**: Connection string errors or cannot reach SQL Server.
+**Pagination Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [...],
+    "pageNumber": 1,
+    "pageSize": 10,
+    "totalCount": 50,
+    "totalPages": 5
+  }
+}
+```
 
-**Solutions**:
-1. Verify SQL Server is running
-2. Check connection string in appsettings.json
-3. Ensure firewall allows connections
-4. Verify database exists (run migrations)
+## Related Projects
 
-## 📖 Additional Resources
+- **Archu.Api** - Main API with authentication endpoints
+- **Archu.Application** - Business logic and CQRS handlers
+- **Archu.Infrastructure** - Data access and repository implementations
+- **Archu.Domain** - Core entities (User, Role, UserRole)
+- **Archu.Contracts** - DTOs and request/response models
 
-- **[JWT Configuration Guide](../docs/ADMINAPI_JWT_CONFIGURATION.md)** - Detailed JWT setup options
-- [Clean Architecture Guide](../docs/ARCHITECTURE.md)
-- [JWT Authentication Guide](../docs/JWT_CONFIGURATION_GUIDE.md)
-- [API Documentation](https://localhost:7002/scalar/v1) (when running)
+## Additional Resources
 
-## 🤝 Contributing
-
-Follow the existing patterns when adding new admin endpoints:
-1. Create DTOs in `Archu.Contracts/Admin/`
-2. Create commands/queries in `Archu.Application/Admin/`
-3. Create controller endpoints in `Archu.AdminApi/Controllers/`
-4. Require SuperAdmin or Administrator role authorization
+- **Scalar UI**: `https://localhost:7290/scalar/v1` (when running)
+- **OpenAPI Spec**: `https://localhost:7290/openapi/v1.json`
+- **HTTP Examples**: `Archu.AdminApi.http` (30+ requests)
+- **GitHub**: [https://github.com/chethandvg/archu](https://github.com/chethandvg/archu)
 
 ---
 
-**Last Updated**: 2025-01-22  
-**Version**: 1.1  
-**Maintainer**: Archu Development Team
+**Version**: 1.2  
+**Last Updated**: 2025-01-23  
+**Target Framework**: .NET 9.0  
+**License**: MIT
