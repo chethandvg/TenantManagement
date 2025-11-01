@@ -75,6 +75,7 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
             services.RemoveAll<ICurrentUser>();
             services.RemoveAll<ITimeProvider>();
             
+            services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUser, TestCurrentUser>();
             services.AddSingleton<ITimeProvider, TestTimeProvider>();
 
