@@ -237,16 +237,10 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
                     return null;
                 }
 
-                foreach (var claimType in UserIdClaimTypes)
-                {
-                    var value = principal.FindFirst(claimType)?.Value;
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        return value;
-                    }
-                }
-
-                return principal.Identity?.Name;
+                return UserIdClaimTypes
+                    .Select(claimType => principal.FindFirst(claimType)?.Value)
+                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))
+                    ?? principal.Identity?.Name;
             }
         }
 
