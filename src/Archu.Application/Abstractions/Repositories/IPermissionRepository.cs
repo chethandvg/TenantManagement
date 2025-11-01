@@ -19,6 +19,17 @@ public interface IPermissionRepository
     Task<IReadOnlyCollection<ApplicationPermission>> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves all permissions matching the supplied normalized names.
+    /// Useful when resolving the authoritative identifiers required to link permissions to roles or users.
+    /// </summary>
+    /// <param name="normalizedNames">Collection of normalized permission names to lookup.</param>
+    /// <param name="cancellationToken">Token that propagates notification that operations should be cancelled.</param>
+    /// <returns>A read-only collection of permissions matching the provided names.</returns>
+    Task<IReadOnlyCollection<ApplicationPermission>> GetByNormalizedNamesAsync(
+        IEnumerable<string> normalizedNames,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Adds a batch of permissions to the underlying data store.
     /// </summary>
     /// <param name="permissions">The permission entities to add.</param>
