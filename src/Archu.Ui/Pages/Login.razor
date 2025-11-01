@@ -1,0 +1,66 @@
+@page "/login"
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+            Login to Archu
+        </MudText>
+
+        <EditForm Model="@model" OnValidSubmit="HandleLoginAsync">
+            <DataAnnotationsValidator />
+
+            <MudTextField @bind-Value="model.Email"
+                         Label="Email"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Email"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true"
+                         AutoFocus="true" />
+
+            <MudTextField @bind-Value="model.Password"
+                         Label="Password"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Password"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true" />
+
+            <MudCheckBox T="bool" @bind-Value="model.RememberMe"
+                        Label="Remember me"
+                        Color="Color.Primary" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-4">
+                    @errorMessage
+                </MudAlert>
+            }
+
+            <MudButton ButtonType="ButtonType.Submit"
+                      Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      FullWidth="true"
+                      Size="Size.Large"
+                      Class="mt-6"
+                      Disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <MudText>Logging in...</MudText>
+                }
+                else
+                {
+                    <MudText>Login</MudText>
+                }
+            </MudButton>
+        </EditForm>
+
+        <MudDivider Class="my-6" />
+
+        <MudStack Row="true" Justify="Justify.SpaceBetween">
+            <MudLink Href="/register">Create account</MudLink>
+            <MudLink Href="/forgot-password">Forgot password?</MudLink>
+        </MudStack>
+    </MudPaper>
+</MudContainer>

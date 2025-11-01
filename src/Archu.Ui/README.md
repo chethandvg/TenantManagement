@@ -1,21 +1,57 @@
-# Archu.Ui - Platform-Agnostic Blazor Component Library
+# Archu.Ui – Blazor Component Library
 
-A reusable Razor Class Library containing UI components built with MudBlazor. This library is designed to be platform-agnostic and works seamlessly with:
+Archu.Ui is a Razor Class Library that provides reusable Blazor components, layouts, and pages for the Archu platform. Built with **MudBlazor**, it delivers a consistent, modern UI experience across Blazor Server, WebAssembly, and Hybrid applications.
 
-- **Blazor Server**
-- **Blazor WebAssembly**
-- **Blazor Hybrid (MAUI)**
+## ✨ Features
 
-## Features
+- ✅ **Platform-Agnostic** - Works with Blazor Server, WebAssembly, and Hybrid (MAUI)
+- ✅ **MudBlazor Integration** - Built on Material Design components
+- ✅ **Authentication-Aware** - Components adapt to user authentication state
+- ✅ **Reusable Layouts** - Pre-built application shell with navigation
+- ✅ **State Management** - Built-in busy/error state handling
+- ✅ **Theme Customization** - Runtime theme token service
+- ✅ **Sample Pages** - Login, registration, products, and more
 
-- ✔️ Pre-styled components with CSS isolation
-- ✔️ MudBlazor-based components for consistent design
-- ✔️ Platform-agnostic (no ASP.NET Core dependencies)
-- ✔️ Easy service registration with `AddArchuUi()`
-- ✔️ Type-safe component parameters
-- ✔️ Accessibility-focused
+## 📦 Component Inventory
 
-## Installation
+### Layouts
+
+| Component | Description |
+|-----------|-------------|
+| **MainLayout** | Application shell with app bar, navigation drawer, and MudBlazor providers |
+
+### Navigation
+
+| Component | Description |
+|-----------|-------------|
+| **NavMenu** | Responsive navigation drawer with authentication-aware links |
+| **RedirectToLogin** | Automatic login redirection for unauthenticated users |
+
+### State Management
+
+| Component | Description |
+|-----------|-------------|
+| **BusyBoundary** | Displays loading indicators, error alerts, and retry affordances |
+
+### Application Pages
+
+| Page | Route | Purpose |
+|------|-------|---------|
+| **Index** | `/` | Landing page (requires authentication) |
+| **Login** | `/login` | Email/password login form |
+| **Register** | `/register` | User registration form |
+| **Products** | `/products` | Product catalog with CRUD operations (requires authentication) |
+| **Counter** | `/counter` | Sample counter page for testing |
+| **FetchData** | `/fetchdata` | Sample weather forecast page |
+
+### State Services
+
+| Service | Description |
+|---------|-------------|
+| **UiState** | Aggregates UI state services (busy state, theme, etc.) |
+| **BusyState** | Tracks in-flight operations, loading messages, and errors |
+
+## 🚀 Getting Started
 
 ### 1. Add Project Reference
 
@@ -25,285 +61,339 @@ dotnet add reference ..\Archu.Ui\Archu.Ui.csproj
 
 ### 2. Register Services
 
-In your `Program.cs` (works for Server, WASM, or MAUI):
+In your `Program.cs` (Blazor Server, WebAssembly, or Hybrid):
 
 ```csharp
 using Archu.Ui;
+using Archu.Ui.Theming;
 
-builder.Services.AddArchuUi();
-```
-
-### 3. Add to _Imports.razor
-
-```razor
-@using Archu.Ui
-@using Archu.Ui.Components
-@using Archu.Ui.Components.Common
-@using Archu.Ui.Components.Forms
-@using Archu.Ui.Components.Inputs
-@using Archu.Ui.Components.Products
-@using Archu.Ui.Components.Typography
-@using Archu.Ui.Layouts
-```
-
-### 4. Add MudBlazor CSS and JS (in your host/index.html or App.razor)
-
-```html
-<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-
-<script src="_content/MudBlazor/MudBlazor.min.js"></script>
-```
-
-## Component Overview
-
-### Layout Components
-
-#### MainLayout
-A complete application layout with app bar, drawer, and main content area.
-
-```razor
-@inherits LayoutComponentBase
-@layout Archu.Ui.Layouts.MainLayout
-
-<MainLayout AppTitle="My Application">
-    <TopBarContent>
-        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
-    </TopBarContent>
-    
-    <DrawerContent>
-        <MudNavMenu>
-            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-            <MudNavLink Href="/products" Icon="@Icons.Material.Filled.ShoppingCart">Products</MudNavLink>
-        </MudNavMenu>
-    </DrawerContent>
-    
-    @Body
-</MainLayout>
-```
-
-### Typography Components
-
-#### PageHeading
-Displays a consistent page heading.
-
-```razor
-<PageHeading Color="Color.Primary">Products</PageHeading>
-```
-
-#### ArchuText
-A flexible text component wrapper around MudText.
-
-```razor
-<ArchuText Typo="Typo.h6" Color="Color.Secondary">
-    This is some text
-</ArchuText>
-```
-
-### Input Components
-
-#### ArchuTextField
-Generic text input field.
-
-```razor
-<ArchuTextField @bind-Value="model.Name" 
-                Label="Product Name" 
-                Required="true" />
-```
-
-#### ArchuNumericField
-Numeric input field with type safety.
-
-```razor
-<ArchuNumericField @bind-Value="model.Price" 
-                   Label="Price" 
-                   Min="0M"
-                   Step="0.01M" />
-```
-
-#### ArchuButton
-Styled button component.
-
-```razor
-<ArchuButton Color="Color.Primary" 
-             StartIcon="@Icons.Material.Filled.Add"
-             OnClick="HandleClick">
-    Add Product
-</ArchuButton>
-```
-
-### Product Components
-
-#### ProductCard
-Displays a single product with optional actions.
-
-```razor
-<ProductCard Product="@product"
-            ShowActions="true"
-            OnEdit="HandleEdit"
-            OnDelete="HandleDelete" />
-```
-
-#### ProductGrid
-Displays a responsive grid of products.
-
-```razor
-<ProductGrid Products="@products"
-            ShowActions="true"
-            OnEdit="HandleEdit"
-            OnDelete="HandleDelete"
-            EmptyMessage="No products found." />
-```
-
-### Common Components
-
-#### LoadingContainer
-Shows loading indicator or content.
-
-```razor
-<LoadingContainer IsLoading="@isLoading" Message="Loading products...">
-    <ProductGrid Products="@products" />
-</LoadingContainer>
-```
-
-#### ArchuAlert
-Display alerts and messages.
-
-```razor
-<ArchuAlert Severity="Severity.Success" Message="Product saved successfully!" />
-```
-
-### Form Components
-
-#### ArchuForm
-Complete form wrapper with validation.
-
-```razor
-<ArchuForm Model="@createRequest"
-          Title="Create Product"
-          OnValidSubmit="HandleSubmit"
-          IsSubmitting="@isSubmitting"
-          ShowCancelButton="true"
-          OnCancel="HandleCancel">
-    
-    <ArchuTextField @bind-Value="createRequest.Name" Label="Name" Required="true" />
-    <ArchuNumericField @bind-Value="createRequest.Price" Label="Price" Required="true" />
-    
-</ArchuForm>
-```
-
-## Example Usage in Blazor Server/WASM
-
-```razor
-@page "/products"
-@using Archu.Contracts.Products
-@inject HttpClient Http
-
-<PageHeading>Products</PageHeading>
-
-<LoadingContainer IsLoading="@loading">
-    <ProductGrid Products="@products"
-                ShowActions="true"
-                OnEdit="EditProduct"
-                OnDelete="DeleteProduct" />
-</LoadingContainer>
-
-@code {
-    private bool loading = true;
-    private List<ProductDto> products = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        products = await Http.GetFromJsonAsync<List<ProductDto>>("api/products") ?? new();
-        loading = false;
-    }
-
-    private void EditProduct(ProductDto product)
-    {
-        // Handle edit
-    }
-
-    private void DeleteProduct(ProductDto product)
-    {
-        // Handle delete
-    }
-}
-```
-
-## Example Usage in MAUI Blazor Hybrid
-
-The same components work in MAUI! Just register services in `MauiProgram.cs`:
-
-```csharp
-using Archu.Ui;
-
-public static class MauiProgram
+builder.Services.AddArchuUi(options =>
 {
-    public static MauiApp CreateMauiApp()
-    {
-        var builder = MauiApp.CreateBuilder();
-        builder
-            .UseMauiApp<App>()
-            .ConfigureFonts(fonts =>
-            {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-            });
-
-        builder.Services.AddMauiBlazorWebView();
-        builder.Services.AddArchuUi(); // ? Same registration!
-        
-        return builder.Build();
-    }
-}
-```
-
-## Customization
-
-### Override MudBlazor Configuration
-
-You can customize MudBlazor configuration by calling `AddMudServices` separately:
-
-```csharp
-builder.Services.AddMudServices(config =>
-{
-    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.TopRight;
+    // Optional: Customize theme tokens
+ options.Tokens.Colors.Primary = "#1D4ED8";
+    options.Tokens.Colors.Secondary = "#10B981";
 });
 ```
 
-### CSS Isolation
+### 3. Update `_Imports.razor`
 
-All components use CSS isolation (scoped styles). To override styles:
+```razor
+@using Archu.Ui
+@using Archu.Ui.Components.Navigation
+@using Archu.Ui.Components.Routing
+@using Archu.Ui.Components.State
+@using Archu.Ui.Layouts
+@using Archu.Ui.Pages
+@using MudBlazor
+```
 
-```css
-/* In your wwwroot/css/app.css */
-::deep .product-card {
-    border-radius: 12px;
+### 4. Include MudBlazor Assets
+
+Add to your `index.html` (WebAssembly) or `_Host.cshtml` (Server):
+
+```html
+<!-- In <head> -->
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+
+<!-- Before closing </body> -->
+<script src="_content/MudBlazor/MudBlazor.min.js"></script>
+```
+
+### 5. Use MainLayout
+
+In your `App.razor`:
+
+```razor
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+    <p>Sorry, there's nothing at this address.</p>
+      </LayoutView>
+    </NotFound>
+</Router>
+```
+
+## 🎨 Theming
+
+### Default Theme
+
+MainLayout automatically configures MudBlazor theme with:
+- Primary color: `#594AE2` (purple)
+- Material Design 3 palette
+- Dark mode support (via `MudThemeProvider`)
+
+### Customizing Theme Tokens
+
+Override design tokens at startup:
+
+```csharp
+builder.Services.AddArchuUi(options =>
+{
+    options.Tokens.Colors.Primary = "#1D4ED8";
+    options.Tokens.Colors.Background = "#F9FAFB";
+    options.Tokens.Typography.FontFamily = "Inter, sans-serif";
+});
+```
+
+### Runtime Theme Changes
+
+Use `IThemeTokenService` to change theme at runtime:
+
+```csharp
+@inject IThemeTokenService ThemeService
+
+private void SwitchToDarkMode()
+{
+    ThemeService.ApplyOverrides(tokens =>
+    {
+        tokens.Colors.Background = "#1C1B1F";
+        tokens.Colors.Surface = "#1C1B1F";
+        tokens.Colors.OnBackground = "#E6E1E5";
+    });
 }
 ```
 
-## Dependencies
+The `MainLayout` automatically listens for `IThemeTokenService.TokensChanged` and updates the MudBlazor theme.
 
-- **Microsoft.AspNetCore.Components.Web** (9.0.1)
-- **MudBlazor** (8.0.0)
-- **Archu.Contracts** (project reference)
+## 🔐 Authentication Integration
 
-## Architecture Notes
+Components adapt to authentication state using Blazor's `AuthorizeView`:
 
-- ? No platform-specific dependencies (works everywhere)
-- ? No HTTP or API logic (purely presentational)
-- ? Components accept data via parameters
-- ? Events are exposed via `EventCallback`
-- ? Follows separation of concerns
+### NavMenu Example
 
-## Contributing
+```razor
+<AuthorizeView>
+    <Authorized>
+        <MudNavLink Href="/products" Icon="@Icons.Material.Filled.ShoppingCart">
+            Products
+        </MudNavLink>
+        <MudNavLink @onclick="LogoutAsync" Icon="@Icons.Material.Filled.Logout">
+            Logout
+        </MudNavLink>
+    </Authorized>
+    <NotAuthorized>
+        <MudNavLink Href="/login" Icon="@Icons.Material.Filled.Login">
+    Login
+        </MudNavLink>
+  <MudNavLink Href="/register" Icon="@Icons.Material.Filled.PersonAdd">
+         Register
+        </MudNavLink>
+    </NotAuthorized>
+</AuthorizeView>
+```
+
+### Protecting Pages
+
+Use `[Authorize]` attribute and `RedirectToLogin`:
+
+```razor
+@page "/protected"
+@attribute [Authorize]
+
+<AuthorizeView>
+    <Authorized>
+        <h3>Protected Content</h3>
+    </Authorized>
+<NotAuthorized>
+ <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+```
+
+## 🛠️ State Management
+
+### Using BusyState
+
+The `BusyState` service provides centralized loading and error state management:
+
+```csharp
+@inject UiState State
+
+private async Task LoadDataAsync()
+{
+    State.Busy.SetBusy("Loading products...");
+    
+    try
+    {
+        var products = await ProductsClient.GetProductsAsync();
+   State.Busy.SetSuccess("Products loaded successfully!");
+    }
+    catch (Exception ex)
+    {
+        State.Busy.SetError("Failed to load products", ex.Message);
+    }
+}
+```
+
+### Using BusyBoundary Component
+
+Wrap your content with `BusyBoundary` to display loading/error states:
+
+```razor
+<BusyBoundary OnRetry="LoadDataAsync">
+    @if (products.Any())
+    {
+        <ProductList Items="@products" />
+  }
+</BusyBoundary>
+```
+
+**Features:**
+- Displays loading spinner when `BusyState.IsBusy`
+- Shows error alert when `BusyState.HasError`
+- Provides retry button that calls `OnRetry` callback
+
+## 📋 Component API Reference
+
+### MainLayout
+
+**Parameters:** None
+
+**Features:**
+- MudThemeProvider with runtime theme support
+- MudDialogProvider for dialogs
+- MudSnackbarProvider for notifications
+- MudPopoverProvider for popovers
+- Responsive navigation drawer
+- App bar with title and menu toggle
+
+### NavMenu
+
+**Parameters:** None
+
+**Features:**
+- Adapts links based on authentication state
+- Home, Counter, Products, Login/Logout links
+- Icons from Material Design
+- Mobile-responsive
+
+### RedirectToLogin
+
+**Parameters:**
+- `ReturnUrl` (string, optional) - URL to redirect to after login
+
+**Usage:**
+```razor
+<RedirectToLogin ReturnUrl="/products" />
+```
+
+### BusyBoundary
+
+**Parameters:**
+- `OnRetry` (EventCallback, optional) - Callback for retry button
+
+**Usage:**
+```razor
+<BusyBoundary OnRetry="@LoadDataAsync">
+    <ChildContent>
+        <!-- Your content here -->
+    </ChildContent>
+</BusyBoundary>
+```
+
+## ♿ Accessibility
+
+The library follows accessibility best practices:
+
+### Required Practices
+
+- ✅ **Semantic HTML** - Proper landmarks (`<header>`, `<nav>`, `<main>`)
+- ✅ **ARIA Labels** - All icon buttons have `aria-label`
+- ✅ **Keyboard Navigation** - Full keyboard support via MudBlazor
+- ✅ **Focus Management** - Visible focus indicators
+
+### Testing
+
+**Manual Testing:**
+1. Navigate with Tab/Shift+Tab
+2. Activate with Enter/Space
+3. Test with screen reader (NVDA, JAWS, VoiceOver)
+
+**Automated Testing:**
+```bash
+cd tests/Archu.Ui.Tests
+dotnet test --filter "Category=Accessibility"
+```
+
+## 🧪 Testing
+
+### Unit Tests
+
+The library includes bUnit tests for all components:
+
+```bash
+cd tests/Archu.Ui.Tests
+dotnet test
+```
+
+**Test Coverage:**
+- Component rendering
+- Authentication state changes
+- Theme customization
+- Busy state management
+- Navigation behavior
+
+## 📦 Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `Microsoft.AspNetCore.Components.Web` | 9.0.10 | Blazor component model |
+| `Microsoft.AspNetCore.Components.Authorization` | 9.0.10 | Authentication/authorization |
+| `MudBlazor` | 8.0.0 | Material Design components |
+| `Archu.ApiClient` | - | API client with authentication |
+| `Archu.Contracts` | - | Shared DTOs |
+
+## 🤝 Contributing
 
 When adding new components:
-1. Place them in appropriate namespace folders
-2. Add CSS isolation files (`.razor.css`)
-3. Use `EditorRequired` for mandatory parameters
-4. Expose events via `EventCallback`
-5. Keep components platform-agnostic
 
-## License
+1. **Place in appropriate folder:**
+   - `Components/` - Reusable components
+   - `Layouts/` - Layout components
+   - `Pages/` - Routable pages
 
-Same as parent project.
+2. **Add XML documentation:**
+   ```csharp
+   /// <summary>
+   /// Displays a list of products with pagination.
+   /// </summary>
+   ```
+
+3. **Follow MudBlazor patterns:**
+   - Use MudBlazor components as building blocks
+   - Maintain consistent styling
+   - Support dark mode
+
+4. **Update inventory:**
+   - Add component to this README
+   - Include description and usage example
+
+5. **Write tests:**
+   - Add bUnit test in `Archu.Ui.Tests`
+   - Test component rendering and interactions
+
+## 🔗 Related Projects
+
+- **[Archu.Web](../Archu.Web/README.md)** - Blazor WebAssembly application
+- **[Archu.ApiClient](../Archu.ApiClient/README.md)** - HTTP client library
+- **[Archu.Api](../Archu.Api/README.md)** - Backend API
+
+## 📚 Additional Resources
+
+- **[MudBlazor Documentation](https://mudblazor.com/)**
+- **[Blazor Documentation](https://learn.microsoft.com/en-us/aspnet/core/blazor/)**
+- **[Material Design 3](https://m3.material.io/)**
+- **[WCAG 2.2 Guidelines](https://www.w3.org/WAI/WCAG22/quickref/)**
+
+---
+
+**Platform Support**: Blazor Server, WebAssembly, Hybrid  
+**Target Framework**: .NET 9.0  
+**Version**: 1.0  
+**Last Updated**: 2025-01-23  
+**Maintainer**: Archu Development Team
+

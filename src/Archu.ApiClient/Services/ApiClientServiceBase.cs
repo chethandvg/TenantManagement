@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Archu.ApiClient.Exceptions;
 using Archu.Contracts.Common;
+using Microsoft.Extensions.Logging;
 
 namespace Archu.ApiClient.Services;
 
@@ -13,14 +14,17 @@ public abstract class ApiClientServiceBase
 {
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly ILogger _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ApiClientServiceBase"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client instance.</param>
-    protected ApiClientServiceBase(HttpClient httpClient)
+    /// <param name="logger">The logger instance.</param>
+    protected ApiClientServiceBase(HttpClient httpClient, ILogger logger)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -49,16 +53,23 @@ public abstract class ApiClientServiceBase
         string endpoint,
         CancellationToken cancellationToken = default)
     {
+        var uri = BuildUri(endpoint);
+        _logger.LogDebug("Sending GET request to {Uri}", uri);
+
         try
         {
-            var response = await _httpClient.GetAsync(
-                BuildUri(endpoint),
-                cancellationToken);
+            var response = await _httpClient.GetAsync(uri, cancellationToken);
+
+            _logger.LogDebug(
+                "GET request to {Uri} completed with status {StatusCode}",
+                uri,
+                (int)response.StatusCode);
 
             return await ProcessResponseAsync<TResponse>(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not ApiClientException)
         {
+            _logger.LogError(ex, "Error during GET request to {Uri}", uri);
             return HandleException<TResponse>(ex);
         }
     }
@@ -82,18 +93,27 @@ public abstract class ApiClientServiceBase
         TRequest request,
         CancellationToken cancellationToken = default)
     {
+        var uri = BuildUri(endpoint);
+        _logger.LogDebug("Sending POST request to {Uri}", uri);
+
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-                BuildUri(endpoint),
+                uri,
                 request,
                 _jsonOptions,
                 cancellationToken);
+
+            _logger.LogDebug(
+                "POST request to {Uri} completed with status {StatusCode}",
+                uri,
+                (int)response.StatusCode);
 
             return await ProcessResponseAsync<TResponse>(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not ApiClientException)
         {
+            _logger.LogError(ex, "Error during POST request to {Uri}", uri);
             return HandleException<TResponse>(ex);
         }
     }
@@ -114,22 +134,31 @@ public abstract class ApiClientServiceBase
     /// <exception cref="NetworkException">Thrown when a network error occurs.</exception>
     /// <exception cref="ApiClientException">Thrown for other API errors.</exception>
     protected async Task<ApiResponse<TResponse>> PutAsync<TRequest, TResponse>(
-        String endpoint,
+        string endpoint,
         TRequest request,
         CancellationToken cancellationToken = default)
     {
+        var uri = BuildUri(endpoint);
+        _logger.LogDebug("Sending PUT request to {Uri}", uri);
+
         try
         {
             var response = await _httpClient.PutAsJsonAsync(
-                BuildUri(endpoint),
+                uri,
                 request,
                 _jsonOptions,
                 cancellationToken);
+
+            _logger.LogDebug(
+                "PUT request to {Uri} completed with status {StatusCode}",
+                uri,
+                (int)response.StatusCode);
 
             return await ProcessResponseAsync<TResponse>(response, cancellationToken);
         }
         catch (Exception ex) when (ex is not ApiClientException)
         {
+            _logger.LogError(ex, "Error during PUT request to {Uri}", uri);
             return HandleException<TResponse>(ex);
         }
     }
@@ -149,24 +178,32 @@ public abstract class ApiClientServiceBase
         string endpoint,
         CancellationToken cancellationToken = default)
     {
+        var uri = BuildUri(endpoint);
+        _logger.LogDebug("Sending DELETE request to {Uri}", uri);
+
         try
         {
-            var response = await _httpClient.DeleteAsync(
-                BuildUri(endpoint),
-                cancellationToken);
+            var response = await _httpClient.DeleteAsync(uri, cancellationToken);
+
+            _logger.LogDebug(
+                "DELETE request to {Uri} completed with status {StatusCode}",
+                uri,
+                (int)response.StatusCode);
 
             if (response.IsSuccessStatusCode)
             {
+                _logger.LogInformation("Resource deleted successfully at {Uri}", uri);
                 return ApiResponse<bool>.Ok(true, "Resource deleted successfully");
             }
 
             await ThrowForStatusCodeAsync(response, cancellationToken);
-            
+
             // This line won't be reached due to the throw above, but keeps the compiler happy
             return ApiResponse<bool>.Fail("Request failed");
         }
         catch (Exception ex) when (ex is not ApiClientException)
         {
+            _logger.LogError(ex, "Error during DELETE request to {Uri}", uri);
             return HandleException<bool>(ex);
         }
     }
@@ -177,8 +214,15 @@ public abstract class ApiClientServiceBase
     private string BuildUri(string endpoint)
     {
         var trimmedEndpoint = endpoint.TrimStart('/');
-        return string.IsNullOrWhiteSpace(trimmedEndpoint) 
-            ? BasePath 
+        
+        // If endpoint starts with query string, don't add separator slash
+        if (trimmedEndpoint.StartsWith('?'))
+        {
+            return $"{BasePath}{trimmedEndpoint}";
+        }
+        
+        return string.IsNullOrWhiteSpace(trimmedEndpoint)
+            ? BasePath
             : $"{BasePath}/{trimmedEndpoint}";
     }
 
@@ -197,10 +241,29 @@ public abstract class ApiClientServiceBase
                     _jsonOptions,
                     cancellationToken);
 
-                return apiResponse ?? ApiResponse<T>.Fail("Received null response from server");
+                if (apiResponse == null)
+                {
+                    _logger.LogWarning(
+                        "Received null response from server for {RequestUri}",
+                        response.RequestMessage?.RequestUri);
+                    return ApiResponse<T>.Fail("Received null response from server");
+                }
+
+                _logger.LogDebug(
+                    "Successfully deserialized response from {RequestUri}. Success: {Success}",
+                    response.RequestMessage?.RequestUri,
+                    apiResponse.Success);
+
+                return apiResponse;
             }
             catch (JsonException ex)
             {
+                _logger.LogError(
+                    ex,
+                    "Failed to deserialize response from {RequestUri}. StatusCode: {StatusCode}",
+                    response.RequestMessage?.RequestUri,
+                    (int)response.StatusCode);
+
                 throw new ApiClientException(
                     "Failed to deserialize response from server",
                     (int)response.StatusCode,
@@ -209,7 +272,7 @@ public abstract class ApiClientServiceBase
         }
 
         await ThrowForStatusCodeAsync(response, cancellationToken);
-        
+
         // This line won't be reached due to the throw above, but keeps the compiler happy
         return ApiResponse<T>.Fail("Request failed");
     }
@@ -222,14 +285,16 @@ public abstract class ApiClientServiceBase
         CancellationToken cancellationToken)
     {
         var statusCode = (int)response.StatusCode;
+        var requestUri = response.RequestMessage?.RequestUri;
         string errorContent;
-        
+
         try
         {
             errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Unable to read error response content from {RequestUri}", requestUri);
             errorContent = "Unable to read error response";
         }
 
@@ -242,7 +307,7 @@ public abstract class ApiClientServiceBase
             var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<object>>(
                 _jsonOptions,
                 cancellationToken);
-            
+
             if (errorResponse?.Errors != null)
             {
                 errors = errorResponse.Errors;
@@ -261,6 +326,14 @@ public abstract class ApiClientServiceBase
             }
         }
 
+        // Log the error before throwing
+        _logger.LogWarning(
+            "Request to {RequestUri} failed with status {StatusCode}. Message: {ErrorMessage}, Errors: {Errors}",
+            requestUri,
+            statusCode,
+            errorMessage,
+            errors != null ? string.Join(", ", errors) : "None");
+
         throw response.StatusCode switch
         {
             HttpStatusCode.BadRequest => new ValidationException(errorMessage, errors),
@@ -278,21 +351,27 @@ public abstract class ApiClientServiceBase
     /// <summary>
     /// Handles exceptions and returns a failed API response.
     /// </summary>
-    private static ApiResponse<T> HandleException<T>(Exception ex)
+    private ApiResponse<T> HandleException<T>(Exception ex)
     {
-        return ex switch
+        if (ex is HttpRequestException httpEx)
         {
-            HttpRequestException httpEx => ApiResponse<T>.Fail(
+            _logger.LogError(httpEx, "Network error occurred during HTTP request");
+            return ApiResponse<T>.Fail(
                 "Network error occurred while processing the request",
-                new[] { httpEx.Message }),
-            
-            TaskCanceledException or OperationCanceledException => ApiResponse<T>.Fail(
+                new[] { httpEx.Message });
+        }
+
+        if (ex is TaskCanceledException or OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Request was cancelled or timed out");
+            return ApiResponse<T>.Fail(
                 "Request was cancelled or timed out",
-                new[] { ex.Message }),
-            
-            _ => ApiResponse<T>.Fail(
-                "An unexpected error occurred while processing the request",
-                new[] { ex.Message })
-        };
+                new[] { ex.Message });
+        }
+
+        _logger.LogError(ex, "Unexpected error occurred during HTTP request");
+        return ApiResponse<T>.Fail(
+            "An unexpected error occurred while processing the request",
+            new[] { ex.Message });
     }
 }

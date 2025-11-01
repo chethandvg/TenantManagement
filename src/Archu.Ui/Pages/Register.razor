@@ -1,0 +1,79 @@
+@page "/register"
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+            Create Account
+        </MudText>
+
+        <EditForm Model="@model" OnValidSubmit="HandleRegisterAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <MudTextField @bind-Value="model.UserName"
+                         Label="Username"
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true"
+                         AutoFocus="true" />
+
+            <MudTextField @bind-Value="model.Email"
+                         Label="Email"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Email"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true" />
+
+            <MudTextField @bind-Value="model.Password"
+                         Label="Password"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Password"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true"
+                         HelperText="Minimum 8 characters" />
+
+            <MudTextField @bind-Value="model.ConfirmPassword"
+                         Label="Confirm Password"
+                         Variant="Variant.Outlined"
+                         InputType="InputType.Password"
+                         Required="true"
+                         Margin="Margin.Normal"
+                         FullWidth="true" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-4">
+                    @errorMessage
+                </MudAlert>
+            }
+
+            <MudButton ButtonType="ButtonType.Submit"
+                      Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      FullWidth="true"
+                      Size="Size.Large"
+                      Class="mt-6"
+                      Disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <MudText>Creating account...</MudText>
+                }
+                else
+                {
+                    <MudText>Create Account</MudText>
+                }
+            </MudButton>
+        </EditForm>
+
+        <MudDivider Class="my-6" />
+
+        <MudStack Row="true" Justify="Justify.Center">
+            <MudText>Already have an account?</MudText>
+            <MudLink Href="/login">Login</MudLink>
+        </MudStack>
+    </MudPaper>
+</MudContainer>

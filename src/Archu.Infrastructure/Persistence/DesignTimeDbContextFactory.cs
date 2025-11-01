@@ -1,4 +1,5 @@
 using Archu.Application.Abstractions;
+using Archu.Infrastructure.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -28,16 +29,11 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
             })
             .Options;
 
-        // Minimal dummy services for design-time (tools don’t use them)
+        // Use the new DesignTimeCurrentUser for migrations
         var currentUser = new DesignTimeCurrentUser();
         var time = new SystemTimeProvider();
 
         return new ApplicationDbContext(opts, currentUser, time);
-    }
-
-    private sealed class DesignTimeCurrentUser : ICurrentUser
-    {
-        public string? UserId => "design-time";
     }
 
     private sealed class SystemTimeProvider : ITimeProvider

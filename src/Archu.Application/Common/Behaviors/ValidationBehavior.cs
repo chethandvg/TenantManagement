@@ -28,13 +28,14 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
     {
         if (!_validators.Any())
         {
-            return await next();
+            // RequestHandlerDelegate now flows cancellation tokens, so pass along the provided token.
+            return await next(cancellationToken).ConfigureAwait(false);
         }
 
         var context = new ValidationContext<TRequest>(request);
 
         var validationResults = await Task.WhenAll(
-            _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+            _validators.Select(v => v.ValidateAsync(context, cancellationToken))).ConfigureAwait(false);
 
         var failures = validationResults
             .Where(r => !r.IsValid)
@@ -50,6 +51,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
             throw new ValidationException(failures);
         }
 
-        return await next();
+        // Validation succeeded; continue executing the pipeline while preserving the cancellation token.
+        return await next(cancellationToken).ConfigureAwait(false);
     }
 }

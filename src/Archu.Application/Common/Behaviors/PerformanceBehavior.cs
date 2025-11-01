@@ -12,12 +12,10 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 {
     private readonly ILogger<PerformanceBehavior<TRequest, TResponse>> _logger;
 
-
     public PerformanceBehavior(ILogger<PerformanceBehavior<TRequest, TResponse>> logger)
     {
         _logger = logger;
     }
-
 
     public async Task<TResponse> Handle(
         TRequest request,
@@ -26,7 +24,8 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     {
         var timer = Stopwatch.StartNew();
 
-        var response = await next();
+        // Forward the cancellation token to downstream handlers to respect caller-requested cancellations.
+        var response = await next(cancellationToken).ConfigureAwait(false);
 
         timer.Stop();
 

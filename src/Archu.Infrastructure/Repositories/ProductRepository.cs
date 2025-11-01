@@ -22,10 +22,39 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = DbSet.AsNoTracking();
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(p => p.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
+    public async Task<IEnumerable<Product>> GetByOwnerIdAsync(Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsNoTracking()
+            .Where(p => p.OwnerId == ownerId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await DbSet
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+
+    public async Task<Product?> GetByIdAndOwnerAsync(Guid id, Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .FirstOrDefaultAsync(p => p.Id == id && p.OwnerId == ownerId, cancellationToken);
     }
 
     public Task<Product> AddAsync(Product product, CancellationToken cancellationToken = default)
@@ -38,7 +67,7 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
     {
         // ✅ Set the original RowVersion to enable concurrency detection
         SetOriginalRowVersion(product, originalRowVersion);
-        
+
         DbSet.Update(product);
         return Task.CompletedTask;
     }
@@ -55,5 +84,19 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
         return await DbSet
             .AsNoTracking()
             .AnyAsync(p => p.Id == id, cancellationToken);
+    }
+
+    public async Task<bool> ExistsAndIsOwnedByAsync(Guid id, Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsNoTracking()
+            .AnyAsync(p => p.Id == id && p.OwnerId == ownerId, cancellationToken);
+    }
+
+    public async Task<bool> IsOwnedByAsync(Guid resourceId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsNoTracking()
+            .AnyAsync(p => p.Id == resourceId && p.OwnerId == userId, cancellationToken);
     }
 }

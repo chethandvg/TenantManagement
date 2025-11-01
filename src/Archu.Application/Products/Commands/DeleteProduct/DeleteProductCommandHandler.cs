@@ -8,35 +8,38 @@ namespace Archu.Application.Products.Commands.DeleteProduct;
 /// <summary>
 /// Handles soft deletion of a product.
 /// </summary>
-public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, Result>
+public class DeleteProductCommandHandler : BaseCommandHandler, IRequestHandler<DeleteProductCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<DeleteProductCommandHandler> _logger;
 
     public DeleteProductCommandHandler(
         IUnitOfWork unitOfWork,
+        ICurrentUser currentUser,
         ILogger<DeleteProductCommandHandler> logger)
+        : base(currentUser, logger)
     {
         _unitOfWork = unitOfWork;
-        _logger = logger;
     }
 
     public async Task<Result> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Deleting product with ID: {ProductId}", request.Id);
+        // ✅ Validate user authentication (throws if not authenticated)
+        var userId = GetCurrentUserId("delete products");
+
+        Logger.LogInformation("User {UserId} deleting product with ID: {ProductId}", userId, request.Id);
 
         var product = await _unitOfWork.Products.GetByIdAsync(request.Id, cancellationToken);
         
         if (product is null)
         {
-            _logger.LogWarning("Product with ID {ProductId} not found", request.Id);
+            Logger.LogWarning("Product with ID {ProductId} not found", request.Id);
             return Result.Failure("Product not found");
         }
 
         await _unitOfWork.Products.DeleteAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Product with ID {ProductId} deleted successfully", request.Id);
+        Logger.LogInformation("Product with ID {ProductId} deleted successfully by user {UserId}", request.Id, userId);
         return Result.Success();
     }
 }

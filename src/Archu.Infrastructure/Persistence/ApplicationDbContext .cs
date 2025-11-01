@@ -1,6 +1,7 @@
-﻿using Archu.Application.Abstractions;
+using Archu.Application.Abstractions;
 using Archu.Domain.Abstractions;
 using Archu.Domain.Entities;
+using Archu.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Reflection;
@@ -21,8 +22,17 @@ public class ApplicationDbContext : DbContext
         _time = time;
     }
 
-    // DbSets go here
+    // Business DbSets
     public DbSet<Product> Products => Set<Product>();
+
+    // Identity DbSets
+    public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
+    public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+    
+    // Token DbSets for secure authentication flows
+    public DbSet<EmailConfirmationToken> EmailConfirmationTokens => Set<EmailConfirmationToken>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

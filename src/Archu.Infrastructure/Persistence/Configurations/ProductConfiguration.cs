@@ -1,4 +1,4 @@
-﻿using Archu.Domain.Entities;
+using Archu.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,8 +18,19 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         b.Property(x => x.Price)
             .HasPrecision(18, 2);
 
+        // Owner relationship
+        b.Property(x => x.OwnerId)
+            .IsRequired();
+
+        // Foreign key to Users table
+        b.HasOne<Archu.Domain.Entities.Identity.ApplicationUser>()
+            .WithMany()
+            .HasForeignKey(x => x.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
+
         // Indexes for read performance
         b.HasIndex(x => x.Name);
+        b.HasIndex(x => x.OwnerId); // Index for filtering by owner
 
         // Concurrency token is on BaseEntity.RowVersion via [Timestamp]
         b.Property(x => x.RowVersion).IsRowVersion();

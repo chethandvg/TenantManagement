@@ -1,5 +1,6 @@
 using Archu.Contracts.Common;
 using Archu.Contracts.Products;
+using Microsoft.Extensions.Logging;
 
 namespace Archu.ApiClient.Services;
 
@@ -12,12 +13,14 @@ public sealed class ProductsApiClient : ApiClientServiceBase, IProductsApiClient
     /// Initializes a new instance of the <see cref="ProductsApiClient"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client instance.</param>
-    public ProductsApiClient(HttpClient httpClient) : base(httpClient)
+    /// <param name="logger">The logger instance.</param>
+    public ProductsApiClient(HttpClient httpClient, ILogger<ProductsApiClient> logger) 
+        : base(httpClient, logger)
     {
     }
 
     /// <inheritdoc/>
-    protected override string BasePath => "api/products";
+    protected override string BasePath => "api/v1/products";
 
     /// <inheritdoc/>
     public Task<ApiResponse<PagedResult<ProductDto>>> GetProductsAsync(
