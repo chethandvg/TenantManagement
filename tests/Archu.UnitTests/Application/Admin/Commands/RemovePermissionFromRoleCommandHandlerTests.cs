@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading;
-using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Application.Admin.Commands.RemovePermissionFromRole;
 using Archu.Domain.Entities.Identity;
@@ -36,9 +33,16 @@ public class RemovePermissionFromRoleCommandHandlerTests
             .Setup(repo => repo.GetByIdAsync(roleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationRole { Id = roleId });
 
+        // Configure mock to return permissions based on input
         permissionRepositoryMock
             .Setup(repo => repo.GetByNormalizedNamesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[] { permission });
+            .ReturnsAsync((IEnumerable<string> names, CancellationToken _) =>
+            {
+                // Return the permission only if it's in the requested names
+                return names.Contains(permission.NormalizedName, StringComparer.Ordinal)
+                    ? new[] { permission }
+                    : Array.Empty<ApplicationPermission>();
+            });
 
         rolePermissionRepositoryMock
             .Setup(repo => repo.GetPermissionNamesByRoleIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))

@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading;
-using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Application.Admin.Commands.RemovePermissionFromUser;
 using Archu.Domain.Entities.Identity;
@@ -37,8 +34,16 @@ public class RemovePermissionFromUserCommandHandlerTests
             .ReturnsAsync(new ApplicationUser { Id = userId });
 
         permissionRepositoryMock
-            .Setup(repo => repo.GetByNormalizedNamesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.GetByNormalizedNamesAsync(
+                It.Is<IEnumerable<string>>(names => names.Contains(permission.NormalizedName)),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { permission });
+
+        permissionRepositoryMock
+            .Setup(repo => repo.GetByNormalizedNamesAsync(
+                It.Is<IEnumerable<string>>(names => !names.Any()),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ApplicationPermission>());
 
         userPermissionRepositoryMock
             .Setup(repo => repo.GetPermissionNamesByUserIdAsync(userId, It.IsAny<CancellationToken>()))
