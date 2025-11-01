@@ -65,7 +65,7 @@ public sealed class UserPermissionRepository : BaseRepository<UserPermission>, I
             .AsNoTracking()
             .Where(userPermission => userPermission.UserId == userId)
             .Select(userPermission => userPermission.Permission.NormalizedName)
-            .Distinct(StringComparer.Ordinal)
+            .Distinct()
             .ToListAsync(cancellationToken);
     }
 
