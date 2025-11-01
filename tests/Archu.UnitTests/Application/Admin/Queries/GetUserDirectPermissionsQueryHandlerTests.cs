@@ -4,6 +4,7 @@ using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Application.Admin.Queries.GetUserDirectPermissions;
 using Archu.Domain.Entities.Identity;
+using Archu.UnitTests.TestHelpers.Fixtures;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
