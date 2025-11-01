@@ -562,8 +562,58 @@ public class AuthenticationService : IAuthenticationService
             new(CustomClaimTypes.TwoFactorEnabled, user.TwoFactorEnabled.ToString())
         };
 
-        var permissionClaims = RolePermissionClaims
-            .GetPermissionClaimsForRoles(userRoles)
+        // ✅ Workflow comment: hydrate the JWT with dynamic permission assignments resolved from the database
+        // so that authorization policies respect runtime configuration instead of static lookup tables.
+        var roleIds = user.UserRoles?
+            .Select(ur => ur.RoleId)
+            .Where(roleId => roleId != Guid.Empty)
+            .Distinct()
+            .ToArray() ?? Array.Empty<Guid>();
+
+        IReadOnlyCollection<string> rolePermissionNames = Array.Empty<string>();
+
+        if (roleIds.Length > 0)
+        {
+            rolePermissionNames = await _unitOfWork.RolePermissions
+                .GetPermissionNamesByRoleIdsAsync(roleIds, cancellationToken);
+        }
+
+        var directPermissionNames = await _unitOfWork.UserPermissions
+            .GetPermissionNamesByUserIdAsync(user.Id, cancellationToken);
+
+        var normalizedPermissionNames = new HashSet<string>(StringComparer.Ordinal);
+        normalizedPermissionNames.UnionWith(rolePermissionNames);
+        normalizedPermissionNames.UnionWith(directPermissionNames);
+
+        var resolvedPermissionValues = new HashSet<string>(StringComparer.Ordinal);
+
+        if (normalizedPermissionNames.Count > 0)
+        {
+            var permissionEntities = await _unitOfWork.Permissions
+                .GetByNormalizedNamesAsync(normalizedPermissionNames, cancellationToken);
+
+            var permissionLookup = permissionEntities
+                .ToDictionary(permission => permission.NormalizedName, permission => permission.Name, StringComparer.Ordinal);
+
+            foreach (var normalizedName in normalizedPermissionNames)
+            {
+                if (permissionLookup.TryGetValue(normalizedName, out var permissionValue) &&
+                    !string.IsNullOrWhiteSpace(permissionValue))
+                {
+                    resolvedPermissionValues.Add(permissionValue);
+                }
+                else
+                {
+                    resolvedPermissionValues.Add(normalizedName.ToLowerInvariant());
+                }
+            }
+        }
+        else if (userRoles.Count > 0)
+        {
+            resolvedPermissionValues.UnionWith(RolePermissionClaims.GetPermissionClaimsForRoles(userRoles));
+        }
+
+        var permissionClaims = resolvedPermissionValues
             .Select(permission => new Claim(CustomClaimTypes.Permission, permission));
 
         additionalClaims.AddRange(permissionClaims);
