@@ -85,6 +85,12 @@ public class ApplicationUser : BaseEntity
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
     /// <summary>
+    /// Navigation property for permissions directly assigned to the user.
+    /// Supports fine-grained authorization scenarios.
+    /// </summary>
+    public ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
+
+    /// <summary>
     /// Checks if the user is currently locked out.
     /// </summary>
     public bool IsLockedOut => IsLockedOutAt(DateTime.UtcNow);
