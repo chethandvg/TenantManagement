@@ -30,7 +30,10 @@ public sealed class RolePermissionRepository : BaseRepository<RolePermission>, I
         IEnumerable<Guid> roleIds,
         CancellationToken cancellationToken = default)
     {
-        var roleIdList = roleIds.ToList();
+        var roleIdList = roleIds
+            .Where(roleId => roleId != Guid.Empty)
+            .Distinct()
+            .ToList();
 
         if (roleIdList.Count == 0)
         {
@@ -41,6 +44,110 @@ public sealed class RolePermissionRepository : BaseRepository<RolePermission>, I
             .Where(rp => roleIdList.Contains(rp.RoleId))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Retrieves the normalized permission names assigned to any of the provided roles.
+    /// </summary>
+    /// <param name="roleIds">Role identifiers used to filter permission assignments.</param>
+    /// <param name="cancellationToken">Token that propagates notification that operations should be cancelled.</param>
+    /// <returns>A read-only collection of normalized permission names.</returns>
+    public async Task<IReadOnlyCollection<string>> GetPermissionNamesByRoleIdsAsync(
+        IEnumerable<Guid> roleIds,
+        CancellationToken cancellationToken = default)
+    {
+        var roleIdList = roleIds
+            .Where(roleId => roleId != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (roleIdList.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        return await DbSet
+            .AsNoTracking()
+            .Where(rolePermission => roleIdList.Contains(rolePermission.RoleId))
+            .Select(rolePermission => rolePermission.Permission.NormalizedName)
+            .Distinct(StringComparer.Ordinal)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Links the provided permissions to the specified role while avoiding duplicate assignments.
+    /// </summary>
+    /// <param name="roleId">The role receiving new permission assignments.</param>
+    /// <param name="permissionIds">Permission identifiers to associate with the role.</param>
+    /// <param name="cancellationToken">Token that propagates notification that operations should be cancelled.</param>
+    public async Task LinkPermissionsAsync(
+        Guid roleId,
+        IEnumerable<Guid> permissionIds,
+        CancellationToken cancellationToken = default)
+    {
+        var permissionIdList = permissionIds
+            .Where(permissionId => permissionId != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (permissionIdList.Count == 0)
+        {
+            return;
+        }
+
+        var existingPermissionIds = await DbSet
+            .Where(rolePermission => rolePermission.RoleId == roleId && permissionIdList.Contains(rolePermission.PermissionId))
+            .Select(rolePermission => rolePermission.PermissionId)
+            .ToListAsync(cancellationToken);
+
+        var assignmentsToAdd = permissionIdList
+            .Except(existingPermissionIds)
+            .Select(permissionId => new RolePermission
+            {
+                RoleId = roleId,
+                PermissionId = permissionId
+            })
+            .ToList();
+
+        if (assignmentsToAdd.Count == 0)
+        {
+            return;
+        }
+
+        await DbSet.AddRangeAsync(assignmentsToAdd, cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes existing permission assignments for the provided role.
+    /// </summary>
+    /// <param name="roleId">The role losing permission assignments.</param>
+    /// <param name="permissionIds">Permission identifiers to unlink from the role.</param>
+    /// <param name="cancellationToken">Token that propagates notification that operations should be cancelled.</param>
+    public async Task UnlinkPermissionsAsync(
+        Guid roleId,
+        IEnumerable<Guid> permissionIds,
+        CancellationToken cancellationToken = default)
+    {
+        var permissionIdList = permissionIds
+            .Where(permissionId => permissionId != Guid.Empty)
+            .Distinct()
+            .ToList();
+
+        if (permissionIdList.Count == 0)
+        {
+            return;
+        }
+
+        var assignmentsToRemove = await DbSet
+            .Where(rolePermission => rolePermission.RoleId == roleId && permissionIdList.Contains(rolePermission.PermissionId))
+            .ToListAsync(cancellationToken);
+
+        if (assignmentsToRemove.Count == 0)
+        {
+            return;
+        }
+
+        DbSet.RemoveRange(assignmentsToRemove);
     }
 
     /// <summary>
