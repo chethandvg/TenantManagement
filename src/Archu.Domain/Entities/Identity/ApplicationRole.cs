@@ -27,4 +27,10 @@ public class ApplicationRole : BaseEntity
     /// Navigation property for users in this role (many-to-many relationship).
     /// </summary>
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
+    /// <summary>
+    /// Navigation property for permissions assigned to this role.
+    /// Enables role-based permission aggregation.
+    /// </summary>
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
 }
