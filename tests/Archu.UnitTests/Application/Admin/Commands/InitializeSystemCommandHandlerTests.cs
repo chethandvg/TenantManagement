@@ -220,7 +220,9 @@ public class InitializeSystemCommandHandlerTests
             RoleNames.SuperAdmin
         });
 
-        var roleIdsByName = roleStore.ToDictionary(role => role.Name, role => role.Id);
+        var roleIdsByName = roleStore
+            .Where(role => role.Name != null)
+            .ToDictionary(role => role.Name, role => role.Id);
         var permissionNamesById = permissionStore.ToDictionary(permission => permission.Id, permission => permission.Name);
 
         rolePermissionAssignments.Should().NotBeEmpty();
