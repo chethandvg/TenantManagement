@@ -37,6 +37,7 @@
     <ProjectReference Include="..\..\src\Archu.Application\Archu.Application.csproj" />
     <ProjectReference Include="..\..\src\Archu.Contracts\Archu.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Archu.Domain\Archu.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Archu.Infrastructure\Archu.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

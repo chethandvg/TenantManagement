@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
@@ -540,11 +543,22 @@ public class AuthenticationService : IAuthenticationService
         // ✅ FIX #5: Handle navigation properties correctly
         // User must be loaded with .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
         // from repository to ensure navigation properties are available
-        var userRoles = user.UserRoles?
-            .Where(ur => ur.Role != null)
-            .Select(ur => ur.Role!.Name)
-            .Where(name => !string.IsNullOrEmpty(name))
-            .ToList() ?? new List<string>();
+        // ✅ Workflow comment: capture role metadata so dynamic database assignments can be
+        // reconciled with static defaults when partial seeding occurs.
+        var userRoleEntries = user.UserRoles?
+            .Where(ur => ur.Role != null && !string.IsNullOrWhiteSpace(ur.Role.Name))
+            .Select(ur => (ur.RoleId, RoleName: ur.Role!.Name!))
+            .ToList() ?? new List<(Guid RoleId, string RoleName)>();
+
+        var userRoles = userRoleEntries
+            .Select(entry => entry.RoleName)
+            .ToList();
+
+        var roleIdToRoleName = userRoleEntries
+            .GroupBy(entry => entry.RoleId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First().RoleName);
 
         // If no roles loaded, it might mean user was not properly included
         if (user.UserRoles != null && user.UserRoles.Any() && !userRoles.Any())
@@ -562,8 +576,87 @@ public class AuthenticationService : IAuthenticationService
             new(CustomClaimTypes.TwoFactorEnabled, user.TwoFactorEnabled.ToString())
         };
 
-        var permissionClaims = RolePermissionClaims
-            .GetPermissionClaimsForRoles(userRoles)
+        // ✅ Workflow comment: hydrate the JWT with dynamic permission assignments resolved from the database
+        // so that authorization policies respect runtime configuration instead of static lookup tables.
+        var roleIds = roleIdToRoleName.Keys.ToArray();
+
+        IReadOnlyCollection<string> rolePermissionNames = Array.Empty<string>();
+        HashSet<Guid> rolesWithDatabaseAssignments = new();
+
+        if (roleIds.Length > 0)
+        {
+            var roleAssignments = await _unitOfWork.RolePermissions
+                .GetByRoleIdsAsync(roleIds, cancellationToken);
+
+            rolesWithDatabaseAssignments = roleAssignments
+                .Select(rolePermission => rolePermission.RoleId)
+                .Where(roleId => roleId != Guid.Empty)
+                .ToHashSet();
+
+            rolePermissionNames = await _unitOfWork.RolePermissions
+                .GetPermissionNamesByRoleIdsAsync(roleIds, cancellationToken);
+        }
+
+        var directPermissionNames = await _unitOfWork.UserPermissions
+            .GetPermissionNamesByUserIdAsync(user.Id, cancellationToken);
+
+        var normalizedPermissionNames = new HashSet<string>(StringComparer.Ordinal);
+        normalizedPermissionNames.UnionWith(rolePermissionNames);
+        normalizedPermissionNames.UnionWith(directPermissionNames);
+
+        var resolvedPermissionValues = new HashSet<string>(StringComparer.Ordinal);
+
+        if (normalizedPermissionNames.Count > 0)
+        {
+            var permissionEntities = await _unitOfWork.Permissions
+                .GetByNormalizedNamesAsync(normalizedPermissionNames, cancellationToken);
+
+            var permissionLookup = permissionEntities
+                .ToDictionary(permission => permission.NormalizedName, permission => permission.Name, StringComparer.Ordinal);
+
+            foreach (var normalizedName in normalizedPermissionNames)
+            {
+                if (permissionLookup.TryGetValue(normalizedName, out var permissionValue))
+                {
+                    if (!string.IsNullOrWhiteSpace(permissionValue))
+                    {
+                        resolvedPermissionValues.Add(permissionValue);
+                    }
+                    else
+                    {
+                        _logger.LogError(
+                            "Permission entity for normalized name '{NormalizedPermission}' was found, but its Name value is null or whitespace. Check permission seeding and data integrity.",
+                            normalizedName);
+
+                        throw new InvalidOperationException(
+                            $"Permission entity for normalized name '{normalizedName}' has an invalid Name value (null or whitespace).");
+                    }
+                }
+                else
+                {
+                    _logger.LogError(
+                        "Normalized permission '{NormalizedPermission}' was returned from assignments but the permission entity was not found. Ensure permission data is seeded before issuing tokens.",
+                        normalizedName);
+
+                    throw new InvalidOperationException(
+                        $"Permission with normalized name '{normalizedName}' could not be resolved.");
+                }
+            }
+        }
+
+        // ✅ Workflow comment: fall back to static role claims only for roles lacking database assignments
+        // so partially configured tenants retain legacy permissions until seeding is complete.
+        foreach (var (roleId, roleName) in roleIdToRoleName)
+        {
+            if (rolesWithDatabaseAssignments.Contains(roleId))
+            {
+                continue;
+            }
+
+            resolvedPermissionValues.UnionWith(RolePermissionClaims.GetPermissionClaimsForRole(roleName));
+        }
+
+        var permissionClaims = resolvedPermissionValues
             .Select(permission => new Claim(CustomClaimTypes.Permission, permission));
 
         additionalClaims.AddRange(permissionClaims);
