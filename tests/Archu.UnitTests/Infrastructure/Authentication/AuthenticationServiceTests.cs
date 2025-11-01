@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Abstractions.Repositories;
@@ -143,10 +147,79 @@ public sealed class AuthenticationServiceTests
         });
     }
 
-    private static ApplicationUser CreateUserWithRole(string roleName)
+    [Fact]
+    public async Task LoginAsync_WhenRoleMissingDatabaseAssignments_UsesFallbackClaimsForThatRole()
     {
-        var roleId = Guid.NewGuid();
-        return new ApplicationUser
+        // Arrange
+        var user = CreateUserWithRoles(RoleNames.Manager, RoleNames.User);
+        var managerRoleId = user.UserRoles
+            .First(ur => ur.Role!.Name == RoleNames.Manager)
+            .RoleId;
+
+        var permissionEntities = new[]
+        {
+            new ApplicationPermission
+            {
+                Name = PermissionNames.Users.Manage,
+                NormalizedName = PermissionNames.Users.Manage.ToUpperInvariant()
+            }
+        };
+
+        var (service, getCapturedClaims) = CreateService(
+            user,
+            rolePermissionNames: new[] { PermissionNames.Users.Manage.ToUpperInvariant() },
+            userPermissionNames: Array.Empty<string>(),
+            permissionEntities,
+            rolesWithDatabaseAssignments: new[] { managerRoleId });
+
+        // Act
+        var result = await service.LoginAsync(user.Email, "password", CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        var permissionClaims = getCapturedClaims()
+            .Where(claim => claim.Type == CustomClaimTypes.Permission)
+            .Select(claim => claim.Value)
+            .ToList();
+
+        permissionClaims.Should().BeEquivalentTo(new[]
+        {
+            PermissionNames.Users.Manage,
+            PermissionNames.Products.Read,
+            PermissionNames.Products.Create,
+            PermissionNames.Products.Update
+        });
+    }
+
+    [Fact]
+    public async Task LoginAsync_WhenPermissionDefinitionMissing_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var user = CreateUserWithRole(RoleNames.Manager);
+        var missingPermission = PermissionNames.Users.Manage.ToUpperInvariant();
+
+        var (service, _) = CreateService(
+            user,
+            rolePermissionNames: new[] { missingPermission },
+            userPermissionNames: Array.Empty<string>(),
+            permissionEntities: Array.Empty<ApplicationPermission>());
+
+        // Act
+        var act = async () => await service.LoginAsync(user.Email, "password", CancellationToken.None);
+
+        // Assert
+        await act
+            .Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage($"Permission with normalized name '{missingPermission}' could not be resolved.");
+    }
+
+    private static ApplicationUser CreateUserWithRole(string roleName) => CreateUserWithRoles(roleName);
+
+    private static ApplicationUser CreateUserWithRoles(params string[] roleNames)
+    {
+        var user = new ApplicationUser
         {
             Id = Guid.NewGuid(),
             Email = "user@example.com",
@@ -156,20 +229,25 @@ public sealed class AuthenticationServiceTests
             EmailConfirmed = true,
             TwoFactorEnabled = false,
             LockoutEnabled = false,
-            UserRoles =
-            {
-                new UserRole
-                {
-                    RoleId = roleId,
-                    Role = new ApplicationRole
-                    {
-                        Id = roleId,
-                        Name = roleName,
-                        NormalizedName = roleName.ToUpperInvariant()
-                    }
-                }
-            }
+            UserRoles = new List<UserRole>()
         };
+
+        foreach (var roleName in roleNames)
+        {
+            var roleId = Guid.NewGuid();
+            user.UserRoles.Add(new UserRole
+            {
+                RoleId = roleId,
+                Role = new ApplicationRole
+                {
+                    Id = roleId,
+                    Name = roleName,
+                    NormalizedName = roleName.ToUpperInvariant()
+                }
+            });
+        }
+
+        return user;
     }
 
     private static ApplicationUser CreateUserWithoutRoles()
@@ -192,13 +270,18 @@ public sealed class AuthenticationServiceTests
         ApplicationUser user,
         IEnumerable<string> rolePermissionNames,
         IEnumerable<string> userPermissionNames,
-        IEnumerable<ApplicationPermission> permissionEntities)
+        IEnumerable<ApplicationPermission> permissionEntities,
+        IEnumerable<Guid>? rolesWithDatabaseAssignments = null)
     {
         var unitOfWorkMock = new Mock<IUnitOfWork>();
         var userRepositoryMock = new Mock<IUserRepository>();
         var rolePermissionRepositoryMock = new Mock<IRolePermissionRepository>();
         var userPermissionRepositoryMock = new Mock<IUserPermissionRepository>();
         var permissionRepositoryMock = new Mock<IPermissionRepository>();
+
+        var normalizedRolePermissionNames = rolePermissionNames.ToArray();
+        var normalizedUserPermissionNames = userPermissionNames.ToArray();
+        var permissionEntityArray = permissionEntities.ToArray();
         var passwordHasherMock = new Mock<IPasswordHasher>();
         var jwtTokenServiceMock = new Mock<IJwtTokenService>();
         var timeProviderMock = new Mock<ITimeProvider>();
@@ -219,17 +302,40 @@ public sealed class AuthenticationServiceTests
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
+        var configuredRoleIds = rolesWithDatabaseAssignments?.ToArray()
+            ?? (normalizedRolePermissionNames.Any()
+                ? user.UserRoles.Select(ur => ur.RoleId).ToArray()
+                : Array.Empty<Guid>());
+
+        rolePermissionRepositoryMock
+            .Setup(repo => repo.GetByRoleIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IEnumerable<Guid> requestedRoleIds, CancellationToken _) =>
+            {
+                var requestedSet = requestedRoleIds?
+                    .Where(roleId => roleId != Guid.Empty)
+                    .ToHashSet() ?? new HashSet<Guid>();
+
+                return configuredRoleIds
+                    .Where(requestedSet.Contains)
+                    .Select(roleId => new RolePermission
+                    {
+                        RoleId = roleId,
+                        PermissionId = Guid.NewGuid()
+                    })
+                    .ToArray();
+            });
+
         rolePermissionRepositoryMock
             .Setup(repo => repo.GetPermissionNamesByRoleIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(rolePermissionNames.ToArray());
+            .ReturnsAsync(normalizedRolePermissionNames);
 
         userPermissionRepositoryMock
             .Setup(repo => repo.GetPermissionNamesByUserIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(userPermissionNames.ToArray());
+            .ReturnsAsync(normalizedUserPermissionNames);
 
         permissionRepositoryMock
             .Setup(repo => repo.GetByNormalizedNamesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(permissionEntities.ToArray());
+            .ReturnsAsync(permissionEntityArray);
 
         passwordHasherMock
             .Setup(hasher => hasher.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()))
