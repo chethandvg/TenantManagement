@@ -34,12 +34,18 @@ public class InitializeSystemCommandHandlerTests
         var timeProviderMock = new Mock<ITimeProvider>();
         var userRepositoryMock = new Mock<IUserRepository>();
         var roleRepositoryMock = new Mock<IRoleRepository>();
+        var permissionRepositoryMock = new Mock<IPermissionRepository>();
+        var rolePermissionRepositoryMock = new Mock<IRolePermissionRepository>();
         var userRoleRepositoryMock = new Mock<IUserRoleRepository>();
         var hashedPassword = $"hashed-{password}";
         var superAdminRoleId = Guid.NewGuid();
         var createdRoles = new List<ApplicationRole>();
+        var roleStore = new List<ApplicationRole>();
+        var permissionStore = new List<ApplicationPermission>();
+        var permissionsAdded = new List<ApplicationPermission>();
         var saveTokens = new List<CancellationToken>();
         var userRoleAssignments = new List<UserRole>();
+        var rolePermissionAssignments = new List<RolePermission>();
 
         passwordHasherMock.Setup(hasher => hasher.HashPassword(password)).Returns(hashedPassword);
         timeProviderMock.SetupGet(provider => provider.UtcNow).Returns(utcNow);
@@ -48,6 +54,8 @@ public class InitializeSystemCommandHandlerTests
 
         fixture.MockUnitOfWork.Setup(unit => unit.Users).Returns(userRepositoryMock.Object);
         fixture.MockUnitOfWork.Setup(unit => unit.Roles).Returns(roleRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.Permissions).Returns(permissionRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.RolePermissions).Returns(rolePermissionRepositoryMock.Object);
         fixture.MockUnitOfWork.Setup(unit => unit.UserRoles).Returns(userRoleRepositoryMock.Object);
 
         using var cancellationTokenSource = new CancellationTokenSource();
@@ -89,22 +97,56 @@ public class InitializeSystemCommandHandlerTests
         roleRepositoryMock
             .Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
             .Callback<CancellationToken>(token => capturedGetAllRolesToken = token)
-            .ReturnsAsync(Array.Empty<ApplicationRole>());
+            .ReturnsAsync((CancellationToken _) => roleStore.ToList());
 
         roleRepositoryMock
             .Setup(repo => repo.AddAsync(It.IsAny<ApplicationRole>(), It.IsAny<CancellationToken>()))
             .Callback<ApplicationRole, CancellationToken>((role, token) =>
             {
                 token.Should().Be(cancellationTokenSource.Token);
+                if (role.Name == RoleNames.SuperAdmin)
+                {
+                    role.Id = superAdminRoleId;
+                }
                 createdRoles.Add(role);
+                roleStore.Add(role);
             })
             .ReturnsAsync((ApplicationRole role, CancellationToken _) => role);
 
         CancellationToken capturedGetRoleByNameToken = default;
         roleRepositoryMock
-            .Setup(repo => repo.GetByNameAsync(RoleNames.SuperAdmin, It.IsAny<CancellationToken>()))
+            .Setup(repo => repo.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, CancellationToken>((_, token) => capturedGetRoleByNameToken = token)
-            .ReturnsAsync(new ApplicationRole { Id = superAdminRoleId, Name = RoleNames.SuperAdmin });
+            .ReturnsAsync((string roleName, CancellationToken _) =>
+                roleStore.FirstOrDefault(role => role.NormalizedName == roleName.ToUpperInvariant()));
+
+        permissionRepositoryMock
+            .Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CancellationToken _) => permissionStore.ToList());
+
+        permissionRepositoryMock
+            .Setup(repo => repo.AddRangeAsync(It.IsAny<IEnumerable<ApplicationPermission>>(), It.IsAny<CancellationToken>()))
+            .Callback<IEnumerable<ApplicationPermission>, CancellationToken>((permissions, token) =>
+            {
+                token.Should().Be(cancellationTokenSource.Token);
+                var permissionList = permissions.ToList();
+                permissionsAdded.AddRange(permissionList);
+                permissionStore.AddRange(permissionList);
+            })
+            .Returns(Task.CompletedTask);
+
+        rolePermissionRepositoryMock
+            .Setup(repo => repo.GetByRoleIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<RolePermission>());
+
+        rolePermissionRepositoryMock
+            .Setup(repo => repo.AddRangeAsync(It.IsAny<IEnumerable<RolePermission>>(), It.IsAny<CancellationToken>()))
+            .Callback<IEnumerable<RolePermission>, CancellationToken>((assignments, token) =>
+            {
+                token.Should().Be(cancellationTokenSource.Token);
+                rolePermissionAssignments.AddRange(assignments);
+            })
+            .Returns(Task.CompletedTask);
 
         CancellationToken capturedUserNameExistsToken = default;
         userRepositoryMock
@@ -164,6 +206,10 @@ public class InitializeSystemCommandHandlerTests
         result.Value.UserId.Should().Be(userId);
         result.Value.Message.Should().Contain("System initialized successfully");
 
+        permissionsAdded.Select(permission => permission.Name)
+            .Should()
+            .BeEquivalentTo(PermissionNames.GetAllPermissions());
+
         createdRoles.Should().HaveCount(5);
         createdRoles.Select(role => role.Name).Should().BeEquivalentTo(new[]
         {
@@ -173,6 +219,17 @@ public class InitializeSystemCommandHandlerTests
             RoleNames.Administrator,
             RoleNames.SuperAdmin
         });
+
+        var roleIdsByName = roleStore.ToDictionary(role => role.Name, role => role.Id);
+        var permissionNamesById = permissionStore.ToDictionary(permission => permission.Id, permission => permission.Name);
+
+        rolePermissionAssignments.Should().NotBeEmpty();
+        var superAdminPermissionNames = rolePermissionAssignments
+            .Where(assignment => assignment.RoleId == roleIdsByName[RoleNames.SuperAdmin])
+            .Select(assignment => permissionNamesById[assignment.PermissionId])
+            .ToList();
+
+        superAdminPermissionNames.Should().Contain(PermissionNames.Roles.Manage);
 
         userRoleAssignments.Should().HaveCount(1);
         userRoleAssignments[0].UserId.Should().Be(userId);
@@ -262,6 +319,8 @@ public class InitializeSystemCommandHandlerTests
         var timeProviderMock = new Mock<ITimeProvider>();
         var userRepositoryMock = new Mock<IUserRepository>();
         var roleRepositoryMock = new Mock<IRoleRepository>();
+        var permissionRepositoryMock = new Mock<IPermissionRepository>();
+        var rolePermissionRepositoryMock = new Mock<IRolePermissionRepository>();
         var userRoleRepositoryMock = new Mock<IUserRoleRepository>();
         var exception = new InvalidOperationException("boom");
 
@@ -271,6 +330,8 @@ public class InitializeSystemCommandHandlerTests
 
         fixture.MockUnitOfWork.Setup(unit => unit.Users).Returns(userRepositoryMock.Object);
         fixture.MockUnitOfWork.Setup(unit => unit.Roles).Returns(roleRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.Permissions).Returns(permissionRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.RolePermissions).Returns(rolePermissionRepositoryMock.Object);
         fixture.MockUnitOfWork.Setup(unit => unit.UserRoles).Returns(userRoleRepositoryMock.Object);
 
         userRepositoryMock
@@ -291,13 +352,39 @@ public class InitializeSystemCommandHandlerTests
             .Callback<CancellationToken>(token => capturedRollbackToken = token)
             .Returns(Task.CompletedTask);
 
+        var roleStore = new List<ApplicationRole>();
         roleRepositoryMock
             .Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<ApplicationRole>());
+            .ReturnsAsync((CancellationToken _) => roleStore.ToList());
 
         roleRepositoryMock
             .Setup(repo => repo.AddAsync(It.IsAny<ApplicationRole>(), It.IsAny<CancellationToken>()))
+            .Callback<ApplicationRole, CancellationToken>((role, _) => roleStore.Add(role))
             .ReturnsAsync((ApplicationRole role, CancellationToken _) => role);
+
+        roleRepositoryMock
+            .Setup(repo => repo.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string roleName, CancellationToken _) =>
+                roleStore.FirstOrDefault(role => role.NormalizedName == roleName.ToUpperInvariant()));
+
+        var permissionStore = new List<ApplicationPermission>();
+        permissionRepositoryMock
+            .Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CancellationToken _) => permissionStore.ToList());
+
+        permissionRepositoryMock
+            .Setup(repo => repo.AddRangeAsync(It.IsAny<IEnumerable<ApplicationPermission>>(), It.IsAny<CancellationToken>()))
+            .Callback<IEnumerable<ApplicationPermission>, CancellationToken>((permissions, _) =>
+                permissionStore.AddRange(permissions))
+            .Returns(Task.CompletedTask);
+
+        rolePermissionRepositoryMock
+            .Setup(repo => repo.GetByRoleIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<RolePermission>());
+
+        rolePermissionRepositoryMock
+            .Setup(repo => repo.AddRangeAsync(It.IsAny<IEnumerable<RolePermission>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         fixture.MockUnitOfWork
             .Setup(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()))

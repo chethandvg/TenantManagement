@@ -23,6 +23,16 @@ public interface IUnitOfWork : IDisposable
     IRoleRepository Roles { get; }
 
     /// <summary>
+    /// Gets the permission repository.
+    /// </summary>
+    IPermissionRepository Permissions { get; }
+
+    /// <summary>
+    /// Gets the role-permission repository.
+    /// </summary>
+    IRolePermissionRepository RolePermissions { get; }
+
+    /// <summary>
     /// Gets the user-role repository.
     /// </summary>
     IUserRoleRepository UserRoles { get; }

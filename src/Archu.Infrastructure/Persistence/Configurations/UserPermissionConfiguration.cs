@@ -19,11 +19,11 @@ public sealed class UserPermissionConfiguration : IEntityTypeConfiguration<UserP
     {
         builder.ToTable("UserPermissions");
 
-        builder.HasKey(up => up.Id);
+        builder.HasKey(up => new { up.UserId, up.PermissionId });
 
-        builder.HasIndex(up => new { up.UserId, up.PermissionId })
+        builder.HasIndex(up => up.Id)
             .IsUnique()
-            .HasDatabaseName("IX_UserPermissions_UserId_PermissionId");
+            .HasDatabaseName("IX_UserPermissions_Id");
 
         builder.HasOne(up => up.User)
             .WithMany(u => u.UserPermissions)

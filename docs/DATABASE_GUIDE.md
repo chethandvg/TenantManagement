@@ -218,6 +218,26 @@ cd src/Archu.Infrastructure
 dotnet ef migrations add MigrationName --startup-project ../Archu.Api
 ```
 
+#### Regenerating Permission Tables
+
+When resetting the database and removing prior migrations, recreate the permissions schema and tables with:
+
+```bash
+cd src/Archu.Infrastructure
+dotnet ef migrations add AddPermissionsSchema \
+  --context ApplicationDbContext \
+  --startup-project ../Archu.Api \
+  --output-dir Persistence/Migrations
+
+dotnet ef database update \
+  --context ApplicationDbContext \
+  --startup-project ../Archu.Api
+```
+
+The migration will create the `Permissions`, `RolePermissions`, and `UserPermissions` tables with their configured keys,
+unique constraints, and foreign keys. Run the update command against your development database after deleting any
+previous databases to ensure the initialization workflow can seed the new tables successfully.
+
 ### Applying Migrations
 
 **Development** (automatic on startup):

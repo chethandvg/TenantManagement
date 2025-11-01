@@ -18,6 +18,8 @@ public class UnitOfWork : IUnitOfWork
     private IProductRepository? _productRepository;
     private IUserRepository? _userRepository;
     private IRoleRepository? _roleRepository;
+    private IPermissionRepository? _permissionRepository;
+    private IRolePermissionRepository? _rolePermissionRepository;
     private IUserRoleRepository? _userRoleRepository;
     private IEmailConfirmationTokenRepository? _emailConfirmationTokenRepository;
     private IPasswordResetTokenRepository? _passwordResetTokenRepository;
@@ -35,6 +37,9 @@ public class UnitOfWork : IUnitOfWork
     public IProductRepository Products => _productRepository ??= new ProductRepository(_context);
     public IUserRepository Users => _userRepository ??= new UserRepository(_context);
     public IRoleRepository Roles => _roleRepository ??= new RoleRepository(_context);
+    public IPermissionRepository Permissions => _permissionRepository ??= new PermissionRepository(_context);
+    public IRolePermissionRepository RolePermissions =>
+        _rolePermissionRepository ??= new RolePermissionRepository(_context);
     public IUserRoleRepository UserRoles => _userRoleRepository ??= new UserRoleRepository(_context);
     public IEmailConfirmationTokenRepository EmailConfirmationTokens =>
         _emailConfirmationTokenRepository ??= new EmailConfirmationTokenRepository(

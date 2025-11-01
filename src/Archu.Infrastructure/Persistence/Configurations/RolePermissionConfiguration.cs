@@ -19,11 +19,11 @@ public sealed class RolePermissionConfiguration : IEntityTypeConfiguration<RoleP
     {
         builder.ToTable("RolePermissions");
 
-        builder.HasKey(rp => rp.Id);
+        builder.HasKey(rp => new { rp.RoleId, rp.PermissionId });
 
-        builder.HasIndex(rp => new { rp.RoleId, rp.PermissionId })
+        builder.HasIndex(rp => rp.Id)
             .IsUnique()
-            .HasDatabaseName("IX_RolePermissions_RoleId_PermissionId");
+            .HasDatabaseName("IX_RolePermissions_Id");
 
         builder.HasOne(rp => rp.Role)
             .WithMany(r => r.RolePermissions)
