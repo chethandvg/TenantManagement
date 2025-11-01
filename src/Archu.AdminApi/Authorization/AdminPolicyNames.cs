@@ -112,6 +112,87 @@ public static class AdminPolicyNames
     }
 
     /// <summary>
+    /// Role permission policies.
+    /// Controls assignment and removal of permissions from roles.
+    /// </summary>
+    public static class RolePermissions
+    {
+        /// <summary>
+        /// Policy for viewing role permissions.
+        /// Required Roles: SuperAdmin, Administrator, Manager
+        /// </summary>
+        public const string View = "Admin.RolePermissions.View";
+
+        /// <summary>
+        /// Policy for assigning permissions to roles.
+        /// Required Roles: SuperAdmin
+        /// </summary>
+        public const string Assign = "Admin.RolePermissions.Assign";
+
+        /// <summary>
+        /// Policy for removing permissions from roles.
+        /// Required Roles: SuperAdmin
+        /// </summary>
+        public const string Remove = "Admin.RolePermissions.Remove";
+
+        /// <summary>
+        /// Policy for managing all role permission operations.
+        /// Required Roles: SuperAdmin
+        /// </summary>
+        public const string Manage = "Admin.RolePermissions.Manage";
+    }
+
+    /// <summary>
+    /// User permission policies.
+    /// Controls direct permission assignments to users.
+    /// </summary>
+    public static class UserPermissions
+    {
+        /// <summary>
+        /// Policy for viewing direct user permissions.
+        /// Required Roles: SuperAdmin, Administrator, Manager
+        /// </summary>
+        public const string ViewDirect = "Admin.UserPermissions.ViewDirect";
+
+        /// <summary>
+        /// Policy for viewing effective user permissions.
+        /// Required Roles: SuperAdmin, Administrator, Manager
+        /// </summary>
+        public const string ViewEffective = "Admin.UserPermissions.ViewEffective";
+
+        /// <summary>
+        /// Policy for assigning permissions directly to users.
+        /// Required Roles: SuperAdmin
+        /// </summary>
+        public const string Assign = "Admin.UserPermissions.Assign";
+
+        /// <summary>
+        /// Policy for removing permissions directly from users.
+        /// Required Roles: SuperAdmin
+        /// </summary>
+        public const string Remove = "Admin.UserPermissions.Remove";
+
+        /// <summary>
+        /// Policy for managing all user permission operations.
+        /// Required Roles: SuperAdmin
+        /// </summary>
+        public const string Manage = "Admin.UserPermissions.Manage";
+    }
+
+    /// <summary>
+    /// Permission catalog policies.
+    /// Controls read-only access to the permission list.
+    /// </summary>
+    public static class Permissions
+    {
+        /// <summary>
+        /// Policy for viewing the permission catalog.
+        /// Required Roles: SuperAdmin, Administrator, Manager
+        /// </summary>
+        public const string View = "Admin.Permissions.View";
+    }
+
+    /// <summary>
     /// Base admin access policy.
     /// Minimum requirement for accessing any admin endpoint.
     /// </summary>

@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Linq;
 using Archu.Application.Abstractions;
 using Archu.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -73,7 +75,7 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
             services.RemoveAll<ICurrentUser>();
             services.RemoveAll<ITimeProvider>();
             
-            services.AddSingleton<ICurrentUser, TestCurrentUser>();
+            services.AddScoped<ICurrentUser, TestCurrentUser>();
             services.AddSingleton<ITimeProvider, TestTimeProvider>();
 
             // Add test database
@@ -195,11 +197,119 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
     /// </summary>
     private sealed class TestCurrentUser : ICurrentUser
     {
-        public string? UserId => "test-system-user";
-        public bool IsAuthenticated => false;
-        public bool IsInRole(string role) => false;
-        public bool HasAnyRole(params string[] roles) => false;
-        public IEnumerable<string> GetRoles() => Enumerable.Empty<string>();
+        private static readonly string[] RoleClaimTypes =
+        {
+            ClaimTypes.Role,
+            "role",
+            "roles",
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        };
+
+        private static readonly string[] UserIdClaimTypes =
+        {
+            ClaimTypes.NameIdentifier,
+            "sub",
+            "oid",
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+        };
+
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        /// <summary>
+        /// Creates a test current user implementation that mirrors the production behavior by reading the active HTTP context.
+        /// </summary>
+        public TestCurrentUser(IHttpContextAccessor httpContextAccessor)
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        /// <summary>
+        /// Gets the authenticated user's identifier by inspecting common claim types.
+        /// </summary>
+        public string? UserId
+        {
+            get
+            {
+                var principal = GetPrincipal();
+                if (principal?.Identity?.IsAuthenticated != true)
+                {
+                    return null;
+                }
+
+                foreach (var claimType in UserIdClaimTypes)
+                {
+                    var value = principal.FindFirst(claimType)?.Value;
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        return value;
+                    }
+                }
+
+                return principal.Identity?.Name;
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether the current HTTP context contains an authenticated principal.
+        /// </summary>
+        public bool IsAuthenticated => GetPrincipal()?.Identity?.IsAuthenticated == true;
+
+        /// <summary>
+        /// Determines if the current user belongs to the supplied role name.
+        /// </summary>
+        public bool IsInRole(string role)
+        {
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                return false;
+            }
+
+            var principal = GetPrincipal();
+            if (principal?.Identity?.IsAuthenticated != true)
+            {
+                return false;
+            }
+
+            return principal.IsInRole(role) || GetRoles().Contains(role, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Determines if the current user belongs to any of the provided roles.
+        /// </summary>
+        public bool HasAnyRole(params string[] roles)
+        {
+            if (roles is null || roles.Length == 0)
+            {
+                return false;
+            }
+
+            var roleSet = GetRoles().ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return roles.Any(role => !string.IsNullOrWhiteSpace(role) && roleSet.Contains(role));
+        }
+
+        /// <summary>
+        /// Gets all role values present on the current principal across supported claim types.
+        /// </summary>
+        public IEnumerable<string> GetRoles()
+        {
+            var principal = GetPrincipal();
+            if (principal?.Identity?.IsAuthenticated != true)
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            return principal.Claims
+                .Where(claim => RoleClaimTypes.Contains(claim.Type, StringComparer.OrdinalIgnoreCase))
+                .Select(claim => claim.Value)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        /// <summary>
+        /// Retrieves the current <see cref="ClaimsPrincipal"/> from the HTTP context.
+        /// </summary>
+        private ClaimsPrincipal? GetPrincipal() => _httpContextAccessor.HttpContext?.User;
     }
 
     /// <summary>
