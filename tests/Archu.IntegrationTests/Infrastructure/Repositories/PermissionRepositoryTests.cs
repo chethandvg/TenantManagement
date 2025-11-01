@@ -9,12 +9,24 @@ using Xunit;
 
 namespace Archu.IntegrationTests.Infrastructure.Repositories;
 
-public class PermissionRepositoryTests
+[Collection("Repository Tests Docker")]
+public class PermissionRepositoryTests : IAsyncLifetime
 {
+    private readonly DockerRepositoryTestContextFactory _factory;
+
+    public PermissionRepositoryTests(DockerRepositoryTestContextFactory factory)
+    {
+        _factory = factory;
+    }
+
+    public Task InitializeAsync() => _factory.CleanDatabaseAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
     [Fact]
     public async Task GetByNormalizedNamesAsync_ReturnsMatchingPermissions()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new PermissionRepository(context);
 
         var permissionId = Guid.NewGuid();
@@ -44,7 +56,7 @@ public class PermissionRepositoryTests
     [Fact]
     public async Task GetByNormalizedNamesAsync_IgnoresEmptyRequests()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new PermissionRepository(context);
 
         context.Permissions.Add(new ApplicationPermission

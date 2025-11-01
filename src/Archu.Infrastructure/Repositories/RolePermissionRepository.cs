@@ -70,7 +70,7 @@ public sealed class RolePermissionRepository : BaseRepository<RolePermission>, I
             .AsNoTracking()
             .Where(rolePermission => roleIdList.Contains(rolePermission.RoleId))
             .Select(rolePermission => rolePermission.Permission.NormalizedName)
-            .Distinct(StringComparer.Ordinal)
+            .Distinct()
             .ToListAsync(cancellationToken);
     }
 

@@ -10,12 +10,24 @@ using Xunit;
 
 namespace Archu.IntegrationTests.Infrastructure.Repositories;
 
-public class RolePermissionRepositoryTests
+[Collection("Repository Tests Docker")]
+public class RolePermissionRepositoryTests : IAsyncLifetime
 {
+    private readonly DockerRepositoryTestContextFactory _factory;
+
+    public RolePermissionRepositoryTests(DockerRepositoryTestContextFactory factory)
+    {
+        _factory = factory;
+    }
+
+    public Task InitializeAsync() => _factory.CleanDatabaseAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
     [Fact]
     public async Task LinkPermissionsAsync_AddsOnlyMissingAssignments()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new RolePermissionRepository(context);
 
         var roleId = Guid.NewGuid();
@@ -70,7 +82,7 @@ public class RolePermissionRepositoryTests
     [Fact]
     public async Task UnlinkPermissionsAsync_RemovesExistingAssignments()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new RolePermissionRepository(context);
 
         var roleId = Guid.NewGuid();
@@ -122,7 +134,7 @@ public class RolePermissionRepositoryTests
     [Fact]
     public async Task GetPermissionNamesByRoleIdsAsync_ReturnsDistinctNormalizedNames()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new RolePermissionRepository(context);
 
         var roleId = Guid.NewGuid();
@@ -154,10 +166,10 @@ public class RolePermissionRepositoryTests
                 NormalizedName = "REPORTS.EXPORT"
             });
 
+        // Add unique assignments only - SQL Server enforces composite key uniqueness
         context.RolePermissions.AddRange(
             new RolePermission { RoleId = roleId, PermissionId = permissionIds[0] },
-            new RolePermission { RoleId = roleId, PermissionId = permissionIds[1] },
-            new RolePermission { RoleId = roleId, PermissionId = permissionIds[0] });
+            new RolePermission { RoleId = roleId, PermissionId = permissionIds[1] });
 
         await context.SaveChangesAsync();
 

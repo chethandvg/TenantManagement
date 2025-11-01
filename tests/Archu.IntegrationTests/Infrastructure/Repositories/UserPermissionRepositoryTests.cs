@@ -10,12 +10,24 @@ using Xunit;
 
 namespace Archu.IntegrationTests.Infrastructure.Repositories;
 
-public class UserPermissionRepositoryTests
+[Collection("Repository Tests Docker")]
+public class UserPermissionRepositoryTests : IAsyncLifetime
 {
+    private readonly DockerRepositoryTestContextFactory _factory;
+
+    public UserPermissionRepositoryTests(DockerRepositoryTestContextFactory factory)
+    {
+        _factory = factory;
+    }
+
+    public Task InitializeAsync() => _factory.CleanDatabaseAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
     [Fact]
     public async Task LinkPermissionsAsync_AddsOnlyMissingAssignments()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new UserPermissionRepository(context);
 
         var userId = Guid.NewGuid();
@@ -73,7 +85,7 @@ public class UserPermissionRepositoryTests
     [Fact]
     public async Task UnlinkPermissionsAsync_RemovesExistingAssignments()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new UserPermissionRepository(context);
 
         var userId = Guid.NewGuid();
@@ -128,7 +140,7 @@ public class UserPermissionRepositoryTests
     [Fact]
     public async Task GetPermissionNamesByUserIdAsync_ReturnsDistinctNormalizedNames()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new UserPermissionRepository(context);
 
         var userId = Guid.NewGuid();
@@ -163,10 +175,10 @@ public class UserPermissionRepositoryTests
                 NormalizedName = "REPORTS.EXPORT"
             });
 
+        // Add unique assignments only - SQL Server enforces composite key uniqueness
         context.UserPermissions.AddRange(
             new UserPermission { UserId = userId, PermissionId = permissionIds[0] },
-            new UserPermission { UserId = userId, PermissionId = permissionIds[1] },
-            new UserPermission { UserId = userId, PermissionId = permissionIds[0] });
+            new UserPermission { UserId = userId, PermissionId = permissionIds[1] });
 
         await context.SaveChangesAsync();
 
@@ -178,7 +190,7 @@ public class UserPermissionRepositoryTests
     [Fact]
     public async Task GetByUserIdsAsync_ReturnsMatchingAssignments()
     {
-        await using var context = RepositoryTestContextFactory.CreateContext(Guid.NewGuid().ToString());
+        await using var context = _factory.CreateContext();
         var repository = new UserPermissionRepository(context);
 
         var firstUserId = Guid.NewGuid();
