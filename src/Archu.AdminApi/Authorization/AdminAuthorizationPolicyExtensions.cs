@@ -29,6 +29,15 @@ public static class AdminAuthorizationPolicyExtensions
 
         // Configure user-role assignment policies
         ConfigureUserRolePolicies(options);
+
+        // Configure role permission policies
+        ConfigureRolePermissionPolicies(options);
+
+        // Configure user permission policies
+        ConfigureUserPermissionPolicies(options);
+
+        // Configure permission catalog policies
+        ConfigurePermissionCatalogPolicies(options);
     }
 
     /// <summary>
@@ -188,6 +197,121 @@ public static class AdminAuthorizationPolicyExtensions
             policy.Requirements.Add(new AdminRoleRequirement(
                 "Manage User Roles",
                 RoleNames.SuperAdmin));
+        });
+    }
+
+    /// <summary>
+    /// Configures authorization policies for role permission operations.
+    /// </summary>
+    private static void ConfigureRolePermissionPolicies(AuthorizationOptions options)
+    {
+        // View role permissions - accessible by SuperAdmin, Administrator, and Manager
+        options.AddPolicy(AdminPolicyNames.RolePermissions.View, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "View Role Permissions",
+                RoleNames.SuperAdmin,
+                RoleNames.Administrator,
+                RoleNames.Manager));
+        });
+
+        // Assign permissions to roles - accessible by SuperAdmin only
+        options.AddPolicy(AdminPolicyNames.RolePermissions.Assign, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "Assign Permissions to Role",
+                RoleNames.SuperAdmin));
+        });
+
+        // Remove permissions from roles - accessible by SuperAdmin only
+        options.AddPolicy(AdminPolicyNames.RolePermissions.Remove, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "Remove Permissions from Role",
+                RoleNames.SuperAdmin));
+        });
+
+        // Manage all role permission operations - accessible by SuperAdmin only
+        options.AddPolicy(AdminPolicyNames.RolePermissions.Manage, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "Manage Role Permissions",
+                RoleNames.SuperAdmin));
+        });
+    }
+
+    /// <summary>
+    /// Configures authorization policies for user permission operations.
+    /// </summary>
+    private static void ConfigureUserPermissionPolicies(AuthorizationOptions options)
+    {
+        // View direct user permissions - accessible by SuperAdmin, Administrator, and Manager
+        options.AddPolicy(AdminPolicyNames.UserPermissions.ViewDirect, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "View Direct User Permissions",
+                RoleNames.SuperAdmin,
+                RoleNames.Administrator,
+                RoleNames.Manager));
+        });
+
+        // View effective user permissions - accessible by SuperAdmin, Administrator, and Manager
+        options.AddPolicy(AdminPolicyNames.UserPermissions.ViewEffective, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "View Effective User Permissions",
+                RoleNames.SuperAdmin,
+                RoleNames.Administrator,
+                RoleNames.Manager));
+        });
+
+        // Assign permissions to users - accessible by SuperAdmin only
+        options.AddPolicy(AdminPolicyNames.UserPermissions.Assign, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "Assign Permissions to User",
+                RoleNames.SuperAdmin));
+        });
+
+        // Remove permissions from users - accessible by SuperAdmin only
+        options.AddPolicy(AdminPolicyNames.UserPermissions.Remove, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "Remove Permissions from User",
+                RoleNames.SuperAdmin));
+        });
+
+        // Manage user permissions - accessible by SuperAdmin only
+        options.AddPolicy(AdminPolicyNames.UserPermissions.Manage, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "Manage User Permissions",
+                RoleNames.SuperAdmin));
+        });
+    }
+
+    /// <summary>
+    /// Configures authorization policies for viewing the permission catalog.
+    /// </summary>
+    private static void ConfigurePermissionCatalogPolicies(AuthorizationOptions options)
+    {
+        options.AddPolicy(AdminPolicyNames.Permissions.View, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new AdminRoleRequirement(
+                "View Permissions",
+                RoleNames.SuperAdmin,
+                RoleNames.Administrator,
+                RoleNames.Manager));
         });
     }
 }
