@@ -29,7 +29,20 @@ public class ApplicationDbContext : DbContext
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
+
+    /// <summary>
+    /// Exposes all discrete application permissions for assignment to roles or users.
+    /// </summary>
+    public DbSet<ApplicationPermission> Permissions => Set<ApplicationPermission>();
+
+    /// <summary>
+    /// Provides access to role-permission junction entities supporting authorization policies.
+    /// </summary>
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
+    /// <summary>
+    /// Provides access to user-permission junction entities for direct permission grants.
+    /// </summary>
     public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
     
     // Token DbSets for secure authentication flows
