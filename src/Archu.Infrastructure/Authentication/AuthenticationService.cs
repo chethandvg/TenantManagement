@@ -616,10 +616,21 @@ public class AuthenticationService : IAuthenticationService
 
             foreach (var normalizedName in normalizedPermissionNames)
             {
-                if (permissionLookup.TryGetValue(normalizedName, out var permissionValue) &&
-                    !string.IsNullOrWhiteSpace(permissionValue))
+                if (permissionLookup.TryGetValue(normalizedName, out var permissionValue))
                 {
-                    resolvedPermissionValues.Add(permissionValue);
+                    if (!string.IsNullOrWhiteSpace(permissionValue))
+                    {
+                        resolvedPermissionValues.Add(permissionValue);
+                    }
+                    else
+                    {
+                        _logger.LogError(
+                            "Permission entity for normalized name '{NormalizedPermission}' was found, but its Name value is null or whitespace. Check permission seeding and data integrity.",
+                            normalizedName);
+
+                        throw new InvalidOperationException(
+                            $"Permission entity for normalized name '{normalizedName}' has an invalid Name value (null or whitespace).");
+                    }
                 }
                 else
                 {
