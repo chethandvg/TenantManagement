@@ -18,6 +18,9 @@ public class UnitOfWork : IUnitOfWork
     private IProductRepository? _productRepository;
     private IUserRepository? _userRepository;
     private IRoleRepository? _roleRepository;
+    private IPermissionRepository? _permissionRepository;
+    private IRolePermissionRepository? _rolePermissionRepository;
+    private IUserPermissionRepository? _userPermissionRepository;
     private IUserRoleRepository? _userRoleRepository;
     private IEmailConfirmationTokenRepository? _emailConfirmationTokenRepository;
     private IPasswordResetTokenRepository? _passwordResetTokenRepository;
@@ -32,15 +35,55 @@ public class UnitOfWork : IUnitOfWork
         _loggerFactory = loggerFactory;
     }
 
+    /// <summary>
+    /// Gets the product repository scoped to the current unit of work transaction boundary.
+    /// </summary>
     public IProductRepository Products => _productRepository ??= new ProductRepository(_context);
+
+    /// <summary>
+    /// Gets the user repository for retrieving and persisting user entities.
+    /// </summary>
     public IUserRepository Users => _userRepository ??= new UserRepository(_context);
+
+    /// <summary>
+    /// Gets the role repository for role-centric data operations.
+    /// </summary>
     public IRoleRepository Roles => _roleRepository ??= new RoleRepository(_context);
+
+    /// <summary>
+    /// Gets the permission repository for managing application permission definitions.
+    /// </summary>
+    public IPermissionRepository Permissions => _permissionRepository ??= new PermissionRepository(_context);
+
+    /// <summary>
+    /// Gets the role-permission repository that manages many-to-many role assignments.
+    /// </summary>
+    public IRolePermissionRepository RolePermissions =>
+        _rolePermissionRepository ??= new RolePermissionRepository(_context);
+
+    /// <summary>
+    /// Gets the user-permission repository enabling direct permission grants.
+    /// </summary>
+    public IUserPermissionRepository UserPermissions =>
+        _userPermissionRepository ??= new UserPermissionRepository(_context);
+
+    /// <summary>
+    /// Gets the user-role repository for connecting users to roles.
+    /// </summary>
     public IUserRoleRepository UserRoles => _userRoleRepository ??= new UserRoleRepository(_context);
+
+    /// <summary>
+    /// Gets the email confirmation token repository for identity flows.
+    /// </summary>
     public IEmailConfirmationTokenRepository EmailConfirmationTokens =>
         _emailConfirmationTokenRepository ??= new EmailConfirmationTokenRepository(
             _context,
             _timeProvider,
             _loggerFactory.CreateLogger<EmailConfirmationTokenRepository>());
+
+    /// <summary>
+    /// Gets the password reset token repository for credential recovery workflows.
+    /// </summary>
     public IPasswordResetTokenRepository PasswordResetTokens =>
         _passwordResetTokenRepository ??= new PasswordResetTokenRepository(
             _context,

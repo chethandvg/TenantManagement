@@ -30,7 +30,7 @@ The Aspire Dashboard will open automatically, showing all running services.
 | **Understanding the System** | [Architecture Guide](docs/ARCHITECTURE.md) | [Development Guide](docs/DEVELOPMENT_GUIDE.md) |
 | **Adding Features** | [Adding New Entity](docs/getting-started/ADDING_NEW_ENTITY.md) | [Development Guide](docs/DEVELOPMENT_GUIDE.md) |
 | **API Development** | [API Guide](docs/API_GUIDE.md) | [Database Guide](docs/DATABASE_GUIDE.md) |
-| **Authentication/Security** | [Authentication Guide](docs/AUTHENTICATION_GUIDE.md) | [Authorization Guide](docs/AUTHORIZATION_GUIDE.md) |
+| **Authentication/Security** | [Authentication Guide](docs/AUTHENTICATION_GUIDE.md) | [Authorization Guide](docs/AUTHORIZATION_GUIDE.md) → [Security Architecture](docs/security.md) |
 | **Testing** | [Testing Guide](tests/TESTING_GUIDE.md) | [Integration Tests](tests/INTEGRATION_TESTING_GUIDE.md) |
 | **All Documentation** | [📖 Documentation Hub](docs/README.md) | Browse all guides |
 

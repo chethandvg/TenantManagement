@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Common;
@@ -58,10 +61,14 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
                     // Step 1: Create all system roles
                     var (created, count) = await CreateSystemRolesAsync(cancellationToken);
 
-                    // Step 2: Create super admin user
+                    // Step 2: Ensure permissions exist and assign defaults to roles
+                    await SeedPermissionsAsync(cancellationToken);
+                    await SeedDefaultRolePermissionsAsync(cancellationToken);
+
+                    // Step 3: Create super admin user
                     var userId = await CreateSuperAdminUserAsync(request, cancellationToken);
 
-                    // Step 3: Assign SuperAdmin role to the user
+                    // Step 4: Assign SuperAdmin role to the user
                     await AssignSuperAdminRoleAsync(userId, cancellationToken);
 
                     await _unitOfWork.CommitTransactionAsync(cancellationToken);
@@ -95,6 +102,128 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
             _logger.LogError(ex, "Error occurred during system initialization");
             return Result<InitializationResult>.Failure($"System initialization failed: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Ensures that every permission defined by <see cref="PermissionNames"/> exists in the database.
+    /// Adds any missing permissions in an idempotent manner so the initialization workflow can be re-run safely.
+    /// </summary>
+    /// <param name="cancellationToken">Token to signal cancellation.</param>
+    private async Task SeedPermissionsAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Seeding application permissions...");
+
+        var existingPermissions = await _unitOfWork.Permissions.GetAllAsync(cancellationToken);
+        var existingNormalizedNames = existingPermissions
+            .Select(permission => permission.NormalizedName)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var permissionsToCreate = PermissionNames
+            .GetAllPermissions()
+            .Select(permissionName => new
+            {
+                Name = permissionName,
+                Normalized = permissionName.ToUpperInvariant()
+            })
+            .Where(permission => !existingNormalizedNames.Contains(permission.Normalized))
+            .Select(permission => new ApplicationPermission
+            {
+                Name = permission.Name,
+                NormalizedName = permission.Normalized
+            })
+            .ToList();
+
+        if (permissionsToCreate.Count == 0)
+        {
+            _logger.LogInformation("All application permissions already exist.");
+            return;
+        }
+
+        await _unitOfWork.Permissions.AddRangeAsync(permissionsToCreate, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Seeded {PermissionCount} application permissions.",
+            permissionsToCreate.Count);
+    }
+
+    /// <summary>
+    /// Ensures default role-to-permission assignments exist for all system roles using the authoritative mapping.
+    /// Missing relationships are added while preserving existing assignments to keep the operation idempotent.
+    /// </summary>
+    /// <param name="cancellationToken">Token to signal cancellation.</param>
+    private async Task SeedDefaultRolePermissionsAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Seeding default role permissions...");
+
+        var roles = (await _unitOfWork.Roles.GetAllAsync(cancellationToken)).ToList();
+        if (roles.Count == 0)
+        {
+            _logger.LogInformation("No roles available for permission seeding.");
+            return;
+        }
+
+        var permissions = await _unitOfWork.Permissions.GetAllAsync(cancellationToken);
+        var permissionLookup = permissions.ToDictionary(
+            permission => permission.NormalizedName,
+            permission => permission,
+            StringComparer.Ordinal);
+
+        var existingRolePermissions = await _unitOfWork.RolePermissions.GetByRoleIdsAsync(
+            roles.Select(role => role.Id),
+            cancellationToken);
+
+        var existingAssignments = existingRolePermissions
+            .Select(rolePermission => (rolePermission.RoleId, rolePermission.PermissionId))
+            .ToHashSet();
+
+        var newAssignments = new List<RolePermission>();
+
+        foreach (var role in roles)
+        {
+            var desiredPermissions = RolePermissionClaims.GetPermissionClaimsForRole(role.Name);
+
+            foreach (var permissionName in desiredPermissions)
+            {
+                var normalizedName = permissionName.ToUpperInvariant();
+
+                if (!permissionLookup.TryGetValue(normalizedName, out var permission))
+                {
+                    _logger.LogWarning(
+                        "Permission '{PermissionName}' for role '{RoleName}' was not found during seeding.",
+                        permissionName,
+                        role.Name);
+                    continue;
+                }
+
+                var assignmentKey = (role.Id, permission.Id);
+                if (existingAssignments.Contains(assignmentKey))
+                {
+                    continue;
+                }
+
+                newAssignments.Add(new RolePermission
+                {
+                    RoleId = role.Id,
+                    PermissionId = permission.Id
+                });
+
+                existingAssignments.Add(assignmentKey);
+            }
+        }
+
+        if (newAssignments.Count == 0)
+        {
+            _logger.LogInformation("Default role permissions already configured.");
+            return;
+        }
+
+        await _unitOfWork.RolePermissions.AddRangeAsync(newAssignments, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Assigned {AssignmentCount} default role permissions.",
+            newAssignments.Count);
     }
 
     private async Task<(bool created, int count)> CreateSystemRolesAsync(CancellationToken cancellationToken)

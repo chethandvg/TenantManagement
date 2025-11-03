@@ -92,6 +92,7 @@
 1. ✅ **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT setup
 2. ✅ **[Authorization Guide](AUTHORIZATION_GUIDE.md)** - Role management
 3. ✅ **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)** - Password policies
+4. ✅ **[Security Architecture](security.md)** - Shared identity store, JWT reuse, permission model
 
 ### I want to work with the database...
 1. ✅ **[Database Guide](DATABASE_GUIDE.md)** - Complete database guide

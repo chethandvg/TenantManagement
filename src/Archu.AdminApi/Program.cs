@@ -198,6 +198,21 @@ builder.Services.AddOpenApi(options =>
             },
             new()
             {
+                Name = "RolePermissions",
+                Description = "Role permission operations. View, grant, and revoke permissions from roles. **SuperAdmin required for writes.**"
+            },
+            new()
+            {
+                Name = "UserPermissions",
+                Description = "Direct user permission operations. Audit and manage user-specific grants. **SuperAdmin required for writes.**"
+            },
+            new()
+            {
+                Name = "Permissions",
+                Description = "Permission catalog endpoints. Retrieve available permissions for UI dropdowns and audits."
+            },
+            new()
+            {
                 Name = "Health",
                 Description = "Health check endpoints for monitoring application status."
             }
