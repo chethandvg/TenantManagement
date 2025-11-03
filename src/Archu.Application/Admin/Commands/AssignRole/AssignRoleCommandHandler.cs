@@ -125,11 +125,13 @@ public class AssignRoleCommandHandler : IRequestHandler<AssignRoleCommand, Resul
     private async Task AssignRolePermissionsToUserAsync(Guid userId, ApplicationRole role, CancellationToken cancellationToken)
     {
         var permissionNames = await _unitOfWork.RolePermissions
-            .GetPermissionNamesByRoleIdsAsync(new[] { role.Id }, cancellationToken);
+            .GetPermissionNamesByRoleIdsAsync(new[] { role.Id }, cancellationToken)
+            ?? Array.Empty<string>();
 
         if (permissionNames.Count == 0)
         {
-            permissionNames = RolePermissionClaims.GetPermissionClaimsForRole(role.Name);
+            permissionNames = RolePermissionClaims.GetPermissionClaimsForRole(role.Name)
+                ?? Array.Empty<string>();
         }
 
         var normalizedPermissionNames = NormalizePermissionNames(permissionNames);
@@ -158,6 +160,15 @@ public class AssignRoleCommandHandler : IRequestHandler<AssignRoleCommand, Resul
         var permissionIds = permissions
             .Select(permission => permission.Id)
             .ToArray();
+
+        if (permissionIds.Length == 0)
+        {
+            _logger.LogDebug(
+                "No resolved permission IDs to link for role '{RoleName}' and user {UserId}",
+                role.Name,
+                userId);
+            return;
+        }
 
         await _unitOfWork.UserPermissions.LinkPermissionsAsync(userId, permissionIds, cancellationToken);
     }
