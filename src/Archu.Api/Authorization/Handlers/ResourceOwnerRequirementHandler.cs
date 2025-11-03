@@ -1,7 +1,7 @@
 using Archu.Api.Authorization.Requirements;
 using Archu.Application.Abstractions;
 using Archu.Domain.Abstractions.Identity;
-using Archu.Contracts.Authentication.Constants;
+using Archu.SharedKernel.Constants;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 

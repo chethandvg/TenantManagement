@@ -1,9 +1,8 @@
-namespace Archu.Contracts.Authentication.Constants;
+namespace Archu.SharedKernel.Constants;
 
 /// <summary>
 /// Defines the custom claim types issued by the Archu identity platform.
-/// These constants are part of the contract between the API and clients,
-/// ensuring consistent claim type usage across all projects.
+/// These constants are part of the shared kernel, usable by Domain, Contracts, and client code.
 /// </summary>
 public static class CustomClaimTypes
 {

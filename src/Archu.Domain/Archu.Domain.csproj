@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Archu.Contracts\Archu.Contracts.csproj" />
+    <ProjectReference Include="..\Archu.SharedKernel\Archu.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>

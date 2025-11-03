@@ -1,4 +1,4 @@
-using Archu.Contracts.Authentication.Constants;
+using Archu.SharedKernel.Constants;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 

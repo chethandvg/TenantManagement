@@ -1,5 +1,5 @@
 using Archu.Api.Authorization.Requirements;
-using Archu.Contracts.Authentication.Constants;
+using Archu.SharedKernel.Constants;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Archu.Api.Authorization;

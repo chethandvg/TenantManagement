@@ -1,6 +1,6 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Common;
-using Archu.Contracts.Authentication.Constants;
+using Archu.SharedKernel.Constants;
 using Archu.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.Extensions.Logging;

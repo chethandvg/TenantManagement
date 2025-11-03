@@ -1,4 +1,4 @@
-using Archu.Contracts.Authentication.Constants;
+using Archu.SharedKernel.Constants;
 
 namespace Archu.Domain.Constants;
 

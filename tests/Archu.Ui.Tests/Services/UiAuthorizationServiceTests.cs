@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Archu.Contracts.Authentication.Constants;
+using Archu.SharedKernel.Constants;
 using Archu.Ui.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Xunit;

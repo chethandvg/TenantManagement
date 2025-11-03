@@ -1,4 +1,4 @@
-namespace Archu.Contracts.Authentication.Constants;
+namespace Archu.SharedKernel.Constants;
 
 /// <summary>
 /// Defines permission claim values used throughout the application.

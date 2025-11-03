@@ -4,7 +4,7 @@ using System.Linq;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Common;
-using Archu.Contracts.Authentication.Constants;
+using Archu.SharedKernel.Constants;
 using Archu.Domain.Constants;
 using Archu.Domain.Entities.Identity;
 using MediatR;

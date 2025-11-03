@@ -1,5 +1,5 @@
 using Archu.AdminApi.Authorization.Requirements;
-using Archu.Contracts.Authentication.Constants;
+using Archu.SharedKernel.Constants;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Archu.AdminApi.Authorization;

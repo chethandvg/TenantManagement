@@ -8,24 +8,28 @@ The UI authorization system reads permissions and roles from JWT claims, elimina
 
 ## Architecture
 
-The authorization constants (`CustomClaimTypes`, `PermissionNames`, `RoleNames`) are located in `Archu.Contracts.Authentication.Constants` to maintain Clean Architecture principles:
+The authorization constants (`CustomClaimTypes`, `PermissionNames`, `RoleNames`) are located in `Archu.SharedKernel.Constants` to maintain Clean Architecture principles:
 
 ```
 External Apps (UI, Mobile, 3rd Party)
          ↓
-    [Contracts]  ← Contains shared constants (CustomClaimTypes, PermissionNames, RoleNames)
+    [Contracts]  ← Public API surface (references SharedKernel)
          ↓
    [Application]  ← Use cases
          ↓
     [Infrastructure] ← Data access
          ↓
-    [Domain]  ← Core business logic (references Contracts for constants it needs)
+    [Domain]  ← Core business logic (references SharedKernel)
+         ↓
+    [SharedKernel]  ← Shared constants and cross-cutting concerns (NO dependencies)
 ```
 
 This ensures:
-- ✅ Dependencies point INWARD (Domain can reference Contracts)
-- ✅ Client code (ApiClient, UI) can access constants without referencing Domain
+- ✅ Domain has minimal dependencies (only SharedKernel)
+- ✅ SharedKernel has zero dependencies
+- ✅ Client code can access constants through Contracts (which references SharedKernel)
 - ✅ No circular dependencies
+- ✅ Pure Clean Architecture with proper layering
 
 ## Key Components
 
@@ -117,7 +121,7 @@ A reusable component for declarative permission-based rendering:
 ```razor
 @page "/products"
 @attribute [Authorize]
-@using Archu.Contracts.Authentication.Constants
+@using Archu.SharedKernel.Constants
 
 <MudText Typo="Typo.h3">Products</MudText>
 
