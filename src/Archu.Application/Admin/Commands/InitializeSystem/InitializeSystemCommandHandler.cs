@@ -344,6 +344,27 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
         };
 
         await _unitOfWork.UserRoles.AddAsync(userRole, cancellationToken);
+
+        // Automatically assign role permissions to the user
+        var rolePermissions = await _unitOfWork.RolePermissions.GetByRoleIdsAsync(
+            new[] { superAdminRole.Id }, 
+            cancellationToken);
+        
+        if (rolePermissions.Count > 0)
+        {
+            var permissionIds = rolePermissions.Select(rp => rp.PermissionId).ToList();
+            await _unitOfWork.UserPermissions.LinkPermissionsAsync(
+                userId, 
+                permissionIds, 
+                cancellationToken);
+
+            _logger.LogInformation(
+                "Automatically assigned {PermissionCount} permissions from role '{RoleName}' to user {UserId}",
+                permissionIds.Count,
+                superAdminRole.Name,
+                userId);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("SuperAdmin role assigned successfully");
