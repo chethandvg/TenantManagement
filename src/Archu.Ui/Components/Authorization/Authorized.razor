@@ -61,11 +61,6 @@ else if (NotAuthorized != null)
     [Parameter]
     public string[]? AllRoles { get; set; }
 
-    protected override async Task OnInitializedAsync()
-    {
-        await CheckAuthorizationAsync();
-    }
-
     protected override async Task OnParametersSetAsync()
     {
         await CheckAuthorizationAsync();

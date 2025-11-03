@@ -6,6 +6,27 @@ This document explains how to use permission-based authorization in the Blazor U
 
 The UI authorization system reads permissions and roles from JWT claims, eliminating the need to make API calls every time you need to check permissions. All checks are performed client-side against the authenticated user's claims.
 
+## Architecture
+
+The authorization constants (`CustomClaimTypes`, `PermissionNames`, `RoleNames`) are located in `Archu.Contracts.Authentication.Constants` to maintain Clean Architecture principles:
+
+```
+External Apps (UI, Mobile, 3rd Party)
+         ↓
+    [Contracts]  ← Contains shared constants (CustomClaimTypes, PermissionNames, RoleNames)
+         ↓
+   [Application]  ← Use cases
+         ↓
+    [Infrastructure] ← Data access
+         ↓
+    [Domain]  ← Core business logic (references Contracts for constants it needs)
+```
+
+This ensures:
+- ✅ Dependencies point INWARD (Domain can reference Contracts)
+- ✅ Client code (ApiClient, UI) can access constants without referencing Domain
+- ✅ No circular dependencies
+
 ## Key Components
 
 ### 1. ClaimsPrincipalAuthorizationExtensions
@@ -96,7 +117,7 @@ A reusable component for declarative permission-based rendering:
 ```razor
 @page "/products"
 @attribute [Authorize]
-@using Archu.Domain.Constants
+@using Archu.Contracts.Authentication.Constants
 
 <MudText Typo="Typo.h3">Products</MudText>
 

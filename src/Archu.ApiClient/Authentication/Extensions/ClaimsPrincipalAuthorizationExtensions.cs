@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Archu.Domain.Constants;
+using Archu.Contracts.Authentication.Constants;
 
 namespace Archu.ApiClient.Authentication.Extensions;
 

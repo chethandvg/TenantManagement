@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Archu.ApiClient.Authentication.Extensions;
-using Archu.Domain.Constants;
+using Archu.Contracts.Authentication.Constants;
 using Xunit;
 
 namespace Archu.ApiClient.Tests.Authentication.Extensions;

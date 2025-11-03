@@ -1,10 +1,9 @@
-namespace Archu.Domain.Constants;
+namespace Archu.Contracts.Authentication.Constants;
 
 /// <summary>
 /// Defines the custom claim types issued by the Archu identity platform.
-/// Keeping the constants in the domain layer ensures consistent usage
-/// across API, infrastructure, and client projects without creating
-/// circular dependencies.
+/// These constants are part of the contract between the API and clients,
+/// ensuring consistent claim type usage across all projects.
 /// </summary>
 public static class CustomClaimTypes
 {

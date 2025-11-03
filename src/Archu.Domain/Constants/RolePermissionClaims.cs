@@ -1,3 +1,5 @@
+using Archu.Contracts.Authentication.Constants;
+
 namespace Archu.Domain.Constants;
 
 /// <summary>

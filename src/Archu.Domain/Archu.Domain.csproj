@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Archu.Contracts\Archu.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>

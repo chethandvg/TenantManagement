@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Application.Admin.Commands.RemoveRole;
 using Archu.Application.Common;
-using Archu.Domain.Constants;
+using Archu.Contracts.Authentication.Constants;
 using Archu.Domain.Entities.Identity;
 using Archu.UnitTests.TestHelpers.Fixtures;
 using FluentAssertions;
