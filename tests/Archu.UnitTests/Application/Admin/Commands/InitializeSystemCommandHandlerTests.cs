@@ -8,7 +8,7 @@ using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Application.Admin.Commands.InitializeSystem;
 using Archu.Application.Common;
-using Archu.Domain.Constants;
+using Archu.SharedKernel.Constants;
 using Archu.Domain.Entities.Identity;
 using Archu.UnitTests.TestHelpers.Fixtures;
 using FluentAssertions;

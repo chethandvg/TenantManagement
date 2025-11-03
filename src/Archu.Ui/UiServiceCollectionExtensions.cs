@@ -1,4 +1,5 @@
 using System;
+using Archu.Ui.Services;
 using Archu.Ui.State;
 using Archu.Ui.Theming;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,9 @@ public static class UiServiceCollectionExtensions
         // Register shared UI state containers that power busy and error workflows
         services.AddScoped<BusyState>();
         services.AddScoped<UiState>();
+
+        // Register authorization service for permission and role checks
+        services.AddScoped<IUiAuthorizationService, UiAuthorizationService>();
 
         return services;
     }

@@ -7,7 +7,7 @@ using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Application.Common;
-using Archu.Domain.Constants;
+using Archu.SharedKernel.Constants;
 using Archu.Domain.Entities.Identity;
 using Archu.Infrastructure.Authentication;
 using FluentAssertions;

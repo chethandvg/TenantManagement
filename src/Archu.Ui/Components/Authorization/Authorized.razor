@@ -1,0 +1,128 @@
+@using Archu.Ui.Services
+@inject IUiAuthorizationService AuthorizationService
+
+@if (isAuthorized)
+{
+    @ChildContent
+}
+else if (NotAuthorized != null)
+{
+    @NotAuthorized
+}
+
+@code {
+    private bool isAuthorized;
+
+    /// <summary>
+    /// Content to display when the user is authorized.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Content to display when the user is not authorized.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? NotAuthorized { get; set; }
+
+    /// <summary>
+    /// Permission required to view the content (e.g., "products:delete").
+    /// This is the recommended approach for authorization checks.
+    /// </summary>
+    [Parameter]
+    public string? Permission { get; set; }
+
+    /// <summary>
+    /// Permissions where at least one is required to view the content.
+    /// </summary>
+    [Parameter]
+    public string[]? AnyPermission { get; set; }
+
+    /// <summary>
+    /// Permissions where all are required to view the content.
+    /// </summary>
+    [Parameter]
+    public string[]? AllPermissions { get; set; }
+
+    /// <summary>
+    /// Role required to view the content.
+    /// Note: Use permission-based authorization instead of role-based when possible.
+    /// </summary>
+    [Parameter]
+    public string? Role { get; set; }
+
+    /// <summary>
+    /// Roles where at least one is required to view the content.
+    /// Note: Use permission-based authorization instead of role-based when possible.
+    /// </summary>
+    [Parameter]
+    public string[]? AnyRole { get; set; }
+
+    /// <summary>
+    /// Roles where all are required to view the content.
+    /// Note: Use permission-based authorization instead of role-based when possible.
+    /// </summary>
+    [Parameter]
+    public string[]? AllRoles { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await CheckAuthorizationAsync();
+    }
+
+    /// <summary>
+    /// Checks authorization based on the provided parameters.
+    /// Authorization parameters are evaluated in the following priority order:
+    /// 1. Permission (single permission check)
+    /// 2. AnyPermission (at least one permission required)
+    /// 3. AllPermissions (all permissions required)
+    /// 4. Role (single role check)
+    /// 5. AnyRole (at least one role required)
+    /// 6. AllRoles (all roles required)
+    /// 
+    /// Only the first non-null/non-empty parameter is evaluated.
+    /// Provide only one authorization parameter to avoid confusion.
+    /// </summary>
+    private async Task CheckAuthorizationAsync()
+    {
+        isAuthorized = false;
+
+        // Check permission-based authorization (recommended approach)
+        if (!string.IsNullOrWhiteSpace(Permission))
+        {
+            isAuthorized = await AuthorizationService.HasPermissionAsync(Permission);
+            return;
+        }
+
+        if (AnyPermission is { Length: > 0 })
+        {
+            isAuthorized = await AuthorizationService.HasAnyPermissionAsync(AnyPermission);
+            return;
+        }
+
+        if (AllPermissions is { Length: > 0 })
+        {
+            isAuthorized = await AuthorizationService.HasAllPermissionsAsync(AllPermissions);
+            return;
+        }
+
+        // Check role-based authorization (use permissions instead when possible)
+        if (!string.IsNullOrWhiteSpace(Role))
+        {
+            isAuthorized = await AuthorizationService.HasRoleAsync(Role);
+            return;
+        }
+
+        if (AnyRole is { Length: > 0 })
+        {
+            isAuthorized = await AuthorizationService.HasAnyRoleAsync(AnyRole);
+            return;
+        }
+
+        if (AllRoles is { Length: > 0 })
+        {
+            isAuthorized = await AuthorizationService.HasAllRolesAsync(AllRoles);
+            return;
+        }
+    }
+}
