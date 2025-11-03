@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Archu.Contracts\Archu.Contracts.csproj" />
+    <ProjectReference Include="..\Archu.Domain\Archu.Domain.csproj" />
   </ItemGroup>
 
 </Project>

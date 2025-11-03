@@ -1,4 +1,5 @@
 @inject IClientFeatureService ClientFeatureService
+@using Archu.Domain.Constants
 
 <nav role="navigation" aria-label="Primary navigation">
     <MudNavMenu TabIndex="0">
@@ -6,12 +7,25 @@
 
         <AuthorizeView>
             <Authorized>
-                <MudNavLink Href="/products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ShoppingCart" TabIndex="0">Products</MudNavLink>
+                <Authorized Permission="@PermissionNames.Products.Read">
+                    <MudNavLink Href="/products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ShoppingCart" TabIndex="0">Products</MudNavLink>
+                </Authorized>
                 @if (isPreviewEnabled)
                 {
                     <MudNavLink Href="/counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add" TabIndex="0">Counter</MudNavLink>
                 }
                 <MudNavLink Href="/fetchdata" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List" TabIndex="0">Fetch data</MudNavLink>
+                
+                <Authorized AnyPermission="@adminPermissions">
+                    <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="false">
+                        <Authorized Permission="@PermissionNames.Users.Read">
+                            <MudNavLink Href="/admin/users" Icon="@Icons.Material.Filled.People" TabIndex="0">Users</MudNavLink>
+                        </Authorized>
+                        <Authorized Permission="@PermissionNames.Roles.Read">
+                            <MudNavLink Href="/admin/roles" Icon="@Icons.Material.Filled.Security" TabIndex="0">Roles</MudNavLink>
+                        </Authorized>
+                    </MudNavGroup>
+                </Authorized>
             </Authorized>
             <NotAuthorized>
                 <MudNavLink Href="/login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login" TabIndex="0">Login</MudNavLink>
@@ -23,6 +37,7 @@
 
 @code {
     private bool isPreviewEnabled;
+    private readonly string[] adminPermissions = new[] { PermissionNames.Users.Read, PermissionNames.Roles.Read };
 
     /// <summary>
     /// Loads feature flag state so navigation items reflect the current configuration.

@@ -1,9 +1,16 @@
 @page "/products"
 @attribute [Authorize]
+@using Archu.Domain.Constants
 
 <PageTitle>Products</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Products</MudText>
+
+<Authorized Permission="@PermissionNames.Products.Create">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="mb-4">
+        Create Product
+    </MudButton>
+</Authorized>
 
 <BusyBoundary Retry="LoadProductsAsync">
     @if (products == null || !products.Any())
@@ -23,7 +30,19 @@
                         </MudCardContent>
                         <MudCardActions>
                             <MudButton Variant="Variant.Text" Color="Color.Primary">View</MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Secondary">Edit</MudButton>
+                            <Authorized Permission="@PermissionNames.Products.Update">
+                                <MudButton Variant="Variant.Text" Color="Color.Secondary">Edit</MudButton>
+                            </Authorized>
+                            <Authorized Permission="@PermissionNames.Products.Delete">
+                                <NotAuthorized>
+                                    <MudTooltip Text="You don't have permission to delete products">
+                                        <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="true">Delete</MudButton>
+                                    </MudTooltip>
+                                </NotAuthorized>
+                                <ChildContent>
+                                    <MudButton Variant="Variant.Text" Color="Color.Error">Delete</MudButton>
+                                </ChildContent>
+                            </Authorized>
                         </MudCardActions>
                     </MudCard>
                 </MudItem>
