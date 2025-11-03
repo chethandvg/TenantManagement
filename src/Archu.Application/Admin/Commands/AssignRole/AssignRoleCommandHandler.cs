@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Archu.Application.Abstractions;
 using Archu.Application.Common;
+using Archu.Domain.Constants;
 using Archu.SharedKernel.Constants;
 using Archu.Domain.Entities.Identity;
 using MediatR;
@@ -8,16 +12,21 @@ using Microsoft.Extensions.Logging;
 namespace Archu.Application.Admin.Commands.AssignRole;
 
 /// <summary>
-/// Handles the assignment of a role to a user with security restrictions.
+/// Handles the assignment of a role to a user with security restrictions and default permissions.
 /// </summary>
 /// <remarks>
 /// **Role Assignment Rules:**
 /// - SuperAdmin: Can assign any role (including SuperAdmin and Administrator)
 /// - Administrator: Can assign User, Manager, and Guest roles ONLY
 /// - Manager: Cannot assign roles (blocked by authorization policy)
+///
+/// **Permission Assignment:**
+/// Automatically links the role's default permissions to the target user based on configured role claims.
 /// </remarks>
 public class AssignRoleCommandHandler : IRequestHandler<AssignRoleCommand, Result>
 {
+    private static readonly StringComparer PermissionComparer = StringComparer.Ordinal;
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUser _currentUser;
     private readonly ITimeProvider _timeProvider;
@@ -35,6 +44,13 @@ public class AssignRoleCommandHandler : IRequestHandler<AssignRoleCommand, Resul
         _logger = logger;
     }
 
+    /// <summary>
+    /// Assigns the requested role to the target user and links the role's default permissions.
+    /// </summary>
+    /// <remarks>
+    /// Ensures the role assignment adheres to security rules and synchronizes the configured
+    /// permission claims for the role onto the user.
+    /// </remarks>
     public async Task<Result> Handle(AssignRoleCommand request, CancellationToken cancellationToken)
     {
         var adminUserId = _currentUser.UserId;
@@ -89,6 +105,9 @@ public class AssignRoleCommandHandler : IRequestHandler<AssignRoleCommand, Resul
         };
 
         await _unitOfWork.UserRoles.AddAsync(userRole, cancellationToken);
+
+        await AssignRolePermissionsToUserAsync(userRole.UserId, role, cancellationToken);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
@@ -98,6 +117,61 @@ public class AssignRoleCommandHandler : IRequestHandler<AssignRoleCommand, Resul
             adminUserId);
 
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Resolves the default permissions associated with the role and links them to the specified user.
+    /// </summary>
+    private async Task AssignRolePermissionsToUserAsync(Guid userId, ApplicationRole role, CancellationToken cancellationToken)
+    {
+        var permissionNames = await _unitOfWork.RolePermissions
+            .GetPermissionNamesByRoleIdsAsync(new[] { role.Id }, cancellationToken);
+
+        if (permissionNames.Count == 0)
+        {
+            permissionNames = RolePermissionClaims.GetPermissionClaimsForRole(role.Name);
+        }
+
+        var normalizedPermissionNames = NormalizePermissionNames(permissionNames);
+
+        if (normalizedPermissionNames.Count == 0)
+        {
+            _logger.LogDebug(
+                "Role '{RoleName}' has no default permissions to assign to user {UserId}",
+                role.Name,
+                userId);
+            return;
+        }
+
+        var permissions = await _unitOfWork.Permissions
+            .GetByNormalizedNamesAsync(normalizedPermissionNames, cancellationToken);
+
+        if (permissions.Count == 0)
+        {
+            _logger.LogWarning(
+                "Unable to locate default permissions for role '{RoleName}' when assigning to user {UserId}",
+                role.Name,
+                userId);
+            return;
+        }
+
+        var permissionIds = permissions
+            .Select(permission => permission.Id)
+            .ToArray();
+
+        await _unitOfWork.UserPermissions.LinkPermissionsAsync(userId, permissionIds, cancellationToken);
+    }
+
+    /// <summary>
+    /// Normalizes permission names for consistent lookup and comparison.
+    /// </summary>
+    private static IReadOnlyCollection<string> NormalizePermissionNames(IEnumerable<string> permissionNames)
+    {
+        return permissionNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim().ToUpperInvariant())
+            .Distinct(PermissionComparer)
+            .ToArray();
     }
 
     /// <summary>
