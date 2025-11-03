@@ -34,14 +34,14 @@
                                 <MudButton Variant="Variant.Text" Color="Color.Secondary">Edit</MudButton>
                             </Authorized>
                             <Authorized Permission="@PermissionNames.Products.Delete">
+                                <ChildContent>
+                                    <MudButton Variant="Variant.Text" Color="Color.Error">Delete</MudButton>
+                                </ChildContent>
                                 <NotAuthorized>
                                     <MudTooltip Text="You don't have permission to delete products">
                                         <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="true">Delete</MudButton>
                                     </MudTooltip>
                                 </NotAuthorized>
-                                <ChildContent>
-                                    <MudButton Variant="Variant.Text" Color="Color.Error">Delete</MudButton>
-                                </ChildContent>
                             </Authorized>
                         </MudCardActions>
                     </MudCard>

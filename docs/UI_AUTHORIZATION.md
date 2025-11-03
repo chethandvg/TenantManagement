@@ -4,7 +4,9 @@ This document explains how to use permission-based authorization in the Blazor U
 
 ## Overview
 
-The UI authorization system reads permissions and roles from JWT claims, eliminating the need to make API calls every time you need to check permissions. All checks are performed client-side against the authenticated user's claims.
+The UI authorization system reads permissions from JWT claims, eliminating the need to make API calls every time you need to check permissions. All checks are performed client-side against the authenticated user's claims.
+
+**Important**: Always use **permission-based authorization** for frontend and API access control. Role-based checks are provided for backward compatibility but should be avoided in favor of granular permission checks.
 
 ## Architecture
 
@@ -56,14 +58,15 @@ bool hasFullAccess = user.HasAllPermissions(
     PermissionNames.Products.Delete
 );
 
-// Check roles
+// Check roles (avoid - use permissions instead)
+// Role checks are available but not recommended for authorization
 bool isAdmin = user.HasRole(RoleNames.Administrator);
 bool hasManagementAccess = user.HasAnyRole(RoleNames.Manager, RoleNames.Administrator);
 ```
 
 ### 2. IUiAuthorizationService
 
-A service that provides async methods for permission/role checks in Blazor components:
+A service that provides async methods for permission checks in Blazor components:
 
 ```csharp
 @inject IUiAuthorizationService AuthorizationService
@@ -71,7 +74,10 @@ A service that provides async methods for permission/role checks in Blazor compo
 // In component code
 protected override async Task OnInitializedAsync()
 {
+    // Use permission checks (recommended)
     var canCreate = await AuthorizationService.HasPermissionAsync(PermissionNames.Products.Create);
+    
+    // Role checks available but not recommended
     var isManager = await AuthorizationService.HasRoleAsync(RoleNames.Manager);
 }
 ```
@@ -80,8 +86,18 @@ protected override async Task OnInitializedAsync()
 
 A reusable component for declarative permission-based rendering:
 
+**Best Practice**: Always use `Permission`, `AnyPermission`, or `AllPermissions` parameters. Avoid `Role`, `AnyRole`, and `AllRoles` parameters.
+
+**Parameter Priority**: If multiple parameters are provided, only the first non-null parameter is evaluated in this order:
+1. `Permission` (recommended)
+2. `AnyPermission` 
+3. `AllPermissions`
+4. `Role` (not recommended)
+5. `AnyRole` (not recommended)
+6. `AllRoles` (not recommended)
+
 ```razor
-<!-- Show content only if user has the permission -->
+<!-- Show content only if user has the permission (recommended approach) -->
 <Authorized Permission="@PermissionNames.Products.Create">
     <MudButton>Create Product</MudButton>
 </Authorized>
@@ -108,13 +124,16 @@ A reusable component for declarative permission-based rendering:
     </NotAuthorized>
 </Authorized>
 
-<!-- Role-based authorization -->
+<!-- AVOID: Role-based authorization (use permissions instead) -->
+<!-- This example is shown for reference only - prefer permission-based checks -->
 <Authorized Role="@RoleNames.Administrator">
     <MudButton>Admin Panel</MudButton>
 </Authorized>
 ```
 
 ## Usage Examples
+
+All examples below use **permission-based authorization**, which is the recommended approach.
 
 ### Example 1: Products Page
 
@@ -230,11 +249,13 @@ A reusable component for declarative permission-based rendering:
 
 ## Important Notes
 
-1. **Permission Names**: Always use constants from `PermissionNames` class to avoid typos
-2. **No API Calls**: All checks are done locally against JWT claims - fast and offline-capable
-3. **API Alignment**: UI should check the same permission the API enforces
-4. **Role vs Permission**: Prefer permission checks over role checks for fine-grained control
-5. **NotAuthorized Fallback**: Use the `NotAuthorized` section to show disabled states or explanatory messages
+1. **Use Permissions Only**: Always use permission-based authorization for frontend and API access control
+2. **Permission Names**: Always use constants from `PermissionNames` class to avoid typos
+3. **No API Calls**: All checks are done locally against JWT claims - fast and offline-capable
+4. **API Alignment**: UI should check the same permission the API enforces
+5. **Avoid Roles**: Role-based checks are available for backward compatibility but should not be used for authorization
+6. **NotAuthorized Fallback**: Use the `NotAuthorized` section to show disabled states or explanatory messages
+7. **Single Parameter**: Only provide one authorization parameter to the `Authorized` component to avoid confusion
 
 ## Available Permissions
 
