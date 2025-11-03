@@ -4,7 +4,7 @@ This document captures how the Archu platform reuses a single identity store, JW
 
 ## Shared ApplicationDbContext & Connection String
 
-Both **Archu.Api** and **Archu.AdminApi** call `services.AddInfrastructure(configuration, environment)` during startup, which registers the same `ApplicationDbContext` instance for both APIs. The Infrastructure layer resolves the connection string from the `Sql` (fallback `archudb`) connection string entry and wires up Entity Framework Core with retry and migration settings. This ensures every microservice using the Infrastructure package interacts with the same SQL Server database and identity schema.
+Both **Archu.Api** and **Archu.AdminApi** call `services.AddInfrastructure(configuration, environment)` during startup, which registers `ApplicationDbContext` with the same configuration for both APIs. The Infrastructure layer resolves the connection string from the `Sql` (fallback `archudb`) connection string entry and wires up Entity Framework Core with retry and migration settings. This ensures every microservice using the Infrastructure package interacts with the same SQL Server database and identity schema.
 
 - `src/Archu.Api/Program.cs` → `builder.Services.AddInfrastructure(...)`
 - `src/Archu.AdminApi/Program.cs` → `builder.Services.AddInfrastructure(...)`
