@@ -10,7 +10,7 @@ Both **Archu.Api** and **Archu.AdminApi** call `services.AddInfrastructure(confi
 - `src/Archu.AdminApi/Program.cs` → `builder.Services.AddInfrastructure(...)`
 - `src/Archu.Infrastructure/DependencyInjection.cs` → `AddDatabase` configures `ApplicationDbContext` using the shared connection string
 
-Because both APIs resolve the context from the same DI registration, every write to roles, permissions, or tokens immediately shows up for the other API. Future services should reuse the Infrastructure package instead of registering their own DbContext to stay aligned with the platform defaults.
+Because both APIs resolve the context from the same DI registration, every write to roles, permissions, or tokens is persisted to the same database and becomes visible to the other API after the transaction is committed. Note that visibility of changes may depend on transaction isolation levels and caching, so changes may not be immediately reflected until the relevant transaction is completed and caches are refreshed. Future services should reuse the Infrastructure package instead of registering their own DbContext to stay aligned with the platform defaults.
 
 ## Canonical Identity Store & Permission Entities
 
