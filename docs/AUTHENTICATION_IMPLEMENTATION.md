@@ -737,9 +737,8 @@ Before deploying:
 
 ## 📚 Related Documentation
 
-- [Authentication Guide](./AUTHENTICATION_GUIDE.md) - User-facing authentication guide
+- [Authentication Guide](./AUTHENTICATION_GUIDE.md) - User-facing authentication guide (includes security architecture)
 - [Authorization Guide](./AUTHORIZATION_GUIDE.md) - Role and permission-based access control
-- [Security Architecture](./security.md) - Shared identity store and JWT reuse
 - [Architecture Guide](./ARCHITECTURE.md) - Clean Architecture overview
 
 ---

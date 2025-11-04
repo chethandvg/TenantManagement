@@ -33,7 +33,7 @@ Complete guide for developing features, following patterns, and maintaining code
 
 ### Adding a New Feature
 
-**See**: [../src/README_NEW_ENTITY.md](../src/README_NEW_ENTITY.md) for step-by-step guide
+**See**: [Adding New Entities Tutorial](#adding-new-entities---step-by-step-tutorial) below for complete step-by-step guide
 
 **Quick Summary**:
 1. Create entity in `Archu.Domain`
@@ -503,9 +503,9 @@ public class ProductsControllerTests : IClassFixture<WebApplicationFactory<Progr
 ## 📚 Related Documentation
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture
-- **[../src/README_NEW_ENTITY.md](../src/README_NEW_ENTITY.md)** - Step-by-step feature guide
 - **[API_GUIDE.md](API_GUIDE.md)** - API reference
 - **[DATABASE_GUIDE.md](DATABASE_GUIDE.md)** - Database patterns
+- **[AUTHENTICATION_GUIDE.md](AUTHENTICATION_GUIDE.md)** - Authentication setup
 
 ---
 
