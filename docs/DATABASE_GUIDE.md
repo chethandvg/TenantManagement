@@ -11,6 +11,9 @@ Complete guide to database setup, migrations, seeding, and best practices.
 - [Database Seeding](#database-seeding)
 - [Migrations](#migrations)
 - [Retry Strategy](#retry-strategy)
+- [Concurrency Control](#concurrency-control)
+- [Soft Delete](#soft-delete)
+- [Automatic Audit Tracking](#automatic-audit-tracking)
 - [Best Practices](#best-practices)
 
 ---
@@ -321,6 +324,248 @@ Attempt 4 → Fail
   ↓ Wait 8s
 Attempt 5 → Success ✅
 ```
+
+---
+
+## 🔐 Concurrency Control
+
+### Overview
+
+Archu implements **optimistic concurrency control** to prevent lost updates when multiple users modify the same data simultaneously.
+
+| Feature | Implementation | Benefit |
+|---------|----------------|---------|
+| **Concurrency Token** | SQL Server `rowversion` | Automatic version tracking |
+| **Conflict Detection** | EF Core + Application layer | Two-level validation |
+| **Error Handling** | 409 Conflict response | User-friendly feedback |
+
+### How It Works
+
+All entities inherit from `BaseEntity` which includes a `RowVersion` property:
+
+```csharp
+public abstract class BaseEntity
+{
+    public Guid Id { get; set; }
+    
+    [Timestamp]  // EF Core concurrency token
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+    
+    // Other properties...
+}
+```
+
+SQL Server automatically updates `RowVersion` on every INSERT or UPDATE.
+
+### Client-Side Concurrency Flow
+
+```
+1. Client GETs product → RowVersion: v1
+2. Client edits locally
+3. Client PUTs update with RowVersion: v1
+4. Server checks: Is database still v1?
+   ✅ YES → Save succeeds, return v2
+   ❌ NO  → Return 409 Conflict
+```
+
+### Two-Level Validation
+
+**Level 1: Early Validation (Application Layer)**
+```csharp
+if (!product.RowVersion.SequenceEqual(request.RowVersion))
+{
+    return Result<ProductDto>.Failure(
+        "The product was modified by another user. Please refresh and try again.");
+}
+```
+
+**Level 2: Database Validation (EF Core)**
+```csharp
+Context.Entry(product).Property(e => e.RowVersion).OriginalValue = request.RowVersion;
+await SaveChangesAsync();  // Throws DbUpdateConcurrencyException if conflict
+```
+
+### Repository Implementation
+
+```csharp
+public class ProductRepository : BaseRepository<Product>
+{
+    public Task UpdateAsync(Product product, byte[] originalRowVersion, CancellationToken ct = default)
+    {
+        // Set original RowVersion for concurrency detection
+        SetOriginalRowVersion(product, originalRowVersion);
+        DbSet.Update(product);
+        return Task.CompletedTask;
+    }
+}
+```
+
+### DTOs and Requests
+
+**Always include RowVersion in DTOs:**
+```csharp
+public sealed class ProductDto
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public decimal Price { get; init; }
+    public byte[] RowVersion { get; init; } = Array.Empty<byte>();
+}
+
+public sealed class UpdateProductRequest
+{
+    [Required] public Guid Id { get; init; }
+    [Required] public string Name { get; init; } = string.Empty;
+    [Required] public decimal Price { get; init; }
+    [Required, MinLength(1)] public byte[] RowVersion { get; init; } = Array.Empty<byte>();
+}
+```
+
+### Error Handling
+
+```csharp
+try
+{
+    await _unitOfWork.Products.UpdateAsync(product, request.RowVersion, ct);
+    await _unitOfWork.SaveChangesAsync(ct);
+}
+catch (DbUpdateConcurrencyException)
+{
+    return Result<ProductDto>.Failure(
+        "The product was modified by another user. Please refresh and try again.");
+}
+```
+
+---
+
+## 🗑️ Soft Delete
+
+### Overview
+
+Instead of physically deleting records, Archu marks them as deleted while preserving the data for audit history.
+
+### Implementation
+
+All entities inherit `ISoftDeletable`:
+
+```csharp
+public interface ISoftDeletable
+{
+    bool IsDeleted { get; set; }
+    DateTime? DeletedAtUtc { get; set; }
+    string? DeletedBy { get; set; }
+}
+```
+
+### Global Query Filter
+
+DbContext automatically excludes soft-deleted records from all queries:
+
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+    {
+        if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+        {
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var property = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
+            var filter = Expression.Lambda(Expression.Not(property), parameter);
+            
+            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
+        }
+    }
+}
+```
+
+### Soft Delete Transform
+
+When you call `DbSet.Remove()`, the DbContext transforms it to an UPDATE:
+
+```csharp
+public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
+{
+    ApplyAuditing();
+    ApplySoftDeleteTransform();
+    return await base.SaveChangesAsync(ct);
+}
+
+private void ApplySoftDeleteTransform()
+{
+    var now = _time.UtcNow;
+    var user = _currentUser.UserId;
+
+    foreach (var entry in ChangeTracker.Entries<ISoftDeletable>()
+                 .Where(e => e.State == EntityState.Deleted))
+    {
+        entry.State = EntityState.Modified;
+        entry.Entity.IsDeleted = true;
+        entry.Entity.DeletedAtUtc = now;
+        entry.Entity.DeletedBy = user;
+    }
+}
+```
+
+### Querying Deleted Records
+
+To include soft-deleted records (e.g., for admin views):
+
+```csharp
+var allProducts = await _context.Products
+    .IgnoreQueryFilters()
+    .ToListAsync();
+```
+
+---
+
+## 📝 Automatic Audit Tracking
+
+### Overview
+
+All entities automatically track creation, modification, and deletion timestamps along with the user who performed the action.
+
+### Audit Fields
+
+| Field | Populated On | Value |
+|-------|-------------|-------|
+| `CreatedAtUtc` | INSERT | Current UTC time |
+| `CreatedBy` | INSERT | Current user ID |
+| `ModifiedAtUtc` | UPDATE | Current UTC time |
+| `ModifiedBy` | UPDATE | Current user ID |
+| `DeletedAtUtc` | Soft DELETE | Current UTC time |
+| `DeletedBy` | Soft DELETE | Current user ID |
+
+### Implementation
+
+```csharp
+private void ApplyAuditing()
+{
+    var now = _time.UtcNow;
+    var user = _currentUser.UserId;
+
+    foreach (var entry in ChangeTracker.Entries<IAuditable>())
+    {
+        if (entry.State == EntityState.Added)
+        {
+            entry.Entity.CreatedAtUtc = now;
+            entry.Entity.CreatedBy = user;
+        }
+
+        if (entry.State == EntityState.Modified)
+        {
+            entry.Entity.ModifiedAtUtc = now;
+            entry.Entity.ModifiedBy = user;
+        }
+    }
+}
+```
+
+### Benefits
+
+- ✅ Complete audit trail
+- ✅ Automatic (no manual tracking)
+- ✅ Consistent across all entities
+- ✅ Supports compliance requirements
 
 ---
 

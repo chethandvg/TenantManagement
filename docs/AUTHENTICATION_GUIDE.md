@@ -1332,3 +1332,65 @@ A network-related or instance-specific error occurred
 **Maintainer**: Archu Development Team
 
 **Questions?** See [docs/README.md](README.md) or open an [issue](https://github.com/chethandvg/archu/issues)
+
+---
+
+## 🏗️ Security Architecture
+
+### Shared Infrastructure Design
+
+This section captures how the Archu platform reuses a single identity store, JWT configuration, and permission model across every API surface.
+
+#### Shared ApplicationDbContext & Connection String
+
+Both **Archu.Api** and **Archu.AdminApi** call `services.AddInfrastructure(configuration, environment)` during startup, which registers `ApplicationDbContext` with the same configuration for both APIs. The Infrastructure layer resolves the connection string from the `Sql` (fallback `archudb`) connection string entry and wires up Entity Framework Core with retry and migration settings.
+
+**Key Files:**
+- `src/Archu.Api/Program.cs` → `builder.Services.AddInfrastructure(...)`
+- `src/Archu.AdminApi/Program.cs` → `builder.Services.AddInfrastructure(...)`
+- `src/Archu.Infrastructure/DependencyInjection.cs` → `AddDatabase` configures `ApplicationDbContext`
+
+Because both APIs resolve the context from the same DI registration, every write to roles, permissions, or tokens is persisted to the same database and becomes visible to the other API after the transaction is committed.
+
+#### Canonical Identity Store & Permission Entities
+
+`ApplicationDbContext` exposes all identity tables, including permission entities:
+
+| Entity | Purpose | DbSet |
+| ------ | ------- | ----- |
+| `ApplicationPermission` | Catalog of discrete permissions | `ApplicationDbContext.Permissions` |
+| `RolePermission` | Junction table linking roles to permissions | `ApplicationDbContext.RolePermissions` |
+| `UserPermission` | Junction table assigning permissions directly to users | `ApplicationDbContext.UserPermissions` |
+
+These DbSets live alongside existing identity entities (`ApplicationUser`, `ApplicationRole`, `UserRole`) in the same context.
+
+#### JWT Issuer/Audience/Signing Key Reuse
+
+`AddInfrastructure` wires up the shared JWT authentication stack. `AddAuthenticationServices` binds the `Jwt` configuration section into `JwtOptions`, validates the issuer/audience/secret, and registers `JwtTokenService` plus the ASP.NET Core JWT bearer handler. 
+
+Because both APIs call the same extension, they rely on identical issuer, audience, and signing key settings, guaranteeing tokens created by one API are trusted by the others.
+
+#### Permission Propagation Into Tokens
+
+`AuthenticationService.GenerateAuthenticationResultAsync` mints access tokens during login/registration. It loads the caller's roles, resolves role-assigned permissions via `RolePermissions`, gathers direct grants from `UserPermissions`, and hydrates the token with `CustomClaimTypes.Permission` claims.
+
+The generated JWT includes:
+- Standard identity claims (subject, email, username)
+- Role claims for every role assignment
+- Permission claims representing the union of role and direct permissions
+- Feature flags such as `EmailVerified` and `TwoFactorEnabled`
+
+Tokens from either API carry the same claim shape, allowing downstream services to rely on JWT permissions without re-querying the database.
+
+#### Integrating New Services
+
+When building a new API or background worker:
+
+1. Reference `Archu.Infrastructure` and call `services.AddInfrastructure(configuration, environment)`
+2. Consume `ApplicationDbContext` or repository abstractions
+3. Configure your host to read the shared `Jwt` configuration for token validation
+4. Use JWT permission claims to enforce policies
+
+This keeps every service aligned with the canonical identity store while preserving centralized token issuance and validation.
+
+---
