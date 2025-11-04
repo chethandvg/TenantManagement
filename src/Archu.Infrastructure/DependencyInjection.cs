@@ -4,9 +4,12 @@ using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Domain.ValueObjects;
 using Archu.Infrastructure.Authentication;
+using Archu.Infrastructure.Contentful;
 using Archu.Infrastructure.Persistence;
 using Archu.Infrastructure.Repositories;
 using Archu.Infrastructure.Time;
+using Contentful.Core;
+using Contentful.Core.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -40,6 +43,9 @@ public static class DependencyInjection
 
         // Add authentication services
         services.AddAuthenticationServices(configuration, environment);
+
+        // Add Contentful services
+        services.AddContentfulServices(configuration);
 
         // Add repositories
         services.AddRepositories();
@@ -208,6 +214,70 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ITimeProvider, SystemTimeProvider>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures Contentful CMS services.
+    /// </summary>
+    private static IServiceCollection AddContentfulServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Configure Contentful options
+        services.Configure<ContentfulSettings>(configuration.GetSection(ContentfulSettings.SectionName));
+
+        // Get Contentful options for validation
+        var contentfulSettings = configuration
+            .GetSection(ContentfulSettings.SectionName)
+            .Get<ContentfulSettings>();
+
+        // Only configure Contentful if credentials are provided
+        // This allows the app to run without Contentful configured
+        if (contentfulSettings != null &&
+            !string.IsNullOrWhiteSpace(contentfulSettings.SpaceId) &&
+            !string.IsNullOrWhiteSpace(contentfulSettings.DeliveryApiKey))
+        {
+            contentfulSettings.Validate();
+
+            // Create HttpClient for Contentful
+            var httpClient = new HttpClient();
+
+            // Configure Contentful client options
+            var contentfulClientOptions = new ContentfulOptions
+            {
+                DeliveryApiKey = contentfulSettings.DeliveryApiKey,
+                SpaceId = contentfulSettings.SpaceId,
+                Environment = contentfulSettings.Environment,
+                UsePreviewApi = false
+            };
+
+            // Register ContentfulClient as singleton
+            services.AddSingleton<IContentfulClient>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<ContentfulClient>>();
+                logger.LogInformation(
+                    "Initializing Contentful client for Space: {SpaceId}, Environment: {Environment}",
+                    contentfulSettings.SpaceId,
+                    contentfulSettings.Environment);
+
+                return new ContentfulClient(httpClient, contentfulClientOptions);
+            });
+
+            // Register Contentful service
+            services.AddScoped<IContentfulService, ContentfulService>();
+        }
+        else
+        {
+            // Register a null/placeholder service if Contentful is not configured
+            services.AddScoped<IContentfulService>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<ContentfulService>>();
+                logger.LogWarning("Contentful is not configured. ContentfulService will not be available.");
+                throw new InvalidOperationException("Contentful is not configured. Please configure Contentful:SpaceId and Contentful:DeliveryApiKey in appsettings.json or environment variables.");
+            });
+        }
 
         return services;
     }
