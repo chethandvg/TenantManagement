@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Common;
+using Archu.SharedKernel.Constants;
 using Archu.Domain.Constants;
 using Archu.Domain.Entities.Identity;
 using Microsoft.Extensions.Logging;
@@ -98,6 +99,26 @@ public class AuthenticationService : IAuthenticationService
                     UserId = user.Id,
                     RoleId = defaultRole.Id
                 }, cancellationToken);
+
+                // Automatically assign role permissions to the user
+                var rolePermissions = await _unitOfWork.RolePermissions.GetByRoleIdsAsync(
+                    new[] { defaultRole.Id }, 
+                    cancellationToken);
+                
+                if (rolePermissions.Count > 0)
+                {
+                    var permissionIds = rolePermissions.Select(rp => rp.PermissionId).ToList();
+                    await _unitOfWork.UserPermissions.LinkPermissionsAsync(
+                        user.Id, 
+                        permissionIds, 
+                        cancellationToken);
+
+                    _logger.LogInformation(
+                        "Automatically assigned {PermissionCount} permissions from role '{RoleName}' to user '{UserName}'",
+                        permissionIds.Count,
+                        defaultRole.Name,
+                        user.UserName);
+                }
             }
             else
             {

@@ -1,6 +1,7 @@
+using System.Linq;
 using Archu.Application.Abstractions;
 using Archu.Application.Common;
-using Archu.Domain.Constants;
+using Archu.SharedKernel.Constants;
 using Archu.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -89,6 +90,27 @@ public class AssignRoleCommandHandler : IRequestHandler<AssignRoleCommand, Resul
         };
 
         await _unitOfWork.UserRoles.AddAsync(userRole, cancellationToken);
+
+        // Automatically assign role permissions to the user
+        var rolePermissions = await _unitOfWork.RolePermissions.GetByRoleIdsAsync(
+            new[] { request.RoleId }, 
+            cancellationToken);
+        
+        if (rolePermissions.Count > 0)
+        {
+            var permissionIds = rolePermissions.Select(rp => rp.PermissionId).ToList();
+            await _unitOfWork.UserPermissions.LinkPermissionsAsync(
+                request.UserId, 
+                permissionIds, 
+                cancellationToken);
+
+            _logger.LogInformation(
+                "Automatically assigned {PermissionCount} permissions from role '{RoleName}' to user '{UserName}'",
+                permissionIds.Count,
+                role.Name,
+                user.UserName);
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

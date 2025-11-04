@@ -1,3 +1,4 @@
+using Archu.SharedKernel.Constants;
 using Archu.Domain.Enums;
 
 namespace Archu.Domain.Constants;

@@ -80,24 +80,29 @@
 5. ✅ **[API Guide](API_GUIDE.md)** - API endpoints and contracts
 
 ### I want to develop features...
-1. ✅ **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development workflow
-2. ✅ **[New Entity Guide](getting-started/ADDING_NEW_ENTITY.md)** - Step-by-step tutorial
-3. ✅ **[Architecture Guide](ARCHITECTURE.md)** - Design patterns & layer responsibilities
-4. ✅ **[Application Layer](../src/Archu.Application/README.md)** - CQRS & use cases
-5. ✅ **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Data access & repositories
-6. ✅ **[Archu.AppHost](../src/Archu.AppHost/README.md)** - Local development orchestration ⭐ NEW
-7. ✅ **[Archu.ServiceDefaults](../src/Archu.ServiceDefaults/README.md)** - Shared configuration ⭐ NEW
+1. ✅ **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development workflow + Adding new entities tutorial
+2. ✅ **[Architecture Guide](ARCHITECTURE.md)** - Design patterns & layer responsibilities
+3. ✅ **[Application Layer](../src/Archu.Application/README.md)** - CQRS & use cases
+4. ✅ **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Data access & repositories
+5. ✅ **[Archu.AppHost](../src/Archu.AppHost/README.md)** - Local development orchestration ⭐ NEW
+6. ✅ **[Archu.ServiceDefaults](../src/Archu.ServiceDefaults/README.md)** - Shared configuration ⭐ NEW
 
 ### I want to manage security...
-1. ✅ **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT setup
-2. ✅ **[Authorization Guide](AUTHORIZATION_GUIDE.md)** - Role management
-3. ✅ **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)** - Password policies
-4. ✅ **[Security Architecture](security.md)** - Shared identity store, JWT reuse, permission model
+1. ✅ **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT setup + Security architecture
+2. ✅ **[Authentication Implementation](AUTHENTICATION_IMPLEMENTATION.md)** - Technical implementation details
+3. ✅ **[Authorization Guide](AUTHORIZATION_GUIDE.md)** - Role management
+4. ✅ **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)** - Password policies
 
 ### I want to work with the database...
-1. ✅ **[Database Guide](DATABASE_GUIDE.md)** - Complete database guide
+1. ✅ **[Database Guide](DATABASE_GUIDE.md)** - Complete database guide + Concurrency control
 2. ✅ **[Development Guide](DEVELOPMENT_GUIDE.md)** - Migrations and patterns
 3. ✅ **[Infrastructure Layer](../src/Archu.Infrastructure/README.md)** - Repository implementations
+
+### I want to build UI components...
+1. ✅ **[UI Guide](UI_GUIDE.md)** - UI authorization, loading boundaries, error handling
+2. ✅ **[Archu.Web README](../src/Archu.Web/README.md)** - Blazor WebAssembly application
+3. ✅ **[Archu.Ui README](../src/Archu.Ui/README.md)** - Shared component library
+4. ✅ **[API Client](../src/Archu.ApiClient/README.md)** - HTTP client with authentication
 
 ### I want to test the application... ⭐ NEW
 1. ✅ **[Integration Tests](../tests/Archu.IntegrationTests/README.md)** - API integration testing
@@ -186,7 +191,7 @@ dotnet test /p:CollectCoverage=true
 
 | Metric | Value |
 |--------|-------|
-| **Total Documentation Files** | 39 essential docs ✅ |
+| **Docs Folder MD Files** | 12 files ✅ (reduced from 18) |
 | **Quick Start Time** | 10 minutes |
 | **Full Onboarding Time** | 45 minutes |
 | **HTTP Request Examples** | 71+ examples |
@@ -194,13 +199,24 @@ dotnet test /p:CollectCoverage=true
 | **Project READMEs** | 13 |
 | **Test Project READMEs** | 4 ⭐ |
 | **Total Tests** | 67+ tests (17 integration + 11 API client + 2 UI + 37 unit test classes) |
-| **Documentation Cleanup** | Complete ✅ |
+| **Documentation Consolidation** | Complete ✅ (33% reduction) |
 
 ---
 
 ### Recent Updates ⭐
 
 **Date**: 2025-01-24
+
+**Documentation Consolidation:**
+- ✅ **Reduced docs folder from 18 to 12 files** (33% reduction)
+- ✅ **Consolidated authentication guides** (3 files → AUTHENTICATION_IMPLEMENTATION.md)
+- ✅ **Merged database guides** (CONCURRENCY_GUIDE → DATABASE_GUIDE.md)
+- ✅ **Combined UI guides** (3 files → UI_GUIDE.md)
+- ✅ **Integrated security architecture** (security.md → AUTHENTICATION_GUIDE.md)
+- ✅ **Added new entity tutorial** (ADDING_NEW_ENTITY → DEVELOPMENT_GUIDE.md)
+- ✅ **Maintained all content** (no information lost, better organization)
+
+**Previous Updates:**
 
 **Documentation Maintenance:**
 - ✅ **Removed temporary cleanup files** (3 files)
@@ -221,7 +237,8 @@ dotnet test /p:CollectCoverage=true
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 5.1 | 2025-01-24 | **Documentation verification & cleanup** (removed 3 temp files, fixed dates/links) ✅ NEW |
+| 5.2 | 2025-01-24 | **Documentation consolidation** (18 → 12 files, 33% reduction, improved organization) ✅ NEW |
+| 5.1 | 2025-01-24 | **Documentation verification & cleanup** (removed 3 temp files, fixed dates/links) ✅ |
 | 5.0 | 2025-01-23 | **Documentation cleanup** (removed 12 files, improved organization) ✅ |
 | 4.4 | 2025-01-24 | **Added unit tests documentation** (Archu.UnitTests README) |
 | 4.3 | 2025-01-24 | **Added test documentation** (3 new test project READMEs) |
@@ -238,7 +255,7 @@ dotnet test /p:CollectCoverage=true
 ---
 
 **Last Updated**: 2025-01-24  
-**Version**: 5.1 ⚡ **DOCUMENTATION VERIFIED & CLEAN**  
+**Version**: 5.2 ⚡ **DOCUMENTATION CONSOLIDATED**  
 **Maintainer**: Archu Development Team
 **Questions?** Open an issue on [GitHub](https://github.com/chethandvg/archu/issues)
 

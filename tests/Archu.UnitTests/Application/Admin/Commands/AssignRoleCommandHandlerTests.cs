@@ -6,7 +6,7 @@ using Archu.Application.Abstractions;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Application.Admin.Commands.AssignRole;
 using Archu.Application.Common;
-using Archu.Domain.Constants;
+using Archu.SharedKernel.Constants;
 using Archu.Domain.Entities.Identity;
 using Archu.UnitTests.TestHelpers.Fixtures;
 using FluentAssertions;
@@ -33,6 +33,8 @@ public class AssignRoleCommandHandlerTests
         var userRepositoryMock = new Mock<IUserRepository>();
         var roleRepositoryMock = new Mock<IRoleRepository>();
         var userRoleRepositoryMock = new Mock<IUserRoleRepository>();
+        var rolePermissionRepositoryMock = new Mock<IRolePermissionRepository>();
+        var userPermissionRepositoryMock = new Mock<IUserPermissionRepository>();
         var user = new ApplicationUser { Id = userId, UserName = userName };
         var role = new ApplicationRole { Id = roleId, Name = roleName, NormalizedName = roleName.ToUpperInvariant() };
 
@@ -46,6 +48,8 @@ public class AssignRoleCommandHandlerTests
         fixture.MockUnitOfWork.Setup(unit => unit.Users).Returns(userRepositoryMock.Object);
         fixture.MockUnitOfWork.Setup(unit => unit.Roles).Returns(roleRepositoryMock.Object);
         fixture.MockUnitOfWork.Setup(unit => unit.UserRoles).Returns(userRoleRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.RolePermissions).Returns(rolePermissionRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.UserPermissions).Returns(userPermissionRepositoryMock.Object);
 
         timeProviderMock.SetupGet(provider => provider.UtcNow).Returns(utcNow);
 
@@ -80,6 +84,11 @@ public class AssignRoleCommandHandlerTests
             })
             .Returns(Task.CompletedTask);
 
+        // Mock role permissions - empty list for this test
+        rolePermissionRepositoryMock
+            .Setup(repo => repo.GetByRoleIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<RolePermission>());
+
         fixture.MockUnitOfWork
             .Setup(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Callback<CancellationToken>(token => capturedSaveToken = token)
@@ -103,6 +112,10 @@ public class AssignRoleCommandHandlerTests
         capturedUserRole.AssignedBy.Should().Be(adminId.ToString());
 
         userRoleRepositoryMock.Verify(repo => repo.AddAsync(It.Is<UserRole>(ur => ur == capturedUserRole), cancellationTokenSource.Token), Times.Once());
+        rolePermissionRepositoryMock.Verify(repo => repo.GetByRoleIdsAsync(
+            It.Is<IEnumerable<Guid>>(ids => ids.Contains(roleId)), 
+            cancellationTokenSource.Token), 
+            Times.Once());
         fixture.MockUnitOfWork.Verify(unit => unit.SaveChangesAsync(cancellationTokenSource.Token), Times.Once());
 
         capturedUserToken.Should().Be(cancellationTokenSource.Token);
@@ -117,6 +130,118 @@ public class AssignRoleCommandHandlerTests
                 ["RoleName"] = roleName,
                 ["UserName"] = userName,
                 ["AdminUserId"] = adminId.ToString()
+            },
+            Times.Once());
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenRoleHasPermissions_ShouldAssignRoleAndPermissionsToUser(
+        Guid userId,
+        Guid roleId,
+        Guid adminId,
+        Guid permission1Id,
+        Guid permission2Id,
+        string userName,
+        string roleName,
+        DateTime utcNow)
+    {
+        // Arrange
+        var timeProviderMock = new Mock<ITimeProvider>();
+        var userRepositoryMock = new Mock<IUserRepository>();
+        var roleRepositoryMock = new Mock<IRoleRepository>();
+        var userRoleRepositoryMock = new Mock<IUserRoleRepository>();
+        var rolePermissionRepositoryMock = new Mock<IRolePermissionRepository>();
+        var userPermissionRepositoryMock = new Mock<IUserPermissionRepository>();
+        var user = new ApplicationUser { Id = userId, UserName = userName };
+        var role = new ApplicationRole { Id = roleId, Name = roleName, NormalizedName = roleName.ToUpperInvariant() };
+
+        var rolePermissions = new List<RolePermission>
+        {
+            new RolePermission { RoleId = roleId, PermissionId = permission1Id },
+            new RolePermission { RoleId = roleId, PermissionId = permission2Id }
+        };
+
+        var fixture = CreateFixture(timeProviderMock)
+            .WithAuthenticatedUser(adminId);
+
+        fixture.MockCurrentUser.Setup(current => current.IsInRole(RoleNames.SuperAdmin)).Returns(true);
+        fixture.MockCurrentUser.Setup(current => current.IsInRole(RoleNames.Administrator)).Returns(false);
+        fixture.MockCurrentUser.Setup(current => current.GetRoles()).Returns(new[] { RoleNames.SuperAdmin });
+
+        fixture.MockUnitOfWork.Setup(unit => unit.Users).Returns(userRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.Roles).Returns(roleRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.UserRoles).Returns(userRoleRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.RolePermissions).Returns(rolePermissionRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.UserPermissions).Returns(userPermissionRepositoryMock.Object);
+
+        timeProviderMock.SetupGet(provider => provider.UtcNow).Returns(utcNow);
+
+        userRepositoryMock
+            .Setup(repo => repo.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        roleRepositoryMock
+            .Setup(repo => repo.GetByIdAsync(roleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(role);
+
+        userRoleRepositoryMock
+            .Setup(repo => repo.UserHasRoleAsync(userId, roleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        userRoleRepositoryMock
+            .Setup(repo => repo.AddAsync(It.IsAny<UserRole>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        rolePermissionRepositoryMock
+            .Setup(repo => repo.GetByRoleIdsAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(rolePermissions);
+
+        IEnumerable<Guid>? capturedPermissionIds = null;
+        userPermissionRepositoryMock
+            .Setup(repo => repo.LinkPermissionsAsync(userId, It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .Callback<Guid, IEnumerable<Guid>, CancellationToken>((_, permIds, _) => capturedPermissionIds = permIds.ToList())
+            .Returns(Task.CompletedTask);
+
+        fixture.MockUnitOfWork
+            .Setup(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        using var cancellationTokenSource = new CancellationTokenSource();
+
+        var handler = fixture.CreateHandler();
+        var command = new AssignRoleCommand(userId, roleId);
+
+        // Act
+        var result = await handler.Handle(command, cancellationTokenSource.Token);
+
+        // Assert
+        result.Should().Be(Result.Success());
+
+        userRoleRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<UserRole>(), cancellationTokenSource.Token), Times.Once());
+        rolePermissionRepositoryMock.Verify(repo => repo.GetByRoleIdsAsync(
+            It.Is<IEnumerable<Guid>>(ids => ids.Contains(roleId)), 
+            cancellationTokenSource.Token), 
+            Times.Once());
+        userPermissionRepositoryMock.Verify(repo => repo.LinkPermissionsAsync(
+            userId,
+            It.IsAny<IEnumerable<Guid>>(),
+            cancellationTokenSource.Token),
+            Times.Once());
+        
+        capturedPermissionIds.Should().NotBeNull();
+        capturedPermissionIds.Should().Contain(permission1Id);
+        capturedPermissionIds.Should().Contain(permission2Id);
+        capturedPermissionIds.Should().HaveCount(2);
+
+        fixture.MockUnitOfWork.Verify(unit => unit.SaveChangesAsync(cancellationTokenSource.Token), Times.Once());
+
+        // Verify that permission assignment was logged
+        fixture.VerifyStructuredInformationLogged(
+            new Dictionary<string, object?>
+            {
+                ["PermissionCount"] = 2,
+                ["RoleName"] = roleName,
+                ["UserName"] = userName
             },
             Times.Once());
     }

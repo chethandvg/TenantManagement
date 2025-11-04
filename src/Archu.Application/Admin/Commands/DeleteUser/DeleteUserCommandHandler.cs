@@ -1,6 +1,6 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Common;
-using Archu.Domain.Constants;
+using Archu.SharedKernel.Constants;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

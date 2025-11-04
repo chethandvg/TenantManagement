@@ -1,4 +1,4 @@
-namespace Archu.Domain.Constants;
+namespace Archu.SharedKernel.Constants;
 
 /// <summary>
 /// Contains constant values for system roles.

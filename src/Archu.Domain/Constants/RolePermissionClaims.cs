@@ -1,3 +1,5 @@
+using Archu.SharedKernel.Constants;
+
 namespace Archu.Domain.Constants;
 
 /// <summary>
