@@ -69,7 +69,7 @@ public class ContentfulController : ControllerBase
             if (page is null)
             {
                 _logger.LogWarning("Contentful page not found: {PageUrl}", pageUrl);
-                return NotFound(ApiResponse<ContentfulPageDto>.Fail($"Page '{pageUrl}' not found"));
+                return NotFound(ApiResponse<object>.Fail($"Page '{pageUrl}' not found"));
             }
 
             _logger.LogInformation(

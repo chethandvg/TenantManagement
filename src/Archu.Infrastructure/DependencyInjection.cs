@@ -270,13 +270,9 @@ public static class DependencyInjection
         }
         else
         {
-            // Register a null/placeholder service if Contentful is not configured
-            services.AddScoped<IContentfulService>(sp =>
-            {
-                var logger = sp.GetRequiredService<ILogger<ContentfulService>>();
-                logger.LogWarning("Contentful is not configured. ContentfulService will not be available.");
-                throw new InvalidOperationException("Contentful is not configured. Please configure Contentful:SpaceId and Contentful:DeliveryApiKey in appsettings.json or environment variables.");
-            });
+            // Register a null object implementation if Contentful is not configured
+            // This allows the app to run without Contentful configured
+            services.AddScoped<IContentfulService, NullContentfulService>();
         }
 
         return services;
