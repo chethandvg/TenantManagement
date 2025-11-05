@@ -1,5 +1,6 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Contentful.Models;
+using Archu.Infrastructure.Contentful.Models;
 using Contentful.Core;
 using Contentful.Core.Models;
 using Contentful.Core.Search;
@@ -33,8 +34,8 @@ public class ContentfulService : IContentfulService
 
         try
         {
-            // Build query to find page by slug
-            var queryBuilder = QueryBuilder<Entry<dynamic>>.New
+            // Build query to find page by slug using Entry wrapper
+            var queryBuilder = QueryBuilder<Entry<ContentfulPageEntry>>.New
                 .ContentTypeIs("page") // Using "page" as the content type ID
                 .FieldEquals("fields.slug", pageUrl)
                 .Include(3); // Include linked entries up to 3 levels deep
@@ -76,52 +77,26 @@ public class ContentfulService : IContentfulService
     /// <summary>
     /// Parses a Contentful entry into a ContentfulPage model.
     /// </summary>
-    private ContentfulPage ParsePage(Entry<dynamic> entry)
+    private ContentfulPage ParsePage(Entry<ContentfulPageEntry> entry)
     {
         var page = new ContentfulPage();
 
         try
         {
-            // Access fields directly from the dynamic entry.Fields
-            // The Contentful SDK exposes fields as properties on the Fields object
-            dynamic fields = entry.Fields;
-            
-            if (fields != null)
+            // Access fields from the strongly-typed entry
+            if (entry.Fields != null)
             {
-                try
+                page.Slug = entry.Fields.Slug ?? string.Empty;
+                page.Title = entry.Fields.Title ?? string.Empty;
+                page.Description = entry.Fields.Description;
+                
+                // Parse sections if available
+                if (entry.Fields.Sections != null && entry.Fields.Sections.Any())
                 {
-                    page.Slug = fields.slug?.ToString() ?? string.Empty;
+                    page.Sections = ParseSections(entry.Fields.Sections);
                 }
-                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+                else
                 {
-                    _logger.LogWarning("Field 'slug' not found in entry");
-                }
-
-                try
-                {
-                    page.Title = fields.title?.ToString() ?? string.Empty;
-                }
-                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
-                {
-                    _logger.LogWarning("Field 'title' not found in entry");
-                }
-
-                try
-                {
-                    page.Description = fields.description?.ToString();
-                }
-                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
-                {
-                    // Description is optional, no warning needed
-                }
-
-                try
-                {
-                    page.Sections = ParseSections(fields.sections);
-                }
-                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
-                {
-                    _logger.LogWarning("Field 'sections' not found in entry");
                     page.Sections = new List<ContentfulSection>();
                 }
             }
@@ -152,26 +127,22 @@ public class ContentfulService : IContentfulService
     /// <summary>
     /// Parses sections from a Contentful entry field.
     /// </summary>
-    private List<ContentfulSection> ParseSections(object? sectionsObj)
+    private List<ContentfulSection> ParseSections(List<object>? sectionsObj)
     {
         var sectionsList = new List<ContentfulSection>();
 
-        if (sectionsObj == null)
+        if (sectionsObj == null || !sectionsObj.Any())
         {
             return sectionsList;
         }
 
         try
         {
-            // Sections might be an array/list of entries
-            if (sectionsObj is IEnumerable<object> sectionsEnumerable)
-            {
-                sectionsList = sectionsEnumerable
-                    .Select(sectionEntry => ParseSection(sectionEntry))
-                    .Where(section => section != null)
-                    .Cast<ContentfulSection>()
-                    .ToList();
-            }
+            sectionsList = sectionsObj
+                .Select(sectionEntry => ParseSection(sectionEntry))
+                .Where(section => section != null)
+                .Cast<ContentfulSection>()
+                .ToList();
         }
         catch (InvalidCastException ex)
         {
@@ -199,61 +170,58 @@ public class ContentfulService : IContentfulService
 
         try
         {
-            // Try to access the section as an Entry
-            if (sectionObj is Entry<dynamic> sectionEntry)
+            // Serialize and deserialize to handle dynamic types properly
+            var json = JsonSerializer.Serialize(sectionObj);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            // Extract system properties
+            if (root.TryGetProperty("sys", out var sysElement))
             {
-                // Get system properties
-                if (sectionEntry.SystemProperties != null)
+                if (sysElement.TryGetProperty("id", out var idElement))
                 {
-                    section.Id = sectionEntry.SystemProperties.Id ?? string.Empty;
-                    section.ContentType = sectionEntry.SystemProperties.ContentType?.SystemProperties?.Id ?? string.Empty;
-
-                    section.Sys = new ContentfulSystemMetadata
-                    {
-                        Id = sectionEntry.SystemProperties.Id ?? string.Empty,
-                        ContentType = sectionEntry.SystemProperties.ContentType?.SystemProperties?.Id ?? string.Empty,
-                        Locale = sectionEntry.SystemProperties.Locale,
-                        CreatedAt = sectionEntry.SystemProperties.CreatedAt,
-                        UpdatedAt = sectionEntry.SystemProperties.UpdatedAt,
-                        Revision = sectionEntry.SystemProperties.Revision
-                    };
+                    section.Id = idElement.GetString() ?? string.Empty;
                 }
 
-                // Get fields directly from the dynamic entry.Fields
-                dynamic fields = sectionEntry.Fields;
-                if (fields != null)
+                if (sysElement.TryGetProperty("contentType", out var contentTypeElement))
                 {
-                    // Convert dynamic fields to dictionary
-                    var fieldsDict = new Dictionary<string, object?>();
-                    
-                    try
+                    if (contentTypeElement.TryGetProperty("sys", out var ctSysElement))
                     {
-                        // Attempt to enumerate properties dynamically
-                        foreach (var prop in ((object)fields).GetType().GetProperties())
+                        if (ctSysElement.TryGetProperty("id", out var ctIdElement))
                         {
-                            try
-                            {
-                                var value = prop.GetValue(fields);
-                                fieldsDict[ToCamelCase(prop.Name)] = value;
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogDebug(ex, "Could not get property {PropertyName}", prop.Name);
-                            }
+                            section.ContentType = ctIdElement.GetString() ?? string.Empty;
                         }
                     }
-                    catch (Exception)
-                    {
-                        // If reflection fails, fields might be a dictionary already
-                        if (fields is IDictionary<string, object> dict)
-                        {
-                            fieldsDict = dict.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value);
-                        }
-                    }
-                    
-                    section.Fields = fieldsDict;
                 }
+
+                section.Sys = new ContentfulSystemMetadata
+                {
+                    Id = section.Id,
+                    ContentType = section.ContentType,
+                    Locale = sysElement.TryGetProperty("locale", out var localeEl) ? localeEl.GetString() : null,
+                    CreatedAt = sysElement.TryGetProperty("createdAt", out var createdEl) && createdEl.TryGetDateTime(out var created) ? created : null,
+                    UpdatedAt = sysElement.TryGetProperty("updatedAt", out var updatedEl) && updatedEl.TryGetDateTime(out var updated) ? updated : null,
+                    Revision = sysElement.TryGetProperty("revision", out var revEl) && revEl.TryGetInt32(out var rev) ? rev : null
+                };
             }
+
+            // Extract fields
+            if (root.TryGetProperty("fields", out var fieldsElement))
+            {
+                var fieldsDict = new Dictionary<string, object?>();
+                
+                foreach (var field in fieldsElement.EnumerateObject())
+                {
+                    fieldsDict[field.Name] = ExtractJsonValue(field.Value);
+                }
+                
+                section.Fields = fieldsDict;
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "JSON error while parsing section, skipping");
+            return null;
         }
         catch (InvalidCastException ex)
         {
@@ -270,15 +238,20 @@ public class ContentfulService : IContentfulService
     }
 
     /// <summary>
-    /// Converts PascalCase to camelCase for field names.
+    /// Extracts a value from a JsonElement.
     /// </summary>
-    private static string ToCamelCase(string str)
+    private object? ExtractJsonValue(JsonElement element)
     {
-        if (string.IsNullOrEmpty(str) || char.IsLower(str[0]))
+        return element.ValueKind switch
         {
-            return str;
-        }
-
-        return char.ToLowerInvariant(str[0]) + str.Substring(1);
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number => element.TryGetInt64(out var longVal) ? longVal : element.GetDouble(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            JsonValueKind.Array => element.EnumerateArray().Select(ExtractJsonValue).ToList(),
+            JsonValueKind.Object => element.EnumerateObject().ToDictionary(p => p.Name, p => ExtractJsonValue(p.Value)),
+            _ => element.GetRawText()
+        };
     }
 }
