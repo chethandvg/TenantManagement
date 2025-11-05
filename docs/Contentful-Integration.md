@@ -243,7 +243,7 @@ The Contentful endpoint is marked with `[AllowAnonymous]` because:
 
 ## Dependencies
 
-- `contentful.csharp` v8.2.0
+- `contentful.csharp` v8.1.1
   - Official Contentful .NET SDK
   - No known security vulnerabilities
   - Maintained by Contentful

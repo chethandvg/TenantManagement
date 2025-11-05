@@ -86,9 +86,28 @@ public class ContentfulController : ControllerBase
                 StatusCodes.Status500InternalServerError,
                 ApiResponse<object>.Fail("Contentful CMS is not configured on this server"));
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
         {
-            _logger.LogError(ex, "Error retrieving Contentful page: {PageUrl}", pageUrl);
+            _logger.LogWarning(ex, "Invalid argument while retrieving Contentful page: {PageUrl}", pageUrl);
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Network error while retrieving Contentful page: {PageUrl}", pageUrl);
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                ApiResponse<object>.Fail("Contentful CMS is temporarily unavailable"));
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Request timeout while retrieving Contentful page: {PageUrl}", pageUrl);
+            return StatusCode(
+                StatusCodes.Status504GatewayTimeout,
+                ApiResponse<object>.Fail("Request to Contentful CMS timed out"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation while retrieving Contentful page: {PageUrl}", pageUrl);
             return StatusCode(
                 StatusCodes.Status500InternalServerError,
                 ApiResponse<object>.Fail("An error occurred while retrieving the page"));

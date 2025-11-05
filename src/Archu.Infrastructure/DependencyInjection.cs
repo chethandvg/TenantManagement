@@ -241,9 +241,6 @@ public static class DependencyInjection
         {
             contentfulSettings.Validate();
 
-            // Create HttpClient for Contentful
-            var httpClient = new HttpClient();
-
             // Configure Contentful client options
             var contentfulClientOptions = new ContentfulOptions
             {
@@ -253,8 +250,8 @@ public static class DependencyInjection
                 UsePreviewApi = false
             };
 
-            // Register ContentfulClient as singleton
-            services.AddSingleton<IContentfulClient>(sp =>
+            // Register ContentfulClient as singleton using IHttpClientFactory
+            services.AddHttpClient<IContentfulClient, ContentfulClient>((httpClient, sp) =>
             {
                 var logger = sp.GetRequiredService<ILogger<ContentfulClient>>();
                 logger.LogInformation(

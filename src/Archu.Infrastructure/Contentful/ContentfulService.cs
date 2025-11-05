@@ -82,28 +82,47 @@ public class ContentfulService : IContentfulService
 
         try
         {
-            // Access fields from the entry
-            var fields = entry.Fields as IDictionary<string, object>;
+            // Access fields directly from the dynamic entry.Fields
+            // The Contentful SDK exposes fields as properties on the Fields object
+            dynamic fields = entry.Fields;
+            
             if (fields != null)
             {
-                if (fields.TryGetValue("slug", out var slug))
+                try
                 {
-                    page.Slug = slug?.ToString() ?? string.Empty;
+                    page.Slug = fields.slug?.ToString() ?? string.Empty;
+                }
+                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+                {
+                    _logger.LogWarning("Field 'slug' not found in entry");
                 }
 
-                if (fields.TryGetValue("title", out var title))
+                try
                 {
-                    page.Title = title?.ToString() ?? string.Empty;
+                    page.Title = fields.title?.ToString() ?? string.Empty;
+                }
+                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+                {
+                    _logger.LogWarning("Field 'title' not found in entry");
                 }
 
-                if (fields.TryGetValue("description", out var description))
+                try
                 {
-                    page.Description = description?.ToString();
+                    page.Description = fields.description?.ToString();
+                }
+                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+                {
+                    // Description is optional, no warning needed
                 }
 
-                if (fields.TryGetValue("sections", out var sections))
+                try
                 {
-                    page.Sections = ParseSections(sections);
+                    page.Sections = ParseSections(fields.sections);
+                }
+                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+                {
+                    _logger.LogWarning("Field 'sections' not found in entry");
+                    page.Sections = new List<ContentfulSection>();
                 }
             }
 
@@ -147,19 +166,20 @@ public class ContentfulService : IContentfulService
             // Sections might be an array/list of entries
             if (sectionsObj is IEnumerable<object> sectionsEnumerable)
             {
-                foreach (var sectionEntry in sectionsEnumerable)
-                {
-                    var section = ParseSection(sectionEntry);
-                    if (section != null)
-                    {
-                        sectionsList.Add(section);
-                    }
-                }
+                sectionsList = sectionsEnumerable
+                    .Select(sectionEntry => ParseSection(sectionEntry))
+                    .Where(section => section != null)
+                    .Cast<ContentfulSection>()
+                    .ToList();
             }
         }
-        catch (Exception ex)
+        catch (InvalidCastException ex)
         {
-            _logger.LogError(ex, "Error parsing sections");
+            _logger.LogError(ex, "Invalid cast while parsing sections");
+        }
+        catch (ArgumentNullException ex)
+        {
+            _logger.LogError(ex, "Null argument while parsing sections");
         }
 
         return sectionsList;
@@ -199,21 +219,66 @@ public class ContentfulService : IContentfulService
                     };
                 }
 
-                // Get fields
-                var fields = sectionEntry.Fields as IDictionary<string, object>;
+                // Get fields directly from the dynamic entry.Fields
+                dynamic fields = sectionEntry.Fields;
                 if (fields != null)
                 {
-                    // Convert to nullable dictionary
-                    section.Fields = fields.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value);
+                    // Convert dynamic fields to dictionary
+                    var fieldsDict = new Dictionary<string, object?>();
+                    
+                    try
+                    {
+                        // Attempt to enumerate properties dynamically
+                        foreach (var prop in ((object)fields).GetType().GetProperties())
+                        {
+                            try
+                            {
+                                var value = prop.GetValue(fields);
+                                fieldsDict[ToCamelCase(prop.Name)] = value;
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogDebug(ex, "Could not get property {PropertyName}", prop.Name);
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // If reflection fails, fields might be a dictionary already
+                        if (fields is IDictionary<string, object> dict)
+                        {
+                            fieldsDict = dict.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value);
+                        }
+                    }
+                    
+                    section.Fields = fieldsDict;
                 }
             }
         }
-        catch (Exception ex)
+        catch (InvalidCastException ex)
         {
-            _logger.LogWarning(ex, "Error parsing individual section, skipping");
+            _logger.LogWarning(ex, "Invalid cast while parsing section, skipping");
+            return null;
+        }
+        catch (ArgumentNullException ex)
+        {
+            _logger.LogWarning(ex, "Null argument while parsing section, skipping");
             return null;
         }
 
         return section;
+    }
+
+    /// <summary>
+    /// Converts PascalCase to camelCase for field names.
+    /// </summary>
+    private static string ToCamelCase(string str)
+    {
+        if (string.IsNullOrEmpty(str) || char.IsLower(str[0]))
+        {
+            return str;
+        }
+
+        return char.ToLowerInvariant(str[0]) + str.Substring(1);
     }
 }
