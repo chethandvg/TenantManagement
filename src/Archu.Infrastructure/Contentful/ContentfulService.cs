@@ -34,8 +34,8 @@ public class ContentfulService : IContentfulService
 
         try
         {
-            // Build query to find page by slug using Entry wrapper
-            var queryBuilder = QueryBuilder<Entry<ContentfulPageEntry>>.New
+            // Build query to find page by slug
+            var queryBuilder = QueryBuilder<ContentfulPageEntry>.New
                 .ContentTypeIs("page") // Using "page" as the content type ID
                 .FieldEquals("fields.slug", pageUrl)
                 .Include(3); // Include linked entries up to 3 levels deep
@@ -77,43 +77,30 @@ public class ContentfulService : IContentfulService
     /// <summary>
     /// Parses a Contentful entry into a ContentfulPage model.
     /// </summary>
-    private ContentfulPage ParsePage(Entry<ContentfulPageEntry> entry)
+    private ContentfulPage ParsePage(ContentfulPageEntry entry)
     {
         var page = new ContentfulPage();
 
         try
         {
             // Access fields from the strongly-typed entry
-            if (entry.Fields != null)
+            page.Slug = entry.Slug ?? string.Empty;
+            page.Title = entry.Title ?? string.Empty;
+            page.Description = entry.Description;
+            
+            // Parse sections if available
+            if (entry.Sections != null && entry.Sections.Any())
             {
-                page.Slug = entry.Fields.Slug ?? string.Empty;
-                page.Title = entry.Fields.Title ?? string.Empty;
-                page.Description = entry.Fields.Description;
-                
-                // Parse sections if available
-                if (entry.Fields.Sections != null && entry.Fields.Sections.Any())
-                {
-                    page.Sections = ParseSections(entry.Fields.Sections);
-                }
-                else
-                {
-                    page.Sections = new List<ContentfulSection>();
-                }
+                page.Sections = ParseSections(entry.Sections);
+            }
+            else
+            {
+                page.Sections = new List<ContentfulSection>();
             }
 
-            // Parse system metadata
-            if (entry.SystemProperties != null)
-            {
-                page.Sys = new ContentfulSystemMetadata
-                {
-                    Id = entry.SystemProperties.Id ?? string.Empty,
-                    ContentType = entry.SystemProperties.ContentType?.SystemProperties?.Id ?? string.Empty,
-                    Locale = entry.SystemProperties.Locale,
-                    CreatedAt = entry.SystemProperties.CreatedAt,
-                    UpdatedAt = entry.SystemProperties.UpdatedAt,
-                    Revision = entry.SystemProperties.Revision
-                };
-            }
+            // Note: System metadata (Sys) is not available when using QueryBuilder<ContentfulPageEntry>
+            // If you need system metadata, use QueryBuilder<Entry<ContentfulPageEntry>> instead
+            page.Sys = null;
         }
         catch (Exception ex)
         {
