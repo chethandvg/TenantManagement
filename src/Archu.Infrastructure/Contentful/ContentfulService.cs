@@ -85,13 +85,19 @@ public class ContentfulService : IContentfulService
         {
             // Access fields from the strongly-typed entry
             page.Slug = entry.Slug ?? string.Empty;
-            page.Title = entry.Title ?? string.Empty;
-            page.Description = entry.Description;
             
-            // Parse sections if available
-            if (entry.Sections != null && entry.Sections.Any())
+            // Use PageName as primary title, fallback to Title for backward compatibility
+            page.Title = entry.PageName ?? entry.Title ?? string.Empty;
+            
+            // Use InternalName as description if Description is not available
+            page.Description = entry.Description ?? entry.InternalName;
+            
+            // Parse sections from either TopSection or Sections field
+            var sectionsToProcess = entry.TopSection ?? entry.Sections;
+            
+            if (sectionsToProcess != null && sectionsToProcess.Any())
             {
-                page.Sections = ParseSections(entry.Sections);
+                page.Sections = ParseSectionsFromJObjects(sectionsToProcess);
             }
             else
             {
@@ -112,43 +118,46 @@ public class ContentfulService : IContentfulService
     }
 
     /// <summary>
-    /// Parses sections from a Contentful entry field.
+    /// Parses sections from JObject list (flexible approach for dynamic Contentful schemas).
     /// </summary>
-    private List<ContentfulSection> ParseSections(List<object>? sectionsObj)
+    private List<ContentfulSection> ParseSectionsFromJObjects(List<Newtonsoft.Json.Linq.JObject>? jobjects)
     {
         var sectionsList = new List<ContentfulSection>();
 
-        if (sectionsObj == null || !sectionsObj.Any())
+        if (jobjects == null || !jobjects.Any())
         {
             return sectionsList;
         }
 
         try
         {
-            sectionsList = sectionsObj
-                .Select(sectionEntry => ParseSection(sectionEntry))
-                .Where(section => section != null)
-                .Cast<ContentfulSection>()
-                .ToList();
+            foreach (var jobj in jobjects)
+            {
+                var section = ParseSectionFromJObject(jobj);
+                if (section != null)
+                {
+                    sectionsList.Add(section);
+                }
+            }
         }
         catch (InvalidCastException ex)
         {
-            _logger.LogError(ex, "Invalid cast while parsing sections");
+            _logger.LogError(ex, "Invalid cast while parsing sections from JObjects");
         }
         catch (ArgumentNullException ex)
         {
-            _logger.LogError(ex, "Null argument while parsing sections");
+            _logger.LogError(ex, "Null argument while parsing sections from JObjects");
         }
 
         return sectionsList;
     }
 
     /// <summary>
-    /// Parses a single section from a Contentful entry.
+    /// Parses a single section from a JObject.
     /// </summary>
-    private ContentfulSection? ParseSection(object? sectionObj)
+    private ContentfulSection? ParseSectionFromJObject(Newtonsoft.Json.Linq.JObject? jobj)
     {
-        if (sectionObj == null)
+        if (jobj == null)
         {
             return null;
         }
@@ -157,67 +166,52 @@ public class ContentfulService : IContentfulService
 
         try
         {
-            // Serialize and deserialize to handle dynamic types properly
-            var json = JsonSerializer.Serialize(sectionObj);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
             // Extract system properties
-            if (root.TryGetProperty("sys", out var sysElement))
+            if (jobj["sys"] is Newtonsoft.Json.Linq.JObject sysObj)
             {
-                if (sysElement.TryGetProperty("id", out var idElement))
+                section.Id = sysObj["id"]?.ToString() ?? string.Empty;
+                
+                if (sysObj["contentType"]?["sys"]?["id"] is Newtonsoft.Json.Linq.JToken ctId)
                 {
-                    section.Id = idElement.GetString() ?? string.Empty;
-                }
-
-                if (sysElement.TryGetProperty("contentType", out var contentTypeElement))
-                {
-                    if (contentTypeElement.TryGetProperty("sys", out var ctSysElement))
-                    {
-                        if (ctSysElement.TryGetProperty("id", out var ctIdElement))
-                        {
-                            section.ContentType = ctIdElement.GetString() ?? string.Empty;
-                        }
-                    }
+                    section.ContentType = ctId.ToString();
                 }
 
                 section.Sys = new ContentfulSystemMetadata
                 {
                     Id = section.Id,
                     ContentType = section.ContentType,
-                    Locale = sysElement.TryGetProperty("locale", out var localeEl) ? localeEl.GetString() : null,
-                    CreatedAt = sysElement.TryGetProperty("createdAt", out var createdEl) && createdEl.TryGetDateTime(out var created) ? created : null,
-                    UpdatedAt = sysElement.TryGetProperty("updatedAt", out var updatedEl) && updatedEl.TryGetDateTime(out var updated) ? updated : null,
-                    Revision = sysElement.TryGetProperty("revision", out var revEl) && revEl.TryGetInt32(out var rev) ? rev : null
+                    Locale = sysObj["locale"]?.ToString(),
+                    CreatedAt = sysObj["createdAt"]?.ToObject<DateTime?>(),
+                    UpdatedAt = sysObj["updatedAt"]?.ToObject<DateTime?>(),
+                    Revision = sysObj["revision"]?.ToObject<int?>()
                 };
             }
 
-            // Extract fields
-            if (root.TryGetProperty("fields", out var fieldsElement))
+            // Extract all fields (excluding sys and $metadata)
+            var fieldsDict = new Dictionary<string, object?>();
+            foreach (var prop in jobj.Properties())
             {
-                var fieldsDict = new Dictionary<string, object?>();
-                
-                foreach (var field in fieldsElement.EnumerateObject())
+                if (prop.Name != "sys" && prop.Name != "$metadata" && prop.Name != "$id")
                 {
-                    fieldsDict[field.Name] = ExtractJsonValue(field.Value);
+                    fieldsDict[prop.Name] = ExtractJTokenValue(prop.Value);
                 }
-                
-                section.Fields = fieldsDict;
             }
+            
+            section.Fields = fieldsDict;
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "JSON error while parsing section, skipping");
+            _logger.LogWarning(ex, "JSON error while parsing section from JObject, skipping");
             return null;
         }
         catch (InvalidCastException ex)
         {
-            _logger.LogWarning(ex, "Invalid cast while parsing section, skipping");
+            _logger.LogWarning(ex, "Invalid cast while parsing section from JObject, skipping");
             return null;
         }
         catch (ArgumentNullException ex)
         {
-            _logger.LogWarning(ex, "Null argument while parsing section, skipping");
+            _logger.LogWarning(ex, "Null argument while parsing section from JObject, skipping");
             return null;
         }
 
@@ -225,20 +219,20 @@ public class ContentfulService : IContentfulService
     }
 
     /// <summary>
-    /// Extracts a value from a JsonElement.
+    /// Extracts a value from a JToken.
     /// </summary>
-    private object? ExtractJsonValue(JsonElement element)
+    private object? ExtractJTokenValue(Newtonsoft.Json.Linq.JToken token)
     {
-        return element.ValueKind switch
+        return token.Type switch
         {
-            JsonValueKind.String => element.GetString(),
-            JsonValueKind.Number => element.TryGetInt64(out var longVal) ? longVal : element.GetDouble(),
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.Null => null,
-            JsonValueKind.Array => element.EnumerateArray().Select(ExtractJsonValue).ToList(),
-            JsonValueKind.Object => element.EnumerateObject().ToDictionary(p => p.Name, p => ExtractJsonValue(p.Value)),
-            _ => element.GetRawText()
+            Newtonsoft.Json.Linq.JTokenType.String => token.ToString(),
+            Newtonsoft.Json.Linq.JTokenType.Integer => token.ToObject<long>(),
+            Newtonsoft.Json.Linq.JTokenType.Float => token.ToObject<double>(),
+            Newtonsoft.Json.Linq.JTokenType.Boolean => token.ToObject<bool>(),
+            Newtonsoft.Json.Linq.JTokenType.Null => null,
+            Newtonsoft.Json.Linq.JTokenType.Array => token.Select(ExtractJTokenValue).ToList(),
+            Newtonsoft.Json.Linq.JTokenType.Object => token.ToObject<Dictionary<string, object?>>(),
+            _ => token.ToString()
         };
     }
 }
