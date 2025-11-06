@@ -10,13 +10,14 @@ namespace Archu.Infrastructure.Contentful;
 /// for Contentful CMS integration using the GraphQL.Client library.
 /// Supports both production (published) and preview (draft) content.
 /// </summary>
-public class GraphQlClientService : IGraphQlClientService
+public class GraphQlClientService : IGraphQlClientService, IDisposable
 {
     private readonly IOptions<ContentfulSettings> _settings;
     private readonly ILogger<GraphQlClientService> _logger;
     private GraphQLHttpClient? _cachedClient;
     private GraphQLHttpClient? _cachedPreviewClient;
     private readonly object _lock = new();
+    private bool _disposed;
 
     public GraphQlClientService(
         IOptions<ContentfulSettings> settings,
@@ -34,6 +35,8 @@ public class GraphQlClientService : IGraphQlClientService
     /// <returns>A configured <see cref="GraphQLHttpClient"/> instance.</returns>
     public GraphQLHttpClient GetGraphQLClient(bool isPreview = false)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         lock (_lock)
         {
             // Return cached client if available
@@ -50,9 +53,7 @@ public class GraphQlClientService : IGraphQlClientService
             var settings = _settings.Value;
             
             // Determine which API key to use
-            var apiKey = isPreview && !string.IsNullOrWhiteSpace(settings.PreviewApiKey)
-                ? settings.PreviewApiKey
-                : settings.DeliveryApiKey;
+            var apiKey = GetApiKey(isPreview);
 
             // Construct the GraphQL endpoint URL
             var endpoint = settings.GetGraphQlEndpoint();
@@ -68,13 +69,13 @@ public class GraphQlClientService : IGraphQlClientService
                 new NewtonsoftJsonSerializer());
 
             // Configure authorization header with Bearer token
-            graphQlClient.HttpClient.DefaultRequestHeaders.Add(
+            graphQlClient.HttpClient.DefaultRequestHeaders.TryAddWithoutValidation(
                 "Authorization",
                 $"Bearer {apiKey}");
 
             // Add optional headers for better performance and debugging
-            graphQlClient.HttpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
-            graphQlClient.HttpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
+            graphQlClient.HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate");
+            graphQlClient.HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("Connection", "keep-alive");
 
             // Set timeout for requests (30 seconds)
             graphQlClient.HttpClient.Timeout = TimeSpan.FromSeconds(30);
@@ -91,5 +92,39 @@ public class GraphQlClientService : IGraphQlClientService
 
             return graphQlClient;
         }
+    }
+
+    /// <summary>
+    /// Gets the appropriate API key based on whether preview mode is requested.
+    /// </summary>
+    /// <param name="isPreview">True for preview API key, false for delivery API key.</param>
+    /// <returns>The API key to use.</returns>
+    private string GetApiKey(bool isPreview)
+    {
+        var settings = _settings.Value;
+        return isPreview && !string.IsNullOrWhiteSpace(settings.PreviewApiKey)
+            ? settings.PreviewApiKey
+            : settings.DeliveryApiKey;
+    }
+
+    /// <summary>
+    /// Disposes the cached GraphQL HTTP clients.
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        lock (_lock)
+        {
+            _cachedClient?.Dispose();
+            _cachedClient = null;
+
+            _cachedPreviewClient?.Dispose();
+            _cachedPreviewClient = null;
+        }
+
+        _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
