@@ -1,6 +1,7 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Contentful.Models;
 using GraphQL;
+using GraphQlApi;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
