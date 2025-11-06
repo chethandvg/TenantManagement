@@ -59,16 +59,30 @@ public class ContentfulService : IContentfulService
                                 .WithSys(new SysQueryBuilder().WithAllScalarFields())
                                 .WithTopSectionCollection(
                                     new PageTopSectionCollectionQueryBuilder()
+                                        .WithAllScalarFields()
                                         .WithItems(
                                             new PageTopSectionItemQueryBuilder()
-                                                .WithAllFields()
+                                                // Union type requires fragments for each possible component type
+                                                .WithComponentCtaFragment(new ComponentCtaQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentDuplexFragment(new ComponentDuplexQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentHeroBannerFragment(new ComponentHeroBannerQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentInfoBlockFragment(new ComponentInfoBlockQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentQuoteFragment(new ComponentQuoteQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentTextBlockFragment(new ComponentTextBlockQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
                                         )
                                 )
                                 .WithExtraSectionCollection(
                                     new PageExtraSectionCollectionQueryBuilder()
+                                        .WithAllScalarFields()
                                         .WithItems(
                                             new PageExtraSectionItemQueryBuilder()
-                                                .WithAllFields()
+                                                // Union type requires fragments for each possible component type
+                                                .WithComponentCtaFragment(new ComponentCtaQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentDuplexFragment(new ComponentDuplexQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentHeroBannerFragment(new ComponentHeroBannerQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentInfoBlockFragment(new ComponentInfoBlockQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentQuoteFragment(new ComponentQuoteQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentTextBlockFragment(new ComponentTextBlockQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
                                         )
                                 )
                                 .WithSeo(new SeoQueryBuilder().WithAllScalarFields())
