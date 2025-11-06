@@ -102,8 +102,23 @@ public class ContentfulService : IContentfulService
                 Query = queryString
             };
 
-            // Execute the query using GraphQL.Client with strongly-typed response
-            var response = await graphQlClient.SendQueryAsync<Query>(request, cancellationToken);
+            GraphQL.GraphQLResponse<Query> response;
+            try
+            {
+                // Execute the query using GraphQL.Client with strongly-typed response
+                response = await graphQlClient.SendQueryAsync<Query>(request, cancellationToken);
+            }
+            catch (GraphQL.Client.Http.GraphQLHttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "GraphQL HTTP request failed for page slug: {PageUrl}. Status: {StatusCode}, Content: {Content}", 
+                    pageUrl, httpEx.StatusCode, httpEx.Content);
+                throw new InvalidOperationException($"Failed to fetch page from Contentful: {httpEx.Message}", httpEx);
+            }
+            catch (Newtonsoft.Json.JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "Failed to deserialize GraphQL response for page slug: {PageUrl}", pageUrl);
+                throw new InvalidOperationException($"Invalid response from Contentful GraphQL API: {jsonEx.Message}", jsonEx);
+            }
 
             // Check for GraphQL errors
             if (response.Errors != null && response.Errors.Any())
