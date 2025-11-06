@@ -1,23 +1,27 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Contentful.Models;
+using GraphQL;
+using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 namespace Archu.Infrastructure.Contentful;
 
 /// <summary>
-/// Implementation of IContentfulService using Contentful's GraphQL API with generated models.
+/// Implementation of IContentfulService using Contentful's GraphQL API with GraphQL.Client library.
+/// Provides access to Contentful CMS content through GraphQL queries with support for both
+/// published and preview content.
 /// </summary>
 public class ContentfulService : IContentfulService
 {
-    private readonly GraphQlContentfulClient _graphQlClient;
+    private readonly IGraphQlClientService _graphQlClientService;
     private readonly ILogger<ContentfulService> _logger;
 
     public ContentfulService(
-        GraphQlContentfulClient graphQlClient,
+        IGraphQlClientService graphQlClientService,
         ILogger<ContentfulService> logger)
     {
-        _graphQlClient = graphQlClient ?? throw new ArgumentNullException(nameof(graphQlClient));
+        _graphQlClientService = graphQlClientService ?? throw new ArgumentNullException(nameof(graphQlClientService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -38,6 +42,9 @@ public class ContentfulService : IContentfulService
 
         try
         {
+            // Get the GraphQL client
+            var graphQlClient = _graphQlClientService.GetGraphQLClient(isPreview: false);
+
             // Build GraphQL query using the generated query builder
             var queryBuilder = new QueryQueryBuilder()
                 .WithPageCollection(
@@ -69,21 +76,44 @@ public class ContentfulService : IContentfulService
                     where: new PageFilter { Slug = pageUrl }
                 );
 
-            var query = queryBuilder.Build();
-            _logger.LogDebug("GraphQL Query: {Query}", query);
+            var queryString = queryBuilder.Build();
+            _logger.LogDebug("GraphQL Query: {Query}", queryString);
 
-            // Execute the query
-            var result = await _graphQlClient.ExecuteQueryAsync<Query>(
-                query,
-                cancellationToken);
+            // Create GraphQL request using GraphQL.Client library
+            var request = new GraphQLRequest
+            {
+                Query = queryString
+            };
 
-            if (result?.PageCollection?.Items == null || !result.PageCollection.Items.Any())
+            // Execute the query using GraphQL.Client
+            var response = await graphQlClient.SendQueryAsync<JObject>(request, cancellationToken);
+
+            // Check for GraphQL errors
+            if (response.Errors != null && response.Errors.Any())
+            {
+                var errorMessages = string.Join("; ", response.Errors.Select(e => e.Message));
+                _logger.LogError("GraphQL query returned errors: {Errors}", errorMessages);
+                throw new InvalidOperationException($"GraphQL query failed: {errorMessages}");
+            }
+
+            // Parse the response data
+            var data = response.Data;
+            if (data == null)
+            {
+                _logger.LogInformation("No data returned from GraphQL query for slug: {PageUrl}", pageUrl);
+                return null;
+            }
+
+            // Extract page collection from response
+            var pageCollection = data["pageCollection"]?.ToObject<PageCollection>();
+            
+            if (pageCollection?.Items == null || !pageCollection.Items.Any())
             {
                 _logger.LogInformation("No page found with slug: {PageUrl}", pageUrl);
                 return null;
             }
 
-            var page = result.PageCollection.Items.FirstOrDefault();
+            var page = pageCollection.Items.FirstOrDefault();
             if (page == null)
             {
                 return null;
