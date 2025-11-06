@@ -26,7 +26,9 @@ The Contentful integration provides a public API endpoint to retrieve page conte
    - `ContentfulSectionDto`: Section response DTO
 
 4. **Infrastructure Layer** (`Archu.Infrastructure`)
-   - `ContentfulService`: Implementation using Contentful .NET SDK
+   - `ContentfulService`: Implementation using GraphQL.Client library
+   - `GraphQlClientService`: GraphQL HTTP client service for Contentful
+   - `IGraphQlClientService`: Interface for GraphQL client abstraction
    - `ContentfulSettings`: Configuration options
    - `NullContentfulService`: Null Object pattern for unconfigured scenarios
 
@@ -41,6 +43,7 @@ Add the following to your `appsettings.json` or environment variables:
   "Contentful": {
     "SpaceId": "your-contentful-space-id",
     "DeliveryApiKey": "your-contentful-delivery-api-key",
+    "PreviewApiKey": "your-contentful-preview-api-key",  // Optional: for draft content
     "Environment": "master"
   }
 }
@@ -51,6 +54,7 @@ Add the following to your `appsettings.json` or environment variables:
 ```bash
 Contentful__SpaceId=your-space-id
 Contentful__DeliveryApiKey=your-api-key
+Contentful__PreviewApiKey=your-preview-api-key  # Optional
 Contentful__Environment=master
 ```
 
@@ -171,6 +175,75 @@ Contentful automatically falls back to the default locale for untranslated field
 
 ## Implementation Details
 
+### GraphQL.Client Library
+
+The integration uses the **GraphQL.Client** library for communicating with Contentful's GraphQL API. This provides:
+
+- **Type-safe queries**: Uses generated query builders from Contentful's schema
+- **Efficient data fetching**: Only retrieves the fields you need
+- **Connection pooling**: Reuses HTTP connections for better performance
+- **Error handling**: Comprehensive error messages from GraphQL responses
+- **Serialization**: Uses Newtonsoft.Json for flexible JSON handling
+
+### GraphQL Client Service
+
+The `GraphQlClientService` manages GraphQL HTTP clients with these features:
+
+- **Client caching**: Reuses clients within the service lifetime
+- **Preview support**: Can create clients for draft/preview content
+- **Proper configuration**: Sets authorization headers and timeouts
+- **Connection optimization**: Configures keep-alive and compression
+
+Example usage in ContentfulService:
+
+```csharp
+// Get a configured GraphQL client
+var graphQlClient = _graphQlClientService.GetGraphQLClient(isPreview: false);
+
+// Create a GraphQL request
+var request = new GraphQLRequest
+{
+    Query = queryString
+};
+
+// Execute the query
+var response = await graphQlClient.SendQueryAsync<JObject>(request, cancellationToken);
+```
+
+### Clean Architecture Principles
+
+The implementation follows Clean Architecture and best practices:
+
+1. **Separation of Concerns**
+   - `IContentfulService` is defined in the Application layer (abstractions)
+   - `ContentfulService` implementation is in the Infrastructure layer
+   - GraphQL client details are encapsulated and not exposed to Application layer
+
+2. **Dependency Inversion**
+   - Application layer depends on abstractions (`IContentfulService`)
+   - Infrastructure layer implements the abstractions
+   - Dependencies flow inward (Infrastructure → Application → Domain)
+
+3. **Interface Segregation**
+   - `IGraphQlClientService` provides focused GraphQL client management
+   - `IContentfulService` provides business-focused Contentful operations
+   - Each interface has a single, clear responsibility
+
+4. **Reusability**
+   - `GraphQlClientService` can be reused for other GraphQL APIs
+   - Query builders are generated from schema for type safety
+   - Client caching improves performance across requests
+
+5. **Testability**
+   - Services use dependency injection
+   - Interfaces allow easy mocking in tests
+   - Null Object pattern allows running without Contentful configured
+
+6. **Error Handling**
+   - Comprehensive logging at all levels
+   - GraphQL errors are properly caught and reported
+   - Graceful degradation with NullContentfulService
+
 ### Include Depth
 
 The integration fetches linked entries up to **3 levels deep**. This ensures:
@@ -243,8 +316,18 @@ The Contentful endpoint is marked with `[AllowAnonymous]` because:
 
 ## Dependencies
 
-- `contentful.csharp` v8.1.1
-  - Official Contentful .NET SDK
+- `GraphQL.Client` v6.1.0
+  - Modern GraphQL client for .NET
+  - Supports HTTP and WebSocket transports
+  - Actively maintained with regular updates
+  
+- `GraphQL.Client.Serializer.Newtonsoft` v6.1.0
+  - JSON serialization using Newtonsoft.Json
+  - Compatible with existing codebase
+  
+- `contentful.aspnetcore` v8.1.0
+  - Provides Contentful-specific models and query builders
+  - Generates type-safe GraphQL query builders from schema
   - No known security vulnerabilities
   - Maintained by Contentful
 
@@ -279,13 +362,16 @@ The Contentful endpoint is marked with `[AllowAnonymous]` because:
 
 Potential improvements:
 - [ ] Response caching to reduce API calls
-- [ ] Preview API support for draft content
+- [x] GraphQL support for more efficient queries (Implemented)
+- [x] Preview API support for draft content (Implemented via PreviewApiKey)
 - [ ] Webhook integration for cache invalidation
-- [ ] GraphQL support for more efficient queries
 - [ ] Type-safe section models for specific content types
+- [ ] Subscription support for real-time updates
 
 ## References
 
+- [GraphQL.Client Documentation](https://github.com/graphql-dotnet/graphql-client)
+- [Contentful GraphQL API](https://www.contentful.com/developers/docs/references/graphql/)
 - [Contentful .NET SDK Documentation](https://github.com/contentful/contentful.net)
 - [Contentful Content Delivery API](https://www.contentful.com/developers/docs/references/content-delivery-api/)
 - [Archu API Documentation](../README.md)
