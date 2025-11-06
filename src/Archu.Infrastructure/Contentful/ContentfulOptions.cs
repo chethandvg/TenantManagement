@@ -25,6 +25,14 @@ public sealed class ContentfulSettings
     public string DeliveryApiKey { get; init; } = string.Empty;
 
     /// <summary>
+    /// The Contentful Content Preview API key (optional).
+    /// Used to access draft/preview content.
+    /// If not specified, DeliveryApiKey will be used for preview as well.
+    /// Should be stored securely (Azure Key Vault, environment variables, etc.).
+    /// </summary>
+    public string? PreviewApiKey { get; init; }
+
+    /// <summary>
     /// The Contentful environment name.
     /// Default: "master"
     /// </summary>

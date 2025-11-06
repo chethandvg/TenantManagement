@@ -239,10 +239,10 @@ public static class DependencyInjection
         {
             contentfulSettings.Validate();
 
-            // Register GraphQL HTTP client for Contentful
-            services.AddHttpClient<GraphQlContentfulClient>();
+            // Register GraphQL client service for Contentful
+            services.AddScoped<IGraphQlClientService, GraphQlClientService>();
 
-            // Register Contentful GraphQL service
+            // Register Contentful service
             services.AddScoped<IContentfulService, ContentfulService>();
         }
         else

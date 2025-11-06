@@ -1,23 +1,27 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Contentful.Models;
+using GraphQL;
+using GraphQlApi;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 namespace Archu.Infrastructure.Contentful;
 
 /// <summary>
-/// Implementation of IContentfulService using Contentful's GraphQL API with generated models.
+/// Implementation of IContentfulService using Contentful's GraphQL API with GraphQL.Client library.
+/// Provides access to Contentful CMS content through GraphQL queries with support for both
+/// published and preview content.
 /// </summary>
 public class ContentfulService : IContentfulService
 {
-    private readonly GraphQlContentfulClient _graphQlClient;
+    private readonly IGraphQlClientService _graphQlClientService;
     private readonly ILogger<ContentfulService> _logger;
 
     public ContentfulService(
-        GraphQlContentfulClient graphQlClient,
+        IGraphQlClientService graphQlClientService,
         ILogger<ContentfulService> logger)
     {
-        _graphQlClient = graphQlClient ?? throw new ArgumentNullException(nameof(graphQlClient));
+        _graphQlClientService = graphQlClientService ?? throw new ArgumentNullException(nameof(graphQlClientService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -38,6 +42,9 @@ public class ContentfulService : IContentfulService
 
         try
         {
+            // Get the GraphQL client
+            var graphQlClient = _graphQlClientService.GetGraphQLClient(isPreview: false);
+
             // Build GraphQL query using the generated query builder
             var queryBuilder = new QueryQueryBuilder()
                 .WithPageCollection(
@@ -45,20 +52,183 @@ public class ContentfulService : IContentfulService
                         .WithAllScalarFields()
                         .WithItems(
                             new PageQueryBuilder()
-                                .WithAllScalarFields()
-                                .WithSys(new SysQueryBuilder().WithAllScalarFields())
+                                // Explicitly specify fields to avoid _id field which causes deserialization issues
+                                .WithInternalName()
+                                .WithPageName()
+                                .WithSlug()
+                                .WithSys(new SysQueryBuilder()
+                                    .WithFirstPublishedAt()
+                                    .WithId()
+                                    .WithLocale()
+                                    .WithPublishedAt()
+                                    .WithPublishedVersion()
+                                    .WithSpaceId())
                                 .WithTopSectionCollection(
                                     new PageTopSectionCollectionQueryBuilder()
+                                        .WithLimit()
+                                        .WithSkip()
+                                        .WithTotal()
                                         .WithItems(
                                             new PageTopSectionItemQueryBuilder()
-                                                .WithAllFields()
+                                                // Union type requires fragments for each possible component type
+                                                // Note: Manually specifying all fields to avoid _id field which causes deserialization issues
+                                                .WithComponentCtaFragment(new ComponentCtaQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithHeadline()
+                                                    .WithCtaText()
+                                                    .WithColorPalette()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentDuplexFragment(new ComponentDuplexQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithHeadline()
+                                                    .WithCtaText()
+                                                    .WithColorPalette()
+                                                    .WithContainerLayout()
+                                                    .WithImageStyle()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentHeroBannerFragment(new ComponentHeroBannerQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithHeadline()
+                                                    .WithCtaText()
+                                                    .WithColorPalette()
+                                                    .WithHeroSize()
+                                                    .WithImageStyle()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentInfoBlockFragment(new ComponentInfoBlockQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithHeadline()
+                                                    .WithColorPalette()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentQuoteFragment(new ComponentQuoteQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithQuoteAlignment()
+                                                    .WithColorPalette()
+                                                    .WithImagePosition()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentTextBlockFragment(new ComponentTextBlockQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithColorPalette()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
                                         )
                                 )
                                 .WithExtraSectionCollection(
                                     new PageExtraSectionCollectionQueryBuilder()
+                                        .WithLimit()
+                                        .WithSkip()
+                                        .WithTotal()
                                         .WithItems(
                                             new PageExtraSectionItemQueryBuilder()
-                                                .WithAllFields()
+                                                // Union type requires fragments for each possible component type
+                                                // Note: Manually specifying all fields to avoid _id field which causes deserialization issues
+                                                .WithComponentCtaFragment(new ComponentCtaQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithHeadline()
+                                                    .WithCtaText()
+                                                    .WithColorPalette()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentDuplexFragment(new ComponentDuplexQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithHeadline()
+                                                    .WithCtaText()
+                                                    .WithColorPalette()
+                                                    .WithContainerLayout()
+                                                    .WithImageStyle()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentHeroBannerFragment(new ComponentHeroBannerQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithHeadline()
+                                                    .WithCtaText()
+                                                    .WithColorPalette()
+                                                    .WithHeroSize()
+                                                    .WithImageStyle()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentInfoBlockFragment(new ComponentInfoBlockQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithHeadline()
+                                                    .WithColorPalette()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentQuoteFragment(new ComponentQuoteQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithQuoteAlignment()
+                                                    .WithColorPalette()
+                                                    .WithImagePosition()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
+                                                .WithComponentTextBlockFragment(new ComponentTextBlockQueryBuilder()
+                                                    .WithInternalName()
+                                                    .WithColorPalette()
+                                                    .WithSys(new SysQueryBuilder()
+                                                        .WithFirstPublishedAt()
+                                                        .WithId()
+                                                        .WithLocale()
+                                                        .WithPublishedAt()
+                                                        .WithPublishedVersion()
+                                                        .WithSpaceId()))
                                         )
                                 )
                                 .WithSeo(new SeoQueryBuilder().WithAllScalarFields())
@@ -69,14 +239,43 @@ public class ContentfulService : IContentfulService
                     where: new PageFilter { Slug = pageUrl }
                 );
 
-            var query = queryBuilder.Build();
-            _logger.LogDebug("GraphQL Query: {Query}", query);
+            var queryString = queryBuilder.Build();
+            _logger.LogDebug("GraphQL Query: {Query}", queryString);
 
-            // Execute the query
-            var result = await _graphQlClient.ExecuteQueryAsync<Query>(
-                query,
-                cancellationToken);
+            // Create GraphQL request using GraphQL.Client library
+            var request = new GraphQLRequest
+            {
+                Query = queryString
+            };
 
+            GraphQL.GraphQLResponse<Query> response;
+            try
+            {
+                // Execute the query using GraphQL.Client with strongly-typed response
+                response = await graphQlClient.SendQueryAsync<Query>(request, cancellationToken);
+            }
+            catch (GraphQL.Client.Http.GraphQLHttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "GraphQL HTTP request failed for page slug: {PageUrl}. Status: {StatusCode}, Content: {Content}", 
+                    pageUrl, httpEx.StatusCode, httpEx.Content);
+                throw new InvalidOperationException($"Failed to fetch page from Contentful: {httpEx.Message}", httpEx);
+            }
+            catch (Newtonsoft.Json.JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "Failed to deserialize GraphQL response for page slug: {PageUrl}", pageUrl);
+                throw new InvalidOperationException($"Invalid response from Contentful GraphQL API: {jsonEx.Message}", jsonEx);
+            }
+
+            // Check for GraphQL errors
+            if (response.Errors != null && response.Errors.Any())
+            {
+                var errorMessages = string.Join("; ", response.Errors.Select(e => e.Message));
+                _logger.LogError("GraphQL query returned errors: {Errors}", errorMessages);
+                throw new InvalidOperationException($"GraphQL query failed: {errorMessages}");
+            }
+
+            // Get the strongly-typed result
+            var result = response.Data;
             if (result?.PageCollection?.Items == null || !result.PageCollection.Items.Any())
             {
                 _logger.LogInformation("No page found with slug: {PageUrl}", pageUrl);
