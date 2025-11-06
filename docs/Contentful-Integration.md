@@ -358,6 +358,36 @@ The Contentful endpoint is marked with `[AllowAnonymous]` because:
 
 **Solution**: Check that sections are linked and published in Contentful
 
+### GraphQL Query Building Best Practices
+
+**Important**: When building GraphQL queries for Contentful:
+
+- **DO NOT use `WithAllScalarFields()`** on component fragments within collections (topSectionCollection, extraSectionCollection)
+- **Manually specify all fields** including Sys fields to avoid deserialization errors
+- **Reason**: The `_id` field returns base64-encoded strings but the generated models expect `Guid?`, causing JSON deserialization failures
+
+**Example - Correct Approach**:
+```csharp
+.WithComponentDuplexFragment(new ComponentDuplexQueryBuilder()
+    .WithSys(new SysQueryBuilder()
+        .WithEnvironmentId()
+        .WithFirstPublishedAt()
+        .WithId()
+        .WithLocale()
+        .WithPublishedAt()
+        .WithPublishedVersion()
+        .WithSpaceId()))
+```
+
+**Example - Incorrect Approach** (causes deserialization errors):
+```csharp
+.WithComponentDuplexFragment(new ComponentDuplexQueryBuilder()
+    .WithAllScalarFields()  // ❌ Includes _id field
+    .WithSys(new SysQueryBuilder().WithAllScalarFields()))  // ❌ Avoid this
+```
+
+This pattern applies to all collection query builders for components to ensure reliable data retrieval.
+
 ## Future Enhancements
 
 Potential improvements:
