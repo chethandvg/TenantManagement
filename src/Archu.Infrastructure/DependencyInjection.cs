@@ -4,6 +4,7 @@ using Archu.Application.Abstractions.Authentication;
 using Archu.Application.Abstractions.Repositories;
 using Archu.Domain.ValueObjects;
 using Archu.Infrastructure.Authentication;
+using Archu.Infrastructure.Contentful;
 using Archu.Infrastructure.Persistence;
 using Archu.Infrastructure.Repositories;
 using Archu.Infrastructure.Time;
@@ -40,6 +41,9 @@ public static class DependencyInjection
 
         // Add authentication services
         services.AddAuthenticationServices(configuration, environment);
+
+        // Add Contentful services
+        services.AddContentfulServices(configuration);
 
         // Add repositories
         services.AddRepositories();
@@ -208,6 +212,45 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ITimeProvider, SystemTimeProvider>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures Contentful CMS services with GraphQL API support.
+    /// </summary>
+    private static IServiceCollection AddContentfulServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Configure Contentful options
+        services.Configure<ContentfulSettings>(configuration.GetSection(ContentfulSettings.SectionName));
+
+        // Get Contentful options for validation
+        var contentfulSettings = configuration
+            .GetSection(ContentfulSettings.SectionName)
+            .Get<ContentfulSettings>();
+
+        // Only configure Contentful if credentials are provided
+        // This allows the app to run without Contentful configured
+        if (contentfulSettings != null &&
+            !string.IsNullOrWhiteSpace(contentfulSettings.SpaceId) &&
+            !string.IsNullOrWhiteSpace(contentfulSettings.DeliveryApiKey))
+        {
+            contentfulSettings.Validate();
+
+            // Register GraphQL HTTP client for Contentful
+            services.AddHttpClient<GraphQlContentfulClient>();
+
+            // Register Contentful GraphQL service
+            services.AddScoped<IContentfulService, ContentfulService>();
+        }
+        else
+        {
+            // Register a null object implementation if Contentful is not configured
+            // This allows the app to run without Contentful configured
+            services.AddScoped<IContentfulService, NullContentfulService>();
+        }
 
         return services;
     }
