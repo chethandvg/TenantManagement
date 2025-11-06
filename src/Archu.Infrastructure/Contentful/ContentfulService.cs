@@ -1,7 +1,6 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Contentful.Models;
 using GraphQL;
-using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -85,8 +84,8 @@ public class ContentfulService : IContentfulService
                 Query = queryString
             };
 
-            // Execute the query using GraphQL.Client
-            var response = await graphQlClient.SendQueryAsync<JObject>(request, cancellationToken);
+            // Execute the query using GraphQL.Client with strongly-typed response
+            var response = await graphQlClient.SendQueryAsync<Query>(request, cancellationToken);
 
             // Check for GraphQL errors
             if (response.Errors != null && response.Errors.Any())
@@ -96,24 +95,15 @@ public class ContentfulService : IContentfulService
                 throw new InvalidOperationException($"GraphQL query failed: {errorMessages}");
             }
 
-            // Parse the response data
-            var data = response.Data;
-            if (data == null)
-            {
-                _logger.LogInformation("No data returned from GraphQL query for slug: {PageUrl}", pageUrl);
-                return null;
-            }
-
-            // Extract page collection from response
-            var pageCollection = data["pageCollection"]?.ToObject<PageCollection>();
-            
-            if (pageCollection?.Items == null || !pageCollection.Items.Any())
+            // Get the strongly-typed result
+            var result = response.Data;
+            if (result?.PageCollection?.Items == null || !result.PageCollection.Items.Any())
             {
                 _logger.LogInformation("No page found with slug: {PageUrl}", pageUrl);
                 return null;
             }
 
-            var page = pageCollection.Items.FirstOrDefault();
+            var page = result.PageCollection.Items.FirstOrDefault();
             if (page == null)
             {
                 return null;
