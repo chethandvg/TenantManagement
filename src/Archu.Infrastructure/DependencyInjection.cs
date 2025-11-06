@@ -8,8 +8,6 @@ using Archu.Infrastructure.Contentful;
 using Archu.Infrastructure.Persistence;
 using Archu.Infrastructure.Repositories;
 using Archu.Infrastructure.Time;
-using Contentful.Core;
-using Contentful.Core.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -219,7 +217,7 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Configures Contentful CMS services.
+    /// Configures Contentful CMS services with GraphQL API support.
     /// </summary>
     private static IServiceCollection AddContentfulServices(
         this IServiceCollection services,
@@ -241,28 +239,10 @@ public static class DependencyInjection
         {
             contentfulSettings.Validate();
 
-            // Configure Contentful client options
-            var contentfulClientOptions = new ContentfulOptions
-            {
-                DeliveryApiKey = contentfulSettings.DeliveryApiKey,
-                SpaceId = contentfulSettings.SpaceId,
-                Environment = contentfulSettings.Environment,
-                UsePreviewApi = false
-            };
+            // Register GraphQL HTTP client for Contentful
+            services.AddHttpClient<GraphQlContentfulClient>();
 
-            // Register ContentfulClient as singleton using IHttpClientFactory
-            services.AddHttpClient<IContentfulClient, ContentfulClient>((httpClient, sp) =>
-            {
-                var logger = sp.GetRequiredService<ILogger<ContentfulClient>>();
-                logger.LogInformation(
-                    "Initializing Contentful client for Space: {SpaceId}, Environment: {Environment}",
-                    contentfulSettings.SpaceId,
-                    contentfulSettings.Environment);
-
-                return new ContentfulClient(httpClient, contentfulClientOptions);
-            });
-
-            // Register Contentful service
+            // Register Contentful GraphQL service
             services.AddScoped<IContentfulService, ContentfulService>();
         }
         else

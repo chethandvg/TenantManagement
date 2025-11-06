@@ -31,6 +31,23 @@ public sealed class ContentfulSettings
     public string Environment { get; init; } = "master";
 
     /// <summary>
+    /// The Contentful GraphQL endpoint URL.
+    /// If not specified, defaults to https://graphql.contentful.com/content/v1/spaces/{SpaceId}/environments/{Environment}
+    /// </summary>
+    public string? GraphQlEndpoint { get; init; }
+
+    /// <summary>
+    /// Gets the GraphQL endpoint URL, using the default if not explicitly configured.
+    /// </summary>
+    public string GetGraphQlEndpoint()
+    {
+        if (!string.IsNullOrWhiteSpace(GraphQlEndpoint))
+            return GraphQlEndpoint;
+
+        return $"https://graphql.contentful.com/content/v1/spaces/{SpaceId}/environments/{Environment}";
+    }
+
+    /// <summary>
     /// Validates that the Contentful options are properly configured.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when configuration is invalid.</exception>

@@ -1,71 +1,103 @@
 using Archu.Application.Abstractions;
 using Archu.Application.Contentful.Models;
-using Archu.Infrastructure.Contentful.Models;
-using Contentful.Core;
-using Contentful.Core.Models;
-using Contentful.Core.Search;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Archu.Infrastructure.Contentful;
 
 /// <summary>
-/// Implementation of IContentfulService using the Contentful .NET SDK.
+/// Implementation of IContentfulService using Contentful's GraphQL API with generated models.
 /// </summary>
 public class ContentfulService : IContentfulService
 {
-    private readonly IContentfulClient _client;
+    private readonly GraphQlContentfulClient _graphQlClient;
     private readonly ILogger<ContentfulService> _logger;
 
-    public ContentfulService(IContentfulClient client, ILogger<ContentfulService> logger)
+    public ContentfulService(
+        GraphQlContentfulClient graphQlClient,
+        ILogger<ContentfulService> logger)
     {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
+        _graphQlClient = graphQlClient ?? throw new ArgumentNullException(nameof(graphQlClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<ContentfulPage?> GetPageAsync(string pageUrl, string? locale = null, CancellationToken cancellationToken = default)
+    public async Task<ContentfulPage?> GetPageAsync(
+        string pageUrl,
+        string? locale = null,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(pageUrl))
         {
             throw new ArgumentException("Page URL cannot be null or empty", nameof(pageUrl));
         }
 
-        _logger.LogInformation("Fetching Contentful page with slug: {PageUrl}, locale: {Locale}", pageUrl, locale ?? "default");
+        _logger.LogInformation(
+            "Fetching Contentful page with slug: {PageUrl}, locale: {Locale}",
+            pageUrl,
+            locale ?? "default");
 
         try
         {
-            // Build query to find page by slug
-            var queryBuilder = QueryBuilder<ContentfulPageEntry>.New
-                .ContentTypeIs("page") // Using "page" as the content type ID
-                .FieldEquals("fields.slug", pageUrl)
-                .Include(3); // Include linked entries up to 3 levels deep
+            // Build GraphQL query using the generated query builder
+            var queryBuilder = new QueryQueryBuilder()
+                .WithPageCollection(
+                    new PageCollectionQueryBuilder()
+                        .WithAllScalarFields()
+                        .WithItems(
+                            new PageQueryBuilder()
+                                .WithAllScalarFields()
+                                .WithSys(new SysQueryBuilder().WithAllScalarFields())
+                                .WithTopSectionCollection(
+                                    new PageTopSectionCollectionQueryBuilder()
+                                        .WithItems(
+                                            new PageTopSectionItemQueryBuilder()
+                                                .WithAllFields()
+                                        )
+                                )
+                                .WithExtraSectionCollection(
+                                    new PageExtraSectionCollectionQueryBuilder()
+                                        .WithItems(
+                                            new PageExtraSectionItemQueryBuilder()
+                                                .WithAllFields()
+                                        )
+                                )
+                                .WithSeo(new SeoQueryBuilder().WithAllScalarFields())
+                                .WithPageContent(new PagePageContentQueryBuilder().WithAllFields())
+                        ),
+                    limit: 1,
+                    locale: string.IsNullOrWhiteSpace(locale) ? null : locale,
+                    where: new PageFilter { Slug = pageUrl }
+                );
 
-            // Add locale parameter if specified
-            if (!string.IsNullOrWhiteSpace(locale))
-            {
-                queryBuilder = queryBuilder.LocaleIs(locale);
-            }
+            var query = queryBuilder.Build();
+            _logger.LogDebug("GraphQL Query: {Query}", query);
 
-            var entries = await _client.GetEntries(queryBuilder, cancellationToken);
+            // Execute the query
+            var result = await _graphQlClient.ExecuteQueryAsync<Query>(
+                query,
+                cancellationToken);
 
-            if (entries == null || !entries.Any())
+            if (result?.PageCollection?.Items == null || !result.PageCollection.Items.Any())
             {
                 _logger.LogInformation("No page found with slug: {PageUrl}", pageUrl);
                 return null;
             }
 
-            var entry = entries.FirstOrDefault();
-            if (entry == null)
+            var page = result.PageCollection.Items.FirstOrDefault();
+            if (page == null)
             {
                 return null;
             }
 
-            // Parse the entry into our ContentfulPage model
-            var page = ParsePage(entry);
+            // Convert from generated Page model to ContentfulPage application model
+            var contentfulPage = MapToContentfulPage(page);
 
-            _logger.LogInformation("Successfully fetched page: {PageUrl} with {SectionCount} sections", pageUrl, page.Sections.Count);
+            _logger.LogInformation(
+                "Successfully fetched page: {PageUrl} with {SectionCount} sections",
+                pageUrl,
+                contentfulPage.Sections.Count);
 
-            return page;
+            return contentfulPage;
         }
         catch (Exception ex)
         {
@@ -75,164 +107,199 @@ public class ContentfulService : IContentfulService
     }
 
     /// <summary>
-    /// Parses a Contentful entry into a ContentfulPage model.
+    /// Maps the generated Page model to the application's ContentfulPage model.
     /// </summary>
-    private ContentfulPage ParsePage(ContentfulPageEntry entry)
+    private ContentfulPage MapToContentfulPage(Page page)
     {
-        var page = new ContentfulPage();
+        var contentfulPage = new ContentfulPage
+        {
+            Slug = page.Slug ?? string.Empty,
+            Title = page.PageName ?? page.InternalName ?? string.Empty,
+            Description = page.InternalName ?? string.Empty,
+            Sections = new List<ContentfulSection>(),
+            Sys = MapSystemMetadata(page.Sys)
+        };
+
+        // Map top sections
+        if (page.TopSectionCollection?.Items != null)
+        {
+            foreach (var sectionItem in page.TopSectionCollection.Items)
+            {
+                var section = MapSectionItem(sectionItem);
+                if (section != null)
+                {
+                    contentfulPage.Sections.Add(section);
+                }
+            }
+        }
+
+        // Map extra sections
+        if (page.ExtraSectionCollection?.Items != null)
+        {
+            foreach (var sectionItem in page.ExtraSectionCollection.Items)
+            {
+                var section = MapSectionItem(sectionItem);
+                if (section != null)
+                {
+                    contentfulPage.Sections.Add(section);
+                }
+            }
+        }
+
+        return contentfulPage;
+    }
+
+    /// <summary>
+    /// Maps a section item (which can be any component type) to ContentfulSection.
+    /// </summary>
+    private ContentfulSection? MapSectionItem(object? sectionItem)
+    {
+        if (sectionItem == null)
+            return null;
 
         try
         {
-            // Access fields from the strongly-typed entry
-            page.Slug = entry.Slug ?? string.Empty;
-            
-            // Use PageName as primary title, fallback to Title for backward compatibility
-            page.Title = entry.PageName ?? entry.Title ?? string.Empty;
-            
-            // Use InternalName as description if Description is not available
-            page.Description = entry.Description ?? entry.InternalName;
-            
-            // Parse sections from either TopSection or Sections field
-            var sectionsToProcess = entry.TopSection ?? entry.Sections;
-            
-            if (sectionsToProcess != null && sectionsToProcess.Any())
+            // Convert the section item to JObject to extract all fields dynamically
+            var jObject = JObject.FromObject(sectionItem);
+
+            var section = new ContentfulSection
             {
-                page.Sections = ParseSectionsFromJObjects(sectionsToProcess);
-            }
-            else
+                Fields = new Dictionary<string, object?>()
+            };
+
+            // Extract __typename for content type
+            var typename = jObject["__typename"]?.Value<string>();
+            if (!string.IsNullOrEmpty(typename))
             {
-                page.Sections = new List<ContentfulSection>();
+                section.ContentType = typename;
             }
 
-            // Note: System metadata (Sys) is not available when using QueryBuilder<ContentfulPageEntry>
-            // If you need system metadata, use QueryBuilder<Entry<ContentfulPageEntry>> instead
-            page.Sys = null;
+            // Extract system metadata if available
+            if (jObject["sys"] != null)
+            {
+                var sysObject = jObject["sys"]?.ToObject<Sys>();
+                section.Sys = MapSystemMetadata(sysObject);
+                if (section.Sys != null)
+                {
+                    section.Id = section.Sys.Id;
+                    // Update content type in Sys if we have it from __typename
+                    if (!string.IsNullOrEmpty(typename))
+                    {
+                        section.Sys.ContentType = typename;
+                    }
+                }
+            }
+
+            // Extract all fields (excluding sys and __typename)
+            foreach (var property in jObject.Properties())
+            {
+                if (property.Name == "sys" || property.Name == "__typename")
+                    continue;
+
+                var value = ExtractFieldValue(property.Value);
+                if (value != null)
+                {
+                    section.Fields[property.Name] = value;
+                }
+            }
+
+            return section;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error parsing Contentful page entry");
-            throw;
+            _logger.LogWarning(ex, "Failed to map section item");
+            return null;
         }
-
-        return page;
     }
 
     /// <summary>
-    /// Parses sections from JObject list (flexible approach for dynamic Contentful schemas).
+    /// Extracts a field value from a JToken, handling nested objects and arrays.
     /// </summary>
-    private List<ContentfulSection> ParseSectionsFromJObjects(List<Newtonsoft.Json.Linq.JObject>? jobjects)
+    private object? ExtractFieldValue(JToken token)
     {
-        var sectionsList = new List<ContentfulSection>();
-
-        if (jobjects == null || !jobjects.Any())
+        switch (token.Type)
         {
-            return sectionsList;
-        }
-
-        try
-        {
-            foreach (var jobj in jobjects)
-            {
-                var section = ParseSectionFromJObject(jobj);
-                if (section != null)
+            case JTokenType.Object:
+                var dict = new Dictionary<string, object>();
+                foreach (var prop in ((JObject)token).Properties())
                 {
-                    sectionsList.Add(section);
+                    var value = ExtractFieldValue(prop.Value);
+                    if (value != null)
+                    {
+                        dict[prop.Name] = value;
+                    }
                 }
-            }
-        }
-        catch (InvalidCastException ex)
-        {
-            _logger.LogError(ex, "Invalid cast while parsing sections from JObjects");
-        }
-        catch (ArgumentNullException ex)
-        {
-            _logger.LogError(ex, "Null argument while parsing sections from JObjects");
-        }
+                return dict.Count > 0 ? dict : null;
 
-        return sectionsList;
+            case JTokenType.Array:
+                var list = new List<object>();
+                foreach (var item in (JArray)token)
+                {
+                    var value = ExtractFieldValue(item);
+                    if (value != null)
+                    {
+                        list.Add(value);
+                    }
+                }
+                return list.Count > 0 ? list : null;
+
+            case JTokenType.String:
+                return token.Value<string>();
+
+            case JTokenType.Integer:
+                return token.Value<long>();
+
+            case JTokenType.Float:
+                return token.Value<double>();
+
+            case JTokenType.Boolean:
+                return token.Value<bool>();
+
+            case JTokenType.Date:
+                return token.Value<DateTime>();
+
+            case JTokenType.Null:
+            case JTokenType.Undefined:
+                return null;
+
+            default:
+                return token.ToString();
+        }
     }
 
     /// <summary>
-    /// Parses a single section from a JObject.
+    /// Maps Contentful Sys object to ContentfulSystemMetadata.
     /// </summary>
-    private ContentfulSection? ParseSectionFromJObject(Newtonsoft.Json.Linq.JObject? jobj)
+    private ContentfulSystemMetadata? MapSystemMetadata(Sys? sys)
     {
-        if (jobj == null)
-        {
+        if (sys == null)
             return null;
-        }
 
-        var section = new ContentfulSection();
-
-        try
+        return new ContentfulSystemMetadata
         {
-            // Extract system properties
-            if (jobj["sys"] is Newtonsoft.Json.Linq.JObject sysObj)
-            {
-                section.Id = sysObj["id"]?.ToString() ?? string.Empty;
-                
-                if (sysObj["contentType"]?["sys"]?["id"] is Newtonsoft.Json.Linq.JToken ctId)
-                {
-                    section.ContentType = ctId.ToString();
-                }
-
-                section.Sys = new ContentfulSystemMetadata
-                {
-                    Id = section.Id,
-                    ContentType = section.ContentType,
-                    Locale = sysObj["locale"]?.ToString(),
-                    CreatedAt = sysObj["createdAt"]?.ToObject<DateTime?>(),
-                    UpdatedAt = sysObj["updatedAt"]?.ToObject<DateTime?>(),
-                    Revision = sysObj["revision"]?.ToObject<int?>()
-                };
-            }
-
-            // Extract all fields (excluding sys and $metadata)
-            var fieldsDict = new Dictionary<string, object?>();
-            foreach (var prop in jobj.Properties())
-            {
-                if (prop.Name != "sys" && prop.Name != "$metadata" && prop.Name != "$id")
-                {
-                    fieldsDict[prop.Name] = ExtractJTokenValue(prop.Value);
-                }
-            }
-            
-            section.Fields = fieldsDict;
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "JSON error while parsing section from JObject, skipping");
-            return null;
-        }
-        catch (InvalidCastException ex)
-        {
-            _logger.LogWarning(ex, "Invalid cast while parsing section from JObject, skipping");
-            return null;
-        }
-        catch (ArgumentNullException ex)
-        {
-            _logger.LogWarning(ex, "Null argument while parsing section from JObject, skipping");
-            return null;
-        }
-
-        return section;
-    }
-
-    /// <summary>
-    /// Extracts a value from a JToken.
-    /// </summary>
-    private object? ExtractJTokenValue(Newtonsoft.Json.Linq.JToken token)
-    {
-        return token.Type switch
-        {
-            Newtonsoft.Json.Linq.JTokenType.String => token.ToString(),
-            Newtonsoft.Json.Linq.JTokenType.Integer => token.ToObject<long>(),
-            Newtonsoft.Json.Linq.JTokenType.Float => token.ToObject<double>(),
-            Newtonsoft.Json.Linq.JTokenType.Boolean => token.ToObject<bool>(),
-            Newtonsoft.Json.Linq.JTokenType.Null => null,
-            Newtonsoft.Json.Linq.JTokenType.Array => token.Select(ExtractJTokenValue).ToList(),
-            Newtonsoft.Json.Linq.JTokenType.Object => token.ToObject<Dictionary<string, object?>>(),
-            _ => token.ToString()
+            Id = sys.Id ?? string.Empty,
+            ContentType = "unknown", // GraphQL API doesn't provide content type in Sys, use __typename from JSON
+            Locale = sys.Locale ?? string.Empty,
+            CreatedAt = ConvertToDateTime(sys.FirstPublishedAt),
+            UpdatedAt = ConvertToDateTime(sys.PublishedAt),
+            Revision = sys.PublishedVersion ?? 0
         };
+    }
+
+    /// <summary>
+    /// Converts object (which could be DateTime or string) to nullable DateTime.
+    /// </summary>
+    private DateTime? ConvertToDateTime(object? value)
+    {
+        if (value == null)
+            return null;
+
+        if (value is DateTime dt)
+            return dt;
+
+        if (value is string str && DateTime.TryParse(str, out var parsed))
+            return parsed;
+
+        return null;
     }
 }
