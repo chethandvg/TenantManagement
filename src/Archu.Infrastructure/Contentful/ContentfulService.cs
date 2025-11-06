@@ -63,12 +63,13 @@ public class ContentfulService : IContentfulService
                                         .WithItems(
                                             new PageTopSectionItemQueryBuilder()
                                                 // Union type requires fragments for each possible component type
-                                                .WithComponentCtaFragment(new ComponentCtaQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentDuplexFragment(new ComponentDuplexQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentHeroBannerFragment(new ComponentHeroBannerQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentInfoBlockFragment(new ComponentInfoBlockQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentQuoteFragment(new ComponentQuoteQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentTextBlockFragment(new ComponentTextBlockQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                // Note: Not using WithAllScalarFields() to avoid _id field which causes deserialization issues
+                                                .WithComponentCtaFragment(new ComponentCtaQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentDuplexFragment(new ComponentDuplexQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentHeroBannerFragment(new ComponentHeroBannerQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentInfoBlockFragment(new ComponentInfoBlockQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentQuoteFragment(new ComponentQuoteQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentTextBlockFragment(new ComponentTextBlockQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
                                         )
                                 )
                                 .WithExtraSectionCollection(
@@ -77,12 +78,13 @@ public class ContentfulService : IContentfulService
                                         .WithItems(
                                             new PageExtraSectionItemQueryBuilder()
                                                 // Union type requires fragments for each possible component type
-                                                .WithComponentCtaFragment(new ComponentCtaQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentDuplexFragment(new ComponentDuplexQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentHeroBannerFragment(new ComponentHeroBannerQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentInfoBlockFragment(new ComponentInfoBlockQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentQuoteFragment(new ComponentQuoteQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
-                                                .WithComponentTextBlockFragment(new ComponentTextBlockQueryBuilder().WithAllScalarFields().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                // Note: Not using WithAllScalarFields() to avoid _id field which causes deserialization issues
+                                                .WithComponentCtaFragment(new ComponentCtaQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentDuplexFragment(new ComponentDuplexQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentHeroBannerFragment(new ComponentHeroBannerQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentInfoBlockFragment(new ComponentInfoBlockQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentQuoteFragment(new ComponentQuoteQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
+                                                .WithComponentTextBlockFragment(new ComponentTextBlockQueryBuilder().WithSys(new SysQueryBuilder().WithAllScalarFields()))
                                         )
                                 )
                                 .WithSeo(new SeoQueryBuilder().WithAllScalarFields())
