@@ -52,7 +52,10 @@ public class ContentfulService : IContentfulService
                         .WithAllScalarFields()
                         .WithItems(
                             new PageQueryBuilder()
-                                .WithAllScalarFields()
+                                // Explicitly specify fields to avoid _id field which causes deserialization issues
+                                .WithInternalName()
+                                .WithPageName()
+                                .WithSlug()
                                 .WithSys(new SysQueryBuilder().WithAllScalarFields())
                                 .WithTopSectionCollection(
                                     new PageTopSectionCollectionQueryBuilder()
