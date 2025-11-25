@@ -1,10 +1,13 @@
+using Archu.Domain.Common;
+
 namespace Archu.Domain.Entities.Identity;
 
 /// <summary>
 /// Junction entity for the many-to-many relationship between users and roles.
 /// This allows users to have multiple roles and roles to contain multiple users.
+/// Inherits from <see cref="BaseEntity"/> so auditing, soft-delete, and concurrency metadata are recorded.
 /// </summary>
-public class UserRole
+public class UserRole : BaseEntity
 {
     /// <summary>
     /// Foreign key to the ApplicationUser.
