@@ -93,7 +93,7 @@ public class UnitsController : ControllerBase
         try
         {
             await _mediator.Send(command, cancellationToken);
-            return Ok(ApiResponse<object>.Ok(null, "Unit ownership set successfully"));
+            return Ok(ApiResponse<object>.Ok(null!, "Unit ownership set successfully"));
         }
         catch (InvalidOperationException ex)
         {
@@ -124,7 +124,7 @@ public class UnitsController : ControllerBase
         try
         {
             await _mediator.Send(command, cancellationToken);
-            return Ok(ApiResponse<object>.Ok(null, "File added to unit successfully"));
+            return Ok(ApiResponse<object>.Ok(null!, "File added to unit successfully"));
         }
         catch (InvalidOperationException ex)
         {

@@ -30,8 +30,10 @@ public class AddBuildingFileCommandHandler : BaseCommandHandler, IRequestHandler
             throw new InvalidOperationException($"Building {request.BuildingId} not found");
         }
 
-        // Note: Assuming FileMetadata with the given FileId already exists
-        // In a real implementation, you would validate this or create it as part of the upload process
+        // NOTE: FileMetadata with the given FileId should already exist in the system.
+        // Files are uploaded separately before being linked to buildings.
+        // In a production system, you would validate file existence through a FileMetadataRepository.
+        // For now, this will fail at SaveChanges if FileId doesn't exist due to foreign key constraint.
 
         var buildingFile = new BuildingFile
         {
