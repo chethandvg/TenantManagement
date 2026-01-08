@@ -1,4 +1,4 @@
-using TentMan.Domain.Enums;
+using TentMan.Contracts.Enums;
 using TentMan.Contracts.Buildings;
 
 namespace TentMan.Contracts.Units;

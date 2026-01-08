@@ -1,6 +1,7 @@
 using TentMan.Application.Abstractions;
 using TentMan.Application.Common;
 using TentMan.Contracts.Units;
+using TentMan.Contracts.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using DomainUnit = TentMan.Domain.Entities.Unit;
@@ -47,7 +48,7 @@ public class CreateUnitCommandHandler : BaseCommandHandler, IRequestHandler<Crea
             Bathrooms = request.Bathrooms,
             Furnishing = request.Furnishing,
             ParkingSlots = request.ParkingSlots,
-            OccupancyStatus = TentMan.Domain.Enums.OccupancyStatus.Vacant
+            OccupancyStatus = OccupancyStatus.Vacant
         };
 
         await _unitOfWork.Units.AddAsync(unit, cancellationToken);

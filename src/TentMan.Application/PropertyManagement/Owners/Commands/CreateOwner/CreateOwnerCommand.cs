@@ -1,11 +1,12 @@
 using TentMan.Contracts.Owners;
+using TentMan.Contracts.Enums;
 using MediatR;
 
 namespace TentMan.Application.PropertyManagement.Owners.Commands.CreateOwner;
 
 public record CreateOwnerCommand(
     Guid OrgId,
-    TentMan.Domain.Enums.OwnerType OwnerType,
+    OwnerType OwnerType,
     string DisplayName,
     string Phone,
     string Email,

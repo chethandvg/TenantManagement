@@ -1,4 +1,4 @@
-namespace TentMan.Domain.Enums;
+namespace TentMan.Contracts.Enums;
 
 /// <summary>
 /// Represents the type of utility meter.

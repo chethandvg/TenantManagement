@@ -1,5 +1,5 @@
 using TentMan.Domain.Common;
-using TentMan.Domain.Enums;
+using TentMan.Contracts.Enums;
 using TentMan.Domain.Entities.Identity;
 
 namespace TentMan.Domain.Entities;

@@ -43,6 +43,6 @@ public class OwnerRepository : IOwnerRepository
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Owners.AnyAsync(o => o.Id == id, cancellationToken);
+        return await _context.Owners.AnyAsync(o => o.Id == id && !o.IsDeleted, cancellationToken);
     }
 }

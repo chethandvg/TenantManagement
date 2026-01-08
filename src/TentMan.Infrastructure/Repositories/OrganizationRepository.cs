@@ -42,6 +42,6 @@ public class OrganizationRepository : IOrganizationRepository
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Organizations.AnyAsync(o => o.Id == id, cancellationToken);
+        return await _context.Organizations.AnyAsync(o => o.Id == id && !o.IsDeleted, cancellationToken);
     }
 }

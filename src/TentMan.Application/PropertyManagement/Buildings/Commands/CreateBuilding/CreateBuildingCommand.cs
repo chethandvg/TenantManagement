@@ -1,4 +1,5 @@
 using TentMan.Contracts.Buildings;
+using TentMan.Contracts.Enums;
 using MediatR;
 
 namespace TentMan.Application.PropertyManagement.Buildings.Commands.CreateBuilding;
@@ -7,7 +8,7 @@ public record CreateBuildingCommand(
     Guid OrgId,
     string BuildingCode,
     string Name,
-    TentMan.Domain.Enums.PropertyType PropertyType,
+    PropertyType PropertyType,
     int TotalFloors,
     bool HasLift,
     string? Notes

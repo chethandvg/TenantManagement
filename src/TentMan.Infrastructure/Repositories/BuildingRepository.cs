@@ -56,7 +56,7 @@ public class BuildingRepository : IBuildingRepository
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Buildings.AnyAsync(b => b.Id == id, cancellationToken);
+        return await _context.Buildings.AnyAsync(b => b.Id == id && !b.IsDeleted, cancellationToken);
     }
 
     public async Task<bool> BuildingCodeExistsAsync(Guid orgId, string buildingCode, Guid? excludeBuildingId = null, CancellationToken cancellationToken = default)

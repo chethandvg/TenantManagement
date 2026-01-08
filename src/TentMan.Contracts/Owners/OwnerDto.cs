@@ -1,4 +1,4 @@
-using TentMan.Domain.Enums;
+using TentMan.Contracts.Enums;
 
 namespace TentMan.Contracts.Owners;
 

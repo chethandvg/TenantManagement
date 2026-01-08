@@ -1,5 +1,5 @@
 using TentMan.Contracts.Units;
-using TentMan.Domain.Enums;
+using TentMan.Contracts.Enums;
 using MediatR;
 
 namespace TentMan.Application.PropertyManagement.Units.Commands.CreateUnit;

@@ -63,7 +63,7 @@ public class UnitRepository : IUnitRepository
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Units.AnyAsync(u => u.Id == id, cancellationToken);
+        return await _context.Units.AnyAsync(u => u.Id == id && !u.IsDeleted, cancellationToken);
     }
 
     public async Task<bool> UnitNumberExistsAsync(Guid buildingId, string unitNumber, Guid? excludeUnitId = null, CancellationToken cancellationToken = default)
