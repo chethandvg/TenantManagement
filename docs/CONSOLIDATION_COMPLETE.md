@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully consolidated Archu documentation from **51 files to 11 files** (78% reduction).
+Successfully consolidated TentMan documentation from **51 files to 11 files** (78% reduction).
 
 ---
 
@@ -192,7 +192,7 @@ docs/README.md (Documentation hub)
 
 **New developers should read in this order:**
 
-1. **README.md** - Understand what Archu is (5 min)
+1. **README.md** - Understand what TentMan is (5 min)
 2. **docs/GETTING_STARTED.md** - Get running (10 min)
 3. **docs/ARCHITECTURE.md** - Understand structure (15 min)
 4. **docs/API_GUIDE.md** - Learn the APIs (20 min)

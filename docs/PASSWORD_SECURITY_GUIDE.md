@@ -1,6 +1,6 @@
-# Archu Password Security Guide
+# TentMan Password Security Guide
 
-Complete guide to password policies, complexity validation, and security configuration in Archu.
+Complete guide to password policies, complexity validation, and security configuration in TentMan.
 
 ---
 
@@ -19,7 +19,7 @@ Complete guide to password policies, complexity validation, and security configu
 
 ### Password Security Features
 
-Archu implements comprehensive password security:
+TentMan implements comprehensive password security:
 - ✅ Configurable complexity requirements
 - ✅ Minimum length enforcement
 - ✅ Character type requirements (uppercase, lowercase, digits, symbols)
@@ -436,4 +436,4 @@ Response 200 OK:
 
 **Last Updated**: 2025-01-22  
 **Version**: 1.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

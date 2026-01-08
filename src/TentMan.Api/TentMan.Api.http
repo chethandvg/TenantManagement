@@ -1,0 +1,613 @@
+@TentMan.Api_HostAddress = https://localhost:7123
+@TentMan.Api_Http = http://localhost:5268
+
+# ============================================================================
+# TentMan API - HTTP Requests Collection
+# ============================================================================
+# Version: 1.0
+# Last Updated: 2025-01-22
+# 
+# This file contains example HTTP requests for testing the TentMan API.
+# Includes authentication endpoints and product management examples.
+#
+# Usage:
+# 1. Run the TentMan.AppHost project to start all services
+# 2. Register a new user or login with existing credentials
+# 3. Use the returned JWT token for authenticated endpoints
+# 4. Replace {{jwt_token}} and other variables with actual values
+# 5. Execute requests using the "Send Request" button in Visual Studio
+#
+# Note: Variables are defined at the top and can be reused throughout
+# ============================================================================
+
+# Variables
+@jwt_token = your-jwt-token-here
+@refresh_token = your-refresh-token-here
+@user_id = 3fa85f64-5717-4562-b3fc-2c963f66afa6
+@reset_token = your-reset-token-here
+@confirmation_token = your-confirmation-token-here
+@product_id = 00000000-0000-0000-0000-000000000000
+
+# ============================================================================
+# AUTHENTICATION - User Registration & Login
+# ============================================================================
+
+### 1. Register New User
+# No authentication required
+# Returns JWT access token and refresh token upon successful registration
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!",
+  "userName": "johndoe"
+}
+
+###
+
+### 2. Register New User - Minimal
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "jane.smith@example.com",
+  "password": "StrongPass456!",
+  "userName": "janesmith"
+}
+
+###
+
+### 3. Login with Email and Password
+# No authentication required
+# Returns JWT tokens (access + refresh)
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+
+###
+
+### 4. Login - Alternative User
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/login
+Content-Type: application/json
+
+{
+  "email": "jane.smith@example.com",
+  "password": "StrongPass456!"
+}
+
+###
+
+# ============================================================================
+# TOKEN MANAGEMENT - Refresh & Logout
+# ============================================================================
+
+### 5. Refresh Access Token
+# Use when access token expires (typically after 1 hour)
+# No authentication required (uses refresh token)
+# Returns new access token and refresh token pair
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh_token}}"
+}
+
+###
+
+### 6. Logout User
+# Requires valid JWT token in Authorization header
+# Invalidates refresh token to prevent future token refreshes
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/logout
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+###
+
+# ============================================================================
+# PASSWORD MANAGEMENT - Change, Reset, Forgot
+# ============================================================================
+
+### 7. Change Password (Authenticated User)
+# Requires authentication
+# User must provide current password for verification
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/change-password
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "SecurePassword123!",
+  "newPassword": "NewSecurePassword456!"
+}
+
+###
+
+### 8. Forgot Password - Request Reset Token
+# No authentication required
+# Always returns success (prevents email enumeration)
+# If email exists, user receives reset token via email
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+###
+
+### 9. Reset Password with Token
+# No authentication required
+# Use token received via email from forgot-password endpoint
+# Token is single-use and expires after limited time
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/reset-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "resetToken": "{{reset_token}}",
+  "newPassword": "BrandNewPassword789!"
+}
+
+###
+
+# ============================================================================
+# EMAIL VERIFICATION
+# ============================================================================
+
+### 10. Confirm Email Address
+# No authentication required
+# Use confirmation token received via email during registration
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/confirm-email
+Content-Type: application/json
+
+{
+  "userId": "{{user_id}}",
+  "confirmationToken": "{{confirmation_token}}"
+}
+
+###
+
+# ============================================================================
+# TESTING SCENARIOS - Common Workflows
+# ============================================================================
+
+### 11. Scenario: Complete Registration Flow
+# Step 1: Register new user
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "NewUserPass123!",
+  "userName": "newuser"
+}
+
+# Expected Response:
+# {
+#   "success": true,
+#   "message": "Registration successful",
+#   "data": {
+#     "userId": "guid-here",
+#     "userName": "newuser",
+#     "email": "newuser@example.com",
+#     "token": "jwt-access-token",
+#     "refreshToken": "refresh-token",
+#     "expiresAt": "2025-01-22T12:00:00Z"
+#   }
+# }
+
+###
+
+### 12. Scenario: Login and Get Tokens
+# Step 2: Login with credentials
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/login
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "NewUserPass123!"
+}
+
+# Expected Response:
+# {
+#   "success": true,
+#   "message": "Login successful",
+#   "data": {
+#     "userId": "guid-here",
+#     "userName": "newuser",
+#     "email": "newuser@example.com",
+#     "token": "jwt-access-token",
+#     "refreshToken": "refresh-token",
+#     "expiresAt": "2025-01-22T12:00:00Z"
+#   }
+# }
+
+###
+
+### 13. Scenario: Full Password Reset Flow
+# Step 1: Request password reset
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/forgot-password
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com"
+}
+
+###
+
+### 14. Scenario: Reset Password with Token
+# Step 2: Reset password using token from email
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/reset-password
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "resetToken": "token-from-email",
+  "newPassword": "ResetPassword123!"
+}
+
+###
+
+### 15. Scenario: Change Password While Authenticated
+# User wants to change password (knows current password)
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/change-password
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "NewUserPass123!",
+  "newPassword": "ChangedPassword456!"
+}
+
+###
+
+# ============================================================================
+# ERROR SCENARIOS - Testing Validation & Security
+# ============================================================================
+
+### 16. Error: Register with Existing Email
+# Should fail with 400 Bad Request
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!",
+  "userName": "duplicate"
+}
+
+###
+
+### 17. Error: Register with Weak Password
+# Should fail with 400 Bad Request - Password validation
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "weak",
+  "userName": "testuser"
+}
+
+###
+
+### 18. Error: Login with Invalid Credentials
+# Should fail with 401 Unauthorized
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "WrongPassword123!"
+}
+
+###
+
+### 19. Error: Login with Non-Existent Email
+# Should fail with 401 Unauthorized
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "SomePassword123!"
+}
+
+###
+
+### 20. Error: Refresh Token with Invalid Token
+# Should fail with 401 Unauthorized
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "invalid-token-here"
+}
+
+###
+
+### 21. Error: Logout with Invalid JWT
+# Should fail with 401 Unauthorized
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/logout
+Authorization: Bearer invalid-jwt-token
+Content-Type: application/json
+
+###
+
+### 22. Error: Logout without Authorization Header
+# Should fail with 401 Unauthorized
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/logout
+Content-Type: application/json
+
+###
+
+### 23. Error: Change Password with Wrong Current Password
+# Should fail with 400 Bad Request
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/change-password
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "WrongCurrentPassword123!",
+  "newPassword": "NewPassword456!"
+}
+
+###
+
+### 24. Error: Change Password without Authentication
+# Should fail with 401 Unauthorized
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/change-password
+Content-Type: application/json
+
+{
+  "currentPassword": "SecurePassword123!",
+  "newPassword": "NewPassword456!"
+}
+
+###
+
+### 25. Error: Reset Password with Invalid Token
+# Should fail with 400 Bad Request
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/reset-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "resetToken": "invalid-reset-token",
+  "newPassword": "NewPassword123!"
+}
+
+###
+
+### 26. Error: Confirm Email with Invalid Token
+# Should fail with 400 Bad Request
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/confirm-email
+Content-Type: application/json
+
+{
+  "userId": "{{user_id}}",
+  "confirmationToken": "invalid-confirmation-token"
+}
+
+###
+
+# ============================================================================
+# PRODUCTS API - Example Authenticated Endpoints
+# ============================================================================
+
+### 27. Retrieve All Products (Example - May Require Auth)
+GET {{TentMan.Api_HostAddress}}/api/Products
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+### 28. Retrieve Single Product by ID
+GET {{TentMan.Api_HostAddress}}/api/Products/{{product_id}}
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+### 29. Create a Product (Example - May Require Auth)
+POST {{TentMan.Api_HostAddress}}/api/Products
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Sample Product",
+  "price": 19.99
+}
+
+###
+
+### 30. Update a Product
+PUT {{TentMan.Api_HostAddress}}/api/Products/{{product_id}}
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Product",
+  "price": 24.99,
+  "rowVersion": "AAAAAAAAAAA="
+}
+
+###
+
+### 31. Delete a Product
+DELETE {{TentMan.Api_HostAddress}}/api/Products/{{product_id}}
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# ============================================================================
+# TOKEN REFRESH WORKFLOW - Handling Expired Tokens
+# ============================================================================
+
+### 32. Workflow: Token Refresh Example
+# Step 1: Try to access protected resource with expired token
+# (This will fail with 401 Unauthorized)
+GET {{TentMan.Api_HostAddress}}/api/Products
+Authorization: Bearer expired-jwt-token
+Accept: application/json
+
+###
+
+### 33. Workflow: Refresh the Token
+# Step 2: Use refresh token to get new access token
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh_token}}"
+}
+
+# Response contains new access token and refresh token
+
+###
+
+### 34. Workflow: Retry with New Token
+# Step 3: Retry the request with new access token
+GET {{TentMan.Api_HostAddress}}/api/Products
+Authorization: Bearer new-jwt-token-from-refresh
+Accept: application/json
+
+###
+
+# ============================================================================
+# HTTP PROTOCOL - Testing Different Protocols
+# ============================================================================
+
+### 35. Test HTTPS Endpoint (Authentication)
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+
+###
+
+### 36. Test HTTP Endpoint (Authentication)
+POST {{TentMan.Api_Http}}/api/v1/authentication/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+
+###
+
+# ============================================================================
+# BULK TESTING - Multiple User Registrations
+# ============================================================================
+
+### 37. Bulk Registration - Developer 1
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "developer1@example.com",
+  "password": "DevPassword123!",
+  "userName": "developer1"
+}
+
+###
+
+### 38. Bulk Registration - Developer 2
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "developer2@example.com",
+  "password": "DevPassword123!",
+  "userName": "developer2"
+}
+
+###
+
+### 39. Bulk Registration - Developer 3
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "developer3@example.com",
+  "password": "DevPassword123!",
+  "userName": "developer3"
+}
+
+###
+
+### 40. Bulk Registration - Tester
+POST {{TentMan.Api_HostAddress}}/api/v1/authentication/register
+Content-Type: application/json
+
+{
+  "email": "tester@example.com",
+  "password": "TesterPassword123!",
+  "userName": "tester"
+}
+
+###
+
+# ============================================================================
+# NOTES & TIPS
+# ============================================================================
+#
+# Authentication Flow:
+# 1. Register new user (returns tokens immediately)
+#    OR Login with existing credentials
+# 2. Use access token in Authorization header for protected endpoints
+# 3. When access token expires, use refresh token to get new tokens
+# 4. Logout to invalidate refresh token
+#
+# Token Lifetimes:
+# - Access Token: 1 hour (default)
+# - Refresh Token: 7 days (default)
+#
+# Password Requirements:
+# - Minimum 8 characters
+# - Maximum 100 characters
+# - Additional requirements may be enforced by Identity
+#
+# Common Response Codes:
+# - 200 OK: Success
+# - 400 Bad Request: Validation error or business rule violation
+# - 401 Unauthorized: Missing, expired, or invalid token/credentials
+# - 403 Forbidden: Insufficient permissions (for other endpoints)
+# - 404 Not Found: Resource doesn't exist
+#
+# Security Best Practices:
+# 1. Store tokens securely (never in localStorage for sensitive apps)
+# 2. Use HTTPS in production
+# 3. Implement token refresh before expiration
+# 4. Clear tokens on logout
+# 5. Handle 401 responses by redirecting to login
+#
+# Testing Tips:
+# 1. Start with registration or login to get valid tokens
+# 2. Copy access token and refresh token to variables at top
+# 3. Test happy path scenarios first
+# 4. Then test error scenarios
+# 5. Verify security restrictions work as expected
+# 6. Test token refresh workflow
+#
+# Integration with Admin API:
+# - After registering/logging in here, use the JWT token in Admin API
+# - Admin API requires specific roles (SuperAdmin, Administrator, Manager)
+# - Regular users from this API may not have admin permissions
+# - Use Admin API initialization to create super admin user
+#
+# Documentation:
+# - Controller: src/TentMan.Api/Controllers/AuthenticationController.cs
+# - Contracts: src/TentMan.Contracts/Authentication/
+# - Guide: docs/HTTP_REQUESTS_GUIDE.md (for Admin API pattern)
+#
+# ============================================================================

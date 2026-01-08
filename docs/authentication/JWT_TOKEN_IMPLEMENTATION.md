@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the JWT (JSON Web Token) implementation for secure authentication in the Archu application. The implementation includes access token generation, refresh token handling, and token validation following security best practices.
+This document describes the JWT (JSON Web Token) implementation for secure authentication in the TentMan application. The implementation includes access token generation, refresh token handling, and token validation following security best practices.
 
 **Date**: 2025-01-22  
 **Version**: 1.0  
@@ -45,7 +45,7 @@ This document describes the JWT (JSON Web Token) implementation for secure authe
 
 ### 1. `JwtOptions.cs` (Infrastructure Layer)
 
-**Location**: `src/Archu.Infrastructure/Authentication/JwtOptions.cs`
+**Location**: `src/TentMan.Infrastructure/Authentication/JwtOptions.cs`
 
 **Purpose**: Configuration options for JWT token generation.
 
@@ -61,8 +61,8 @@ This document describes the JWT (JSON Web Token) implementation for secure authe
 {
   "Jwt": {
     "Secret": "YourSuperSecretKeyThatIsAtLeast256BitsLong!ChangeThisInProduction",
-    "Issuer": "https://api.archu.com",
-    "Audience": "https://api.archu.com",
+    "Issuer": "https://api.tentman.com",
+    "Audience": "https://api.tentman.com",
     "AccessTokenExpirationMinutes": 60,
     "RefreshTokenExpirationDays": 7
   }
@@ -79,7 +79,7 @@ This document describes the JWT (JSON Web Token) implementation for secure authe
 
 ### 2. `IJwtTokenService.cs` (Application Layer)
 
-**Location**: `src/Archu.Application/Abstractions/Authentication/IJwtTokenService.cs`
+**Location**: `src/TentMan.Application/Abstractions/Authentication/IJwtTokenService.cs`
 
 **Purpose**: Abstraction for JWT token operations.
 
@@ -100,7 +100,7 @@ DateTime GetRefreshTokenExpiryUtc();
 
 ### 3. `JwtTokenService.cs` (Infrastructure Layer)
 
-**Location**: `src/Archu.Infrastructure/Authentication/JwtTokenService.cs`
+**Location**: `src/TentMan.Infrastructure/Authentication/JwtTokenService.cs`
 
 **Purpose**: Implementation of JWT token generation and validation.
 
@@ -125,8 +125,8 @@ DateTime GetRefreshTokenExpiryUtc();
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": "user@example.com",
   "http://schemas.microsoft.com/ws/2008/06/identity/claims/role": ["Admin", "User"],
   "role": ["Admin", "User"],
-  "iss": "https://api.archu.com",
-  "aud": "https://api.archu.com",
+  "iss": "https://api.tentman.com",
+  "aud": "https://api.tentman.com",
   "exp": 1234571490,
   "nbf": 1234567890
 }
@@ -141,7 +141,7 @@ DateTime GetRefreshTokenExpiryUtc();
 
 ### 4. `RefreshTokenHandler.cs` (Infrastructure Layer)
 
-**Location**: `src/Archu.Infrastructure/Authentication/RefreshTokenHandler.cs`
+**Location**: `src/TentMan.Infrastructure/Authentication/RefreshTokenHandler.cs`
 
 **Purpose**: Manages refresh token lifecycle and security.
 
@@ -496,8 +496,8 @@ var roles = principal.FindAll(ClaimTypes.Role).Select(c => c.Value);
 {
   "Jwt": {
     "Secret": "#{JWT_SECRET}#",  // Injected from Azure Key Vault
-    "Issuer": "https://api.archu.com",
-    "Audience": "https://api.archu.com",
+    "Issuer": "https://api.tentman.com",
+    "Audience": "https://api.tentman.com",
     "AccessTokenExpirationMinutes": 30,
     "RefreshTokenExpirationDays": 14
   }

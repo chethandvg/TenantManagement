@@ -1,4 +1,4 @@
-# Archu Database Guide
+# TentMan Database Guide
 
 Complete guide to database setup, migrations, seeding, and best practices.
 
@@ -101,7 +101,7 @@ Automatic initialization creates:
    - SuperAdmin
 
 2. **1 Admin User** (configurable):
-   - Email: admin@archu.com (default)
+   - Email: admin@tentman.com (default)
    - Password: Admin@123 (default)
    - Roles: SuperAdmin, Administrator, User
 
@@ -109,11 +109,11 @@ Automatic initialization creates:
 
 **Enable Seeding** (User Secrets):
 ```bash
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet user-secrets set "DatabaseSeeding:Enabled" "true"
 dotnet user-secrets set "DatabaseSeeding:SeedRoles" "true"
 dotnet user-secrets set "DatabaseSeeding:SeedAdminUser" "true"
-dotnet user-secrets set "DatabaseSeeding:AdminEmail" "admin@archu.com"
+dotnet user-secrets set "DatabaseSeeding:AdminEmail" "admin@tentman.com"
 dotnet user-secrets set "DatabaseSeeding:AdminPassword" "Admin@123"
 dotnet user-secrets set "DatabaseSeeding:AdminRoles" "SuperAdmin,Administrator,User"
 ```
@@ -197,14 +197,14 @@ info: Database seeding completed successfully
 SELECT * FROM AspNetRoles;
 
 -- Check admin user
-SELECT * FROM AspNetUsers WHERE Email = 'admin@archu.com';
+SELECT * FROM AspNetUsers WHERE Email = 'admin@tentman.com';
 
 -- Check role assignments
 SELECT u.Email, r.Name
 FROM AspNetUsers u
 JOIN AspNetUserRoles ur ON u.Id = ur.UserId
 JOIN AspNetRoles r ON ur.RoleId = r.Id
-WHERE u.Email = 'admin@archu.com';
+WHERE u.Email = 'admin@tentman.com';
 ```
 
 ---
@@ -214,8 +214,8 @@ WHERE u.Email = 'admin@archu.com';
 ### Creating Migrations
 
 ```bash
-cd src/Archu.Infrastructure
-dotnet ef migrations add MigrationName --startup-project ../Archu.Api
+cd src/TentMan.Infrastructure
+dotnet ef migrations add MigrationName --startup-project ../TentMan.Api
 ```
 
 ### Applying Migrations
@@ -232,13 +232,13 @@ if (app.Environment.IsDevelopment())
 
 **Production** (manual or CI/CD):
 ```bash
-dotnet ef database update --startup-project ../Archu.Api
+dotnet ef database update --startup-project ../TentMan.Api
 ```
 
 ### Removing Migrations
 
 ```bash
-dotnet ef migrations remove --startup-project ../Archu.Api
+dotnet ef migrations remove --startup-project ../TentMan.Api
 ```
 
 ### Migration Best Practices
@@ -261,7 +261,7 @@ dotnet ef migrations remove --startup-project ../Archu.Api
 
 ### Configuration
 
-Archu implements automatic retry for transient SQL Server failures:
+TentMan implements automatic retry for transient SQL Server failures:
 
 ```csharp
 services.AddDbContext<ApplicationDbContext>(options =>
@@ -379,4 +379,4 @@ Attempt 5 → Success ✅
 
 **Last Updated**: 2025-01-22  
 **Version**: 1.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

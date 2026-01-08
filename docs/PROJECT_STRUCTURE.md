@@ -1,23 +1,23 @@
-# Archu Project Structure
+# TentMan Project Structure
 
-Complete guide to all projects in the Archu solution.
+Complete guide to all projects in the TentMan solution.
 
 ## Solution Overview
 
-Archu follows **Clean Architecture** with **.NET Aspire** orchestration.
+TentMan follows **Clean Architecture** with **.NET Aspire** orchestration.
 
 ```
-Archu/
+TentMan/
 ├── src/
-│   ├── Archu.Domain/              # Domain Layer (Core Business Logic)
-│   ├── Archu.Application/         # Application Layer (Use Cases)
-│   ├── Archu.Infrastructure/      # Infrastructure Layer (Data Access)
-│   ├── Archu.Contracts/           # API Contracts (DTOs)
-│   ├── Archu.Api/                 # Presentation Layer (Web API)
-│   ├── Archu.ApiClient/           # API Client Library
-│   ├── Archu.Ui/                  # Blazor Component Library
-│   ├── Archu.AppHost/             # .NET Aspire Orchestrator
-│   └── Archu.ServiceDefaults/     # Aspire Service Defaults
+│   ├── TentMan.Domain/              # Domain Layer (Core Business Logic)
+│   ├── TentMan.Application/         # Application Layer (Use Cases)
+│   ├── TentMan.Infrastructure/      # Infrastructure Layer (Data Access)
+│   ├── TentMan.Contracts/           # API Contracts (DTOs)
+│   ├── TentMan.Api/                 # Presentation Layer (Web API)
+│   ├── TentMan.ApiClient/           # API Client Library
+│   ├── TentMan.Ui/                  # Blazor Component Library
+│   ├── TentMan.AppHost/             # .NET Aspire Orchestrator
+│   └── TentMan.ServiceDefaults/     # Aspire Service Defaults
 └── docs/                          # Documentation
 ```
 
@@ -25,7 +25,7 @@ Archu/
 
 ## Core Projects
 
-### Archu.Domain
+### TentMan.Domain
 **Target**: .NET 9  
 **Dependencies**: None (zero dependencies)
 
@@ -57,9 +57,9 @@ public class ApplicationRole : BaseEntity { }
 
 ---
 
-### Archu.Application
+### TentMan.Application
 **Target**: .NET 9  
-**Dependencies**: Archu.Domain, MediatR, FluentValidation
+**Dependencies**: TentMan.Domain, MediatR, FluentValidation
 
 Application layer with use cases, CQRS handlers, and abstractions.
 
@@ -91,9 +91,9 @@ public interface IProductRepository
 
 ---
 
-### Archu.Infrastructure
+### TentMan.Infrastructure
 **Target**: .NET 9  
-**Dependencies**: Archu.Domain, Archu.Application, EF Core 9, SQL Server
+**Dependencies**: TentMan.Domain, TentMan.Application, EF Core 9, SQL Server
 
 Infrastructure implementations of application interfaces.
 
@@ -126,7 +126,7 @@ public class HttpContextCurrentUser : ICurrentUser { }
 
 ---
 
-### Archu.Contracts
+### TentMan.Contracts
 **Target**: .NET 9  
 **Dependencies**: None (or minimal - DataAnnotations)
 
@@ -159,7 +159,7 @@ public sealed class UpdateProductRequest
 
 ---
 
-### Archu.Api
+### TentMan.Api
 **Target**: .NET 9  
 **Dependencies**: All above projects, Scalar.AspNetCore
 
@@ -204,11 +204,11 @@ public class ProductsController : ControllerBase
 
 ## Supporting Projects
 
-### Archu.ApiClient
+### TentMan.ApiClient
 **Target**: .NET 9  
 **Platform**: Cross-platform (works with any .NET 9 app)
 
-Strongly-typed HTTP client for consuming the Archu API.
+Strongly-typed HTTP client for consuming the TentMan API.
 
 **Features**:
 - Type-safe API calls
@@ -221,7 +221,7 @@ Strongly-typed HTTP client for consuming the Archu API.
 // Register client
 builder.Services.AddArchuApiClient(options => 
 {
-    options.BaseAddress = "https://api.archu.com";
+    options.BaseAddress = "https://api.tentman.com";
 });
 
 // Use client
@@ -232,11 +232,11 @@ if (response.Success)
 }
 ```
 
-**Documentation**: See `src/Archu.ApiClient/README.md` and `RESILIENCE.md`
+**Documentation**: See `src/TentMan.ApiClient/README.md` and `RESILIENCE.md`
 
 ---
 
-### Archu.Ui
+### TentMan.Ui
 **Target**: .NET 9  
 **Platform**: Blazor (Server, WebAssembly, Hybrid)
 
@@ -257,11 +257,11 @@ builder.Services.AddArchuUi();
 <ProductCard Product="@product" OnEdit="HandleEdit" />
 ```
 
-**Documentation**: See `src/Archu.Ui/README.md`, `CHANGELOG.md`, `INTEGRATION.md`
+**Documentation**: See `src/TentMan.Ui/README.md`, `CHANGELOG.md`, `INTEGRATION.md`
 
 ---
 
-### Archu.AppHost
+### TentMan.AppHost
 **Target**: .NET 8 (Aspire requirement)  
 **Type**: .NET Aspire Orchestrator
 
@@ -275,21 +275,21 @@ Local development orchestration and deployment.
 
 **Usage**:
 ```bash
-cd src/Archu.AppHost
+cd src/TentMan.AppHost
 dotnet run
 ```
 
 Opens Aspire dashboard at https://localhost:17001
 
 **Resources Managed**:
-- Archu.Api (Web API)
+- TentMan.Api (Web API)
 - SQL Server database
 - Service discovery
 - Telemetry collection
 
 ---
 
-### Archu.ServiceDefaults
+### TentMan.ServiceDefaults
 **Target**: .NET 9  
 **Type**: Shared Aspire Configuration
 
@@ -311,17 +311,17 @@ builder.AddServiceDefaults();
 ## Dependency Flow
 
 ```
-Archu.Domain (no dependencies)
+TentMan.Domain (no dependencies)
       ↑
-Archu.Application
+TentMan.Application
       ↑
-Archu.Infrastructure
+TentMan.Infrastructure
       ↑
-Archu.Api ← Archu.Contracts
+TentMan.Api ← TentMan.Contracts
       ↑
-Archu.ServiceDefaults
+TentMan.ServiceDefaults
       ↑
-Archu.AppHost
+TentMan.AppHost
 ```
 
 **Rule**: Dependencies point **inward**. Inner layers never depend on outer layers.
@@ -365,13 +365,13 @@ dotnet build
 
 ### Run with Aspire
 ```bash
-cd src/Archu.AppHost
+cd src/TentMan.AppHost
 dotnet run
 ```
 
 ### Run API Only
 ```bash
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet run
 ```
 

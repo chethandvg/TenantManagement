@@ -1,4 +1,4 @@
-# Archu Backend Testing
+# TentMan Backend Testing
 
 Comprehensive testing suite for the "Get Products" endpoint covering Unit Tests, Integration Tests, and API Client Tests.
 
@@ -6,9 +6,9 @@ Comprehensive testing suite for the "Get Products" endpoint covering Unit Tests,
 
 | Project | Type | Description | Test Count |
 |---------|------|-------------|------------|
-| **Archu.UnitTests** | Unit Tests | Tests business logic in Application layer | 9 tests |
-| **Archu.IntegrationTests** | Integration Tests | Tests full API endpoints with database | 10 tests |
-| **Archu.ApiClient.Tests** | API Client Tests | Tests HTTP client behavior | 9 tests |
+| **TentMan.UnitTests** | Unit Tests | Tests business logic in Application layer | 9 tests |
+| **TentMan.IntegrationTests** | Integration Tests | Tests full API endpoints with database | 10 tests |
+| **TentMan.ApiClient.Tests** | API Client Tests | Tests HTTP client behavior | 9 tests |
 
 **Total**: 28 tests covering the Get Products functionality
 
@@ -39,18 +39,18 @@ dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
 
 ```bash
 # Unit Tests only
-dotnet test tests/Archu.UnitTests
+dotnet test tests/TentMan.UnitTests
 
 # Integration Tests only (requires Docker)
-dotnet test tests/Archu.IntegrationTests
+dotnet test tests/TentMan.IntegrationTests
 
 # API Client Tests only
-dotnet test tests/Archu.ApiClient.Tests
+dotnet test tests/TentMan.ApiClient.Tests
 ```
 
 ### Run in Visual Studio
 
-1. Open `Archu.sln`
+1. Open `TentMan.sln`
 2. Open **Test Explorer** (Test → Test Explorer)
 3. Click **Run All Tests** or right-click specific tests
 
@@ -58,7 +58,7 @@ dotnet test tests/Archu.ApiClient.Tests
 
 ## 📦 Test Coverage
 
-### Unit Tests (`Archu.UnitTests`)
+### Unit Tests (`TentMan.UnitTests`)
 
 **Target**: `GetProductsQueryHandler` in Application layer
 
@@ -99,7 +99,7 @@ public async Task Handle_ShouldReturnAllProducts_WhenProductsExist()
 
 ---
 
-### Integration Tests (`Archu.IntegrationTests`)
+### Integration Tests (`TentMan.IntegrationTests`)
 
 **Target**: Full HTTP request/response cycle through the Products API
 
@@ -150,7 +150,7 @@ public async Task GetProducts_ShouldReturn200OK_WithAllProducts()
 
 ---
 
-### API Client Tests (`Archu.ApiClient.Tests`)
+### API Client Tests (`TentMan.ApiClient.Tests`)
 
 **Target**: `ProductsApiClient` HTTP client implementation
 
@@ -195,18 +195,18 @@ public async Task GetProductsAsync_ShouldThrowAuthorizationException_When401()
 
 ```
 ┌─────────────────────────────────────┐
-│  Archu.ApiClient.Tests              │  HTTP Client Layer
+│  TentMan.ApiClient.Tests              │  HTTP Client Layer
 │  (Mock HTTP responses)              │
 └─────────────────┬───────────────────┘
                   │
 ┌─────────────────▼───────────────────┐
-│  Archu.IntegrationTests             │  API Layer + Database
+│  TentMan.IntegrationTests             │  API Layer + Database
 │  (WebApplicationFactory +           │
 │   SQL Server Container)             │
 └─────────────────┬───────────────────┘
                   │
 ┌─────────────────▼───────────────────┐
-│  Archu.UnitTests                    │  Application Layer
+│  TentMan.UnitTests                    │  Application Layer
 │  (Mocked Repositories)              │
 └─────────────────────────────────────┘
 ```
@@ -264,9 +264,9 @@ Test tokens are generated with:
 ```bash
 $ dotnet test
 
-Test run for Archu.UnitTests.dll (.NET 9.0)
-Test run for Archu.IntegrationTests.dll (.NET 9.0)
-Test run for Archu.ApiClient.Tests.dll (.NET 9.0)
+Test run for TentMan.UnitTests.dll (.NET 9.0)
+Test run for TentMan.IntegrationTests.dll (.NET 9.0)
+Test run for TentMan.ApiClient.Tests.dll (.NET 9.0)
 
 Total tests: 28
      Passed: 28
@@ -301,7 +301,7 @@ dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 docker info
 
 # Start Docker Desktop, then re-run tests
-dotnet test tests/Archu.IntegrationTests
+dotnet test tests/TentMan.IntegrationTests
 ```
 
 ### Issue: Tests fail with "Connection refused"
@@ -411,8 +411,8 @@ To test other endpoints (e.g., Create Product, Update Product):
 ## 🔗 Related Documentation
 
 - [Clean Architecture Guide](../../docs/ARCHITECTURE.md)
-- [API Documentation](../../src/Archu.Api/README.md)
-- [API Client Documentation](../../src/Archu.ApiClient/README.md)
+- [API Documentation](../../src/TentMan.Api/README.md)
+- [API Client Documentation](../../src/TentMan.ApiClient/README.md)
 
 ---
 
@@ -459,13 +459,13 @@ jobs:
       run: dotnet build --no-restore
     
     - name: Run Unit Tests
-      run: dotnet test tests/Archu.UnitTests --no-build --verbosity normal
+      run: dotnet test tests/TentMan.UnitTests --no-build --verbosity normal
     
     - name: Run Integration Tests
-      run: dotnet test tests/Archu.IntegrationTests --no-build --verbosity normal
+      run: dotnet test tests/TentMan.IntegrationTests --no-build --verbosity normal
     
     - name: Run API Client Tests
-      run: dotnet test tests/Archu.ApiClient.Tests --no-build --verbosity normal
+      run: dotnet test tests/TentMan.ApiClient.Tests --no-build --verbosity normal
     
     - name: Generate Coverage Report
       run: dotnet test /p:CollectCoverage=true /p:CoverletOutput=./coverage/ /p:CoverletOutputFormat=lcov
@@ -480,4 +480,4 @@ jobs:
 
 **Last Updated**: 2025-01-23  
 **Version**: 1.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

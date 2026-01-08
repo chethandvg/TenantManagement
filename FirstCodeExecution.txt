@@ -29,8 +29,8 @@ dotnet build
 
 ## 1) Pick the projects (assumed names)
 
-* **DbContext & migrations live in:** `src/Archu.Infrastructure`
-* **Startup (web) project is:** `src/Archu.Api`
+* **DbContext & migrations live in:** `src/TentMan.Infrastructure`
+* **Startup (web) project is:** `src/TentMan.Api`
 
 This is the standard split; tools need an executable **startup project** to resolve config/DI, while the **target project** is where migration files are created. ([Microsoft Learn][1])
 
@@ -42,8 +42,8 @@ Create a folder for migrations and add your first migration:
 
 ```bash
 dotnet ef migrations add InitialCreate \
-  --project src/Archu.Infrastructure \
-  --startup-project src/Archu.Api \
+  --project src/TentMan.Infrastructure \
+  --startup-project src/TentMan.Api \
   --output-dir Persistence/Migrations \
   --context ApplicationDbContext
 ```
@@ -61,14 +61,14 @@ Still from the **solution root**:
 
 ```bash
 dotnet ef database update \
-  --project src/Archu.Infrastructure \
-  --startup-project src/Archu.Api \
+  --project src/TentMan.Infrastructure \
+  --startup-project src/TentMan.Api \
   --context ApplicationDbContext
 ```
 
 That updates SQL Server using the connection the startup project resolves (e.g., `appsettings.Development.json`). This is the standard “apply migrations” flow. ([Microsoft Learn][2])
 
-> Using Visual Studio instead? Set **Archu.Api** as Startup Project, set **Default project** in PMC to **Archu.Infrastructure**, then run `Add-Migration` / `Update-Database`. Same idea, GUI sugar on top. ([JetBrains][3])
+> Using Visual Studio instead? Set **TentMan.Api** as Startup Project, set **Default project** in PMC to **TentMan.Infrastructure**, then run `Add-Migration` / `Update-Database`. Same idea, GUI sugar on top. ([JetBrains][3])
 
 ---
 
@@ -77,7 +77,7 @@ That updates SQL Server using the connection the startup project resolves (e.g.,
 * In **AppHost**, you host SQL (`AddSqlServer().AddDatabase("appdb")`) and **in the API** you can use Aspire’s client integration (`builder.AddSqlServerDbContext<ApplicationDbContext>("appdb");`).
 * EF Tools do **not** run via the AppHost; they run against your **startup project** (API). Ensure the API can resolve a connection **at design time**:
 
-  * Easiest: keep a dev connection in `Archu.Api/appsettings.Development.json` (e.g., to your local SQL/SSMS).
+  * Easiest: keep a dev connection in `TentMan.Api/appsettings.Development.json` (e.g., to your local SQL/SSMS).
   * Or set an env var before the command:
 
     * Windows PowerShell:
@@ -101,14 +101,14 @@ Whenever you change entities, repeat (from solution root):
 
 ```bash
 dotnet ef migrations add AddProductsIndex \
-  --project src/Archu.Infrastructure \
-  --startup-project src/Archu.Api \
+  --project src/TentMan.Infrastructure \
+  --startup-project src/TentMan.Api \
   --output-dir Persistence/Migrations \
   --context ApplicationDbContext
 
 dotnet ef database update \
-  --project src/Archu.Infrastructure \
-  --startup-project src/Archu.Api \
+  --project src/TentMan.Infrastructure \
+  --startup-project src/TentMan.Api \
   --context ApplicationDbContext
 ```
 
@@ -122,8 +122,8 @@ For CI/CD or DBA review, spit out a single script:
 
 ```bash
 dotnet ef migrations script \
-  --project src/Archu.Infrastructure \
-  --startup-project src/Archu.Api \
+  --project src/TentMan.Infrastructure \
+  --startup-project src/TentMan.Api \
   --idempotent \
   -o artifacts/migrations.sql \
   --context ApplicationDbContext
@@ -154,15 +154,15 @@ From **solution root** every time:
 ```bash
 # create migration in Infrastructure, using Api to resolve config
 dotnet ef migrations add InitialCreate \
-  --project src/Archu.Infrastructure \
-  --startup-project src/Archu.Api \
+  --project src/TentMan.Infrastructure \
+  --startup-project src/TentMan.Api \
   --output-dir Persistence/Migrations \
   --context ApplicationDbContext
 
 # apply it
 dotnet ef database update \
-  --project src/Archu.Infrastructure \
-  --startup-project src/Archu.Api \
+  --project src/TentMan.Infrastructure \
+  --startup-project src/TentMan.Api \
   --context ApplicationDbContext
 ```
 
@@ -176,4 +176,4 @@ That’s the clean way, boss—fast, predictable, and plays nice with Aspire and
 [6]: https://learn.microsoft.com/en-us/ef/core/cli/dbcontext-creation?utm_source=chatgpt.com "Design-time DbContext Creation - EF Core"
 [7]: https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/projects?utm_source=chatgpt.com "Using a Separate Migrations Project - EF Core"
 
-dotnet ef migrations add InitialCreate --project src/Archu.Infrastructure --startup-project src/Archu.Api --output-dir Persistence/Migrations --context ApplicationDbContext
+dotnet ef migrations add InitialCreate --project src/TentMan.Infrastructure --startup-project src/TentMan.Api --output-dir Persistence/Migrations --context ApplicationDbContext

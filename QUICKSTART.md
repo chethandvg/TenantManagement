@@ -1,4 +1,4 @@
-# Quick Start Guide - Archu Application with Aspire
+# Quick Start Guide - TentMan Application with Aspire
 
 ## Prerequisites
 
@@ -13,14 +13,14 @@
 **Start the entire application stack with one command:**
 
 ```sh
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 ```
 
 **What happens:**
 1. 🐳 SQL Server container starts with persistent storage
-2. 🔧 Archu.Api backend starts on dynamic port
-3. 👨‍💼 Archu.AdminApi starts on dynamic port
-4. 🌐 Archu.Web frontend starts on dynamic port
+2. 🔧 TentMan.Api backend starts on dynamic port
+3. 👨‍💼 TentMan.AdminApi starts on dynamic port
+4. 🌐 TentMan.Web frontend starts on dynamic port
 5. 📊 Aspire Dashboard opens in browser
 
 **Access:**
@@ -42,32 +42,32 @@ If you prefer to use your local SQL Server instance:
 ```powershell
 # PowerShell
 $env:ARCHU_USE_LOCAL_DB="true"
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 ```
 
 ```cmd
 # Command Prompt
 set ARCHU_USE_LOCAL_DB=true
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 ```
 
 ```bash
 # Linux/macOS
 export ARCHU_USE_LOCAL_DB=true
-dotnet run --project src/Archu.AppHost
+dotnet run --project src/TentMan.AppHost
 ```
 
 **Requirements:**
 - SQL Server running locally
-- Update connection string in `src\Archu.Api\appsettings.Development.json`
-- Run migrations: `dotnet ef database update --project src\Archu.Infrastructure`
+- Update connection string in `src\TentMan.Api\appsettings.Development.json`
+- Run migrations: `dotnet ef database update --project src\TentMan.Infrastructure`
 
 ## First Time Setup
 
 ### 1. Run Database Migrations
 
 ```sh
-cd src\Archu.Infrastructure
+cd src\TentMan.Infrastructure
 dotnet ef database update
 ```
 
@@ -75,7 +75,7 @@ dotnet ef database update
 
 ```sh
 # From repository root
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 ```
 
 ### 3. Register a User
@@ -124,7 +124,7 @@ When running with Aspire, all URLs are dynamic. Find them in the **Aspire Dashbo
 
 1. **Stop the application** (Ctrl+C in terminal)
 2. **Make your changes**
-3. **Restart**: `dotnet run --project src\Archu.AppHost`
+3. **Restart**: `dotnet run --project src\TentMan.AppHost`
 4. **Aspire hot reloads** most changes automatically
 
 ### View Logs
@@ -136,8 +136,8 @@ When running with Aspire, all URLs are dynamic. Find them in the **Aspire Dashbo
 
 ### Debug in Visual Studio
 
-1. Open `Archu.sln`
-2. Set `Archu.AppHost` as startup project
+1. Open `TentMan.sln`
+2. Set `TentMan.AppHost` as startup project
 3. Press F5 to start debugging
 4. Set breakpoints in any project
 5. Debug across all services simultaneously
@@ -146,7 +146,7 @@ When running with Aspire, all URLs are dynamic. Find them in the **Aspire Dashbo
 
 1. Open workspace folder
 2. Install "C# Dev Kit" extension
-3. Open `src\Archu.AppHost\Program.cs`
+3. Open `src\TentMan.AppHost\Program.cs`
 4. Press F5 to start debugging
 5. Select ".NET Core Launch (web)" configuration
 
@@ -230,13 +230,13 @@ Authorization: Bearer <your-access-token>
 ```sh
 # Start Docker Desktop
 # Then restart Aspire
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 ```
 
 Or use local SQL Server:
 ```sh
 $env:ARCHU_USE_LOCAL_DB="true"
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 ```
 
 ### "Port already in use"
@@ -250,7 +250,7 @@ Ctrl+C
 taskkill /F /IM dotnet.exe
 
 # Restart
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 ```
 
 ### "Database connection failed"
@@ -261,7 +261,7 @@ dotnet run --project src\Archu.AppHost
 docker ps | findstr sql
 
 # Restart Aspire (will recreate container)
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 ```
 
 **Using Local SQL:**
@@ -269,7 +269,7 @@ dotnet run --project src\Archu.AppHost
 # Verify SQL Server is running
 # Check connection string in appsettings.Development.json
 # Run migrations
-cd src\Archu.Infrastructure
+cd src\TentMan.Infrastructure
 dotnet ef database update
 ```
 
@@ -278,7 +278,7 @@ dotnet ef database update
 1. Check Aspire Dashboard for API status
 2. View API logs in Aspire Dashboard
 3. Verify SQL Server is connected (check API logs)
-4. Restart: `dotnet run --project src\Archu.AppHost`
+4. Restart: `dotnet run --project src\TentMan.AppHost`
 
 ### "Login not working"
 
@@ -294,26 +294,26 @@ dotnet ef database update
 ## Project Structure
 
 ```
-Archu/
+TentMan/
 ├── src/
-│   ├── Archu.AppHost/          # Aspire orchestration
+│   ├── TentMan.AppHost/          # Aspire orchestration
 │   │   ├── Program.cs          # Service configuration
 │   │   └── INTEGRATION.md      # Detailed docs
 │   │
-│   ├── Archu.Api/              # Backend API
+│   ├── TentMan.Api/              # Backend API
 │   │   ├── Controllers/        # API endpoints
 │   │   └── appsettings.json
 │   │
-│   ├── Archu.Web/              # Blazor WebAssembly
+│   ├── TentMan.Web/              # Blazor WebAssembly
 │   │   ├── Pages/              # UI pages
 │   │   ├── Layout/             # Layout components
 │   │   └── AUTHENTICATION.md   # Auth docs
 │   │
-│   ├── Archu.ApiClient/        # HTTP client library
-│   ├── Archu.Application/      # Business logic
-│   ├── Archu.Domain/           # Domain entities
-│   ├── Archu.Infrastructure/   # Data access
-│   └── Archu.Contracts/        # DTOs
+│   ├── TentMan.ApiClient/        # HTTP client library
+│   ├── TentMan.Application/      # Business logic
+│   ├── TentMan.Domain/           # Domain entities
+│   ├── TentMan.Infrastructure/   # Data access
+│   └── TentMan.Contracts/        # DTOs
 ```
 
 ## Next Steps
@@ -324,20 +324,20 @@ Archu/
    - Study API client patterns
 
 2. **Add Features**
-   - Create new pages in Archu.Web
+   - Create new pages in TentMan.Web
    - Add new API endpoints
    - Extend the domain model
 
 3. **Deploy**
-   - See [INTEGRATION.md](src/Archu.AppHost/INTEGRATION.md) for deployment guide
+   - See [INTEGRATION.md](src/TentMan.AppHost/INTEGRATION.md) for deployment guide
    - Azure Container Apps ready
    - Docker compose support
 
 ## Documentation
 
-- **Integration Guide**: [src/Archu.AppHost/INTEGRATION.md](src/Archu.AppHost/INTEGRATION.md)
-- **Authentication**: [src/Archu.Web/AUTHENTICATION.md](src/Archu.Web/AUTHENTICATION.md)
-- **API Client**: [src/Archu.ApiClient/README.md](src/Archu.ApiClient/README.md)
+- **Integration Guide**: [src/TentMan.AppHost/INTEGRATION.md](src/TentMan.AppHost/INTEGRATION.md)
+- **Authentication**: [src/TentMan.Web/AUTHENTICATION.md](src/TentMan.Web/AUTHENTICATION.md)
+- **API Client**: [src/TentMan.ApiClient/README.md](src/TentMan.ApiClient/README.md)
 
 ## Getting Help
 
@@ -352,14 +352,14 @@ Archu/
 
 ```sh
 # Start everything
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 
 # Use local database
 $env:ARCHU_USE_LOCAL_DB="true"
-dotnet run --project src\Archu.AppHost
+dotnet run --project src\TentMan.AppHost
 
 # Run migrations
-cd src\Archu.Infrastructure
+cd src\TentMan.Infrastructure
 dotnet ef database update
 
 # Build solution

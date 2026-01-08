@@ -1,6 +1,6 @@
-# Archu Authentication Guide
+# TentMan Authentication Guide
 
-Complete guide to authentication in Archu, including JWT configuration, token management, and security best practices.
+Complete guide to authentication in TentMan, including JWT configuration, token management, and security best practices.
 
 ---
 
@@ -20,7 +20,7 @@ Complete guide to authentication in Archu, including JWT configuration, token ma
 
 ### Authentication System
 
-Archu uses **JWT (JSON Web Token)** authentication with:
+TentMan uses **JWT (JSON Web Token)** authentication with:
 - ✅ ASP.NET Core Identity for user management
 - ✅ JWT Bearer tokens for API authentication
 - ✅ Refresh tokens for seamless re-authentication
@@ -46,7 +46,7 @@ Archu uses **JWT (JSON Web Token)** authentication with:
 **Recommended for local development**:
 
 ```bash
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet user-secrets init
 dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKeyForJWTTokenGeneration1234567890"
 dotnet user-secrets set "Jwt:Issuer" "https://localhost:7123"
@@ -727,7 +727,7 @@ public class AuthenticationController : ControllerBase
 
 **Solution**:
 ```bash
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKey"
 ```
 
@@ -789,4 +789,4 @@ dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKey"
 
 **Last Updated**: 2025-01-22  
 **Version**: 1.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

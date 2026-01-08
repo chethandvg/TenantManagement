@@ -125,14 +125,14 @@ README.md                      # Project overview & quick start
 **Location**: `src/[ProjectName]/README.md`
 
 **Projects**:
-- Archu.Domain
-- Archu.Application
-- Archu.Infrastructure
-- Archu.Contracts
-- Archu.Api
-- Archu.Ui
-- Archu.ServiceDefaults
-- Archu.AppHost
+- TentMan.Domain
+- TentMan.Application
+- TentMan.Infrastructure
+- TentMan.Contracts
+- TentMan.Api
+- TentMan.Ui
+- TentMan.ServiceDefaults
+- TentMan.AppHost
 
 **Content**: Project-specific documentation for each layer
 
@@ -210,7 +210,7 @@ docs/README.md (Documentation hub)
 
 **New developers should read in this order:**
 
-1. **`README.md`** - Understand what Archu is and how to run it (5 min)
+1. **`README.md`** - Understand what TentMan is and how to run it (5 min)
 2. **`docs/ARCHITECTURE.md`** - Understand the solution structure (15 min)
 3. **`src/README_NEW_ENTITY.md`** - Learn development workflow (10 min)
 4. **`docs/CONCURRENCY_GUIDE.md`** - Understand data integrity (15 min)
@@ -247,7 +247,7 @@ docs/README.md (Documentation hub)
 If you want to further improve documentation:
 
 1. **Add diagrams**: Consider adding visual diagrams to ARCHITECTURE.md
-2. **API documentation**: Expand the API guide in `src/Archu.Api/README.md`
+2. **API documentation**: Expand the API guide in `src/TentMan.Api/README.md`
 3. **Testing guide**: Create a dedicated testing guide if you add test projects
 4. **Deployment guide**: Expand deployment documentation when going to production
 5. **Contributing guide**: Add `CONTRIBUTING.md` if open-sourcing

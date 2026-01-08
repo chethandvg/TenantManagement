@@ -1,14 +1,14 @@
-# Archu API Guide
+# TentMan API Guide
 
-Complete reference for Archu's two complementary APIs: **Main API** (Archu.Api) and **Admin API** (Archu.AdminApi).
+Complete reference for TentMan's two complementary APIs: **Main API** (TentMan.Api) and **Admin API** (TentMan.AdminApi).
 
 ---
 
 ## 📚 Table of Contents
 
 - [Overview](#overview)
-- [Main API (Archu.Api)](#main-api-archuapi)
-- [Admin API (Archu.AdminApi)](#admin-api-archuadminapi)
+- [Main API (TentMan.Api)](#main-api-archuapi)
+- [Admin API (TentMan.AdminApi)](#admin-api-archuadminapi)
 - [Authentication](#authentication)
 - [Common Workflows](#common-workflows)
 - [HTTP Examples](#http-examples)
@@ -21,9 +21,9 @@ Complete reference for Archu's two complementary APIs: **Main API** (Archu.Api) 
 
 ### Two APIs, One System
 
-Archu provides **two complementary APIs** that work together:
+TentMan provides **two complementary APIs** that work together:
 
-| Aspect | Main API (Archu.Api) | Admin API (Archu.AdminApi) |
+| Aspect | Main API (TentMan.Api) | Admin API (TentMan.AdminApi) |
 |--------|---------------------|---------------------------|
 | **Purpose** | Public-facing API | Administrative operations |
 | **Port** | 7123 (HTTPS) | 7290 (HTTPS) |
@@ -42,7 +42,7 @@ Both APIs share:
 
 ---
 
-## 🌐 Main API (Archu.Api)
+## 🌐 Main API (TentMan.Api)
 
 **Base URL**: `https://localhost:7123`  
 **API Docs**: `https://localhost:7123/scalar/v1`
@@ -185,7 +185,7 @@ Response 200 OK:
 
 ---
 
-## 🛡️ Admin API (Archu.AdminApi)
+## 🛡️ Admin API (TentMan.AdminApi)
 
 **Base URL**: `https://localhost:7290`  
 **API Docs**: `https://localhost:7290/scalar/v1`
@@ -561,7 +561,7 @@ Response 200 OK:
 
 ### Main API Examples
 
-**File**: `src/Archu.Api/Archu.Api.http`  
+**File**: `src/TentMan.Api/TentMan.Api.http`  
 **Total**: 40+ request examples
 
 **Categories**:
@@ -584,13 +584,13 @@ Response 200 OK:
   - Reset password
 
 **Usage in Visual Studio**:
-1. Open `Archu.Api.http`
+1. Open `TentMan.Api.http`
 2. Update `jwt_token` variable
 3. Click "Send Request" next to any example
 
 ### Admin API Examples
 
-**File**: `Archu.AdminApi/Archu.AdminApi.http`  
+**File**: `TentMan.AdminApi/TentMan.AdminApi.http`  
 **Total**: 31 request examples
 
 **Categories**:
@@ -611,7 +611,7 @@ Response 200 OK:
   - Security restrictions
 
 **Usage in Visual Studio**:
-1. Open `Archu.AdminApi.http`
+1. Open `TentMan.AdminApi.http`
 2. Update `jwt_token` variable
 3. Click "Send Request" next to any example
 
@@ -782,12 +782,12 @@ All APIs return errors in a consistent format:
 - **[AUTHENTICATION_GUIDE.md](AUTHENTICATION_GUIDE.md)** - JWT and authentication details
 - **[AUTHORIZATION_GUIDE.md](AUTHORIZATION_GUIDE.md)** - Role-based authorization
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture
-- **[Main API README](../src/Archu.Api/README.md)** - Main API project details
-- **[Admin API README](../Archu.AdminApi/README.md)** - Admin API project details
+- **[Main API README](../src/TentMan.Api/README.md)** - Main API project details
+- **[Admin API README](../TentMan.AdminApi/README.md)** - Admin API project details
 
 ---
 
 **Last Updated**: 2025-01-22  
 **Version**: 1.0  
 **Total Endpoints**: 28 (16 Main + 12 Admin)  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

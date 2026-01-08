@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-This guide explains how to write and run integration tests for the Archu API using the in-memory database approach.
+This guide explains how to write and run integration tests for the TentMan API using the in-memory database approach.
 
 **Key Points:**
 - ✅ No real database required
@@ -27,7 +27,7 @@ This guide explains how to write and run integration tests for the Archu API usi
 
 ### Prerequisites
 
-All dependencies are already configured in `Archu.IntegrationTests.csproj`:
+All dependencies are already configured in `TentMan.IntegrationTests.csproj`:
 - xUnit 2.9.3
 - FluentAssertions 7.0.0
 - Microsoft.AspNetCore.Mvc.Testing 9.0.0
@@ -38,9 +38,9 @@ No Docker or SQL Server installation needed!
 ### Basic Test Template
 
 ```csharp
-using Archu.IntegrationTests.Fixtures;
-using Archu.Infrastructure.Persistence;
-using Archu.IntegrationTests.TestHelpers;
+using TentMan.IntegrationTests.Fixtures;
+using TentMan.Infrastructure.Persistence;
+using TentMan.IntegrationTests.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
@@ -276,27 +276,27 @@ public async Task DeleteProduct_WithExistingProduct_ReturnsNoContent()
 ### Run All Integration Tests
 
 ```bash
-dotnet test tests/Archu.IntegrationTests
+dotnet test tests/TentMan.IntegrationTests
 ```
 
 ### Run Specific Test Class
 
 ```bash
-dotnet test tests/Archu.IntegrationTests \
+dotnet test tests/TentMan.IntegrationTests \
     --filter "FullyQualifiedName~GetProductsEndpointTests"
 ```
 
 ### Run Specific Test Method
 
 ```bash
-dotnet test tests/Archu.IntegrationTests \
+dotnet test tests/TentMan.IntegrationTests \
     --filter "FullyQualifiedName~GetProductsEndpointTests.GetProducts_WithSeededData_ReturnsAllProducts"
 ```
 
 ### Run with Detailed Output
 
 ```bash
-dotnet test tests/Archu.IntegrationTests \
+dotnet test tests/TentMan.IntegrationTests \
     --verbosity normal \
     --logger "console;verbosity=detailed"
 ```
@@ -304,7 +304,7 @@ dotnet test tests/Archu.IntegrationTests \
 ### Run with Code Coverage
 
 ```bash
-dotnet test tests/Archu.IntegrationTests /p:CollectCoverage=true
+dotnet test tests/TentMan.IntegrationTests /p:CollectCoverage=true
 ```
 
 ---
@@ -519,17 +519,17 @@ public class MyTests { }
 ## 📝 Template for New Tests
 
 ```csharp
-using Archu.Contracts.Products;
-using Archu.Infrastructure.Persistence;
-using Archu.IntegrationTests.Fixtures;
-using Archu.IntegrationTests.TestHelpers;
+using TentMan.Contracts.Products;
+using TentMan.Infrastructure.Persistence;
+using TentMan.IntegrationTests.Fixtures;
+using TentMan.IntegrationTests.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Json;
 using Xunit;
 
-namespace Archu.IntegrationTests.Api.Products;
+namespace TentMan.IntegrationTests.Api.Products;
 
 [Collection("Integration Tests InMemory")]
 [Trait("Category", "Integration")]

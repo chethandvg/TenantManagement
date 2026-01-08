@@ -1,0 +1,31 @@
+/*
+ * Auto-generated design token surface for TentMan.Ui.
+ * These variables mirror the defaults in ThemeOptions and can be overridden by consumers.
+ */
+:root {
+    /* Color tokens */
+    --tentman-color-primary: #6750A4;
+    --tentman-color-on-primary: #FFFFFF;
+    --tentman-color-secondary: #625B71;
+    --tentman-color-on-secondary: #FFFFFF;
+    --tentman-color-background: #FFFBFE;
+    --tentman-color-on-background: #1C1B1F;
+    --tentman-color-surface: #FFFBFE;
+    --tentman-color-surface-variant: #E7E0EC;
+    --tentman-color-success: #0F7A4A;
+    --tentman-color-warning: #FFB74D;
+    --tentman-color-info: #2196F3;
+    --tentman-color-error: #B3261E;
+    --tentman-color-outline: #79747E;
+
+    /* Typography tokens */
+    --tentman-typography-font-family: 'Roboto','Helvetica','Arial',sans-serif;
+    --tentman-typography-heading-weight: 600;
+    --tentman-typography-body-weight: 400;
+    --tentman-typography-base-size: 16px;
+
+    /* Layout tokens */
+    --tentman-layout-border-radius: 12px;
+    --tentman-layout-shadow: 0 8px 16px rgba(17, 17, 26, 0.1);
+    --tentman-layout-spacing-unit: 8px;
+}
