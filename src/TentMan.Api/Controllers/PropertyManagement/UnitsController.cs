@@ -15,6 +15,10 @@ namespace TentMan.Api.Controllers.PropertyManagement;
 
 /// <summary>
 /// API endpoints for managing units within buildings.
+/// Routes:
+/// - New API routes: /api/units/* (simple, non-versioned)
+/// - Legacy routes: /api/v{version}/buildings/{buildingId}/units (versioned, building-scoped)
+/// Both routing patterns are maintained for backward compatibility.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
@@ -115,10 +119,8 @@ public class UnitsController : ControllerBase
         try
         {
             var unit = await _mediator.Send(command, cancellationToken);
-            return CreatedAtAction(
-                nameof(UpdateUnit),
-                new { id },
-                ApiResponse<UnitDetailDto>.Ok(unit, "File added to unit successfully"));
+            // Return Created status - there's no dedicated GET endpoint for a single unit, so we return the unit details directly
+            return Created($"/api/units/{id}/files", ApiResponse<UnitDetailDto>.Ok(unit, "File added to unit successfully"));
         }
         catch (InvalidOperationException ex)
         {

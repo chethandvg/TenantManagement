@@ -19,6 +19,10 @@ namespace TentMan.Api.Controllers.PropertyManagement;
 
 /// <summary>
 /// API endpoints for managing buildings in the property management system.
+/// Routes:
+/// - New API routes: /api/buildings/* (simple, non-versioned)
+/// - Legacy routes: /api/v{version}/organizations/{orgId}/buildings (versioned, organization-scoped)
+/// Both routing patterns are maintained for backward compatibility.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
