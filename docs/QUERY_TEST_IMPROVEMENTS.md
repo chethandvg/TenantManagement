@@ -512,7 +512,7 @@ public async Task Handle_ShouldNotLoadEntireDataset_WhenPaginating(
 ## Example: Complete Refactored Query Test File
 
 ```csharp
-namespace Archu.UnitTests.Application.Products.Queries;
+namespace TentMan.UnitTests.Application.Products.Queries;
 
 [Trait("Category", "Unit")]
 [Trait("Feature", "Products")]

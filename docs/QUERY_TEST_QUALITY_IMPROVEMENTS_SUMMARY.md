@@ -12,7 +12,7 @@ This document summarizes the quality improvements implemented for query handler 
 **Solution**: Enhanced the fixture with comprehensive helper methods matching command test patterns:
 
 **Files Modified**:
-- `tests\Archu.UnitTests\TestHelpers\Fixtures\QueryHandlerTestFixture.cs` (SIGNIFICANTLY ENHANCED)
+- `tests\TentMan.UnitTests\TestHelpers\Fixtures\QueryHandlerTestFixture.cs` (SIGNIFICANTLY ENHANCED)
 
 **New Features Added**:
 
@@ -66,7 +66,7 @@ This document summarizes the quality improvements implemented for query handler 
 **Solution**: Complete refactoring with modern test patterns:
 
 **Files Modified**:
-- `tests\Archu.UnitTests\Application\Products\Queries\GetProductsQueryHandlerTests.cs` (FULLY REFACTORED)
+- `tests\TentMan.UnitTests\Application\Products\Queries\GetProductsQueryHandlerTests.cs` (FULLY REFACTORED)
 
 **Improvements Applied**:
 
@@ -377,14 +377,14 @@ public async Task Handle_CompletesWithinTimeLimit_ForLargeDatasets(...)
 ## Files Changed Summary
 
 ### Modified Files (2):
-1. ✅ `tests\Archu.UnitTests\TestHelpers\Fixtures\QueryHandlerTestFixture.cs` - **SIGNIFICANTLY ENHANCED**
+1. ✅ `tests\TentMan.UnitTests\TestHelpers\Fixtures\QueryHandlerTestFixture.cs` - **SIGNIFICANTLY ENHANCED**
    - Added 4 authentication setup methods
    - Added 4 cancellation token verification methods
    - Added 3 structured logging verification methods
    - Added handler factory pattern support
    - Added `WithCancelledOperation()` helper
 
-2. ✅ `tests\Archu.UnitTests\Application\Products\Queries\GetProductsQueryHandlerTests.cs` - **FULLY REFACTORED**
+2. ✅ `tests\TentMan.UnitTests\Application\Products\Queries\GetProductsQueryHandlerTests.cs` - **FULLY REFACTORED**
    - Converted 12 tests to use AutoFixture
    - Added 20 new comprehensive tests
    - Organized into 7 regions

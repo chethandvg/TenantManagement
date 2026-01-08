@@ -1,8 +1,8 @@
-# Archu Architecture Guide
+# TentMan Architecture Guide
 
 ## Overview
 
-Archu is built using **Clean Architecture** principles with **.NET Aspire** for cloud-native orchestration. This document explains the solution topology, project responsibilities, and architectural patterns.
+TentMan is built using **Clean Architecture** principles with **.NET Aspire** for cloud-native orchestration. This document explains the solution topology, project responsibilities, and architectural patterns.
 
 ---
 
@@ -10,27 +10,27 @@ Archu is built using **Clean Architecture** principles with **.NET Aspire** for 
 
 ```
 ┌──────────────────────────────────────────┐
-│         Archu.AppHost                    │
+│         TentMan.AppHost                    │
 │    (.NET Aspire Orchestration)           │
 └─────────────┬────────────────────────────┘
               │
        ┌──────┴──────┐
        │             │
 ┌──────▼─────┐ ┌────▼──────────┐
-│  Archu.Api │ │ SQL Server DB │
+│  TentMan.Api │ │ SQL Server DB │
 │   (API)    │ │ (via Aspire)  │
 └──────┬─────┘ └───────────────┘
        │
        │ References
        │
-       ├─ Archu.ServiceDefaults
-       ├─ Archu.Contracts
-       ├─ Archu.Infrastructure
-       │     └─ Archu.Application
-       │           └─ Archu.Domain
+       ├─ TentMan.ServiceDefaults
+       ├─ TentMan.Contracts
+       ├─ TentMan.Infrastructure
+       │     └─ TentMan.Application
+       │           └─ TentMan.Domain
        │
 ┌──────▼────────────────┐
-│     Archu.Ui          │
+│     TentMan.Ui          │
 │ (Blazor Components)   │
 └───────────────────────┘
 ```
@@ -39,7 +39,7 @@ Archu is built using **Clean Architecture** principles with **.NET Aspire** for 
 
 ## 📦 Project Structure
 
-### **Archu.Domain** (Core Layer)
+### **TentMan.Domain** (Core Layer)
 **Target Framework**: .NET 9
 
 **Purpose**: Core business logic and entities - the heart of your application.
@@ -72,13 +72,13 @@ public abstract class BaseEntity
 
 ---
 
-### **Archu.Application** (Application Layer)
+### **TentMan.Application** (Application Layer)
 **Target Framework**: .NET 9
 
 **Purpose**: Use cases, application services, CQRS handlers, and abstractions.
 
 **Dependencies**: 
-- `Archu.Domain`
+- `TentMan.Domain`
 - MediatR, FluentValidation
 
 **Contents**:
@@ -113,14 +113,14 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
 ---
 
-### **Archu.Infrastructure** (Infrastructure Layer)
+### **TentMan.Infrastructure** (Infrastructure Layer)
 **Target Framework**: .NET 9
 
 **Purpose**: External concerns (database, time, caching, external APIs).
 
 **Dependencies**:
-- `Archu.Domain`
-- `Archu.Application`
+- `TentMan.Domain`
+- `TentMan.Application`
 - Entity Framework Core 9
 - SQL Server provider
 
@@ -149,7 +149,7 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
 
 ---
 
-### **Archu.Contracts** (API Contracts)
+### **TentMan.Contracts** (API Contracts)
 **Target Framework**: .NET 9
 
 **Purpose**: Data Transfer Objects (DTOs) for API requests/responses.
@@ -183,16 +183,16 @@ public sealed class UpdateProductRequest
 
 ---
 
-### **Archu.Api** (Presentation Layer)
+### **TentMan.Api** (Presentation Layer)
 **Target Framework**: .NET 9
 
 **Purpose**: ASP.NET Core Web API.
 
 **Dependencies**:
-- `Archu.Contracts`
-- `Archu.Application`
-- `Archu.Infrastructure`
-- `Archu.ServiceDefaults`
+- `TentMan.Contracts`
+- `TentMan.Application`
+- `TentMan.Infrastructure`
+- `TentMan.ServiceDefaults`
 - Scalar.AspNetCore (API documentation)
 
 **Contents**:
@@ -230,7 +230,7 @@ public class ProductsController : ControllerBase
 
 ---
 
-### **Archu.Ui** (Component Library)
+### **TentMan.Ui** (Component Library)
 **Target Framework**: .NET 9
 
 **Purpose**: Reusable Blazor component library with MudBlazor.
@@ -244,11 +244,11 @@ public class ProductsController : ControllerBase
 - Platform-agnostic (no ASP.NET Core dependencies)
 - MudBlazor-based components
 - CSS isolation
-- Easy service registration with `AddArchuUi()`
+- Easy service registration with `AddTentManUi()`
 
 ---
 
-### **Archu.ServiceDefaults** (.NET Aspire Shared Defaults)
+### **TentMan.ServiceDefaults** (.NET Aspire Shared Defaults)
 **Target Framework**: .NET 9
 
 **Purpose**: Shared Aspire service configurations.
@@ -266,7 +266,7 @@ public class ProductsController : ControllerBase
 
 ---
 
-### **Archu.AppHost** (.NET Aspire Orchestrator)
+### **TentMan.AppHost** (.NET Aspire Orchestrator)
 **Target Framework**: .NET 8 (Aspire requirement)
 
 **Purpose**: Local development orchestration and deployment.
@@ -290,17 +290,17 @@ public class ProductsController : ControllerBase
 ## 🔀 Dependency Flow
 
 ```
-Archu.Domain (no dependencies)
+TentMan.Domain (no dependencies)
       ↑
-Archu.Application
+TentMan.Application
       ↑
-Archu.Infrastructure
+TentMan.Infrastructure
       ↑
-Archu.Api ← Archu.Contracts
+TentMan.Api ← TentMan.Contracts
       ↑
-Archu.ServiceDefaults
+TentMan.ServiceDefaults
       ↑
-Archu.AppHost
+TentMan.AppHost
 ```
 
 **Dependency Rule**: Inner layers (Domain) should **never** depend on outer layers (API, Infrastructure). Dependencies point **inward**.
@@ -359,7 +359,7 @@ Archu.AppHost
 - **Developer Experience**: Dashboard for monitoring services during development
 
 ### **Aspire Dashboard**
-When running `Archu.AppHost`, you get:
+When running `TentMan.AppHost`, you get:
 - Real-time service status
 - Logs from all services
 - Distributed tracing
@@ -372,7 +372,7 @@ When running `Archu.AppHost`, you get:
 ### **Entity Framework Core**
 - **Version**: 9.0.10
 - **Provider**: SQL Server
-- **Migrations**: Code-first migrations managed in `Archu.Infrastructure`
+- **Migrations**: Code-first migrations managed in `TentMan.Infrastructure`
 
 ### **Key Features**:
 1. **Optimistic Concurrency Control** via `rowversion` column
@@ -386,10 +386,10 @@ When running `Archu.AppHost`, you get:
 # Enabled in Program.cs during development
 
 # CI/CD Pipeline
-dotnet ef database update --project src/Archu.Infrastructure
+dotnet ef database update --project src/TentMan.Infrastructure
 
 # Create new migration
-dotnet ef migrations add YourMigrationName --project src/Archu.Infrastructure
+dotnet ef migrations add YourMigrationName --project src/TentMan.Infrastructure
 ```
 
 ---
@@ -397,12 +397,12 @@ dotnet ef migrations add YourMigrationName --project src/Archu.Infrastructure
 ## 🧪 Testing Strategy
 
 ### **Unit Tests**
-- **Target**: `Archu.Domain`, `Archu.Application`
+- **Target**: `TentMan.Domain`, `TentMan.Application`
 - **Tools**: xUnit, FluentAssertions
 - **Focus**: Business logic without dependencies
 
 ### **Integration Tests**
-- **Target**: `Archu.Infrastructure`, `Archu.Api`
+- **Target**: `TentMan.Infrastructure`, `TentMan.Api`
 - **Tools**: xUnit, Testcontainers (for SQL Server), WebApplicationFactory
 - **Focus**: Database interactions, API endpoints
 
@@ -430,7 +430,7 @@ dotnet ef migrations add YourMigrationName --project src/Archu.Infrastructure
 
 ### **Local Development**
 ```bash
-cd src/Archu.AppHost
+cd src/TentMan.AppHost
 dotnet run
 ```
 Opens Aspire dashboard and spins up all services.
@@ -456,11 +456,11 @@ dotnet publish --os linux --arch x64 -p:PublishProfile=DefaultContainer
 ## 📋 Best Practices
 
 ### **When Adding New Features**
-1. **Domain entities** go in `Archu.Domain/Entities/`
-2. **Application interfaces** go in `Archu.Application/Abstractions/`
-3. **Infrastructure implementations** go in `Archu.Infrastructure/`
-4. **API contracts** go in `Archu.Contracts/`
-5. **Controllers** go in `Archu.Api/Controllers/`
+1. **Domain entities** go in `TentMan.Domain/Entities/`
+2. **Application interfaces** go in `TentMan.Application/Abstractions/`
+3. **Infrastructure implementations** go in `TentMan.Infrastructure/`
+4. **API contracts** go in `TentMan.Contracts/`
+5. **Controllers** go in `TentMan.Api/Controllers/`
 
 Always respect the dependency flow: **Domain ← Application ← Infrastructure ← API**.
 
@@ -484,4 +484,4 @@ Always respect the dependency flow: **Domain ← Application ← Infrastructure 
 
 **Last Updated**: 2025-01-22  
 **Version**: 2.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

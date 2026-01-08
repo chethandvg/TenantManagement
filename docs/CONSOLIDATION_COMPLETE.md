@@ -2,7 +2,7 @@
 
 ## Summary
 
-Successfully consolidated Archu documentation from **51 files to 11 files** (78% reduction).
+Successfully consolidated TentMan documentation from **51 files to 11 files** (78% reduction).
 
 ---
 
@@ -50,8 +50,8 @@ docs/
 
 ### API_GUIDE.md
 **Consolidated from 7 files**:
-- ARCHU_API_DOCUMENTATION.md
-- ARCHU_API_QUICK_REFERENCE.md
+- TENTMAN_API_DOCUMENTATION.md
+- TENTMAN_API_QUICK_REFERENCE.md
 - ADMIN_API_QUICK_REFERENCE.md
 - API_COMPARISON_GUIDE.md
 - OPENAPI_UPDATE_SUMMARY.md
@@ -192,7 +192,7 @@ docs/README.md (Documentation hub)
 
 **New developers should read in this order:**
 
-1. **README.md** - Understand what Archu is (5 min)
+1. **README.md** - Understand what TentMan is (5 min)
 2. **docs/GETTING_STARTED.md** - Get running (10 min)
 3. **docs/ARCHITECTURE.md** - Understand structure (15 min)
 4. **docs/API_GUIDE.md** - Learn the APIs (20 min)
@@ -215,8 +215,8 @@ All redundant files have been consolidated:
 7. ADMIN_API_QUICK_START.md
 8. API_COMPARISON_GUIDE.md
 9. APPHOST_ADMINAPI_CONFIGURATION.md
-10. ARCHU_API_DOCUMENTATION.md
-11. ARCHU_API_QUICK_REFERENCE.md
+10. TENTMAN_API_DOCUMENTATION.md
+11. TENTMAN_API_QUICK_REFERENCE.md
 12. AUTHENTICATION_AND_AUTHORIZATION.md
 13. AUTHENTICATION_IMPLEMENTATION_DETAIL.md
 14. AUTHORIZATION_CLEAN_ARCHITECTURE_GUIDE.md

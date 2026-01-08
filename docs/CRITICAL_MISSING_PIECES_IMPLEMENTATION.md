@@ -487,13 +487,13 @@ Fixture Capabilities:      ██████████ 100% ✅
 ## 📚 Files Modified
 
 ### Enhanced Files (1)
-1. `tests\Archu.UnitTests\TestHelpers\Fixtures\QueryHandlerTestFixture.cs`
+1. `tests\TentMan.UnitTests\TestHelpers\Fixtures\QueryHandlerTestFixture.cs`
    - Added ICurrentUser mock
    - Added 22 new methods
    - Achieved 100% parity with CommandHandlerTestFixture
 
 ### New Files (1)
-1. `tests\Archu.UnitTests\Application\Products\Queries\GetProductByIdQueryHandlerTests.cs`
+1. `tests\TentMan.UnitTests\Application\Products\Queries\GetProductByIdQueryHandlerTests.cs`
    - 22 comprehensive tests
    - All 4 critical pieces implemented
    - Full coverage: happy path, errors, logging, structured logging, cancellation, repository, edge cases

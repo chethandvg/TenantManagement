@@ -1,12 +1,12 @@
-# Archu Test Projects - Phase 1 Complete ✅
+# TentMan Test Projects - Phase 1 Complete ✅
 
-This directory contains all test projects for the Archu application, organized by test type and scope.
+This directory contains all test projects for the TentMan application, organized by test type and scope.
 
 ## 📁 Test Project Structure
 
 ```
 tests/
-├── Archu.UnitTests/                    # Unit tests for business logic
+├── TentMan.UnitTests/                    # Unit tests for business logic
 │   ├── Application/                    # Tests for Application layer
 │   │   └── Products/
 │   │       └── Queries/
@@ -17,20 +17,20 @@ tests/
 │   │   │   └── UserBuilder.cs
 │   │   └── Fixtures/
 │   │       └── AutoMoqDataAttribute.cs ✅ NEW
-│   └── Archu.UnitTests.csproj         # Updated with new packages ✅
+│   └── TentMan.UnitTests.csproj         # Updated with new packages ✅
 │
-├── Archu.ApiClient.Tests/             # Tests for API client library
+├── TentMan.ApiClient.Tests/             # Tests for API client library
 │   ├── TestHelpers/                    # ✅ NEW
 │   │   ├── Fixtures/
 │   │   │   └── AutoMoqDataAttribute.cs
 │   │   └── MockHttpMessageHandlerFactory.cs
-│   └── Archu.ApiClient.Tests.csproj   # Updated with new packages ✅
+│   └── TentMan.ApiClient.Tests.csproj   # Updated with new packages ✅
 │
-├── Archu.IntegrationTests/            # Integration and E2E tests
+├── TentMan.IntegrationTests/            # Integration and E2E tests
 │   ├── TestHelpers/                    # ✅ NEW
 │   │   └── Fixtures/
 │   │       └── AutoMoqDataAttribute.cs
-│   ├── Archu.IntegrationTests.csproj  # Updated with new packages ✅
+│   ├── TentMan.IntegrationTests.csproj  # Updated with new packages ✅
 │   └── README.md                       # Existing documentation
 │
 └── TESTING_GUIDE.md                   # This file ✅ NEW
@@ -115,7 +115,7 @@ Coverage reports are automatically generated in `TestResults/`:
 Automatically generates test data and mocks:
 
 ```csharp
-using Archu.UnitTests.TestHelpers.Fixtures;
+using TentMan.UnitTests.TestHelpers.Fixtures;
 using AutoFixture.Xunit2;
 using FluentAssertions;
 using Moq;
@@ -155,7 +155,7 @@ public async Task Handle_ShouldReturnProducts_WhenProductsExist(
 Create test entities with fluent API:
 
 ```csharp
-using Archu.UnitTests.TestHelpers.Builders;
+using TentMan.UnitTests.TestHelpers.Builders;
 
 // Simple product with defaults
 var product = new ProductBuilder().Build();
@@ -189,7 +189,7 @@ var deletedProduct = new ProductBuilder()
 Test HTTP clients without real network calls:
 
 ```csharp
-using Archu.ApiClient.Tests.TestHelpers;
+using TentMan.ApiClient.Tests.TestHelpers;
 using RichardSzalay.MockHttp;
 
 public class ProductsApiClientTests
@@ -264,8 +264,8 @@ public class GetProductsQueryHandlerTests
 ### After (Using AutoMoqData and Builders)
 
 ```csharp
-using Archu.UnitTests.TestHelpers.Fixtures;
-using Archu.UnitTests.TestHelpers.Builders;
+using TentMan.UnitTests.TestHelpers.Fixtures;
+using TentMan.UnitTests.TestHelpers.Builders;
 
 public class GetProductsQueryHandlerTests
 {
@@ -360,15 +360,15 @@ Run these commands to verify Phase 1 setup:
 dotnet restore
 
 # 2. Build all test projects
-dotnet build tests/Archu.UnitTests
-dotnet build tests/Archu.ApiClient.Tests
-dotnet build tests/Archu.IntegrationTests
+dotnet build tests/TentMan.UnitTests
+dotnet build tests/TentMan.ApiClient.Tests
+dotnet build tests/TentMan.IntegrationTests
 
 # 3. Run existing tests to verify infrastructure
-dotnet test tests/Archu.UnitTests --filter "FullyQualifiedName~GetProductsQueryHandlerTests"
+dotnet test tests/TentMan.UnitTests --filter "FullyQualifiedName~GetProductsQueryHandlerTests"
 
 # 4. Check coverage configuration
-dotnet test tests/Archu.UnitTests /p:CollectCoverage=true
+dotnet test tests/TentMan.UnitTests /p:CollectCoverage=true
 ```
 
 ## 📖 Additional Resources
@@ -383,9 +383,9 @@ dotnet test tests/Archu.UnitTests /p:CollectCoverage=true
 
 ## ✅ Phase 1 Checklist
 
-- [x] Updated Archu.UnitTests.csproj with new packages
-- [x] Updated Archu.ApiClient.Tests.csproj with new packages
-- [x] Updated Archu.IntegrationTests.csproj with new packages
+- [x] Updated TentMan.UnitTests.csproj with new packages
+- [x] Updated TentMan.ApiClient.Tests.csproj with new packages
+- [x] Updated TentMan.IntegrationTests.csproj with new packages
 - [x] Created AutoMoqDataAttribute for UnitTests
 - [x] Created AutoMoqDataAttribute for ApiClient.Tests
 - [x] Created AutoMoqDataAttribute for IntegrationTests
@@ -400,4 +400,4 @@ dotnet test tests/Archu.UnitTests /p:CollectCoverage=true
 **Phase 1 Status**: ✅ **COMPLETED**  
 **Last Updated**: 2025-01-22  
 **Next Phase**: Phase 2 - Additional Test Coverage  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

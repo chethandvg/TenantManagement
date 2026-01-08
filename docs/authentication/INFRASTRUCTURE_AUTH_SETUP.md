@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the authentication infrastructure implementation for the Archu application. The infrastructure layer provides database persistence for authentication entities using Entity Framework Core.
+This document describes the authentication infrastructure implementation for the TentMan application. The infrastructure layer provides database persistence for authentication entities using Entity Framework Core.
 
 **Date**: 2025-01-22  
 **Version**: 1.0  
@@ -125,7 +125,7 @@ Many-to-many relationship between Users and Roles.
 ### New Files
 
 #### 1. `ApplicationUserConfiguration.cs`
-**Location**: `src/Archu.Infrastructure/Persistence/Configurations/ApplicationUserConfiguration.cs`
+**Location**: `src/TentMan.Infrastructure/Persistence/Configurations/ApplicationUserConfiguration.cs`
 
 **Purpose**: Entity Framework Core configuration for `ApplicationUser` entity.
 
@@ -165,7 +165,7 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
 ---
 
 #### 2. `ApplicationRoleConfiguration.cs`
-**Location**: `src/Archu.Infrastructure/Persistence/Configurations/ApplicationRoleConfiguration.cs`
+**Location**: `src/TentMan.Infrastructure/Persistence/Configurations/ApplicationRoleConfiguration.cs`
 
 **Purpose**: Entity Framework Core configuration for `ApplicationRole` entity.
 
@@ -196,7 +196,7 @@ public class ApplicationRoleConfiguration : IEntityTypeConfiguration<Application
 ---
 
 #### 3. `UserRoleConfiguration.cs`
-**Location**: `src/Archu.Infrastructure/Persistence/Configurations/UserRoleConfiguration.cs`
+**Location**: `src/TentMan.Infrastructure/Persistence/Configurations/UserRoleConfiguration.cs`
 
 **Purpose**: Entity Framework Core configuration for `UserRole` junction entity.
 
@@ -228,10 +228,10 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
 ### Modified Files
 
 #### `ApplicationDbContext.cs`
-**Location**: `src/Archu.Infrastructure/Persistence/ApplicationDbContext.cs`
+**Location**: `src/TentMan.Infrastructure/Persistence/ApplicationDbContext.cs`
 
 **Changes:**
-- Added `using Archu.Domain.Entities.Identity;`
+- Added `using TentMan.Domain.Entities.Identity;`
 - Added three new DbSets:
   - `public DbSet<ApplicationUser> Users => Set<ApplicationUser>();`
   - `public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();`
@@ -249,7 +249,7 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
 
 ### Migration File
 **Name**: `20251020183350_AddIdentityEntities`  
-**Location**: `src/Archu.Infrastructure/Persistence/Migrations/20251020183350_AddIdentityEntities.cs`
+**Location**: `src/TentMan.Infrastructure/Persistence/Migrations/20251020183350_AddIdentityEntities.cs`
 
 ### Migration Operations
 
@@ -280,16 +280,16 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
 
 **Development Environment:**
 ```bash
-cd src/Archu.Infrastructure
-dotnet ef database update --startup-project ../Archu.Api --context ApplicationDbContext
+cd src/TentMan.Infrastructure
+dotnet ef database update --startup-project ../TentMan.Api --context ApplicationDbContext
 ```
 
 **Production/CI/CD:**
 ```bash
 # Generate idempotent SQL script
 dotnet ef migrations script \
-  --project src/Archu.Infrastructure \
-  --startup-project src/Archu.Api \
+  --project src/TentMan.Infrastructure \
+  --startup-project src/TentMan.Api \
   --idempotent \
   -o artifacts/auth-migrations.sql \
   --context ApplicationDbContext
@@ -445,9 +445,9 @@ Before moving forward, verify:
 
 ## 📚 Related Documentation
 
-- [Domain Layer Authentication](../src/Archu.Domain/Entities/Identity/README.md)
-- [Application Layer Authentication](../src/Archu.Application/docs/Authentication/README.md)
-- [Authentication Guide](../src/Archu.Application/docs/Authentication/README.md)
+- [Domain Layer Authentication](../src/TentMan.Domain/Entities/Identity/README.md)
+- [Application Layer Authentication](../src/TentMan.Application/docs/Authentication/README.md)
+- [Authentication Guide](../src/TentMan.Application/docs/Authentication/README.md)
 - [Concurrency Guide](./CONCURRENCY_GUIDE.md)
 - [Architecture Overview](./ARCHITECTURE.md)
 

@@ -1,4 +1,4 @@
-# Archu Documentation Archive
+# TentMan Documentation Archive
 
 This document archives historical implementation summaries, fix reports, and migration guides that are no longer actively maintained but kept for reference.
 
@@ -71,7 +71,7 @@ This document archives historical implementation summaries, fix reports, and mig
 **Status**: ✅ Complete
 
 **What was implemented**:
-- Complete Admin API (Archu.AdminApi)
+- Complete Admin API (TentMan.AdminApi)
 - User management endpoints
 - Role management endpoints
 - User-role assignment endpoints
@@ -350,12 +350,12 @@ builder.Services.AddApplication();
 ```csharp
 var sqlServer = builder.AddSqlServer("sql")
     .WithDataVolume()
-    .AddDatabase("archudatabase");
+    .AddDatabase("tentmandatabase");
 
-var api = builder.AddProject<Projects.Archu_Api>("api")
+var api = builder.AddProject<Projects.TentMan_Api>("api")
     .WithReference(sqlServer);
 
-var adminApi = builder.AddProject<Projects.Archu_AdminApi>("adminapi")
+var adminApi = builder.AddProject<Projects.TentMan_AdminApi>("adminapi")
     .WithReference(sqlServer);
 ```
 
@@ -380,10 +380,10 @@ var adminApi = builder.AddProject<Projects.Archu_AdminApi>("adminapi")
 $secret = Generate-Secret
 
 # Apply to both APIs
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet user-secrets set "Jwt:Secret" $secret
 
-cd ../../Archu.AdminApi
+cd ../../TentMan.AdminApi
 dotnet user-secrets set "Jwt:Secret" $secret
 ```
 
@@ -480,8 +480,8 @@ dotnet user-secrets set "Jwt:Secret" $secret
 For detailed implementation history:
 ```bash
 git log --follow -- docs/
-git log --follow -- src/Archu.Infrastructure/
-git log --follow -- Archu.AdminApi/
+git log --follow -- src/TentMan.Infrastructure/
+git log --follow -- TentMan.AdminApi/
 ```
 
 ---
@@ -503,4 +503,4 @@ These files were consolidated into the current documentation structure for bette
 
 **Last Updated**: 2025-01-22  
 **Version**: 1.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

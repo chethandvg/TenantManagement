@@ -14,7 +14,7 @@
 
 ## Overview
 
-This guide explains how Archu implements three critical data integrity features:
+This guide explains how TentMan implements three critical data integrity features:
 
 | Feature | Purpose | How It Works |
 |---------|---------|--------------|
@@ -34,7 +34,7 @@ Optimistic concurrency assumes that conflicts between concurrent operations are 
 
 ### How It Works
 
-Archu implements **client-side optimistic concurrency control**. This means:
+TentMan implements **client-side optimistic concurrency control**. This means:
 
 1. Client GETs product and receives current RowVersion
 2. Client edits the product locally
@@ -894,12 +894,12 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 
 ## Related Files
 
-- `src/Archu.Domain/Common/BaseEntity.cs` - Base entity with RowVersion
-- `src/Archu.Infrastructure/Persistence/ApplicationDbContext.cs` - DbContext with soft delete and auditing
-- `src/Archu.Infrastructure/Repositories/BaseRepository.cs` - Base repository with common functionality
-- `src/Archu.Application/Products/Commands/UpdateProduct/UpdateProductCommandHandler.cs` - Example handler
-- `src/Archu.Contracts/Products/UpdateProductRequest.cs` - API request contract with RowVersion
-- `src/Archu.Api/Controllers/ProductsController.cs` - API controller
+- `src/TentMan.Domain/Common/BaseEntity.cs` - Base entity with RowVersion
+- `src/TentMan.Infrastructure/Persistence/ApplicationDbContext.cs` - DbContext with soft delete and auditing
+- `src/TentMan.Infrastructure/Repositories/BaseRepository.cs` - Base repository with common functionality
+- `src/TentMan.Application/Products/Commands/UpdateProduct/UpdateProductCommandHandler.cs` - Example handler
+- `src/TentMan.Contracts/Products/UpdateProductRequest.cs` - API request contract with RowVersion
+- `src/TentMan.Api/Controllers/ProductsController.cs` - API controller
 
 ---
 
@@ -914,4 +914,4 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 
 **Last Updated**: 2025-01-22  
 **Version**: 2.0 (Consolidated - Client-Side Concurrency Control)  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

@@ -1,6 +1,6 @@
-# Archu Authorization Guide
+# TentMan Authorization Guide
 
-Complete guide to role-based authorization, security restrictions, and access control in Archu.
+Complete guide to role-based authorization, security restrictions, and access control in TentMan.
 
 ---
 
@@ -26,7 +26,7 @@ Complete guide to role-based authorization, security restrictions, and access co
 
 ### Authorization System
 
-Archu uses **role-based authorization** with:
+TentMan uses **role-based authorization** with:
 - ✅ ASP.NET Core Identity roles
 - ✅ Policy-based authorization
 - ✅ Attribute-based access control (`[Authorize]`)
@@ -39,7 +39,7 @@ Archu uses **role-based authorization** with:
 
 ### System Roles
 
-Archu defines 5 built-in roles:
+TentMan defines 5 built-in roles:
 
 | Role | Level | Description | Default Permissions |
 |------|-------|-------------|---------------------|
@@ -100,7 +100,7 @@ Guest (0)
 
 ### Built-in Policies
 
-Archu defines several authorization policies:
+TentMan defines several authorization policies:
 
 #### 1. **RequireUser**
 ```csharp
@@ -559,4 +559,4 @@ public class CurrentUser : ICurrentUser
 
 **Last Updated**: 2025-01-22  
 **Version**: 1.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

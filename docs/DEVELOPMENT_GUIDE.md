@@ -1,6 +1,6 @@
-# Archu Development Guide
+# TentMan Development Guide
 
-Complete guide for developing features, following patterns, and maintaining code quality in Archu.
+Complete guide for developing features, following patterns, and maintaining code quality in TentMan.
 
 ---
 
@@ -36,23 +36,23 @@ Complete guide for developing features, following patterns, and maintaining code
 **See**: [../src/README_NEW_ENTITY.md](../src/README_NEW_ENTITY.md) for step-by-step guide
 
 **Quick Summary**:
-1. Create entity in `Archu.Domain`
-2. Create repository interface in `Archu.Application`
-3. Implement repository in `Archu.Infrastructure`
-4. Create DTOs in `Archu.Contracts`
-5. Create commands/queries in `Archu.Application`
-6. Create controller in `Archu.Api`
+1. Create entity in `TentMan.Domain`
+2. Create repository interface in `TentMan.Application`
+3. Implement repository in `TentMan.Infrastructure`
+4. Create DTOs in `TentMan.Contracts`
+5. Create commands/queries in `TentMan.Application`
+6. Create controller in `TentMan.Api`
 7. Create migration
 8. Test
 
 ### Project Structure
 
 ```
-Archu.Domain/              # Business entities
+TentMan.Domain/              # Business entities
   └─ Entities/
       └─ Product.cs
 
-Archu.Application/         # Use cases
+TentMan.Application/         # Use cases
   └─ Products/
       ├─ Commands/
       │   ├─ CreateProduct/
@@ -60,16 +60,16 @@ Archu.Application/         # Use cases
       └─ Queries/
           └─ GetProducts/
 
-Archu.Infrastructure/      # Data access
+TentMan.Infrastructure/      # Data access
   └─ Repositories/
       └─ ProductRepository.cs
 
-Archu.Contracts/           # DTOs
+TentMan.Contracts/           # DTOs
   └─ Products/
       ├─ ProductDto.cs
       └─ CreateProductRequest.cs
 
-Archu.Api/                 # REST API
+TentMan.Api/                 # REST API
   └─ Controllers/
       └─ ProductsController.cs
 ```
@@ -206,7 +206,7 @@ builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddApplication();
 ```
 
-**Implementation** (Archu.Infrastructure/DependencyInjection.cs):
+**Implementation** (TentMan.Infrastructure/DependencyInjection.cs):
 ```csharp
 public static class DependencyInjection
 {
@@ -511,4 +511,4 @@ public class ProductsControllerTests : IClassFixture<WebApplicationFactory<Progr
 
 **Last Updated**: 2025-01-22  
 **Version**: 1.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

@@ -153,7 +153,7 @@ dotnet test --filter "Category=Unit&Feature=Products"
 Result: 261 tests passed ✅
 
 # All unit tests
-dotnet test tests/Archu.UnitTests
+dotnet test tests/TentMan.UnitTests
 Result: 277 tests passed ✅
 ```
 

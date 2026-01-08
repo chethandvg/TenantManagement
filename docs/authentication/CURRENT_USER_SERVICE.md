@@ -40,7 +40,7 @@ This document describes the implementation of the `ICurrentUser` service that pr
 
 ### 1. `HttpContextCurrentUser.cs` (New)
 
-**Location**: `src/Archu.Infrastructure/Authentication/HttpContextCurrentUser.cs`
+**Location**: `src/TentMan.Infrastructure/Authentication/HttpContextCurrentUser.cs`
 
 **Purpose**: Production implementation of `ICurrentUser` that reads from HTTP context.
 
@@ -69,7 +69,7 @@ This document describes the implementation of the `ICurrentUser` service that pr
 
 ### 2. `DesignTimeCurrentUser.cs` (New)
 
-**Location**: `src/Archu.Infrastructure/Authentication/DesignTimeCurrentUser.cs`
+**Location**: `src/TentMan.Infrastructure/Authentication/DesignTimeCurrentUser.cs`
 
 **Purpose**: Implementation for EF Core migrations and testing scenarios.
 
@@ -94,7 +94,7 @@ var currentUser = new DesignTimeCurrentUser(
 
 ### 3. `ClaimsPrincipalExtensions.cs` (New)
 
-**Location**: `src/Archu.Infrastructure/Authentication/ClaimsPrincipalExtensions.cs`
+**Location**: `src/TentMan.Infrastructure/Authentication/ClaimsPrincipalExtensions.cs`
 
 **Purpose**: Extension methods for easy claims access from `ClaimsPrincipal`.
 
@@ -121,7 +121,7 @@ IEnumerable<string> values = User.GetClaimValues("permissions");
 
 ### 4. `DesignTimeDbContextFactory.cs` (Updated)
 
-**Location**: `src/Archu.Infrastructure/Persistence/DesignTimeDbContextFactory.cs`
+**Location**: `src/TentMan.Infrastructure/Persistence/DesignTimeDbContextFactory.cs`
 
 **Changes**:
 - Updated to use `DesignTimeCurrentUser` instead of inline implementation
@@ -146,8 +146,8 @@ builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 
 **Complete Setup**:
 ```csharp
-using Archu.Application.Abstractions;
-using Archu.Infrastructure.Authentication;
+using TentMan.Application.Abstractions;
+using TentMan.Infrastructure.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -176,7 +176,7 @@ app.Run();
 ### 1. In Command Handlers
 
 ```csharp
-using Archu.Application.Abstractions;
+using TentMan.Application.Abstractions;
 
 public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Result<ProductDto>>
 {
@@ -227,7 +227,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 ### 2. In Controllers
 
 ```csharp
-using Archu.Application.Abstractions;
+using TentMan.Application.Abstractions;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
@@ -749,7 +749,7 @@ Before deploying:
 
 - [JWT Token Implementation](./JWT_TOKEN_IMPLEMENTATION.md)
 - [Infrastructure Authentication Setup](./INFRASTRUCTURE_AUTH_SETUP.md)
-- [Application Layer Authentication](../src/Archu.Application/docs/Authentication/README.md)
+- [Application Layer Authentication](../src/TentMan.Application/docs/Authentication/README.md)
 - [Architecture Guide](./ARCHITECTURE.md)
 
 ---

@@ -1,6 +1,6 @@
-# Archu Documentation Hub
+# TentMan Documentation Hub
 
-Welcome to the Archu documentation! This hub provides links to all documentation resources.
+Welcome to the TentMan documentation! This hub provides links to all documentation resources.
 
 ---
 
@@ -74,7 +74,7 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 
 ### I want to use the API...
 1. ✅ **[API Guide](API_GUIDE.md)** - Complete API reference
-2. ✅ **HTTP Request Files** - `src/Archu.Api/Archu.Api.http` (40+ examples)
+2. ✅ **HTTP Request Files** - `src/TentMan.Api/TentMan.Api.http` (40+ examples)
 3. ✅ **Scalar UI** - https://localhost:7123/scalar/v1 (interactive docs)
 
 ### I want to develop features...
@@ -108,7 +108,7 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 **API integration and usage:**
 1. **[API Guide](API_GUIDE.md)** - Complete API reference
 2. **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT tokens
-3. **HTTP Examples** - `src/Archu.Api/Archu.Api.http`
+3. **HTTP Examples** - `src/TentMan.Api/TentMan.Api.http`
 4. **Scalar UI** - https://localhost:7123/scalar/v1
 
 ### For Backend Developers
@@ -137,7 +137,7 @@ Welcome to the Archu documentation! This hub provides links to all documentation
 ## 🏗️ Project Structure
 
 ```
-Archu/
+TentMan/
 ├── docs/                                   # 📚 Documentation (12 files)
 │   ├── README.md                           # This file - Documentation hub
 │   ├── GETTING_STARTED.md                  # ⚡ Start here - Complete setup guide
@@ -151,19 +151,19 @@ Archu/
 │   ├── DEVELOPMENT_GUIDE.md                # Development workflow
 │   └── ARCHIVE.md                          # Historical documentation
 ├── src/
-│   ├── Archu.Api/                          # 🌐 Main REST API
-│   │   ├── Archu.Api.http                  # 40+ HTTP examples
+│   ├── TentMan.Api/                          # 🌐 Main REST API
+│   │   ├── TentMan.Api.http                  # 40+ HTTP examples
 │   │   └── README.md                       # API project documentation
-│   ├── Archu.AdminApi/                     # 🛡️ Admin API
-│   │   ├── Archu.AdminApi.http             # 31 HTTP examples
+│   ├── TentMan.AdminApi/                     # 🛡️ Admin API
+│   │   ├── TentMan.AdminApi.http             # 31 HTTP examples
 │   │   └── README.md                       # Admin API documentation
-│   ├── Archu.Domain/                       # 💼 Business logic
-│   ├── Archu.Application/                  # 🎯 Use cases
-│   ├── Archu.Infrastructure/               # 🔌 Data access
-│   ├── Archu.Contracts/                    # 📝 API DTOs
-│   ├── Archu.Ui/                           # 🎨 Blazor components
-│   ├── Archu.ServiceDefaults/              # ⚙️ Aspire defaults
-│   ├── Archu.AppHost/                      # 🚀 Aspire orchestrator
+│   ├── TentMan.Domain/                       # 💼 Business logic
+│   ├── TentMan.Application/                  # 🎯 Use cases
+│   ├── TentMan.Infrastructure/               # 🔌 Data access
+│   ├── TentMan.Contracts/                    # 📝 API DTOs
+│   ├── TentMan.Ui/                           # 🎨 Blazor components
+│   ├── TentMan.ServiceDefaults/              # ⚙️ Aspire defaults
+│   ├── TentMan.AppHost/                      # 🚀 Aspire orchestrator
 │   └── README_NEW_ENTITY.md                # Development tutorial
 └── README.md                               # Project overview
 ```
@@ -208,7 +208,7 @@ Archu/
 ### Running the Application
 
 ```bash
-cd src/Archu.AppHost
+cd src/TentMan.AppHost
 dotnet run
 ```
 
@@ -221,7 +221,7 @@ dotnet run
 ### Setting Up Authentication
 
 ```bash
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKey"
 ```
 
@@ -231,8 +231,8 @@ dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKey"
 
 ```bash
 # Open HTTP files in Visual Studio
-# src/Archu.Api/Archu.Api.http (40+ examples)
-# Archu.AdminApi/Archu.AdminApi.http (31 examples)
+# src/TentMan.Api/TentMan.Api.http (40+ examples)
+# TentMan.AdminApi/TentMan.AdminApi.http (31 examples)
 
 # Or use Scalar UI
 https://localhost:7123/scalar/v1  # Main API
@@ -244,9 +244,9 @@ https://localhost:7290/scalar/v1  # Admin API
 ### Creating a Migration
 
 ```bash
-cd src/Archu.Infrastructure
-dotnet ef migrations add YourMigrationName --startup-project ../Archu.Api
-dotnet ef database update --startup-project ../Archu.Api
+cd src/TentMan.Infrastructure
+dotnet ef migrations add YourMigrationName --startup-project ../TentMan.Api
+dotnet ef database update --startup-project ../TentMan.Api
 ```
 
 **[Full guide →](DATABASE_GUIDE.md)**
@@ -311,5 +311,5 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 **Last Updated**: 2025-01-22  
 **Version**: 4.0 ⚡ **CONSOLIDATED**  
-**Maintainer**: Archu Development Team  
-**Questions?** Open an issue on [GitHub](https://github.com/chethandvg/archu/issues)
+**Maintainer**: TentMan Development Team  
+**Questions?** Open an issue on [GitHub](https://github.com/chethandvg/tentman/issues)

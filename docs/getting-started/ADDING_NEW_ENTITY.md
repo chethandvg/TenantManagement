@@ -1,6 +1,6 @@
 # Adding a New Entity - Step-by-Step Guide
 
-This guide shows you how to add a new entity to Archu with full CRUD operations, concurrency control, soft delete, and audit tracking.
+This guide shows you how to add a new entity to TentMan with full CRUD operations, concurrency control, soft delete, and audit tracking.
 
 ## Example: Adding an Order Entity
 
@@ -14,12 +14,12 @@ This guide shows you how to add a new entity to Archu with full CRUD operations,
 
 ## Step 1: Create the Domain Entity
 
-**Location**: `src/Archu.Domain/Entities/Order.cs`
+**Location**: `src/TentMan.Domain/Entities/Order.cs`
 
 ```csharp
-using Archu.Domain.Common;
+using TentMan.Domain.Common;
 
-namespace Archu.Domain.Entities;
+namespace TentMan.Domain.Entities;
 
 /// <summary>
 /// Represents a customer order.
@@ -52,12 +52,12 @@ public enum OrderStatus
 
 ## Step 2: Create Repository Interface
 
-**Location**: `src/Archu.Application/Abstractions/IOrderRepository.cs`
+**Location**: `src/TentMan.Application/Abstractions/IOrderRepository.cs`
 
 ```csharp
-using Archu.Domain.Entities;
+using TentMan.Domain.Entities;
 
-namespace Archu.Application.Abstractions;
+namespace TentMan.Application.Abstractions;
 
 public interface IOrderRepository
 {
@@ -83,15 +83,15 @@ public interface IOrderRepository
 
 ## Step 3: Implement Repository
 
-**Location**: `src/Archu.Infrastructure/Repositories/OrderRepository.cs`
+**Location**: `src/TentMan.Infrastructure/Repositories/OrderRepository.cs`
 
 ```csharp
-using Archu.Application.Abstractions;
-using Archu.Domain.Entities;
-using Archu.Infrastructure.Persistence;
+using TentMan.Application.Abstractions;
+using TentMan.Domain.Entities;
+using TentMan.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace Archu.Infrastructure.Repositories;
+namespace TentMan.Infrastructure.Repositories;
 
 public class OrderRepository : BaseRepository<Order>, IOrderRepository
 {
@@ -142,7 +142,7 @@ public class OrderRepository : BaseRepository<Order>, IOrderRepository
 
 ## Step 4: Add to Unit of Work
 
-**Update**: `src/Archu.Application/Abstractions/IUnitOfWork.cs`
+**Update**: `src/TentMan.Application/Abstractions/IUnitOfWork.cs`
 
 ```csharp
 public interface IUnitOfWork : IDisposable
@@ -157,7 +157,7 @@ public interface IUnitOfWork : IDisposable
 }
 ```
 
-**Update**: `src/Archu.Infrastructure/Repositories/UnitOfWork.cs`
+**Update**: `src/TentMan.Infrastructure/Repositories/UnitOfWork.cs`
 
 ```csharp
 public class UnitOfWork : IUnitOfWork
@@ -183,7 +183,7 @@ public class UnitOfWork : IUnitOfWork
 
 ## Step 5: Register Repository in DI
 
-**Update**: `src/Archu.Api/Program.cs`
+**Update**: `src/TentMan.Api/Program.cs`
 
 ```csharp
 // Register repositories
@@ -196,10 +196,10 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 ## Step 6: Create DTOs
 
-**Location**: `src/Archu.Contracts/Orders/OrderDto.cs`
+**Location**: `src/TentMan.Contracts/Orders/OrderDto.cs`
 
 ```csharp
-namespace Archu.Contracts.Orders;
+namespace TentMan.Contracts.Orders;
 
 public sealed class OrderDto
 {
@@ -214,12 +214,12 @@ public sealed class OrderDto
 }
 ```
 
-**Location**: `src/Archu.Contracts/Orders/CreateOrderRequest.cs`
+**Location**: `src/TentMan.Contracts/Orders/CreateOrderRequest.cs`
 
 ```csharp
 using System.ComponentModel.DataAnnotations;
 
-namespace Archu.Contracts.Orders;
+namespace TentMan.Contracts.Orders;
 
 public sealed class CreateOrderRequest
 {
@@ -236,12 +236,12 @@ public sealed class CreateOrderRequest
 }
 ```
 
-**Location**: `src/Archu.Contracts/Orders/UpdateOrderRequest.cs`
+**Location**: `src/TentMan.Contracts/Orders/UpdateOrderRequest.cs`
 
 ```csharp
 using System.ComponentModel.DataAnnotations;
 
-namespace Archu.Contracts.Orders;
+namespace TentMan.Contracts.Orders;
 
 public sealed class UpdateOrderRequest
 {
@@ -269,14 +269,14 @@ public sealed class UpdateOrderRequest
 
 ### Create Command
 
-**Location**: `src/Archu.Application/Orders/Commands/CreateOrder/CreateOrderCommand.cs`
+**Location**: `src/TentMan.Application/Orders/Commands/CreateOrder/CreateOrderCommand.cs`
 
 ```csharp
-using Archu.Application.Common;
-using Archu.Contracts.Orders;
+using TentMan.Application.Common;
+using TentMan.Contracts.Orders;
 using MediatR;
 
-namespace Archu.Application.Orders.Commands.CreateOrder;
+namespace TentMan.Application.Orders.Commands.CreateOrder;
 
 public record CreateOrderCommand(
     string OrderNumber,
@@ -286,17 +286,17 @@ public record CreateOrderCommand(
 ) : IRequest<Result<OrderDto>>;
 ```
 
-**Location**: `src/Archu.Application/Orders/Commands/CreateOrder/CreateOrderCommandHandler.cs`
+**Location**: `src/TentMan.Application/Orders/Commands/CreateOrder/CreateOrderCommandHandler.cs`
 
 ```csharp
-using Archu.Application.Abstractions;
-using Archu.Application.Common;
-using Archu.Contracts.Orders;
-using Archu.Domain.Entities;
+using TentMan.Application.Abstractions;
+using TentMan.Application.Common;
+using TentMan.Contracts.Orders;
+using TentMan.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace Archu.Application.Orders.Commands.CreateOrder;
+namespace TentMan.Application.Orders.Commands.CreateOrder;
 
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Result<OrderDto>>
 {
@@ -341,14 +341,14 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
 ### Update Command
 
-**Location**: `src/Archu.Application/Orders/Commands/UpdateOrder/UpdateOrderCommand.cs`
+**Location**: `src/TentMan.Application/Orders/Commands/UpdateOrder/UpdateOrderCommand.cs`
 
 ```csharp
-using Archu.Application.Common;
-using Archu.Contracts.Orders;
+using TentMan.Application.Common;
+using TentMan.Contracts.Orders;
 using MediatR;
 
-namespace Archu.Application.Orders.Commands.UpdateOrder;
+namespace TentMan.Application.Orders.Commands.UpdateOrder;
 
 public record UpdateOrderCommand(
     Guid Id,
@@ -359,18 +359,18 @@ public record UpdateOrderCommand(
 ) : IRequest<Result<OrderDto>>;
 ```
 
-**Location**: `src/Archu.Application/Orders/Commands/UpdateOrder/UpdateOrderCommandHandler.cs`
+**Location**: `src/TentMan.Application/Orders/Commands/UpdateOrder/UpdateOrderCommandHandler.cs`
 
 ```csharp
-using Archu.Application.Abstractions;
-using Archu.Application.Common;
-using Archu.Contracts.Orders;
-using Archu.Domain.Entities;
+using TentMan.Application.Abstractions;
+using TentMan.Application.Common;
+using TentMan.Contracts.Orders;
+using TentMan.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Archu.Application.Orders.Commands.UpdateOrder;
+namespace TentMan.Application.Orders.Commands.UpdateOrder;
 
 public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Result<OrderDto>>
 {
@@ -436,26 +436,26 @@ public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, Res
 
 ### Delete Command
 
-**Location**: `src/Archu.Application/Orders/Commands/DeleteOrder/DeleteOrderCommand.cs`
+**Location**: `src/TentMan.Application/Orders/Commands/DeleteOrder/DeleteOrderCommand.cs`
 
 ```csharp
-using Archu.Application.Common;
+using TentMan.Application.Common;
 using MediatR;
 
-namespace Archu.Application.Orders.Commands.DeleteOrder;
+namespace TentMan.Application.Orders.Commands.DeleteOrder;
 
 public record DeleteOrderCommand(Guid Id) : IRequest<Result>;
 ```
 
-**Location**: `src/Archu.Application/Orders/Commands/DeleteOrder/DeleteOrderCommandHandler.cs`
+**Location**: `src/TentMan.Application/Orders/Commands/DeleteOrder/DeleteOrderCommandHandler.cs`
 
 ```csharp
-using Archu.Application.Abstractions;
-using Archu.Application.Common;
+using TentMan.Application.Abstractions;
+using TentMan.Application.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace Archu.Application.Orders.Commands.DeleteOrder;
+namespace TentMan.Application.Orders.Commands.DeleteOrder;
 
 public class DeleteOrderCommandHandler : IRequestHandler<DeleteOrderCommand, Result>
 {
@@ -493,14 +493,14 @@ public class DeleteOrderCommandHandler : IRequestHandler<DeleteOrderCommand, Res
 
 ## Step 8: Create Entity Configuration
 
-**Location**: `src/Archu.Infrastructure/Persistence/Configurations/OrderConfiguration.cs`
+**Location**: `src/TentMan.Infrastructure/Persistence/Configurations/OrderConfiguration.cs`
 
 ```csharp
-using Archu.Domain.Entities;
+using TentMan.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Archu.Infrastructure.Persistence.Configurations;
+namespace TentMan.Infrastructure.Persistence.Configurations;
 
 public class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
@@ -533,7 +533,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 
 ## Step 9: Add DbSet to ApplicationDbContext
 
-**Update**: `src/Archu.Infrastructure/Persistence/ApplicationDbContext.cs`
+**Update**: `src/TentMan.Infrastructure/Persistence/ApplicationDbContext.cs`
 
 ```csharp
 public class ApplicationDbContext : DbContext
@@ -551,7 +551,7 @@ public class ApplicationDbContext : DbContext
 ## Step 10: Create Migration
 
 ```bash
-cd src/Archu.Infrastructure
+cd src/TentMan.Infrastructure
 dotnet ef migrations add AddOrderEntity
 dotnet ef database update
 ```
@@ -560,19 +560,19 @@ dotnet ef database update
 
 ## Step 11: Create API Controller
 
-**Location**: `src/Archu.Api/Controllers/OrdersController.cs`
+**Location**: `src/TentMan.Api/Controllers/OrdersController.cs`
 
 ```csharp
-using Archu.Application.Orders.Commands.CreateOrder;
-using Archu.Application.Orders.Commands.DeleteOrder;
-using Archu.Application.Orders.Commands.UpdateOrder;
-using Archu.Contracts.Common;
-using Archu.Contracts.Orders;
+using TentMan.Application.Orders.Commands.CreateOrder;
+using TentMan.Application.Orders.Commands.DeleteOrder;
+using TentMan.Application.Orders.Commands.UpdateOrder;
+using TentMan.Contracts.Common;
+using TentMan.Contracts.Orders;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Archu.Api.Controllers;
+namespace TentMan.Api.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]

@@ -1,0 +1,399 @@
+@TentMan.AdminApi_HostAddress = https://localhost:7290
+@TentMan.AdminApi_Http = http://localhost:5290
+
+# ============================================================================
+# TentMan Admin API - HTTP Requests Collection
+# ============================================================================
+# Version: 1.0
+# Last Updated: 2025-01-22
+# 
+# This file contains example HTTP requests for testing the TentMan Admin API.
+# All endpoints (except initialization) require JWT Bearer authentication.
+#
+# Usage:
+# 1. Run the TentMan.AppHost project to start all services
+# 2. Initialize the system using the initialization endpoint
+# 3. Authenticate to get a JWT token (use Auth API - separate service)
+# 4. Replace {{jwt_token}} with your actual token
+# 5. Execute requests using the "Send Request" button in Visual Studio
+#
+# Note: Variables are defined at the top and can be reused throughout
+# ============================================================================
+
+# Variables
+@jwt_token = your-jwt-token-here
+@user_id = 3fa85f64-5717-4562-b3fc-2c963f66afa6
+@role_id = 7ba85f64-5717-4562-b3fc-2c963f66afa9
+
+# ============================================================================
+# INITIALIZATION - System Setup (One-time only)
+# ============================================================================
+
+### 1. Initialize System (Create roles and super admin)
+# This endpoint can only be called once when no users exist
+# No authentication required
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/initialization/initialize
+Content-Type: application/json
+
+{
+  "userName": "superadmin",
+  "email": "admin@example.com",
+  "password": "SuperAdmin123!"
+}
+
+# ============================================================================
+# HEALTH CHECKS - Monitoring & Status
+# ============================================================================
+
+### 2. Health Check - Full Status
+GET {{TentMan.AdminApi_HostAddress}}/health
+Accept: application/json
+
+###
+
+### 3. Health Check - Ready Status
+GET {{TentMan.AdminApi_HostAddress}}/health/ready
+Accept: application/json
+
+###
+
+### 4. Health Check - Live Status
+GET {{TentMan.AdminApi_HostAddress}}/health/live
+Accept: application/json
+
+###
+
+# ============================================================================
+# USERS - User Management Operations
+# ============================================================================
+
+### 5. Get All Users (Paginated)
+# Required Role: SuperAdmin, Administrator, Manager
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users?pageNumber=1&pageSize=10
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+
+###
+
+### 6. Create User
+# Required Role: SuperAdmin, Administrator, Manager
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userName": "john.doe",
+  "email": "john.doe@example.com",
+  "password": "SecurePassword123!",
+  "phoneNumber": "+1234567890",
+  "emailConfirmed": false,
+  "twoFactorEnabled": false
+}
+
+###
+
+### 7. Create User - Minimal
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userName": "jane.smith",
+  "email": "jane.smith@example.com",
+  "password": "SecurePassword123!"
+}
+
+###
+
+### 8. Delete User
+# Required Role: SuperAdmin, Administrator
+# Cannot delete yourself or last SuperAdmin
+DELETE {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users/{{user_id}}
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# ============================================================================
+# ROLES - Role Management Operations
+# ============================================================================
+
+### 9. Get All Roles
+# Required Role: SuperAdmin, Administrator, Manager
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/roles
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+
+###
+
+### 10. Create Custom Role
+# Required Role: SuperAdmin, Administrator
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/roles
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "name": "ContentEditor",
+  "description": "Can edit content but not manage users"
+}
+
+###
+
+### 11. Create Custom Role - Minimal
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/roles
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "name": "Reviewer"
+}
+
+###
+
+# ============================================================================
+# USER ROLES - Role Assignment Operations
+# ============================================================================
+
+### 12. Get User Roles
+# Required Role: SuperAdmin, Administrator, Manager
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/user-roles/{{user_id}}
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+
+###
+
+### 13. Assign Role to User
+# Required Role: SuperAdmin, Administrator
+# SuperAdmin can assign any role
+# Administrator can assign User, Manager, Guest only
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/user-roles/assign
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{user_id}}",
+  "roleId": "{{role_id}}"
+}
+
+###
+
+### 14. Remove Role from User
+# Required Role: SuperAdmin, Administrator
+# Cannot remove your own privileged roles
+# Cannot remove last SuperAdmin
+DELETE {{TentMan.AdminApi_HostAddress}}/api/v1/admin/user-roles/{{user_id}}/roles/{{role_id}}
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# ============================================================================
+# TESTING SCENARIOS - Common Use Cases
+# ============================================================================
+
+### 15. Scenario: Create User and Assign Manager Role
+# Step 1: Create user
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userName": "team.lead",
+  "email": "lead@example.com",
+  "password": "SecurePassword123!",
+  "emailConfirmed": true
+}
+
+###
+
+### 16. Scenario: Get Manager Role ID
+# First get all roles to find Manager role ID
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/roles
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+
+###
+
+### 17. Scenario: Assign Manager Role
+# Use the user_id from step 15 and role_id from step 16
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/user-roles/assign
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userId": "user-id-from-step-15",
+  "roleId": "manager-role-id-from-step-16"
+}
+
+###
+
+# ============================================================================
+# ERROR SCENARIOS - Testing Security Restrictions
+# ============================================================================
+
+### 18. Error: Administrator tries to assign SuperAdmin role
+# This should fail with 400 Bad Request
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/user-roles/assign
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{user_id}}",
+  "roleId": "superadmin-role-id"
+}
+
+###
+
+### 19. Error: Try to delete yourself
+# This should fail with 400 Bad Request
+DELETE {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users/your-own-user-id
+Authorization: Bearer {{jwt_token}}
+
+###
+
+### 20. Error: Remove your own SuperAdmin role
+# This should fail with 400 Bad Request
+DELETE {{TentMan.AdminApi_HostAddress}}/api/v1/admin/user-roles/your-user-id/roles/superadmin-role-id
+Authorization: Bearer {{jwt_token}}
+
+###
+
+### 21. Error: Invalid authentication
+# This should fail with 401 Unauthorized
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users
+Authorization: Bearer invalid-token
+Accept: application/json
+
+###
+
+### 22. Error: Missing authentication
+# This should fail with 401 Unauthorized
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users
+Accept: application/json
+
+###
+
+# ============================================================================
+# PAGINATION EXAMPLES
+# ============================================================================
+
+### 23. Get Users - First Page (10 items)
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users?pageNumber=1&pageSize=10
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+
+###
+
+### 24. Get Users - Second Page
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users?pageNumber=2&pageSize=10
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+
+###
+
+### 25. Get Users - Large Page Size
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users?pageNumber=1&pageSize=50
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+
+###
+
+### 26. Get Users - Small Page Size
+GET {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users?pageNumber=1&pageSize=5
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+
+###
+
+# ============================================================================
+# ADVANCED SCENARIOS
+# ============================================================================
+
+### 27. Bulk User Creation - User 1
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userName": "developer1",
+  "email": "dev1@example.com",
+  "password": "DevPassword123!"
+}
+
+###
+
+### 28. Bulk User Creation - User 2
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userName": "developer2",
+  "email": "dev2@example.com",
+  "password": "DevPassword123!"
+}
+
+###
+
+### 29. Bulk User Creation - User 3
+POST {{TentMan.AdminApi_HostAddress}}/api/v1/admin/users
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "userName": "developer3",
+  "email": "dev3@example.com",
+  "password": "DevPassword123!"
+}
+
+###
+
+# ============================================================================
+# HTTP PROTOCOL - Testing Different Protocols
+# ============================================================================
+
+### 30. Test HTTPS Endpoint
+GET {{TentMan.AdminApi_HostAddress}}/health
+Accept: application/json
+
+###
+
+### 31. Test HTTP Endpoint
+GET {{TentMan.AdminApi_Http}}/health
+Accept: application/json
+
+###
+
+# ============================================================================
+# NOTES & TIPS
+# ============================================================================
+#
+# Authentication:
+# - Get JWT token from Auth API (separate service)
+# - Token expires after 1 hour (configurable)
+# - Include token in Authorization header: Bearer <token>
+#
+# Common Response Codes:
+# - 200 OK: Success
+# - 201 Created: Resource created
+# - 400 Bad Request: Validation error or business rule violation
+# - 401 Unauthorized: Missing or invalid token
+# - 403 Forbidden: Insufficient permissions
+# - 404 Not Found: Resource doesn't exist
+#
+# Security Restrictions:
+# - SuperAdmin: Full access to all operations
+# - Administrator: Cannot assign/remove SuperAdmin or Administrator roles
+# - Manager: Read-only access to users and roles
+#
+# Testing Tips:
+# 1. Use Visual Studio's "Send Request" feature
+# 2. Check response status codes and bodies
+# 3. Verify security restrictions work as expected
+# 4. Test pagination with different page sizes
+# 5. Try invalid scenarios to verify error handling
+#
+# Documentation:
+# - Scalar UI: https://localhost:7290/scalar/v1
+# - OpenAPI JSON: https://localhost:7290/openapi/v1.json
+# - Full Docs: /docs/OPENAPI_DOCUMENTATION_UPDATE.md
+#
+# ============================================================================

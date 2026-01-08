@@ -17,8 +17,8 @@ This document summarizes the unit test improvements implemented based on the fee
 - Added logging verification for both scenarios
 
 **Files Modified**:
-- `tests\Archu.UnitTests\TestHelpers\Exceptions\DbUpdateConcurrencyException.cs` (NEW)
-- `tests\Archu.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerTests.cs` (UPDATED)
+- `tests\TentMan.UnitTests\TestHelpers\Exceptions\DbUpdateConcurrencyException.cs` (NEW)
+- `tests\TentMan.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerTests.cs` (UPDATED)
 
 **New Tests Added**:
 ```csharp
@@ -39,7 +39,7 @@ This document summarizes the unit test improvements implemented based on the fee
 - Tests all authentication failure scenarios
 
 **Files Created**:
-- `tests\Archu.UnitTests\Application\Common\BaseCommandHandlerTests.cs` (NEW)
+- `tests\TentMan.UnitTests\Application\Common\BaseCommandHandlerTests.cs` (NEW)
 
 **Test Coverage** (16 new tests):
 - `GetCurrentUserId` behavior with valid/invalid users
@@ -58,8 +58,8 @@ This document summarizes the unit test improvements implemented based on the fee
 - Created example tests demonstrating structured logging validation
 
 **Files Modified**:
-- `tests\Archu.UnitTests\TestHelpers\Fixtures\CommandHandlerTestFixture.cs` (UPDATED)
-- `tests\Archu.UnitTests\Application\Products\Commands\CreateProductCommandHandlerTests.cs` (UPDATED)
+- `tests\TentMan.UnitTests\TestHelpers\Fixtures\CommandHandlerTestFixture.cs` (UPDATED)
+- `tests\TentMan.UnitTests\Application\Products\Commands\CreateProductCommandHandlerTests.cs` (UPDATED)
 
 **New Methods Added**:
 ```csharp
@@ -87,9 +87,9 @@ fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
 - Ensures handlers properly respect cancellation
 
 **Files Modified**:
-- `tests\Archu.UnitTests\TestHelpers\Fixtures\CommandHandlerTestFixture.cs` (UPDATED)
-- `tests\Archu.UnitTests\Application\Products\Commands\CreateProductCommandHandlerTests.cs` (UPDATED)
-- `tests\Archu.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerTests.cs` (UPDATED)
+- `tests\TentMan.UnitTests\TestHelpers\Fixtures\CommandHandlerTestFixture.cs` (UPDATED)
+- `tests\TentMan.UnitTests\Application\Products\Commands\CreateProductCommandHandlerTests.cs` (UPDATED)
+- `tests\TentMan.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerTests.cs` (UPDATED)
 
 **New Verification Methods**:
 ```csharp
@@ -109,8 +109,8 @@ fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
 - Refactored ALL Product command handler tests to use AutoFixture
 
 **Files Created/Modified**:
-- `tests\Archu.UnitTests\TestHelpers\Fixtures\AutoMoqDataAttribute.cs` (NEW)
-- `tests\Archu.UnitTests\TestHelpers\Fixtures\InlineAutoMoqDataAttribute.cs` (NEW)
+- `tests\TentMan.UnitTests\TestHelpers\Fixtures\AutoMoqDataAttribute.cs` (NEW)
+- `tests\TentMan.UnitTests\TestHelpers\Fixtures\InlineAutoMoqDataAttribute.cs` (NEW)
 - All Product command handler test files (REFACTORED)
 
 **Benefits**:
@@ -129,8 +129,8 @@ fixture.VerifyStructuredInformationLogged(new Dictionary<string, object?>
 - Supports custom factory functions for non-standard constructors
 
 **Files Modified**:
-- `tests\Archu.UnitTests\TestHelpers\Fixtures\CommandHandlerTestFixture.cs` (UPDATED)
-- `tests\Archu.UnitTests\Application\Products\Commands\CommandHandlerFactoryExampleTests.cs` (NEW)
+- `tests\TentMan.UnitTests\TestHelpers\Fixtures\CommandHandlerTestFixture.cs` (UPDATED)
+- `tests\TentMan.UnitTests\Application\Products\Commands\CommandHandlerFactoryExampleTests.cs` (NEW)
 - All Product command handler test files (UPDATED)
 
 **New Methods Added**:
@@ -173,9 +173,9 @@ var handler = fixture.CreateHandler();
 - Improved test data coverage with randomized values per test run
 
 **Files Refactored**:
-- `tests\Archu.UnitTests\Application\Products\Commands\CreateProductCommandHandlerTests.cs` (FULLY REFACTORED)
-- `tests\Archu.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerTests.cs` (FULLY REFACTORED)
-- `tests\Archu.UnitTests\Application\Products\Commands\DeleteProductCommandHandlerTests.cs` (FULLY REFACTORED)
+- `tests\TentMan.UnitTests\Application\Products\Commands\CreateProductCommandHandlerTests.cs` (FULLY REFACTORED)
+- `tests\TentMan.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerTests.cs` (FULLY REFACTORED)
+- `tests\TentMan.UnitTests\Application\Products\Commands\DeleteProductCommandHandlerTests.cs` (FULLY REFACTORED)
 
 **Before (Manual Setup)**:
 ```csharp
@@ -239,9 +239,9 @@ public async Task Handle_WhenRequestIsValid_CreatesProductSuccessfully(
 - Kept `CommandHandlerFactoryExampleTests.cs` as it demonstrates a distinct pattern
 
 **Files Removed**:
-- `tests\Archu.UnitTests\Application\Products\Commands\CreateProductCommandHandlerAutoFixtureTests.cs` (REMOVED - 10 duplicate tests)
-- `tests\Archu.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerAutoFixtureTests.cs` (REMOVED - 8 duplicate tests)
-- `tests\Archu.UnitTests\Application\Products\Commands\DeleteProductCommandHandlerAutoFixtureTests.cs` (REMOVED - 7 duplicate tests)
+- `tests\TentMan.UnitTests\Application\Products\Commands\CreateProductCommandHandlerAutoFixtureTests.cs` (REMOVED - 10 duplicate tests)
+- `tests\TentMan.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerAutoFixtureTests.cs` (REMOVED - 8 duplicate tests)
+- `tests\TentMan.UnitTests\Application\Products\Commands\DeleteProductCommandHandlerAutoFixtureTests.cs` (REMOVED - 7 duplicate tests)
 
 **Benefits**:
 - ✅ **Faster test execution**: Eliminated ~25 duplicate tests
@@ -265,22 +265,22 @@ public async Task Handle_WhenRequestIsValid_CreatesProductSuccessfully(
 ## Files Changed Summary
 
 ### New Files (5):
-1. `tests\Archu.UnitTests\TestHelpers\Exceptions\DbUpdateConcurrencyException.cs`
-2. `tests\Archu.UnitTests\Application\Common\BaseCommandHandlerTests.cs`
-3. `tests\Archu.UnitTests\TestHelpers\Fixtures\InlineAutoMoqDataAttribute.cs`
-4. `tests\Archu.UnitTests\TestHelpers\Fixtures\AutoMoqDataAttribute.cs`
-5. `tests\Archu.UnitTests\Application\Products\Commands\CommandHandlerFactoryExampleTests.cs`
+1. `tests\TentMan.UnitTests\TestHelpers\Exceptions\DbUpdateConcurrencyException.cs`
+2. `tests\TentMan.UnitTests\Application\Common\BaseCommandHandlerTests.cs`
+3. `tests\TentMan.UnitTests\TestHelpers\Fixtures\InlineAutoMoqDataAttribute.cs`
+4. `tests\TentMan.UnitTests\TestHelpers\Fixtures\AutoMoqDataAttribute.cs`
+5. `tests\TentMan.UnitTests\Application\Products\Commands\CommandHandlerFactoryExampleTests.cs`
 
 ### Modified Files (4):
-1. `tests\Archu.UnitTests\TestHelpers\Fixtures\CommandHandlerTestFixture.cs`
-2. `tests\Archu.UnitTests\Application\Products\Commands\CreateProductCommandHandlerTests.cs` ✨ FULLY REFACTORED
-3. `tests\Archu.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerTests.cs` ✨ FULLY REFACTORED
-4. `tests\Archu.UnitTests\Application\Products\Commands\DeleteProductCommandHandlerTests.cs` ✨ FULLY REFACTORED
+1. `tests\TentMan.UnitTests\TestHelpers\Fixtures\CommandHandlerTestFixture.cs`
+2. `tests\TentMan.UnitTests\Application\Products\Commands\CreateProductCommandHandlerTests.cs` ✨ FULLY REFACTORED
+3. `tests\TentMan.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerTests.cs` ✨ FULLY REFACTORED
+4. `tests\TentMan.UnitTests\Application\Products\Commands\DeleteProductCommandHandlerTests.cs` ✨ FULLY REFACTORED
 
 ### Files Removed (3): ✨ NEW
-1. `tests\Archu.UnitTests\Application\Products\Commands\CreateProductCommandHandlerAutoFixtureTests.cs` (duplicate)
-2. `tests\Archu.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerAutoFixtureTests.cs` (duplicate)
-3. `tests\Archu.UnitTests\Application\Products\Commands\DeleteProductCommandHandlerAutoFixtureTests.cs` (duplicate)
+1. `tests\TentMan.UnitTests\Application\Products\Commands\CreateProductCommandHandlerAutoFixtureTests.cs` (duplicate)
+2. `tests\TentMan.UnitTests\Application\Products\Commands\UpdateProductCommandHandlerAutoFixtureTests.cs` (duplicate)
+3. `tests\TentMan.UnitTests\Application\Products\Commands\DeleteProductCommandHandlerAutoFixtureTests.cs` (duplicate)
 
 ## Impact Assessment
 

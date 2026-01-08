@@ -1,6 +1,6 @@
-# Archu - Getting Started Guide
+# TentMan - Getting Started Guide
 
-Complete guide to set up and start using Archu from scratch.
+Complete guide to set up and start using TentMan from scratch.
 
 ---
 
@@ -18,8 +18,8 @@ Complete guide to set up and start using Archu from scratch.
 ### Step 1: Clone and Run
 
 ```bash
-git clone https://github.com/chethandvg/archu.git
-cd archu/src/Archu.AppHost
+git clone https://github.com/chethandvg/tentman.git
+cd tentman/src/TentMan.AppHost
 dotnet run
 ```
 
@@ -29,7 +29,7 @@ The Aspire Dashboard will open automatically with all services.
 
 **Windows:**
 ```powershell
-cd ../Archu.Api
+cd ../TentMan.Api
 dotnet user-secrets init
 dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKeyForJWTTokenGeneration1234567890"
 dotnet user-secrets set "Jwt:Issuer" "https://localhost:7123"
@@ -40,7 +40,7 @@ dotnet user-secrets set "Jwt:RefreshTokenExpirationDays" "7"
 
 **Linux/macOS:**
 ```bash
-cd ../Archu.Api
+cd ../TentMan.Api
 dotnet user-secrets init
 dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKeyForJWTTokenGeneration1234567890"
 dotnet user-secrets set "Jwt:Issuer" "https://localhost:7123"
@@ -55,7 +55,7 @@ dotnet user-secrets set "Jwt:RefreshTokenExpirationDays" "7"
 dotnet user-secrets set "DatabaseSeeding:Enabled" "true"
 dotnet user-secrets set "DatabaseSeeding:SeedRoles" "true"
 dotnet user-secrets set "DatabaseSeeding:SeedAdminUser" "true"
-dotnet user-secrets set "DatabaseSeeding:AdminEmail" "admin@archu.com"
+dotnet user-secrets set "DatabaseSeeding:AdminEmail" "admin@tentman.com"
 dotnet user-secrets set "DatabaseSeeding:AdminPassword" "Admin@123"
 ```
 
@@ -139,11 +139,11 @@ Automatic initialization of:
 Enable seeding in User Secrets:
 
 ```bash
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet user-secrets set "DatabaseSeeding:Enabled" "true"
 dotnet user-secrets set "DatabaseSeeding:SeedRoles" "true"
 dotnet user-secrets set "DatabaseSeeding:SeedAdminUser" "true"
-dotnet user-secrets set "DatabaseSeeding:AdminEmail" "admin@archu.com"
+dotnet user-secrets set "DatabaseSeeding:AdminEmail" "admin@tentman.com"
 dotnet user-secrets set "DatabaseSeeding:AdminPassword" "Admin@123"
 dotnet user-secrets set "DatabaseSeeding:AdminRoles" "SuperAdmin,Administrator,User"
 ```
@@ -161,7 +161,7 @@ info: Database seeding completed successfully
 ### Default Credentials
 
 After seeding completes:
-- **Email**: admin@archu.com
+- **Email**: admin@tentman.com
 - **Password**: Admin@123
 - **Roles**: SuperAdmin, Administrator, User
 
@@ -192,7 +192,7 @@ chmod +x ./scripts/setup-jwt-secrets-all.sh
 
 ```bash
 # 1. Navigate to Admin API
-cd Archu.AdminApi
+cd TentMan.AdminApi
 dotnet user-secrets init
 dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKeyForJWTTokenGeneration1234567890"
 dotnet user-secrets set "Jwt:Issuer" "https://localhost:7123"
@@ -209,7 +209,7 @@ Before using admin features, initialize the system:
 
 ```bash
 # Start AdminApi
-cd Archu.AdminApi
+cd TentMan.AdminApi
 dotnet run
 
 # Initialize (creates roles and super admin)
@@ -236,7 +236,7 @@ POST /api/v1/authentication/login
 Content-Type: application/json
 
 {
-  "email": "admin@archu.com",
+  "email": "admin@tentman.com",
   "password": "Admin@123"
 }
 ```
@@ -281,15 +281,15 @@ curl -X POST https://localhost:7290/api/v1/admin/users \
 
 ## 📝 Using HTTP Request Files
 
-Archu includes ready-to-use HTTP request files for testing:
+TentMan includes ready-to-use HTTP request files for testing:
 
 ### Main API Requests
 
-**File**: `src/Archu.Api/Archu.Api.http`
+**File**: `src/TentMan.Api/TentMan.Api.http`
 **Requests**: 40+ examples
 
 **Setup**:
-1. Open `Archu.Api.http` in Visual Studio
+1. Open `TentMan.Api.http` in Visual Studio
 2. Update the `jwt_token` variable with your token
 3. Click "Send Request" next to any request
 
@@ -301,11 +301,11 @@ Archu includes ready-to-use HTTP request files for testing:
 
 ### Admin API Requests
 
-**File**: `Archu.AdminApi/Archu.AdminApi.http`
+**File**: `TentMan.AdminApi/TentMan.AdminApi.http`
 **Requests**: 31 examples
 
 **Setup**:
-1. Open `Archu.AdminApi.http` in Visual Studio
+1. Open `TentMan.AdminApi.http` in Visual Studio
 2. Update the `jwt_token` variable with your token
 3. Click "Send Request" next to any request
 
@@ -358,7 +358,7 @@ dotnet user-secrets set "Jwt:Secret" "<secure-secret>"
 
 **Fix**:
 ```bash
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet user-secrets set "Jwt:Secret" "YourSecure64CharacterSecretKeyForJWTTokenGeneration1234567890"
 ```
 
@@ -389,11 +389,11 @@ dotnet user-secrets set "DatabaseSeeding:Enabled" "true"
 **Fix**: Ensure both APIs use the SAME JWT secret
 ```bash
 # Check Main API
-cd src/Archu.Api
+cd src/TentMan.Api
 dotnet user-secrets list | grep Jwt:Secret
 
 # Check Admin API
-cd ../../Archu.AdminApi
+cd ../../TentMan.AdminApi
 dotnet user-secrets list | grep Jwt:Secret
 
 # They should be identical
@@ -464,4 +464,4 @@ After completing this guide:
 
 **Last Updated**: 2025-01-22  
 **Version**: 1.0  
-**Maintainer**: Archu Development Team
+**Maintainer**: TentMan Development Team

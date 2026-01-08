@@ -1,0 +1,60 @@
+/* TentMan.Ui - Global Styles */
+
+/* These styles are automatically included when you reference TentMan.Ui */
+@import url('./tentman-theme-tokens.css');
+
+:root {
+    --tentman-primary: var(--tentman-color-primary);
+    --tentman-secondary: var(--tentman-color-secondary);
+    --tentman-success: var(--tentman-color-success);
+    --tentman-error: var(--tentman-color-error);
+    --tentman-warning: var(--tentman-color-warning);
+    --tentman-info: var(--tentman-color-info);
+}
+
+/* Utility classes */
+.tentman-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.tentman-card-hover {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.tentman-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.tentman-skip-link {
+    position: absolute;
+    left: -999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.tentman-skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    width: auto;
+    height: auto;
+    clip: auto;
+    padding: 0.75rem 1rem;
+    background-color: var(--tentman-primary);
+    color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+/* Spacing utilities */
+.mt-4 { margin-top: 1rem; }
+.mb-4 { margin-bottom: 1rem; }
+.my-4 { margin-top: 1rem; margin-bottom: 1rem; }
+.pa-4 { padding: 1rem; }
