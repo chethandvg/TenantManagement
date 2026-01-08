@@ -154,13 +154,21 @@ Response 201 Created:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/organizations/{orgId}/buildings` | POST | Create a building |
-| `/api/v1/organizations/{orgId}/buildings` | GET | List all buildings |
+| `/api/buildings` | GET | List all buildings (with orgId query param) |
+| `/api/buildings` | POST | Create a building |
+| `/api/buildings/{id}` | GET | Get a building by ID |
+| `/api/buildings/{id}` | PUT | Update a building |
+| `/api/buildings/{id}/address` | PUT | Set/update building address |
+| `/api/buildings/{id}/units` | POST | Create a unit in a building |
+| `/api/buildings/{id}/units/bulk` | POST | Bulk create units in a building |
+| `/api/buildings/{id}/ownership-shares` | PUT | Set building ownership shares |
+| `/api/buildings/{id}/files` | POST | Add a file to a building |
 
 **Example Request - Create Building**:
 ```json
-POST /api/v1/organizations/{orgId}/buildings
+POST /api/buildings
 {
+  "orgId": "org-guid",
   "buildingCode": "PRS-001",
   "name": "Prestige Lakeside Habitat",
   "propertyType": 1,  // Apartment
@@ -174,6 +182,7 @@ Response 201 Created:
   "success": true,
   "data": {
     "id": "building-guid",
+    "orgId": "org-guid",
     "buildingCode": "PRS-001",
     "name": "Prestige Lakeside Habitat",
     "propertyType": 1,
@@ -185,42 +194,149 @@ Response 201 Created:
 }
 ```
 
-### Units
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/buildings/{buildingId}/units` | POST | Create a unit |
-| `/api/v1/buildings/{buildingId}/units` | GET | List all units in a building |
-
-**Example Request - Create Unit**:
+**Example Request - Update Building**:
 ```json
-POST /api/v1/buildings/{buildingId}/units
+PUT /api/buildings/{id}
 {
-  "unitNumber": "A-402",
-  "floor": 4,
-  "unitType": 2,  // TwoBHK
-  "areaSqFt": 1250.50,
-  "bedrooms": 2,
-  "bathrooms": 2,
-  "furnishing": 2,  // SemiFurnished
-  "parkingSlots": 1
+  "name": "Prestige Lakeside Habitat Tower A",
+  "propertyType": 1,
+  "totalFloors": 30,
+  "hasLift": true,
+  "notes": "Updated premium apartments",
+  "rowVersion": "AAAAAAAAB9E="
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "data": { ... },
+  "message": "Building updated successfully"
+}
+```
+
+**Example Request - Set Building Address**:
+```json
+PUT /api/buildings/{id}/address
+{
+  "line1": "123 Lake View Road",
+  "line2": "Tower A",
+  "locality": "Whitefield",
+  "city": "Bangalore",
+  "district": "Bangalore Urban",
+  "state": "Karnataka",
+  "postalCode": "560066",
+  "landmark": "Near IT Park"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "data": { ... },
+  "message": "Building address updated successfully"
+}
+```
+
+**Example Request - Set Building Ownership**:
+```json
+PUT /api/buildings/{id}/ownership-shares
+{
+  "shares": [
+    { "ownerId": "owner1-guid", "sharePercent": 60.00 },
+    { "ownerId": "owner2-guid", "sharePercent": 40.00 }
+  ],
+  "effectiveFrom": "2026-01-01T00:00:00Z"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "data": { ... },
+  "message": "Building ownership shares updated successfully"
+}
+```
+
+**Example Request - Bulk Create Units**:
+```json
+POST /api/buildings/{id}/units/bulk
+{
+  "units": [
+    {
+      "unitNumber": "A-101",
+      "floor": 1,
+      "unitType": 2,
+      "areaSqFt": 1200,
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "furnishing": 1,
+      "parkingSlots": 1
+    },
+    {
+      "unitNumber": "A-102",
+      "floor": 1,
+      "unitType": 3,
+      "areaSqFt": 1500,
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "furnishing": 2,
+      "parkingSlots": 2
+    }
+  ]
 }
 
 Response 201 Created:
 {
   "success": true,
-  "data": {
-    "id": "unit-guid",
-    "unitNumber": "A-402",
-    "floor": 4,
-    "unitType": 2,
-    "areaSqFt": 1250.50,
-    "bedrooms": 2,
-    "bathrooms": 2,
-    "furnishing": 2,
-    "occupancyStatus": 1,  // Vacant
-    "rowVersion": "AAAAAAAAB9E="
-  }
+  "data": [ ... ],
+  "message": "2 units created successfully"
+}
+```
+
+### Units
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/units/{id}` | PUT | Update a unit |
+| `/api/units/{id}/ownership-shares` | PUT | Set unit ownership shares (overrides building) |
+| `/api/units/{id}/files` | POST | Add a file to a unit |
+
+**Example Request - Update Unit**:
+```json
+PUT /api/units/{id}
+{
+  "floor": 4,
+  "unitType": 2,
+  "areaSqFt": 1250.50,
+  "bedrooms": 2,
+  "bathrooms": 2,
+  "furnishing": 2,
+  "parkingSlots": 1,
+  "occupancyStatus": 1,
+  "rowVersion": "AAAAAAAAB9E="
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "data": { ... },
+  "message": "Unit updated successfully"
+}
+```
+
+**Example Request - Set Unit Ownership**:
+```json
+PUT /api/units/{id}/ownership-shares
+{
+  "shares": [
+    { "ownerId": "owner1-guid", "sharePercent": 100.00 }
+  ],
+  "effectiveFrom": "2026-01-01T00:00:00Z"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "data": { ... },
+  "message": "Unit ownership shares updated successfully"
 }
 ```
 
@@ -269,7 +385,10 @@ The system enforces strict ownership validation rules:
 
 1. **Sum Must Equal 100%**: All ownership shares for a building or unit must sum to exactly 100.00%
 2. **Tolerance**: A tolerance of ±0.01% is allowed for floating-point precision
-3. **Validation Point**: Validation occurs when setting ownership shares
+3. **Each Owner Once**: Each owner can only appear once per ownership set
+4. **Positive Shares**: All share percentages must be greater than 0
+5. **At Least One Owner**: At least one ownership share is required
+6. **Owner Exists**: All referenced owners must exist in the system
 
 **Example**:
 ```csharp
@@ -281,6 +400,12 @@ shares = [33.335%, 33.335%, 33.335%]  ✅ (sum: 100.005%, within 0.01 tolerance)
 
 // Invalid - does not sum to 100%
 shares = [50.00%, 30.00%, 15.00%]  ❌ (sum: 95%)
+
+// Invalid - duplicate owner
+shares = [owner1: 50%, owner1: 50%]  ❌ (owner appears twice)
+
+// Invalid - zero share
+shares = [owner1: 100%, owner2: 0%]  ❌ (share must be > 0)
 ```
 
 **Implementation**:
@@ -297,12 +422,24 @@ public class OwnershipService : IOwnershipService
         return diff <= tolerance;
     }
 }
+
+// Additional validations in command handlers:
+// - Check for duplicate owners
+// - Check all shares are positive (> 0)
+// - Verify all owners exist
 ```
 
 ### Unique Constraints
 
 - **BuildingCode**: Must be unique within an organization
 - **UnitNumber**: Must be unique within a building
+
+### Unit Deletion Protection (Future)
+
+The system is designed to support lease management in the future:
+- When a unit has an active lease, it cannot be deleted
+- This protects tenant data and rental agreements
+- The `HasUnitOwnershipOverride` flag indicates if the unit has custom ownership different from building-level ownership
 
 ### Soft Delete
 
@@ -556,13 +693,13 @@ dotnet test --filter "FullyQualifiedName~OwnershipServiceTests"
 
 Features planned for future releases:
 - [ ] File upload implementation (metadata structure ready)
-- [ ] Building address management endpoints
-- [ ] Ownership share management endpoints
-- [ ] Ownership resolution API (building vs unit-level)
 - [ ] Tenant/lease management
+- [ ] Block unit deletion when active lease exists
 - [ ] Rent collection and payments
 - [ ] Utility bill management
 - [ ] Maintenance request tracking
+- [ ] Ownership history reports
+- [ ] Multi-building ownership analytics
 
 ---
 
