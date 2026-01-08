@@ -218,10 +218,8 @@ public class BuildingsController : ControllerBase
         try
         {
             var unit = await _mediator.Send(command, cancellationToken);
-            return CreatedAtAction(
-                nameof(GetBuilding),
-                new { id },
-                ApiResponse<UnitListDto>.Ok(unit, "Unit created successfully"));
+            // Return Created with direct URL - no GET endpoint for single unit exists
+            return Created($"/api/buildings/{id}/units/{unit.Id}", ApiResponse<UnitListDto>.Ok(unit, "Unit created successfully"));
         }
         catch (InvalidOperationException ex)
         {
@@ -258,10 +256,8 @@ public class BuildingsController : ControllerBase
         try
         {
             var units = await _mediator.Send(command, cancellationToken);
-            return CreatedAtAction(
-                nameof(GetBuilding),
-                new { id },
-                ApiResponse<List<UnitListDto>>.Ok(units, $"{units.Count} units created successfully"));
+            // Return Created with direct URL - no GET endpoint for single unit exists
+            return Created($"/api/buildings/{id}/units", ApiResponse<List<UnitListDto>>.Ok(units, $"{units.Count} units created successfully"));
         }
         catch (InvalidOperationException ex)
         {

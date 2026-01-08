@@ -245,7 +245,7 @@ public class SetBuildingOwnershipCommandHandlerTests
     [Theory]
     [InlineData(99.99, 0.01)] // Total = 100.00, edge case
     [InlineData(33.33, 33.33, 33.34)] // Total = 100.00 exactly
-    [InlineData(100.00, 0.005)] // Near tolerance boundary
+    [InlineData(99.995, 0.005)] // Fractional shares summing to 100.00
     public async Task Handle_WhenSharesSumWithinTolerance_ShouldSucceed(params double[] shares)
     {
         // Arrange

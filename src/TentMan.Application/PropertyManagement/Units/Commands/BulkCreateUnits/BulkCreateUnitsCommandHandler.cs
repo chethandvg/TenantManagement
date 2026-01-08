@@ -44,11 +44,12 @@ public class BulkCreateUnitsCommandHandler : BaseCommandHandler, IRequestHandler
         }
 
         // Check for existing unit numbers in database
-        foreach (var unitData in request.Units)
+        var unitNumbers = request.Units.Select(u => u.UnitNumber).ToList();
+        foreach (var unitNumber in unitNumbers)
         {
-            if (await _unitOfWork.Units.UnitNumberExistsAsync(request.BuildingId, unitData.UnitNumber, null, cancellationToken))
+            if (await _unitOfWork.Units.UnitNumberExistsAsync(request.BuildingId, unitNumber, null, cancellationToken))
             {
-                throw new InvalidOperationException($"Unit number '{unitData.UnitNumber}' already exists in this building");
+                throw new InvalidOperationException($"Unit number '{unitNumber}' already exists in this building");
             }
         }
 

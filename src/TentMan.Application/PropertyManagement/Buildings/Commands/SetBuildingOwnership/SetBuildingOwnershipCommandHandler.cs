@@ -28,8 +28,8 @@ public class SetBuildingOwnershipCommandHandler : BaseCommandHandler, IRequestHa
     {
         Logger.LogInformation("Setting ownership shares for building: {BuildingId}", request.BuildingId);
 
-        // Validate shares
-        ValidateOwnershipShares(request.Shares);
+        // Validate shares using the shared service
+        _ownershipService.ValidateOwnershipShareRequests(request.Shares);
 
         var building = await _unitOfWork.Buildings.GetByIdWithDetailsAsync(request.BuildingId, cancellationToken);
 
@@ -38,12 +38,13 @@ public class SetBuildingOwnershipCommandHandler : BaseCommandHandler, IRequestHa
             throw new InvalidOperationException($"Building {request.BuildingId} not found");
         }
 
-        // Validate all owners exist
-        foreach (var share in request.Shares)
+        // Validate all owners exist - filter to non-existing owners
+        var ownerIds = request.Shares.Select(s => s.OwnerId).ToList();
+        foreach (var ownerId in ownerIds)
         {
-            if (!await _unitOfWork.Owners.ExistsAsync(share.OwnerId, cancellationToken))
+            if (!await _unitOfWork.Owners.ExistsAsync(ownerId, cancellationToken))
             {
-                throw new InvalidOperationException($"Owner {share.OwnerId} not found");
+                throw new InvalidOperationException($"Owner {ownerId} not found");
             }
         }
 
@@ -59,18 +60,19 @@ public class SetBuildingOwnershipCommandHandler : BaseCommandHandler, IRequestHa
             share.ModifiedBy = CurrentUser.UserId ?? "System";
         }
 
-        // Add new ownership shares
-        foreach (var shareRequest in request.Shares)
+        // Add new ownership shares using Select for mapping
+        var newShares = request.Shares.Select(shareRequest => new BuildingOwnershipShare
         {
-            var newShare = new BuildingOwnershipShare
-            {
-                BuildingId = building.Id,
-                OwnerId = shareRequest.OwnerId,
-                SharePercent = shareRequest.SharePercent,
-                EffectiveFrom = request.EffectiveFrom,
-                EffectiveTo = null,
-                CreatedBy = CurrentUser.UserId ?? "System"
-            };
+            BuildingId = building.Id,
+            OwnerId = shareRequest.OwnerId,
+            SharePercent = shareRequest.SharePercent,
+            EffectiveFrom = request.EffectiveFrom,
+            EffectiveTo = null,
+            CreatedBy = CurrentUser.UserId ?? "System"
+        }).ToList();
+
+        foreach (var newShare in newShares)
+        {
             building.OwnershipShares.Add(newShare);
         }
 
@@ -125,39 +127,5 @@ public class SetBuildingOwnershipCommandHandler : BaseCommandHandler, IRequestHa
                 }).ToList(),
             RowVersion = building.RowVersion
         };
-    }
-
-    private void ValidateOwnershipShares(List<OwnershipShareRequest> shares)
-    {
-        if (shares == null || shares.Count == 0)
-        {
-            throw new InvalidOperationException("At least one ownership share is required");
-        }
-
-        // Check for duplicate owners
-        var duplicateOwners = shares.GroupBy(s => s.OwnerId)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .ToList();
-
-        if (duplicateOwners.Any())
-        {
-            throw new InvalidOperationException("Each owner can only appear once in the ownership set");
-        }
-
-        // Check all shares are positive
-        var invalidShares = shares.Where(s => s.SharePercent <= 0).ToList();
-        if (invalidShares.Any())
-        {
-            throw new InvalidOperationException("All ownership shares must be greater than 0");
-        }
-
-        // Validate sum equals 100%
-        var sharePercents = shares.Select(s => s.SharePercent);
-        if (!_ownershipService.ValidateOwnershipShares(sharePercents))
-        {
-            var error = _ownershipService.GetOwnershipValidationError(sharePercents);
-            throw new InvalidOperationException(error);
-        }
     }
 }
