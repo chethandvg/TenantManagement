@@ -244,7 +244,7 @@ public class ProductsController : ControllerBase
 - Platform-agnostic (no ASP.NET Core dependencies)
 - MudBlazor-based components
 - CSS isolation
-- Easy service registration with `AddArchuUi()`
+- Easy service registration with `AddTentManUi()`
 
 ---
 

@@ -350,12 +350,12 @@ builder.Services.AddApplication();
 ```csharp
 var sqlServer = builder.AddSqlServer("sql")
     .WithDataVolume()
-    .AddDatabase("archudatabase");
+    .AddDatabase("tentmandatabase");
 
-var api = builder.AddProject<Projects.Archu_Api>("api")
+var api = builder.AddProject<Projects.TentMan_Api>("api")
     .WithReference(sqlServer);
 
-var adminApi = builder.AddProject<Projects.Archu_AdminApi>("adminapi")
+var adminApi = builder.AddProject<Projects.TentMan_AdminApi>("adminapi")
     .WithReference(sqlServer);
 ```
 

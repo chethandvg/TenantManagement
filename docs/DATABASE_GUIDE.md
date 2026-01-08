@@ -43,7 +43,7 @@ Complete guide to database setup, migrations, seeding, and best practices.
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=ArchuDb;Trusted_Connection=true;TrustServerCertificate=true;"
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TentManDb;Trusted_Connection=true;TrustServerCertificate=true;"
   }
 }
 ```
@@ -52,7 +52,7 @@ Complete guide to database setup, migrations, seeding, and best practices.
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=your-server;Database=ArchuDb;User Id=your-user;Password=your-password;TrustServerCertificate=true;"
+    "DefaultConnection": "Server=your-server;Database=TentManDb;User Id=your-user;Password=your-password;TrustServerCertificate=true;"
   }
 }
 ```
@@ -63,9 +63,9 @@ Complete guide to database setup, migrations, seeding, and best practices.
 ```csharp
 var sqlServer = builder.AddSqlServer("sql")
     .WithDataVolume()
-    .AddDatabase("archudatabase");
+    .AddDatabase("tentmandatabase");
 
-var api = builder.AddProject<Projects.Archu_Api>("api")
+var api = builder.AddProject<Projects.TentMan_Api>("api")
     .WithReference(sqlServer);
 ```
 

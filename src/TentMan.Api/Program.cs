@@ -55,7 +55,7 @@ builder.Services.AddValidatorsFromAssembly(typeof(TentMan.Application.AssemblyRe
 builder.Services.AddAuthorizationHandlers(); // Register custom authorization handlers
 builder.Services.AddAuthorization(options =>
 {
-    options.ConfigureArchuPolicies(); // Configure all application policies
+    options.ConfigureTentManPolicies(); // Configure all application policies
 });
 
 // Add API Versioning
@@ -68,7 +68,7 @@ builder.Services.AddApiVersioning(options =>
 });
 
 // Add Health Checks
-var connectionString = builder.Configuration.GetConnectionString("archudb")
+var connectionString = builder.Configuration.GetConnectionString("tentmandb")
     ?? builder.Configuration.GetConnectionString("Sql")
     ?? throw new InvalidOperationException("Database connection string not configured");
 

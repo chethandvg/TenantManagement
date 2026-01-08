@@ -7,8 +7,8 @@ Complete reference for TentMan's two complementary APIs: **Main API** (TentMan.A
 ## 📚 Table of Contents
 
 - [Overview](#overview)
-- [Main API (TentMan.Api)](#main-api-archuapi)
-- [Admin API (TentMan.AdminApi)](#admin-api-archuadminapi)
+- [Main API (TentMan.Api)](#main-api-tentmanapi)
+- [Admin API (TentMan.AdminApi)](#admin-api-tentmanadminapi)
 - [Authentication](#authentication)
 - [Common Workflows](#common-workflows)
 - [HTTP Examples](#http-examples)

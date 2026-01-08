@@ -63,7 +63,7 @@ In your `Program.cs` (Blazor Server, WebAssembly, or Hybrid):
 using TentMan.Ui;
 using TentMan.Ui.Theming;
 
-builder.Services.AddArchuUi(options =>
+builder.Services.AddTentManUi(options =>
 {
     options.Tokens.Colors.Primary = "#1D4ED8"; // Customize the primary color
 });

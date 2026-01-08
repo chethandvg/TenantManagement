@@ -54,7 +54,7 @@ builder.Services.AddApiVersioning(options =>
 });
 
 // Add Health Checks
-var connectionString = builder.Configuration.GetConnectionString("archudb")
+var connectionString = builder.Configuration.GetConnectionString("tentmandb")
     ?? builder.Configuration.GetConnectionString("Sql")
     ?? throw new InvalidOperationException("Database connection string not configured");
 

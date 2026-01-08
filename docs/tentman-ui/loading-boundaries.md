@@ -4,10 +4,10 @@ The `BusyBoundary` component and accompanying `UiState`/`BusyState` services pro
 
 ## Register Services
 
-`BusyBoundary` relies on the `UiState` container, which is registered automatically when you call `AddArchuUi`:
+`BusyBoundary` relies on the `UiState` container, which is registered automatically when you call `AddTentManUi`:
 
 ```csharp
-builder.Services.AddArchuUi();
+builder.Services.AddTentManUi();
 ```
 
 ## Basic Usage

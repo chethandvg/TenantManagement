@@ -11,7 +11,7 @@ namespace TentMan.ApiClient.Authentication.Storage;
 /// </summary>
 public sealed class BrowserLocalTokenStorage : ITokenStorage
 {
-    private const string StorageKey = "archu_auth_token";
+    private const string StorageKey = "tentman_auth_token";
     private readonly IJSRuntime _jsRuntime;
     private readonly ILogger<BrowserLocalTokenStorage> _logger;
 

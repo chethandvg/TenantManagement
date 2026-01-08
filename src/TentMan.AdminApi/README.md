@@ -243,7 +243,7 @@ The AdminApi shares JWT configuration with the Main API for token compatibility:
 ```json
 {
   "Jwt": {
-    "Secret": "ArchuDevelopmentSecretKeyForJwtTokensThisIsAtLeast32CharactersLong!",
+    "Secret": "TentManDevelopmentSecretKeyForJwtTokensThisIsAtLeast32CharactersLong!",
     "Issuer": "https://localhost:7001",
     "Audience": "https://localhost:7001",
     "AccessTokenExpirationMinutes": 15,
@@ -408,7 +408,7 @@ TentMan.AdminApi/
 ```json
 {
   "ConnectionStrings": {
-    "archudb": "",
+    "tentmandb": "",
     "Sql": ""
   },
   "Jwt": {
@@ -429,7 +429,7 @@ TentMan.AdminApi/
 ### Environment Variables (Production)
 
 ```bash
-export ConnectionStrings__archudb="Server=prod-db;Database=ArchuDb;..."
+export ConnectionStrings__tentmandb="Server=prod-db;Database=TentManDb;..."
 export Jwt__Secret="your-production-secret-here"
 ```
 

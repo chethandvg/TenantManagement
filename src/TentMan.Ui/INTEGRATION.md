@@ -17,7 +17,7 @@ TentMan.Ui ships as a Razor Class Library so it can be reused by Blazor Server, 
    var builder = WebApplication.CreateBuilder(args);
    builder.Services.AddRazorPages();
    builder.Services.AddServerSideBlazor();
-   builder.Services.AddArchuUi();
+   builder.Services.AddTentManUi();
 
    var app = builder.Build();
    app.MapBlazorHub();
@@ -46,7 +46,7 @@ TentMan.Ui ships as a Razor Class Library so it can be reused by Blazor Server, 
    var builder = WebAssemblyHostBuilder.CreateDefault(args);
    builder.RootComponents.Add<App>("#app");
    builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-   builder.Services.AddArchuUi();
+   builder.Services.AddTentManUi();
 
    await builder.Build().RunAsync();
    ```
@@ -85,7 +85,7 @@ TentMan.Ui ships as a Razor Class Library so it can be reused by Blazor Server, 
 #if DEBUG
            builder.Services.AddBlazorWebViewDeveloperTools();
 #endif
-           builder.Services.AddArchuUi();
+           builder.Services.AddTentManUi();
 
            return builder.Build();
        }
@@ -185,7 +185,7 @@ Double-check that the hosting app exposes a `/login` endpoint (the provided logi
 
 ## Next Steps
 
-1. Call `AddArchuUi()` during startup.
+1. Call `AddTentManUi()` during startup.
 2. Import the namespaces listed above.
 3. Set the default layout to `MainLayout` and drop `<NavMenu />` where appropriate.
 4. Use `<RedirectToLogin />` inside `NotAuthorized` views to streamline authentication.

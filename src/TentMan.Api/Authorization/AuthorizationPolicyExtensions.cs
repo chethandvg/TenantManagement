@@ -12,7 +12,7 @@ public static class AuthorizationPolicyExtensions
     /// <summary>
     /// Configures all TentMan authorization policies.
     /// </summary>
-    public static void ConfigureArchuPolicies(this AuthorizationOptions options)
+    public static void ConfigureTentManPolicies(this AuthorizationOptions options)
     {
         // Email verification policy
         options.AddPolicy(PolicyNames.EmailVerified, policy =>

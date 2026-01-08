@@ -219,7 +219,7 @@ Strongly-typed HTTP client for consuming the TentMan API.
 **Usage**:
 ```csharp
 // Register client
-builder.Services.AddArchuApiClient(options => 
+builder.Services.AddTentManApiClient(options => 
 {
     options.BaseAddress = "https://api.tentman.com";
 });
@@ -251,7 +251,7 @@ Reusable Blazor component library with MudBlazor.
 **Usage**:
 ```csharp
 // Register services
-builder.Services.AddArchuUi();
+builder.Services.AddTentManUi();
 
 // Use components
 <ProductCard Product="@product" OnEdit="HandleEdit" />

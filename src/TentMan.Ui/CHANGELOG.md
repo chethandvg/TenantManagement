@@ -28,7 +28,7 @@
 - **Pages/FetchData** – Weather forecast demo using `HttpClient`
 
 ### Service Extensions
-- **UiServiceCollectionExtensions.cs** – `AddArchuUi()` registers theming services, MudBlazor defaults, and static asset manifest
+- **UiServiceCollectionExtensions.cs** – `AddTentManUi()` registers theming services, MudBlazor defaults, and static asset manifest
 
 ### Styling
 - **wwwroot/tentman-ui.css** – Entry point that imports the generated theme token CSS and styles shared elements
@@ -82,7 +82,7 @@ src/TentMan.Ui/
 ### Usage Example
 ```csharp
 // Program.cs
-builder.Services.AddArchuUi();
+builder.Services.AddTentManUi();
 ```
 
 ```razor

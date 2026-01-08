@@ -58,7 +58,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("Sql")
-            ?? configuration.GetConnectionString("archudb")
+            ?? configuration.GetConnectionString("tentmandb")
             ?? throw new InvalidOperationException("Database connection string not configured");
 
         services.AddDbContext<ApplicationDbContext>(options =>

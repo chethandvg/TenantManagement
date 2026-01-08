@@ -18,7 +18,7 @@ public static class UiServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="configureTheme">Optional callback used to override default TentMan design tokens.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddArchuUi(this IServiceCollection services, Action<ThemeOptions>? configureTheme = null)
+    public static IServiceCollection AddTentManUi(this IServiceCollection services, Action<ThemeOptions>? configureTheme = null)
     {
         // Register MudBlazor services
         services.AddMudServices(config =>
@@ -33,7 +33,7 @@ public static class UiServiceCollectionExtensions
         });
 
         // Register theming services that surface design tokens and MudBlazor theme instances
-        services.AddArchuTheming(configureTheme);
+        services.AddTentManTheming(configureTheme);
 
         // Register shared UI state containers that power busy and error workflows
         services.AddScoped<BusyState>();

@@ -34,6 +34,6 @@ builder.Services.AddApiClientForWasm(options =>
 builder.Services.AddAuthorizationCore();
 
 // Add shared UI component services from TentMan.Ui
-builder.Services.AddArchuUi();
+builder.Services.AddTentManUi();
 
 await builder.Build().RunAsync();

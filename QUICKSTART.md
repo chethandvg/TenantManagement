@@ -41,19 +41,19 @@ If you prefer to use your local SQL Server instance:
 
 ```powershell
 # PowerShell
-$env:ARCHU_USE_LOCAL_DB="true"
+$env:TENTMAN_USE_LOCAL_DB="true"
 dotnet run --project src\TentMan.AppHost
 ```
 
 ```cmd
 # Command Prompt
-set ARCHU_USE_LOCAL_DB=true
+set TENTMAN_USE_LOCAL_DB=true
 dotnet run --project src\TentMan.AppHost
 ```
 
 ```bash
 # Linux/macOS
-export ARCHU_USE_LOCAL_DB=true
+export TENTMAN_USE_LOCAL_DB=true
 dotnet run --project src/TentMan.AppHost
 ```
 
@@ -235,7 +235,7 @@ dotnet run --project src\TentMan.AppHost
 
 Or use local SQL Server:
 ```sh
-$env:ARCHU_USE_LOCAL_DB="true"
+$env:TENTMAN_USE_LOCAL_DB="true"
 dotnet run --project src\TentMan.AppHost
 ```
 
@@ -355,7 +355,7 @@ TentMan/
 dotnet run --project src\TentMan.AppHost
 
 # Use local database
-$env:ARCHU_USE_LOCAL_DB="true"
+$env:TENTMAN_USE_LOCAL_DB="true"
 dotnet run --project src\TentMan.AppHost
 
 # Run migrations

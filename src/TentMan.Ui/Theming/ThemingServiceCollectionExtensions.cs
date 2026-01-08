@@ -17,7 +17,7 @@ public static class ThemingServiceCollectionExtensions
     /// <param name="services">The service collection to register into.</param>
     /// <param name="configure">Optional callback used to override theme options and tokens.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddArchuTheming(this IServiceCollection services, Action<ThemeOptions>? configure = null)
+    public static IServiceCollection AddTentManTheming(this IServiceCollection services, Action<ThemeOptions>? configure = null)
     {
         if (services is null)
         {

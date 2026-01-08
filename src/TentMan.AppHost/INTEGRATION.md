@@ -38,7 +38,7 @@ Added Blazor WebAssembly app configuration:
 
 ```csharp
 // Blazor WebAssembly - references the API
-var web = builder.AddProject<Projects.Archu_Web>("web")
+var web = builder.AddProject<Projects.TentMan_Web>("web")
     .WithReference(api)  // This configures the API URL for the Web app
     .WithExternalHttpEndpoints();
 ```
@@ -97,15 +97,15 @@ Set the environment variable to use local database:
 
 ```sh
 # PowerShell
-$env:ARCHU_USE_LOCAL_DB="true"
+$env:TENTMAN_USE_LOCAL_DB="true"
 dotnet run --project src\TentMan.AppHost
 
 # Command Prompt
-set ARCHU_USE_LOCAL_DB=true
+set TENTMAN_USE_LOCAL_DB=true
 dotnet run --project src\TentMan.AppHost
 
 # Bash/Linux
-export ARCHU_USE_LOCAL_DB=true
+export TENTMAN_USE_LOCAL_DB=true
 dotnet run --project src/TentMan.AppHost
 ```
 
@@ -272,11 +272,11 @@ The Web app reads these values in this format:
 
 2. **Check Connection String**
    - In Aspire Dashboard, check API environment variables
-   - Look for `ConnectionStrings__archudb`
+   - Look for `ConnectionStrings__tentmandb`
 
 3. **Switch to Local Database**
    ```sh
-   $env:ARCHU_USE_LOCAL_DB="true"
+   $env:TENTMAN_USE_LOCAL_DB="true"
    dotnet run --project src\TentMan.AppHost
    ```
 
