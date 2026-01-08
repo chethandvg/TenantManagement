@@ -13,6 +13,26 @@ public interface IUnitOfWork : IDisposable
     IProductRepository Products { get; }
 
     /// <summary>
+    /// Gets the organization repository.
+    /// </summary>
+    IOrganizationRepository Organizations { get; }
+
+    /// <summary>
+    /// Gets the building repository.
+    /// </summary>
+    IBuildingRepository Buildings { get; }
+
+    /// <summary>
+    /// Gets the unit repository.
+    /// </summary>
+    IUnitRepository Units { get; }
+
+    /// <summary>
+    /// Gets the owner repository.
+    /// </summary>
+    IOwnerRepository Owners { get; }
+
+    /// <summary>
     /// Gets the user repository.
     /// </summary>
     IUserRepository Users { get; }

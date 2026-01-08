@@ -16,6 +16,10 @@ public class UnitOfWork : IUnitOfWork
     private readonly ILoggerFactory _loggerFactory;
     private IDbContextTransaction? _currentTransaction;
     private IProductRepository? _productRepository;
+    private IOrganizationRepository? _organizationRepository;
+    private IBuildingRepository? _buildingRepository;
+    private IUnitRepository? _unitRepository;
+    private IOwnerRepository? _ownerRepository;
     private IUserRepository? _userRepository;
     private IRoleRepository? _roleRepository;
     private IUserRoleRepository? _userRoleRepository;
@@ -33,6 +37,10 @@ public class UnitOfWork : IUnitOfWork
     }
 
     public IProductRepository Products => _productRepository ??= new ProductRepository(_context);
+    public IOrganizationRepository Organizations => _organizationRepository ??= new OrganizationRepository(_context);
+    public IBuildingRepository Buildings => _buildingRepository ??= new BuildingRepository(_context);
+    public IUnitRepository Units => _unitRepository ??= new UnitRepository(_context);
+    public IOwnerRepository Owners => _ownerRepository ??= new OwnerRepository(_context);
     public IUserRepository Users => _userRepository ??= new UserRepository(_context);
     public IRoleRepository Roles => _roleRepository ??= new RoleRepository(_context);
     public IUserRoleRepository UserRoles => _userRoleRepository ??= new UserRoleRepository(_context);
