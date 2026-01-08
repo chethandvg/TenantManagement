@@ -143,6 +143,43 @@ When adding new components or pages:
 3. Update the inventory tables above to reflect the new functionality.
 4. Prefer MudBlazor primitives and keep application-specific logic inside the host app.
 
+### Coding Guidelines
+
+See **[CONTRIBUTING.md](../../CONTRIBUTING.md)** for complete guidelines. Key rules for this project:
+
+| Rule | Limit | Action When Exceeded |
+|------|-------|---------------------|
+| `.razor` files | **200 lines** (+20 max) | Extract child components |
+| `.razor.cs` code-behind | **300 lines** (+30 max) | Use partial classes |
+| Component parameters | 5-7 max | Use parameter objects |
+
+#### Required: Code-Behind Pattern
+
+**Always** use code-behind files for components with logic:
+
+```
+Components/
+├── MyComponent/
+│   ├── MyComponent.razor        # Markup only (max 100 lines preferred)
+│   ├── MyComponent.razor.cs     # Code-behind (max 200 lines)
+│   └── MyComponent.razor.css    # Scoped styles (optional)
+```
+
+#### Component Extraction
+
+Extract a new component when:
+- UI section is reused in multiple places
+- A section has independent state/logic
+- The parent component exceeds line limits
+- Logic can be tested independently
+
+#### Modular Design Principles
+
+1. **Single Responsibility**: Each component does one thing well
+2. **Reusability**: Design components to be used in multiple contexts
+3. **Composability**: Build complex UIs from simple components
+4. **Isolation**: Components should not depend on parent implementation details
+
 ## Accessibility Guidelines
 
 The TentMan UI library ships reusable building blocks, so we hold them to a strict accessibility bar. When contributing components or layout updates, follow the practices below.

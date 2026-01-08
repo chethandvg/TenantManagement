@@ -206,13 +206,24 @@ TentMan/
 
 ## 🤝 Contributing
 
-1. Follow Clean Architecture principles
-2. Include concurrency control for updates
-3. Write tests for new features
-4. Update documentation
-5. Use consistent patterns from existing code
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for complete coding guidelines including:
 
-See [docs/README.md](docs/README.md) for detailed contribution guidelines.
+- **Code organization rules** (300 LOC limit per .cs file, partial class usage)
+- **Frontend component guidelines** (modular Blazor components, code-behind pattern)
+- **Naming conventions** and file structure
+- **Testing requirements**
+
+### Quick Guidelines
+
+1. Follow Clean Architecture principles
+2. Keep .cs files under 300 lines (use partial classes if needed)
+3. Use code-behind pattern for Blazor components
+4. Include concurrency control for updates
+5. Write tests for new features
+6. Update documentation
+7. Use consistent patterns from existing code
+
+See [docs/README.md](docs/README.md) for documentation hub.
 
 ## 📄 License
 
