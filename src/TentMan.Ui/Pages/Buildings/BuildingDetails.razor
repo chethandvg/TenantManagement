@@ -1,0 +1,263 @@
+@page "/buildings/{BuildingId:guid}"
+@attribute [Authorize]
+
+<PageTitle>@(_building?.Name ?? "Building Details")</PageTitle>
+
+<BusyBoundary Retry="LoadBuildingAsync">
+    @if (_building != null)
+    {
+        <MudStack Spacing="4">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                <MudStack>
+                    <MudBreadcrumbs Items="_breadcrumbs" />
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h4">@_building.Name</MudText>
+                        <MudChip T="string" Size="Size.Small" Color="@GetPropertyTypeColor(_building.PropertyType)">
+                            @_building.PropertyType
+                        </MudChip>
+                    </MudStack>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">Code: @_building.BuildingCode</MudText>
+                </MudStack>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
+                           OnClick="ShowEditDialog">
+                    Edit Building
+                </MudButton>
+            </MudStack>
+
+            @if (_building.Address != null)
+            {
+                <MudPaper Elevation="1" Class="pa-3">
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Secondary" />
+                        <MudText>
+                            @_building.Address.Line1@(string.IsNullOrEmpty(_building.Address.Line2) ? "" : $", {_building.Address.Line2}"),
+                            @_building.Address.Locality, @_building.Address.City, @_building.Address.State @_building.Address.PostalCode
+                        </MudText>
+                    </MudStack>
+                </MudPaper>
+            }
+
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" @bind-ActivePanelIndex="_activeTab">
+                <MudTabPanel Text="Units" Icon="@Icons.Material.Filled.Apartment" BadgeData="@_units?.Count().ToString()">
+                    @* Units Tab Content *@
+                    <MudStack Spacing="3">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Units (@(_units?.Count() ?? 0))</MudText>
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                                           StartIcon="@Icons.Material.Filled.Add" OnClick="ShowAddUnitDialog">
+                                    Add Unit
+                                </MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.PlaylistAdd" OnClick="ShowBulkAddDialog">
+                                    Bulk Add
+                                </MudButton>
+                            </MudStack>
+                        </MudStack>
+
+                        @if (_units?.Any() == true)
+                        {
+                            <MudDataGrid Items="@_units" Hover="true" Dense="true" Striped="true">
+                                <Columns>
+                                    <PropertyColumn Property="x => x.UnitNumber" Title="Unit #" />
+                                    <PropertyColumn Property="x => x.Floor" Title="Floor" />
+                                    <PropertyColumn Property="x => x.UnitType" Title="Type" />
+                                    <PropertyColumn Property="x => x.AreaSqFt" Title="Area" />
+                                    <PropertyColumn Property="x => x.Furnishing" Title="Furnishing" />
+                                    <TemplateColumn Title="Status">
+                                        <CellTemplate>
+                                            <MudChip T="string" Size="Size.Small" Color="@GetOccupancyColor(context.Item.OccupancyStatus)">
+                                                @context.Item.OccupancyStatus
+                                            </MudChip>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Override">
+                                        <CellTemplate>
+                                            @if (context.Item.HasUnitOwnershipOverride)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.Edit">
+                                                    Override
+                                                </MudChip>
+                                            }
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">No units have been added to this building yet.</MudAlert>
+                        }
+                    </MudStack>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Ownership" Icon="@Icons.Material.Filled.People">
+                    @* Ownership Tab Content *@
+                    <MudStack Spacing="4">
+                        <OwnershipEditor Title="Building Ownership"
+                                         Shares="@_buildingOwnershipShares"
+                                         SharesChanged="@OnOwnershipSharesChanged"
+                                         AvailableOwners="@_owners"
+                                         EffectiveDate="@_ownershipEffectiveDate"
+                                         EffectiveDateChanged="@(date => _ownershipEffectiveDate = date)"
+                                         OnAddOwnerRequested="AddNewOwnerShare" />
+
+                        @if (_ownershipChanged)
+                        {
+                            <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
+                                <MudButton Variant="Variant.Outlined" OnClick="ResetOwnership">
+                                    Reset
+                                </MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveOwnership"
+                                           Disabled="@(!IsOwnershipValid())">
+                                    Save Ownership
+                                </MudButton>
+                            </MudStack>
+                        }
+
+                        <MudAlert Severity="Severity.Info">
+                            <MudText Typo="Typo.body2">
+                                Building ownership is applied to all units that don't have specific ownership overrides.
+                            </MudText>
+                        </MudAlert>
+                    </MudStack>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Documents" Icon="@Icons.Material.Filled.AttachFile" BadgeData="@_building.Files.Count.ToString()">
+                    @* Documents Tab Content *@
+                    <MudStack Spacing="3">
+                        <FileUploader Title="Building Documents"
+                                      Files="@_uploadedFiles"
+                                      FilesChanged="@OnFilesChanged"
+                                      OnFileUploaded="OnFileUploaded" />
+
+                        @if (_building.Files.Any())
+                        {
+                            <MudText Typo="Typo.h6">Existing Files</MudText>
+                            <MudGrid>
+                                @foreach (var file in _building.Files.Where(f => f.FileTag == FileTag.Photo))
+                                {
+                                    <MudItem xs="6" sm="4" md="3">
+                                        <MudCard>
+                                            <MudCardMedia Height="100" />
+                                            <MudCardContent Class="pa-2">
+                                                <MudText Typo="Typo.caption">@file.FileName</MudText>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+
+                            <MudSimpleTable Hover="true" Dense="true">
+                                <thead>
+                                    <tr>
+                                        <th>File Name</th>
+                                        <th>Type</th>
+                                        <th>Size</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var file in _building.Files.Where(f => f.FileTag != FileTag.Photo))
+                                    {
+                                        <tr>
+                                            <td>@file.FileName</td>
+                                            <td><MudChip T="string" Size="Size.Small">@file.FileTag</MudChip></td>
+                                            <td>@FormatFileSize(file.SizeBytes)</td>
+                                            <td>
+                                                <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    </MudStack>
+                </MudTabPanel>
+            </MudTabs>
+        </MudStack>
+    }
+</BusyBoundary>
+
+@* Add Unit Dialog *@
+<MudDialog @bind-Visible="_showAddUnitDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 400px;">
+            <MudText Typo="Typo.h6">Add Unit</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_newUnit.UnitNumber" Label="Unit Number" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="_newUnit.Floor" Label="Floor" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="UnitType" @bind-Value="_newUnit.UnitType" Label="Unit Type" Variant="Variant.Outlined">
+                        @foreach (UnitType type in Enum.GetValues<UnitType>())
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="_newUnit.AreaSqFt" Label="Area (sq ft)" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_newUnit.Bedrooms" Label="BR" Variant="Variant.Outlined" Min="0" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_newUnit.Bathrooms" Label="BA" Variant="Variant.Outlined" Min="0" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudSelect T="Furnishing" @bind-Value="_newUnit.Furnishing" Label="Furnishing" Variant="Variant.Outlined">
+                        @foreach (Furnishing f in Enum.GetValues<Furnishing>())
+                        {
+                            <MudSelectItem Value="@f">@f</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showAddUnitDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="AddUnit">Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* Bulk Add Dialog *@
+<MudDialog @bind-Visible="_showBulkAddDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 400px;">
+            <MudText Typo="Typo.h6">Bulk Add Units</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="_bulkPrefix" Label="Prefix" Variant="Variant.Outlined" HelperText="e.g., A-" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_bulkStart" Label="Start" Variant="Variant.Outlined" Min="1" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_bulkEnd" Label="End" Variant="Variant.Outlined" Min="1" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="_bulkDefaultFloor" Label="Floor" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="UnitType" @bind-Value="_bulkDefaultType" Label="Type" Variant="Variant.Outlined">
+                        @foreach (UnitType type in Enum.GetValues<UnitType>())
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+            <MudText Typo="Typo.caption">Preview: @GetBulkPreview()</MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showBulkAddDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="BulkAddUnits">Generate</MudButton>
+    </DialogActions>
+</MudDialog>

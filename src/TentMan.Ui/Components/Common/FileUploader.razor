@@ -1,0 +1,99 @@
+@using MudBlazor
+@using TentMan.Contracts.Buildings
+@using TentMan.Contracts.Enums
+
+<MudPaper Elevation="2" Class="pa-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h6">@Title</MudText>
+        </MudStack>
+
+        <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="OnFilesSelected" 
+                       Accept="@AcceptedFileTypes" MaximumFileCount="@MaxFiles">
+            <ActivatorContent>
+                <MudPaper Outlined="true" Class="pa-8 d-flex flex-column align-center justify-center" Style="border-style: dashed; cursor: pointer;">
+                    <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" />
+                    <MudText Typo="Typo.body1" Class="mt-2">Drag and drop files here or click to browse</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@HelpText</MudText>
+                </MudPaper>
+            </ActivatorContent>
+        </MudFileUpload>
+
+        @if (Files.Any())
+        {
+            <MudText Typo="Typo.subtitle2">Uploaded Files</MudText>
+            
+            @if (ShowThumbnails)
+            {
+                <MudGrid>
+                    @foreach (var file in Files.Where(f => IsImageFile(f)))
+                    {
+                        <MudItem xs="6" sm="4" md="3">
+                            <MudCard Elevation="1">
+                                <MudCardMedia Image="@GetFilePreviewUrl(file)" Height="120" />
+                                <MudCardContent Class="pa-2">
+                                    <MudText Typo="Typo.caption" Class="text-truncate">@file.FileName</MudText>
+                                    <MudSelect T="FileTag" Value="@file.FileTag" ValueChanged="@((value) => OnTagChanged(file, value))"
+                                               Dense="true" Variant="Variant.Text" Margin="Margin.Dense">
+                                        @foreach (FileTag tag in Enum.GetValues<FileTag>())
+                                        {
+                                            <MudSelectItem Value="@tag">@tag</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudCardContent>
+                                <MudCardActions Class="pa-2">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                                   OnClick="@(() => RemoveFile(file))" />
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+
+            <MudSimpleTable Hover="true" Dense="true">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Size</th>
+                        <th>Type</th>
+                        <th>Tag</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var file in Files.Where(f => !ShowThumbnails || !IsImageFile(f)))
+                    {
+                        <tr>
+                            <td>
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                    <MudIcon Icon="@GetFileIcon(file)" Size="Size.Small" />
+                                    <MudText>@file.FileName</MudText>
+                                </MudStack>
+                            </td>
+                            <td>@FormatFileSize(file.SizeBytes)</td>
+                            <td>@file.ContentType</td>
+                            <td>
+                                <MudSelect T="FileTag" Value="@file.FileTag" ValueChanged="@((value) => OnTagChanged(file, value))"
+                                           Dense="true" Variant="Variant.Text" Margin="Margin.Dense">
+                                    @foreach (FileTag tag in Enum.GetValues<FileTag>())
+                                    {
+                                        <MudSelectItem Value="@tag">@tag</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </td>
+                            <td>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                               OnClick="@(() => RemoveFile(file))" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No files uploaded yet.</MudAlert>
+        }
+    </MudStack>
+</MudPaper>

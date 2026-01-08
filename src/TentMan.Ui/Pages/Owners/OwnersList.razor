@@ -1,0 +1,103 @@
+@page "/owners"
+@attribute [Authorize]
+
+<PageTitle>Owners</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Owners</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="ShowAddOwnerDialog">
+            Add Owner
+        </MudButton>
+    </MudStack>
+
+    <MudPaper Elevation="1" Class="pa-4">
+        <MudTextField @bind-Value="_searchText" Label="Search" Placeholder="Search by name, email, or phone..."
+                      Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true" DebounceInterval="300" OnDebounceIntervalElapsed="ApplyFilters" />
+    </MudPaper>
+
+    <BusyBoundary Retry="LoadOwnersAsync">
+        @if (_filteredOwners == null || !_filteredOwners.Any())
+        {
+            <MudAlert Severity="Severity.Info">No owners found.</MudAlert>
+        }
+        else
+        {
+            <MudDataGrid Items="@_filteredOwners" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.DisplayName" Title="Name" />
+                    <TemplateColumn Title="Type">
+                        <CellTemplate>
+                            <MudChip T="string" Size="Size.Small" Color="@GetOwnerTypeColor(context.Item.OwnerType)">
+                                @context.Item.OwnerType
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <PropertyColumn Property="x => x.Phone" Title="Phone" />
+                    <PropertyColumn Property="x => x.Pan" Title="PAN" />
+                    <TemplateColumn Title="Linked User">
+                        <CellTemplate>
+                            @if (context.Item.LinkedUserId.HasValue)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                        <CellTemplate>
+                            <MudStack Row="true" Spacing="1">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                               OnClick="@(() => ShowEditOwnerDialog(context.Item))" Color="Color.Primary" />
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    </BusyBoundary>
+</MudStack>
+
+@* Add/Edit Owner Dialog *@
+<MudDialog @bind-Visible="_showOwnerDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 450px;">
+            <MudText Typo="Typo.h6">@(_isEditMode ? "Edit Owner" : "Add Owner")</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_ownerModel.DisplayName" Label="Display Name" 
+                                  Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="OwnerType" @bind-Value="_ownerModel.OwnerType" Label="Owner Type" 
+                               Variant="Variant.Outlined" Required="true">
+                        @foreach (OwnerType type in Enum.GetValues<OwnerType>())
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_ownerModel.Phone" Label="Phone" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_ownerModel.Email" Label="Email" Variant="Variant.Outlined" 
+                                  Required="true" InputType="InputType.Email" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_ownerModel.Pan" Label="PAN" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_ownerModel.Gstin" Label="GSTIN" Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseOwnerDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SaveOwner">@(_isEditMode ? "Update" : "Create")</MudButton>
+    </DialogActions>
+</MudDialog>

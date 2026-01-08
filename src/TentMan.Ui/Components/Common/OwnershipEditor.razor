@@ -1,0 +1,108 @@
+@using MudBlazor
+@using TentMan.Contracts.Buildings
+@using TentMan.Contracts.Owners
+
+<MudPaper Elevation="2" Class="pa-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h6">@Title</MudText>
+            @if (!ReadOnly)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddOwner" Size="Size.Small">
+                    Add Owner
+                </MudButton>
+            }
+        </MudStack>
+
+        @if (Shares.Any())
+        {
+            <MudSimpleTable Hover="true" Dense="true" Style="overflow-x: auto;">
+                <thead>
+                    <tr>
+                        <th>Owner</th>
+                        <th style="width: 150px;">Share %</th>
+                        @if (!ReadOnly)
+                        {
+                            <th style="width: 60px;"></th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var share in Shares)
+                    {
+                        <tr>
+                            <td>
+                                @if (ReadOnly)
+                                {
+                                    <MudText>@GetOwnerName(share.OwnerId)</MudText>
+                                }
+                                else
+                                {
+                                    <MudSelect T="Guid" Value="@share.OwnerId" ValueChanged="@((value) => OnOwnerChanged(share, value))" 
+                                               Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                               Error="@IsDuplicateOwner(share)" ErrorText="Duplicate owner">
+                                        @foreach (var owner in AvailableOwners)
+                                        {
+                                            <MudSelectItem Value="@owner.Id">@owner.DisplayName</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                }
+                            </td>
+                            <td>
+                                @if (ReadOnly)
+                                {
+                                    <MudText>@share.SharePercent.ToString("F2")%</MudText>
+                                }
+                                else
+                                {
+                                    <MudNumericField T="decimal" Value="@share.SharePercent" ValueChanged="@((value) => OnShareChanged(share, value))"
+                                                     Variant="Variant.Outlined" Margin="Margin.Dense" 
+                                                     Min="0.01M" Max="100M" Step="0.01M"
+                                                     Adornment="Adornment.End" AdornmentText="%"
+                                                     Error="@(share.SharePercent <= 0)" ErrorText="Must be greater than 0" />
+                                }
+                            </td>
+                            @if (!ReadOnly)
+                            {
+                                <td>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                                   OnClick="@(() => RemoveShare(share))" />
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No ownership shares defined.</MudAlert>
+        }
+
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body1">
+                    <strong>Total:</strong> @TotalPercent.ToString("F2")%
+                </MudText>
+                @if (!IsValid && !ReadOnly)
+                {
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Must equal 100%</MudChip>
+                }
+                else if (IsValid && Shares.Any())
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Valid</MudChip>
+                }
+            </MudStack>
+
+            @if (!ReadOnly && ShowEffectiveDate)
+            {
+                <MudDatePicker Label="Effective Date" @bind-Date="EffectiveDate" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            }
+        </MudStack>
+
+        @if (ValidationMessage != null)
+        {
+            <MudAlert Severity="Severity.Error">@ValidationMessage</MudAlert>
+        }
+    </MudStack>
+</MudPaper>

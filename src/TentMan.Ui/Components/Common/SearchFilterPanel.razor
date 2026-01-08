@@ -1,0 +1,43 @@
+@using MudBlazor
+
+<MudPaper Elevation="1" Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <MudTextField @bind-Value="SearchText" Label="Search" Placeholder="@SearchPlaceholder" 
+                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" DebounceInterval="300" OnDebounceIntervalElapsed="OnSearchChanged" />
+        </MudItem>
+        @if (FilterOptions.Any())
+        {
+            @foreach (var filter in FilterOptions)
+            {
+                <MudItem xs="12" sm="6" md="@GetFilterColumnWidth()">
+                    <MudSelect T="string" Label="@filter.Label" Value="@filter.SelectedValue" 
+                               ValueChanged="@((value) => OnFilterValueChanged(filter, value))"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                        @foreach (var option in filter.Options)
+                        {
+                            <MudSelectItem Value="@option.Value">@option.Text</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            }
+        }
+        @if (ShowActiveFilter)
+        {
+            <MudItem xs="12" sm="6" md="2">
+                <MudSelect T="string" Label="Status" @bind-Value="ActiveFilterValue" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelectItem Value="@string.Empty">All</MudSelectItem>
+                    <MudSelectItem Value="@("active")">Active</MudSelectItem>
+                    <MudSelectItem Value="@("deleted")">Deleted</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        }
+        <MudItem xs="12" sm="6" md="2" Class="d-flex align-end">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="ClearFilters" FullWidth="true">
+                Clear
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>

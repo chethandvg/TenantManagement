@@ -1,0 +1,43 @@
+@using MudBlazor
+
+<MudPaper Elevation="2" Class="pa-4">
+    <MudStepper @bind-ActiveIndex="ActiveStepIndex" HeaderSize="Size.Small" 
+                Linear="Linear" PreventStepChangeAsync="ValidateStepAsync">
+        @foreach (var step in Steps)
+        {
+            <MudStep Title="@step.Title" Icon="@step.Icon">
+                @step.Content
+            </MudStep>
+        }
+    </MudStepper>
+
+    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" 
+                   OnClick="GoToPreviousStep" Disabled="@(ActiveStepIndex == 0)">
+            @PreviousButtonText
+        </MudButton>
+        
+        <MudStack Row="true" Spacing="2">
+            @if (ShowSkipButton && ActiveStepIndex < Steps.Count - 1 && CanSkipCurrentStep())
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="SkipStep">
+                    Skip
+                </MudButton>
+            }
+            
+            @if (ActiveStepIndex < Steps.Count - 1)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToNextStep">
+                    @NextButtonText
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Complete" 
+                           Disabled="@(!CanComplete)">
+                    @CompleteButtonText
+                </MudButton>
+            }
+        </MudStack>
+    </MudStack>
+</MudPaper>

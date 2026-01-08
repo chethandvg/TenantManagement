@@ -13,5 +13,6 @@ public sealed class UnitListDto
     public int Bathrooms { get; init; }
     public Furnishing Furnishing { get; init; }
     public OccupancyStatus OccupancyStatus { get; init; }
+    public bool HasUnitOwnershipOverride { get; init; }
     public byte[] RowVersion { get; init; } = Array.Empty<byte>();
 }
