@@ -189,6 +189,12 @@ public static class ServiceCollectionExtensions
         // Configure Products API Client (requires authentication)
         ConfigureHttpClient<IProductsApiClient, ProductsApiClient>(services, options, authOptions, useAuthHandler: true);
 
+        // Configure Buildings API Client (requires authentication)
+        ConfigureHttpClient<IBuildingsApiClient, BuildingsApiClient>(services, options, authOptions, useAuthHandler: true);
+
+        // Configure Owners API Client (requires authentication)
+        ConfigureHttpClient<IOwnersApiClient, OwnersApiClient>(services, options, authOptions, useAuthHandler: true);
+
         // Configure Authentication API Client
         // The implementation will handle token attachment internally based on endpoint
         ConfigureHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(services, options, authOptions, useAuthHandler: true);

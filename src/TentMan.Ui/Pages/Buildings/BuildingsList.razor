@@ -1,0 +1,126 @@
+@page "/buildings"
+@attribute [Authorize]
+
+<PageTitle>Buildings</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Buildings</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+                   Href="/buildings/create">
+            Create Building
+        </MudButton>
+    </MudStack>
+
+    <SearchFilterPanel SearchText="@_searchText" SearchTextChanged="@(value => _searchText = value)"
+                       SearchPlaceholder="Search by name, code, or city..."
+                       FilterOptions="@_filterOptions"
+                       ShowActiveFilter="true"
+                       ActiveFilterValue="@_activeFilter" ActiveFilterValueChanged="@(value => _activeFilter = value)"
+                       FiltersChanged="ApplyFilters" />
+
+    <BusyBoundary Retry="LoadBuildingsAsync">
+        @if (_filteredBuildings == null || !_filteredBuildings.Any())
+        {
+            <MudAlert Severity="Severity.Info">No buildings found matching your criteria.</MudAlert>
+        }
+        else
+        {
+            <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-2">
+                <MudToggleIconButton @bind-Toggled="_showGrid" 
+                                     Icon="@Icons.Material.Filled.ViewModule" 
+                                     ToggledIcon="@Icons.Material.Filled.ViewList"
+                                     Size="Size.Small" Color="Color.Default" />
+            </MudStack>
+
+            @if (_showGrid)
+            {
+                <MudGrid>
+                    @foreach (var building in _filteredBuildings)
+                    {
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudCard Elevation="2" Class="h-100">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6">@building.Name</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@building.BuildingCode</MudText>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        <MudChip T="string" Size="Size.Small" Color="@GetPropertyTypeColor(building.PropertyType)">
+                                            @building.PropertyType
+                                        </MudChip>
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudStack Spacing="1">
+                                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Color="Color.Secondary" />
+                                            <MudText Typo="Typo.body2">@building.City, @building.State</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Apartment" Size="Size.Small" Color="Color.Secondary" />
+                                            <MudText Typo="Typo.body2">@building.UnitCount units</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" Color="Color.Secondary" />
+                                            <MudText Typo="Typo.body2">@building.TotalFloors floors</MudText>
+                                        </MudStack>
+                                        @if (building.HasLift)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Elevator">
+                                                Lift
+                                            </MudChip>
+                                        }
+                                    </MudStack>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="@($"/buildings/{building.Id}")">
+                                        View Details
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Secondary" Href="@($"/buildings/{building.Id}?tab=units&action=add")">
+                                        Add Unit
+                                    </MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else
+            {
+                <MudDataGrid Items="@_filteredBuildings" Hover="true" Dense="true" Striped="true">
+                    <Columns>
+                        <PropertyColumn Property="x => x.BuildingCode" Title="Code" />
+                        <PropertyColumn Property="x => x.Name" Title="Name" />
+                        <PropertyColumn Property="x => x.PropertyType" Title="Type" />
+                        <TemplateColumn Title="Location">
+                            <CellTemplate>
+                                <MudText>@context.Item.City, @context.Item.State</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.UnitCount" Title="Units" />
+                        <PropertyColumn Property="x => x.TotalFloors" Title="Floors" />
+                        <TemplateColumn Title="Lift">
+                            <CellTemplate>
+                                @if (context.Item.HasLift)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" />
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="1">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" 
+                                                   Href="@($"/buildings/{context.Item.Id}")" Color="Color.Primary" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small"
+                                                   Href="@($"/buildings/{context.Item.Id}?tab=units&action=add")" Color="Color.Secondary" />
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+        }
+    </BusyBoundary>
+</MudStack>

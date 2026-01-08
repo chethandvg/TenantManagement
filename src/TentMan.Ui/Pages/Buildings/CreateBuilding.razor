@@ -1,0 +1,263 @@
+@page "/buildings/create"
+@attribute [Authorize]
+
+<PageTitle>Create Building</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Create Building</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" Href="/buildings" StartIcon="@Icons.Material.Filled.ArrowBack">
+            Cancel
+        </MudButton>
+    </MudStack>
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudStepper @bind-ActiveIndex="_activeStep" HeaderSize="Size.Small" Linear="true">
+            <MudStep Title="Building Info" Icon="@Icons.Material.Filled.Business">
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_buildingRequest.BuildingCode" Label="Building Code" 
+                                      Variant="Variant.Outlined" Required="true"
+                                      HelperText="Unique code for this building" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_buildingRequest.Name" Label="Building Name" 
+                                      Variant="Variant.Outlined" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="PropertyType" @bind-Value="_buildingRequest.PropertyType" Label="Property Type" 
+                                   Variant="Variant.Outlined" Required="true">
+                            @foreach (PropertyType type in Enum.GetValues<PropertyType>())
+                            {
+                                <MudSelectItem Value="@type">@type</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField @bind-Value="_buildingRequest.TotalFloors" Label="Total Floors" 
+                                         Variant="Variant.Outlined" Min="1" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudCheckBox @bind-Value="_buildingRequest.HasLift" Label="Has Lift/Elevator" Color="Color.Primary" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_buildingRequest.Notes" Label="Notes" 
+                                      Variant="Variant.Outlined" Lines="3" />
+                    </MudItem>
+                </MudGrid>
+            </MudStep>
+
+            <MudStep Title="Address" Icon="@Icons.Material.Filled.LocationOn">
+                <MudGrid Spacing="3">
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_addressRequest.Line1" Label="Address Line 1" 
+                                      Variant="Variant.Outlined" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_addressRequest.Line2" Label="Address Line 2" 
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_addressRequest.Locality" Label="Locality/Area" 
+                                      Variant="Variant.Outlined" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_addressRequest.Landmark" Label="Landmark" 
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_addressRequest.City" Label="City" 
+                                      Variant="Variant.Outlined" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_addressRequest.District" Label="District" 
+                                      Variant="Variant.Outlined" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_addressRequest.State" Label="State" 
+                                      Variant="Variant.Outlined" Required="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_addressRequest.PostalCode" Label="Postal Code" 
+                                      Variant="Variant.Outlined" Required="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudStep>
+
+            <MudStep Title="Units" Icon="@Icons.Material.Filled.Apartment">
+                <MudStack Spacing="3">
+                    <MudAlert Severity="Severity.Info">
+                        You can add units now or later from the building details page.
+                    </MudAlert>
+
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowAddUnitDialog"
+                                   StartIcon="@Icons.Material.Filled.Add">
+                            Add Unit
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ShowBulkAddDialog"
+                                   StartIcon="@Icons.Material.Filled.PlaylistAdd">
+                            Bulk Add Units
+                        </MudButton>
+                    </MudStack>
+
+                    @if (_units.Any())
+                    {
+                        <MudDataGrid Items="@_units" Hover="true" Dense="true">
+                            <Columns>
+                                <PropertyColumn Property="x => x.UnitNumber" Title="Unit #" />
+                                <PropertyColumn Property="x => x.Floor" Title="Floor" />
+                                <PropertyColumn Property="x => x.UnitType" Title="Type" />
+                                <PropertyColumn Property="x => x.AreaSqFt" Title="Area (sq ft)" />
+                                <PropertyColumn Property="x => x.Bedrooms" Title="BR" />
+                                <PropertyColumn Property="x => x.Bathrooms" Title="BA" />
+                                <TemplateColumn Title="Actions">
+                                    <CellTemplate>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                                       OnClick="@(() => RemoveUnit(context.Item))" />
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info">No units added yet.</MudAlert>
+                    }
+                </MudStack>
+            </MudStep>
+
+            <MudStep Title="Ownership" Icon="@Icons.Material.Filled.People">
+                <MudStack Spacing="3">
+                    <MudAlert Severity="Severity.Info">
+                        Define ownership shares. These will be applied to all units that don't have specific overrides.
+                    </MudAlert>
+
+                    <OwnershipEditor Title="Building Ownership"
+                                     Shares="@_ownershipShares"
+                                     SharesChanged="@(shares => _ownershipShares = shares)"
+                                     AvailableOwners="@_owners"
+                                     EffectiveDate="@_ownershipEffectiveDate"
+                                     EffectiveDateChanged="@(date => _ownershipEffectiveDate = date)"
+                                     OnAddOwnerRequested="AddNewOwnerShare" />
+                </MudStack>
+            </MudStep>
+
+            <MudStep Title="Documents" Icon="@Icons.Material.Filled.AttachFile">
+                <FileUploader Title="Building Photos & Documents"
+                              Files="@_uploadedFiles"
+                              FilesChanged="@(files => _uploadedFiles = files)"
+                              HelpText="Upload photos, agreements, and other documents" />
+            </MudStep>
+        </MudStepper>
+
+        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="PreviousStep" 
+                       Disabled="@(_activeStep == 0)">
+                Previous
+            </MudButton>
+
+            <MudStack Row="true" Spacing="2">
+                @if (_activeStep < 4)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">
+                        Next
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="SubmitBuildingAsync"
+                               Disabled="@_isSubmitting">
+                        @if (_isSubmitting)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+                        }
+                        Create Building
+                    </MudButton>
+                }
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudStack>
+
+<MudDialog @bind-Visible="_showAddUnitDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4">
+            <MudText Typo="Typo.h6">Add Unit</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_newUnit.UnitNumber" Label="Unit Number" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="_newUnit.Floor" Label="Floor" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="UnitType" @bind-Value="_newUnit.UnitType" Label="Unit Type" Variant="Variant.Outlined">
+                        @foreach (UnitType type in Enum.GetValues<UnitType>())
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="_newUnit.AreaSqFt" Label="Area (sq ft)" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_newUnit.Bedrooms" Label="Bedrooms" Variant="Variant.Outlined" Min="0" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_newUnit.Bathrooms" Label="Bathrooms" Variant="Variant.Outlined" Min="0" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudSelect T="Furnishing" @bind-Value="_newUnit.Furnishing" Label="Furnishing" Variant="Variant.Outlined">
+                        @foreach (Furnishing f in Enum.GetValues<Furnishing>())
+                        {
+                            <MudSelectItem Value="@f">@f</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showAddUnitDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="AddUnit">Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="_showBulkAddDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4">
+            <MudText Typo="Typo.h6">Bulk Add Units</MudText>
+            <MudAlert Severity="Severity.Info">Generate multiple units with a naming pattern.</MudAlert>
+            <MudGrid Spacing="2">
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="_bulkPrefix" Label="Prefix" Variant="Variant.Outlined" 
+                                  HelperText="e.g., A-" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_bulkStart" Label="Start" Variant="Variant.Outlined" Min="1" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_bulkEnd" Label="End" Variant="Variant.Outlined" Min="1" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="_bulkDefaultFloor" Label="Default Floor" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="UnitType" @bind-Value="_bulkDefaultType" Label="Default Type" Variant="Variant.Outlined">
+                        @foreach (UnitType type in Enum.GetValues<UnitType>())
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+            <MudText Typo="Typo.caption">Preview: @GetBulkPreview()</MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showBulkAddDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="BulkAddUnits">Generate</MudButton>
+    </DialogActions>
+</MudDialog>

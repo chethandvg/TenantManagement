@@ -7,6 +7,7 @@ using TentMan.Application.PropertyManagement.Buildings.Queries.GetBuildings;
 using TentMan.Application.PropertyManagement.Buildings.Queries.GetBuilding;
 using TentMan.Application.PropertyManagement.Units.Commands.CreateUnit;
 using TentMan.Application.PropertyManagement.Units.Commands.BulkCreateUnits;
+using TentMan.Application.PropertyManagement.Units.Queries.GetUnits;
 using TentMan.Contracts.Buildings;
 using TentMan.Contracts.Units;
 using TentMan.Contracts.Common;
@@ -188,6 +189,24 @@ public class BuildingsController : ControllerBase
         {
             return BadRequest(ApiResponse<object>.Fail(ex.Message));
         }
+    }
+
+    /// <summary>
+    /// Gets all units for a building.
+    /// </summary>
+    [HttpGet("api/buildings/{id:guid}/units")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<UnitListDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<UnitListDto>>>> GetBuildingUnits(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Getting units for building {BuildingId}", id);
+
+        var query = new GetUnitsQuery(id);
+        var units = await _mediator.Send(query, cancellationToken);
+
+        return Ok(ApiResponse<IEnumerable<UnitListDto>>.Ok(units, "Units retrieved successfully"));
     }
 
     /// <summary>
