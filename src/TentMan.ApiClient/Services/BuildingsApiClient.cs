@@ -115,6 +115,6 @@ public sealed class BuildingsApiClient : ApiClientServiceBase, IBuildingsApiClie
         Guid buildingId,
         CancellationToken cancellationToken = default)
     {
-        return GetAsync<IEnumerable<UnitListDto>>($"api/v1/buildings/{buildingId}/units", cancellationToken);
+        return GetAsync<IEnumerable<UnitListDto>>($"{buildingId}/units", cancellationToken);
     }
 }
