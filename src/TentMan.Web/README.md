@@ -86,7 +86,6 @@ This project hosts components from **TentMan.Ui**. When adding new pages or comp
 ```razor
 @page "/my-page"
 @attribute [Authorize]
-@inherits MyPageBase
 
 <PageTitle>My Page</PageTitle>
 
@@ -99,7 +98,7 @@ This project hosts components from **TentMan.Ui**. When adding new pages or comp
     }
     else
     {
-        <MyComponent Data="@Data" />
+        <MyDataComponent Data="@Data" />
     }
 </MudContainer>
 ```

@@ -162,6 +162,8 @@ Maintain modular, reusable components:
 | Layouts | `Layouts/` | 150 | Page structure templates |
 | State Containers | `State/` | 200 | State management |
 
+> **Note**: Create a `State/` folder at the same level as `Pages/`, `Components/`, and `Layouts/` in the Blazor project if it does not already exist. This folder is used to store state container services.
+
 ### Component File Structure
 
 Each component should have:
@@ -170,7 +172,7 @@ Each component should have:
 Components/
 ├── MyComponent/
 │   ├── MyComponent.razor        # Markup only (max 100 lines preferred)
-│   ├── MyComponent.razor.cs     # Code-behind (max 200 lines)
+│   ├── MyComponent.razor.cs     # Code-behind (max 300 lines (+30 max))
 │   └── MyComponent.razor.css    # Scoped styles (optional)
 ```
 
@@ -180,8 +182,6 @@ Components/
 
 **MyComponent.razor:**
 ```razor
-@inherits MyComponentBase
-
 <div class="my-component">
     <h3>@Title</h3>
     @if (IsLoading)

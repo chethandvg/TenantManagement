@@ -161,7 +161,7 @@ See **[CONTRIBUTING.md](../../CONTRIBUTING.md)** for complete guidelines. Key ru
 Components/
 ├── MyComponent/
 │   ├── MyComponent.razor        # Markup only (max 100 lines preferred)
-│   ├── MyComponent.razor.cs     # Code-behind (max 200 lines)
+│   ├── MyComponent.razor.cs     # Code-behind (max 300 lines)
 │   └── MyComponent.razor.css    # Scoped styles (optional)
 ```
 
