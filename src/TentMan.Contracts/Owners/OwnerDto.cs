@@ -1,0 +1,17 @@
+using TentMan.Contracts.Enums;
+
+namespace TentMan.Contracts.Owners;
+
+public sealed class OwnerDto
+{
+    public Guid Id { get; init; }
+    public Guid OrgId { get; init; }
+    public OwnerType OwnerType { get; init; }
+    public string DisplayName { get; init; } = string.Empty;
+    public string Phone { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string? Pan { get; init; }
+    public string? Gstin { get; init; }
+    public Guid? LinkedUserId { get; init; }
+    public byte[] RowVersion { get; init; } = Array.Empty<byte>();
+}

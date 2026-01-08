@@ -187,6 +187,10 @@ public static class DependencyInjection
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+        services.AddScoped<IBuildingRepository, BuildingRepository>();
+        services.AddScoped<IUnitRepository, UnitRepository>();
+        services.AddScoped<IOwnerRepository, OwnerRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IUserRoleRepository, UserRoleRepository>();
@@ -205,6 +209,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ITimeProvider, SystemTimeProvider>();
+        services.AddScoped<TentMan.Application.PropertyManagement.Services.IOwnershipService, TentMan.Application.PropertyManagement.Services.OwnershipService>();
 
         return services;
     }

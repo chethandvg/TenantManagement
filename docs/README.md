@@ -26,39 +26,46 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Common workflows
    - Error handling
 
-4. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
+4. **[Property Management Guide](PROPERTY_MANAGEMENT.md)** 🏢 **NEW!**
+   - Multi-organization property management
+   - Buildings, units, and ownership tracking
+   - Complete API reference
+   - Business rules and validation
+   - Usage examples
+
+5. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
    - JWT configuration
    - Token management
    - Security best practices
    - Troubleshooting
 
-5. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
+6. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
    - Role-based access control
    - Security restrictions
    - Policy configuration
 
-6. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
+7. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
    - Password policies
    - Complexity rules
    - Validation implementation
 
-7. **[Database Guide](DATABASE_GUIDE.md)**
+8. **[Database Guide](DATABASE_GUIDE.md)**
    - Database setup
    - Migrations
    - Seeding
    - Retry strategy
 
-8. **[Development Guide](DEVELOPMENT_GUIDE.md)**
+9. **[Development Guide](DEVELOPMENT_GUIDE.md)**
    - Development workflow
    - Code patterns
    - Best practices
    - Testing
 
-9. **[Project Structure](PROJECT_STRUCTURE.md)**
-   - Directory organization
-   - File conventions
+10. **[Project Structure](PROJECT_STRUCTURE.md)**
+    - Directory organization
+    - File conventions
 
-10. **[Archive](ARCHIVE.md)**
+11. **[Archive](ARCHIVE.md)**
     - Historical documentation
     - Implementation summaries
     - Migration guides
