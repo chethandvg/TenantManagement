@@ -154,7 +154,7 @@ The TentMan UI library ships reusable building blocks, so we hold them to a stri
 - **Document accessibility behaviors.** Update XML doc comments or README sections when you introduce new interaction patterns so consumers know what keyboard shortcuts and landmarks to expect.
 
 ### Testing Workflow
-1. **Run the automated bUnit + axe suite.** Execute `dotnet test Archana.sln --filter "Category=Accessibility"` to render shared components with bUnit and assert against axe rules. The suite fails if new regressions are introduced, so run it locally before pushing.
+1. **Run the automated bUnit + axe suite.** Execute `dotnet test TentMan.sln --filter "Category=Accessibility"` to render shared components with bUnit and assert against axe rules. The suite fails if new regressions are introduced, so run it locally before pushing.
 2. **Verify keyboard navigation manually.** Launch the host application that references the library (for example, `dotnet run --project src/TentMan.Web/TentMan.Web.csproj`) and tab through shared components:
    - `NavMenu` – ensure the toggle button, each menu item, and focus trap inside the drawer honor the arrow/escape key patterns.
    - `BusyBoundary` – confirm the retry button is reachable and announced when busy/error states change.
