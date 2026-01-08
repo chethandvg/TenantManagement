@@ -40,7 +40,7 @@ public partial class BuildingDetails : ComponentBase
     // Ownership
     private List<OwnershipShareModel> _buildingOwnershipShares = new();
     private List<OwnershipShareModel> _originalOwnershipShares = new();
-    private DateTime? _ownershipEffectiveDate = DateTime.Today;
+    private DateTime? _ownershipEffectiveDate = DateTime.UtcNow.Date;
     private bool _ownershipChanged = false;
 
     // Documents

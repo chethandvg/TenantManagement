@@ -103,19 +103,18 @@ public partial class BuildingsList : ComponentBase
         {
             var search = _searchText.ToLowerInvariant();
             filtered = filtered.Where(b =>
-                b.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                b.BuildingCode.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                b.City.Contains(search, StringComparison.OrdinalIgnoreCase));
+                (!string.IsNullOrEmpty(b.Name) && b.Name.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(b.BuildingCode) && b.BuildingCode.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(b.City) && b.City.Contains(search, StringComparison.OrdinalIgnoreCase)));
         }
 
         // Apply property type filter
         var propertyTypeFilter = _filterOptions.FirstOrDefault(f => f.Label == "Property Type");
-        if (propertyTypeFilter != null && !string.IsNullOrEmpty(propertyTypeFilter.SelectedValue))
+        if (propertyTypeFilter != null
+            && !string.IsNullOrEmpty(propertyTypeFilter.SelectedValue)
+            && Enum.TryParse<PropertyType>(propertyTypeFilter.SelectedValue, out var propertyType))
         {
-            if (Enum.TryParse<PropertyType>(propertyTypeFilter.SelectedValue, out var propertyType))
-            {
-                filtered = filtered.Where(b => b.PropertyType == propertyType);
-            }
+            filtered = filtered.Where(b => b.PropertyType == propertyType);
         }
 
         _filteredBuildings = filtered.ToList();

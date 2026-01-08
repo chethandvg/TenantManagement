@@ -83,9 +83,9 @@ public partial class OwnersList : ComponentBase
         {
             var search = _searchText.ToLowerInvariant();
             filtered = filtered.Where(o =>
-                o.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                o.Email.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                o.Phone.Contains(search, StringComparison.OrdinalIgnoreCase));
+                (!string.IsNullOrEmpty(o.DisplayName) && o.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(o.Email) && o.Email.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(o.Phone) && o.Phone.Contains(search, StringComparison.OrdinalIgnoreCase)));
         }
 
         _filteredOwners = filtered.ToList();

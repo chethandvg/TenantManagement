@@ -39,7 +39,7 @@ public partial class CreateBuilding : ComponentBase
 
     // Step 4: Ownership
     private List<OwnershipShareModel> _ownershipShares = new();
-    private DateTime? _ownershipEffectiveDate = DateTime.Today;
+    private DateTime? _ownershipEffectiveDate = DateTime.UtcNow.Date;
     private IEnumerable<OwnerDto> _owners = Enumerable.Empty<OwnerDto>();
 
     // Step 5: Documents
@@ -141,15 +141,33 @@ public partial class CreateBuilding : ComponentBase
             return false;
         }
 
+        if (string.IsNullOrWhiteSpace(_addressRequest.Locality))
+        {
+            Snackbar.Add("Locality is required.", Severity.Error);
+            return false;
+        }
+
         if (string.IsNullOrWhiteSpace(_addressRequest.City))
         {
             Snackbar.Add("City is required.", Severity.Error);
             return false;
         }
 
+        if (string.IsNullOrWhiteSpace(_addressRequest.District))
+        {
+            Snackbar.Add("District is required.", Severity.Error);
+            return false;
+        }
+
         if (string.IsNullOrWhiteSpace(_addressRequest.State))
         {
             Snackbar.Add("State is required.", Severity.Error);
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_addressRequest.PostalCode))
+        {
+            Snackbar.Add("Postal code is required.", Severity.Error);
             return false;
         }
 
@@ -246,6 +264,7 @@ public partial class CreateBuilding : ComponentBase
             return;
         }
 
+        var addedCount = 0;
         for (var i = _bulkStart; i <= _bulkEnd; i++)
         {
             var unitNumber = $"{_bulkPrefix}{i}";
@@ -258,11 +277,12 @@ public partial class CreateBuilding : ComponentBase
                     UnitType = _bulkDefaultType,
                     Furnishing = Furnishing.Unfurnished
                 });
+                addedCount++;
             }
         }
 
         _showBulkAddDialog = false;
-        Snackbar.Add($"Added {_bulkEnd - _bulkStart + 1} units.", Severity.Success);
+        Snackbar.Add($"Added {addedCount} units.", Severity.Success);
     }
 
     private void AddNewOwnerShare()

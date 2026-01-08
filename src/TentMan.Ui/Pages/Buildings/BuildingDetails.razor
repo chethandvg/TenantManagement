@@ -55,7 +55,7 @@
                             </MudStack>
                         </MudStack>
 
-                        @if (_units?.Any() == true)
+                        @if (_units != null && _units.Any())
                         {
                             <MudDataGrid Items="@_units" Hover="true" Dense="true" Striped="true">
                                 <Columns>

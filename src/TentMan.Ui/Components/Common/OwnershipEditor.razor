@@ -57,7 +57,7 @@
                                 {
                                     <MudNumericField T="decimal" Value="@share.SharePercent" ValueChanged="@((value) => OnShareChanged(share, value))"
                                                      Variant="Variant.Outlined" Margin="Margin.Dense" 
-                                                     Min="0.01M" Max="100M" Step="0.01M"
+                                                     Min="0.01m" Max="100m" Step="0.01m"
                                                      Adornment="Adornment.End" AdornmentText="%"
                                                      Error="@(share.SharePercent <= 0)" ErrorText="Must be greater than 0" />
                                 }
