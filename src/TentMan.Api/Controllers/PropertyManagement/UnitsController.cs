@@ -1,5 +1,9 @@
 using TentMan.Application.PropertyManagement.Units.Commands.CreateUnit;
+using TentMan.Application.PropertyManagement.Units.Commands.UpdateUnit;
+using TentMan.Application.PropertyManagement.Units.Commands.SetUnitOwnership;
+using TentMan.Application.PropertyManagement.Units.Commands.AddUnitFile;
 using TentMan.Application.PropertyManagement.Units.Queries.GetUnits;
+using TentMan.Contracts.Buildings;
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Units;
 using Asp.Versioning;
@@ -13,7 +17,6 @@ namespace TentMan.Api.Controllers.PropertyManagement;
 /// API endpoints for managing units within buildings.
 /// </summary>
 [ApiController]
-[Route("api/v{version:apiVersion}/buildings/{buildingId}/[controller]")]
 [ApiVersion("1.0")]
 [Authorize]
 public class UnitsController : ControllerBase
@@ -28,9 +31,107 @@ public class UnitsController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new unit in a building.
+    /// Updates a unit.
     /// </summary>
-    [HttpPost]
+    [HttpPut("api/units/{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<UnitDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<UnitDetailDto>>> UpdateUnit(
+        Guid id,
+        UpdateUnitRequest request,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Updating unit {UnitId}", id);
+
+        var command = new UpdateUnitCommand(
+            id,
+            request.Floor,
+            request.UnitType,
+            request.AreaSqFt,
+            request.Bedrooms,
+            request.Bathrooms,
+            request.Furnishing,
+            request.ParkingSlots,
+            request.OccupancyStatus,
+            request.RowVersion);
+
+        try
+        {
+            var unit = await _mediator.Send(command, cancellationToken);
+            return Ok(ApiResponse<UnitDetailDto>.Ok(unit, "Unit updated successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Sets ownership shares for a unit.
+    /// </summary>
+    [HttpPut("api/units/{id:guid}/ownership-shares")]
+    [ProducesResponseType(typeof(ApiResponse<UnitDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<UnitDetailDto>>> SetUnitOwnership(
+        Guid id,
+        SetUnitOwnershipRequest request,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Setting ownership shares for unit {UnitId}", id);
+
+        var command = new SetUnitOwnershipCommand(id, request.Shares, request.EffectiveFrom);
+
+        try
+        {
+            var unit = await _mediator.Send(command, cancellationToken);
+            return Ok(ApiResponse<UnitDetailDto>.Ok(unit, "Unit ownership shares updated successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Adds a file to a unit.
+    /// </summary>
+    [HttpPost("api/units/{id:guid}/files")]
+    [ProducesResponseType(typeof(ApiResponse<UnitDetailDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<UnitDetailDto>>> AddUnitFile(
+        Guid id,
+        AddFileRequest request,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Adding file {FileId} to unit {UnitId}", request.FileId, id);
+
+        var command = new AddUnitFileCommand(id, request.FileId, request.FileTag, request.SortOrder);
+
+        try
+        {
+            var unit = await _mediator.Send(command, cancellationToken);
+            return CreatedAtAction(
+                nameof(UpdateUnit),
+                new { id },
+                ApiResponse<UnitDetailDto>.Ok(unit, "File added to unit successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    #region Legacy Building-scoped routes
+
+    /// <summary>
+    /// Creates a new unit in a building (legacy route).
+    /// </summary>
+    [HttpPost("api/v{version:apiVersion}/buildings/{buildingId}/units")]
     [ProducesResponseType(typeof(ApiResponse<UnitListDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -67,9 +168,9 @@ public class UnitsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets all units for a building.
+    /// Gets all units for a building (legacy route).
     /// </summary>
-    [HttpGet]
+    [HttpGet("api/v{version:apiVersion}/buildings/{buildingId}/units")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<UnitListDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<IEnumerable<UnitListDto>>>> GetUnits(
@@ -83,4 +184,6 @@ public class UnitsController : ControllerBase
 
         return Ok(ApiResponse<IEnumerable<UnitListDto>>.Ok(units, "Units retrieved successfully"));
     }
+
+    #endregion
 }
