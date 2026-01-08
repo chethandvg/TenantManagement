@@ -5,24 +5,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TentMan.Infrastructure.Repositories;
 
-public class OwnerRepository : IOwnerRepository
+public class OwnerRepository : BaseRepository<Owner>, IOwnerRepository
 {
-    private readonly ApplicationDbContext _context;
-
-    public OwnerRepository(ApplicationDbContext context)
+    public OwnerRepository(ApplicationDbContext context) : base(context)
     {
-        _context = context;
     }
 
     public async Task<Owner?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Owners
+        return await DbSet
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
     public async Task<IEnumerable<Owner>> GetByOrganizationIdAsync(Guid orgId, CancellationToken cancellationToken = default)
     {
-        return await _context.Owners
+        return await DbSet
             .Where(o => o.OrgId == orgId)
             .OrderBy(o => o.DisplayName)
             .ToListAsync(cancellationToken);
@@ -30,19 +27,19 @@ public class OwnerRepository : IOwnerRepository
 
     public async Task<Owner> AddAsync(Owner owner, CancellationToken cancellationToken = default)
     {
-        var entry = await _context.Owners.AddAsync(owner, cancellationToken);
+        var entry = await DbSet.AddAsync(owner, cancellationToken);
         return entry.Entity;
     }
 
     public Task UpdateAsync(Owner owner, byte[] originalRowVersion, CancellationToken cancellationToken = default)
     {
-        _context.Entry(owner).OriginalValues[nameof(owner.RowVersion)] = originalRowVersion;
-        _context.Owners.Update(owner);
+        SetOriginalRowVersion(owner, originalRowVersion);
+        DbSet.Update(owner);
         return Task.CompletedTask;
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Owners.AnyAsync(o => o.Id == id && !o.IsDeleted, cancellationToken);
+        return await DbSet.AnyAsync(o => o.Id == id && !o.IsDeleted, cancellationToken);
     }
 }

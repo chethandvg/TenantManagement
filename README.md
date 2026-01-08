@@ -95,6 +95,18 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 
 ## 🎯 Key Features
 
+### Property Management 🏢 NEW!
+- **Multi-Organization Support**: Complete organization isolation for multi-tenancy
+- **Building Management**: Track properties with addresses, types, and metadata
+- **Unit Management**: Manage individual units (flats, shops, offices) within buildings
+- **Ownership Tracking**: Support for full and co-ownership with percentage shares
+- **Ownership Validation**: Automated validation ensuring shares sum to 100%
+- **Utility Meters**: Track electricity, water, and gas meters per unit
+- **Indian Tax IDs**: Support for PAN and GSTIN identifiers
+- **File Attachments**: Metadata storage for documents and photos
+
+📚 **[Read the Property Management Guide →](docs/PROPERTY_MANAGEMENT.md)**
+
 ### Tenant Management
 - **Multi-Tenant Architecture**: Support for unlimited tenants with data isolation
 - **Tenant Provisioning**: Automated tenant setup and configuration

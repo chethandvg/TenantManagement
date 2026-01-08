@@ -5,24 +5,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TentMan.Infrastructure.Repositories;
 
-public class UnitRepository : IUnitRepository
+public class UnitRepository : BaseRepository<Unit>, IUnitRepository
 {
-    private readonly ApplicationDbContext _context;
-
-    public UnitRepository(ApplicationDbContext context)
+    public UnitRepository(ApplicationDbContext context) : base(context)
     {
-        _context = context;
     }
 
     public async Task<Unit?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Units
+        return await DbSet
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
     public async Task<Unit?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Units
+        return await DbSet
             .Include(u => u.Building)
                 .ThenInclude(b => b.OwnershipShares.Where(s => s.EffectiveTo == null || s.EffectiveTo >= DateTime.UtcNow))
                     .ThenInclude(s => s.Owner)
@@ -36,7 +33,7 @@ public class UnitRepository : IUnitRepository
 
     public async Task<IEnumerable<Unit>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default)
     {
-        return await _context.Units
+        return await DbSet
             .Where(u => u.BuildingId == buildingId)
             .OrderBy(u => u.Floor)
                 .ThenBy(u => u.UnitNumber)
@@ -45,30 +42,30 @@ public class UnitRepository : IUnitRepository
 
     public async Task<Unit> AddAsync(Unit unit, CancellationToken cancellationToken = default)
     {
-        var entry = await _context.Units.AddAsync(unit, cancellationToken);
+        var entry = await DbSet.AddAsync(unit, cancellationToken);
         return entry.Entity;
     }
 
     public async Task AddRangeAsync(IEnumerable<Unit> units, CancellationToken cancellationToken = default)
     {
-        await _context.Units.AddRangeAsync(units, cancellationToken);
+        await DbSet.AddRangeAsync(units, cancellationToken);
     }
 
     public Task UpdateAsync(Unit unit, byte[] originalRowVersion, CancellationToken cancellationToken = default)
     {
-        _context.Entry(unit).OriginalValues[nameof(unit.RowVersion)] = originalRowVersion;
-        _context.Units.Update(unit);
+        SetOriginalRowVersion(unit, originalRowVersion);
+        DbSet.Update(unit);
         return Task.CompletedTask;
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Units.AnyAsync(u => u.Id == id && !u.IsDeleted, cancellationToken);
+        return await DbSet.AnyAsync(u => u.Id == id && !u.IsDeleted, cancellationToken);
     }
 
     public async Task<bool> UnitNumberExistsAsync(Guid buildingId, string unitNumber, Guid? excludeUnitId = null, CancellationToken cancellationToken = default)
     {
-        var query = _context.Units.Where(u => u.BuildingId == buildingId && u.UnitNumber == unitNumber);
+        var query = DbSet.Where(u => u.BuildingId == buildingId && u.UnitNumber == unitNumber);
         
         if (excludeUnitId.HasValue)
         {

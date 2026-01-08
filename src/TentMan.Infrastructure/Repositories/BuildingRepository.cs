@@ -5,24 +5,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TentMan.Infrastructure.Repositories;
 
-public class BuildingRepository : IBuildingRepository
+public class BuildingRepository : BaseRepository<Building>, IBuildingRepository
 {
-    private readonly ApplicationDbContext _context;
-
-    public BuildingRepository(ApplicationDbContext context)
+    public BuildingRepository(ApplicationDbContext context) : base(context)
     {
-        _context = context;
     }
 
     public async Task<Building?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Buildings
+        return await DbSet
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
     }
 
     public async Task<Building?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Buildings
+        return await DbSet
             .Include(b => b.Address)
             .Include(b => b.OwnershipShares.Where(s => s.EffectiveTo == null || s.EffectiveTo >= DateTime.UtcNow))
                 .ThenInclude(s => s.Owner)
@@ -33,7 +30,7 @@ public class BuildingRepository : IBuildingRepository
 
     public async Task<IEnumerable<Building>> GetByOrganizationIdAsync(Guid orgId, CancellationToken cancellationToken = default)
     {
-        return await _context.Buildings
+        return await DbSet
             .Include(b => b.Address)
             .Include(b => b.Units)
             .Where(b => b.OrgId == orgId)
@@ -43,25 +40,25 @@ public class BuildingRepository : IBuildingRepository
 
     public async Task<Building> AddAsync(Building building, CancellationToken cancellationToken = default)
     {
-        var entry = await _context.Buildings.AddAsync(building, cancellationToken);
+        var entry = await DbSet.AddAsync(building, cancellationToken);
         return entry.Entity;
     }
 
     public Task UpdateAsync(Building building, byte[] originalRowVersion, CancellationToken cancellationToken = default)
     {
-        _context.Entry(building).OriginalValues[nameof(building.RowVersion)] = originalRowVersion;
-        _context.Buildings.Update(building);
+        SetOriginalRowVersion(building, originalRowVersion);
+        DbSet.Update(building);
         return Task.CompletedTask;
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Buildings.AnyAsync(b => b.Id == id && !b.IsDeleted, cancellationToken);
+        return await DbSet.AnyAsync(b => b.Id == id && !b.IsDeleted, cancellationToken);
     }
 
     public async Task<bool> BuildingCodeExistsAsync(Guid orgId, string buildingCode, Guid? excludeBuildingId = null, CancellationToken cancellationToken = default)
     {
-        var query = _context.Buildings.Where(b => b.OrgId == orgId && b.BuildingCode == buildingCode);
+        var query = DbSet.Where(b => b.OrgId == orgId && b.BuildingCode == buildingCode);
         
         if (excludeBuildingId.HasValue)
         {
