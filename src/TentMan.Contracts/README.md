@@ -1,0 +1,186 @@
+# TentMan.Contracts
+
+The Contracts project contains DTOs, request models, and response models shared across the application.
+
+---
+
+## 📁 Folder Structure
+
+```
+TentMan.Contracts/
+├── Admin/                     # Admin API contracts
+│   ├── CreateUserRequest.cs
+│   ├── UserDto.cs
+│   └── ...
+├── Authentication/            # Auth contracts
+│   ├── LoginRequest.cs
+│   ├── LoginResponse.cs
+│   └── TokenResponse.cs
+├── Buildings/                 # Building contracts
+│   ├── BuildingDto.cs
+│   ├── CreateBuildingRequest.cs
+│   └── UpdateBuildingRequest.cs
+├── Common/                    # Shared contracts
+│   ├── ApiResponse.cs
+│   ├── PagedResult.cs
+│   └── ErrorResponse.cs
+├── Enums/                     # Shared enumerations
+├── Owners/                    # Owner contracts
+├── Products/                  # Product contracts
+│   ├── ProductDto.cs
+│   ├── CreateProductRequest.cs
+│   └── UpdateProductRequest.cs
+└── Units/                     # Unit contracts
+```
+
+---
+
+## 🎯 Purpose
+
+The Contracts project:
+- Defines API data transfer objects (DTOs)
+- Provides request/response models
+- Ensures consistent API contracts
+- Shares models between API and clients
+
+---
+
+## 📋 Coding Guidelines
+
+### DTO Pattern
+
+```csharp
+namespace TentMan.Contracts.Products;
+
+/// <summary>
+/// Product data transfer object.
+/// </summary>
+public sealed record ProductDto(
+    Guid Id,
+    string Name,
+    string? Description,
+    decimal Price,
+    DateTime CreatedAt,
+    string RowVersion);
+```
+
+### Request Pattern
+
+```csharp
+namespace TentMan.Contracts.Products;
+
+/// <summary>
+/// Request to create a new product.
+/// </summary>
+public sealed record CreateProductRequest(
+    [Required]
+    [StringLength(200, MinimumLength = 1)]
+    string Name,
+    
+    [StringLength(1000)]
+    string? Description,
+    
+    [Required]
+    [Range(0.01, double.MaxValue)]
+    decimal Price);
+```
+
+### Response Pattern
+
+```csharp
+namespace TentMan.Contracts.Products;
+
+/// <summary>
+/// Response containing product details.
+/// </summary>
+public sealed record ProductResponse(
+    Guid Id,
+    string Name,
+    string? Description,
+    decimal Price,
+    bool Success = true,
+    string? Message = null);
+```
+
+### File Naming Conventions
+
+| Type | Convention | Example |
+|------|------------|---------|
+| DTO | `{Entity}Dto.cs` | `ProductDto.cs` |
+| Create Request | `Create{Entity}Request.cs` | `CreateProductRequest.cs` |
+| Update Request | `Update{Entity}Request.cs` | `UpdateProductRequest.cs` |
+| Response | `{Entity}Response.cs` | `ProductResponse.cs` |
+
+### File Size Limits
+
+| File Type | Limit | Guidance |
+|-----------|-------|----------|
+| Single DTO | 50 lines max | One record per file |
+| Request | 50 lines max | One record per file |
+| Response | 50 lines max | One record per file |
+
+### Common Patterns
+
+#### ApiResponse Wrapper
+
+```csharp
+namespace TentMan.Contracts.Common;
+
+/// <summary>
+/// Standard API response wrapper.
+/// </summary>
+public sealed record ApiResponse<T>(
+    bool Success,
+    T? Data,
+    string? Message,
+    IEnumerable<string>? Errors,
+    DateTime Timestamp)
+{
+    public static ApiResponse<T> Ok(T data, string? message = null)
+        => new(true, data, message, null, DateTime.UtcNow);
+        
+    public static ApiResponse<T> Fail(string message)
+        => new(false, default, message, null, DateTime.UtcNow);
+        
+    public static ApiResponse<T> Fail(IEnumerable<string> errors)
+        => new(false, default, "Validation failed", errors, DateTime.UtcNow);
+}
+```
+
+#### PagedResult
+
+```csharp
+namespace TentMan.Contracts.Common;
+
+/// <summary>
+/// Paginated result set.
+/// </summary>
+public sealed record PagedResult<T>(
+    IEnumerable<T> Items,
+    int PageNumber,
+    int PageSize,
+    int TotalCount,
+    int TotalPages);
+```
+
+---
+
+## 🔗 Dependencies
+
+- **System.ComponentModel.DataAnnotations**: Validation attributes
+
+---
+
+## ✅ Checklist for New Contracts
+
+- [ ] Use record types for immutability
+- [ ] Add validation attributes where applicable
+- [ ] Add XML documentation
+- [ ] One type per file
+- [ ] Place in appropriate feature folder
+- [ ] File size under 50 lines
+
+---
+
+**Last Updated**: 2026-01-08  
+**Maintainer**: TentMan Development Team

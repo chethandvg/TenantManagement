@@ -14,58 +14,64 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Database seeding
    - Testing your setup
 
-2. **[Architecture Guide](ARCHITECTURE.md)**
+2. **[Contributing Guide](../CONTRIBUTING.md)** 🤖 **FOR CODING AGENTS**
+   - Code organization rules (300 LOC limit)
+   - Backend guidelines (partial classes, naming conventions)
+   - Frontend guidelines (modular components, code-behind pattern)
+   - Testing requirements
+
+3. **[Architecture Guide](ARCHITECTURE.md)**
    - Clean Architecture explained
    - Project structure
    - Design patterns
 
-3. **[API Guide](API_GUIDE.md)**
+4. **[API Guide](API_GUIDE.md)**
    - Complete API reference for both Main API and Admin API
    - All endpoints documented
    - Authentication flows
    - Common workflows
    - Error handling
 
-4. **[Property Management Guide](PROPERTY_MANAGEMENT.md)** 🏢 **NEW!**
+5. **[Property Management Guide](PROPERTY_MANAGEMENT.md)** 🏢 **NEW!**
    - Multi-organization property management
    - Buildings, units, and ownership tracking
    - Complete API reference
    - Business rules and validation
    - Usage examples
 
-5. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
+6. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
    - JWT configuration
    - Token management
    - Security best practices
    - Troubleshooting
 
-6. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
+7. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
    - Role-based access control
    - Security restrictions
    - Policy configuration
 
-7. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
+8. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
    - Password policies
    - Complexity rules
    - Validation implementation
 
-8. **[Database Guide](DATABASE_GUIDE.md)**
+9. **[Database Guide](DATABASE_GUIDE.md)**
    - Database setup
    - Migrations
    - Seeding
    - Retry strategy
 
-9. **[Development Guide](DEVELOPMENT_GUIDE.md)**
-   - Development workflow
-   - Code patterns
-   - Best practices
-   - Testing
+10. **[Development Guide](DEVELOPMENT_GUIDE.md)**
+    - Development workflow
+    - Code patterns
+    - Best practices
+    - Testing
 
-10. **[Project Structure](PROJECT_STRUCTURE.md)**
+11. **[Project Structure](PROJECT_STRUCTURE.md)**
     - Directory organization
     - File conventions
 
-11. **[Archive](ARCHIVE.md)**
+12. **[Archive](ARCHIVE.md)**
     - Historical documentation
     - Implementation summaries
     - Migration guides
@@ -76,8 +82,9 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
 
 ### I want to get started...
 1. ✅ **[Getting Started Guide](GETTING_STARTED.md)** - Complete setup (10 minutes)
-2. ✅ **[Architecture Guide](ARCHITECTURE.md)** - Understand the system (15 minutes)
-3. ✅ **[API Guide](API_GUIDE.md)** - Explore the APIs (20 minutes)
+2. ✅ **[Contributing Guide](../CONTRIBUTING.md)** - Coding guidelines
+3. ✅ **[Architecture Guide](ARCHITECTURE.md)** - Understand the system (15 minutes)
+4. ✅ **[API Guide](API_GUIDE.md)** - Explore the APIs (20 minutes)
 
 ### I want to use the API...
 1. ✅ **[API Guide](API_GUIDE.md)** - Complete API reference
@@ -102,28 +109,45 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
 
 ## 📖 Documentation by Audience
 
+### For Coding Agents 🤖
+**Essential reading for AI-assisted development:**
+1. **[Contributing Guide](../CONTRIBUTING.md)** - **REQUIRED** - Code organization rules ⚡
+2. **[Architecture Guide](ARCHITECTURE.md)** - Understand the structure
+3. **Project READMEs** - Each `src/` folder has a README.md with specific guidelines
+4. **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Step-by-step feature development
+
+**Key Rules:**
+- Keep `.cs` files under **300 lines** (+30 max variance)
+- Keep `.razor` files under **200 lines** (+20 max variance)
+- Use **partial classes** when files exceed limits
+- Use **code-behind pattern** for Blazor components
+- Follow existing patterns in the codebase
+
 ### For New Developers
 **Start here to understand the project:**
 1. **[Getting Started Guide](GETTING_STARTED.md)** - Get running in 10 minutes ⚡
-2. **[Architecture Guide](ARCHITECTURE.md)** - Understand the structure
-3. **[API Guide](API_GUIDE.md)** - Learn the APIs
-4. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development patterns
+2. **[Contributing Guide](../CONTRIBUTING.md)** - Coding guidelines
+3. **[Architecture Guide](ARCHITECTURE.md)** - Understand the structure
+4. **[API Guide](API_GUIDE.md)** - Learn the APIs
+5. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Development patterns
 
 **Total onboarding time**: ~45 minutes
 
 ### For Frontend Developers
 **API integration and usage:**
-1. **[API Guide](API_GUIDE.md)** - Complete API reference
-2. **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT tokens
-3. **HTTP Examples** - `src/TentMan.Api/TentMan.Api.http`
-4. **Scalar UI** - https://localhost:7123/scalar/v1
+1. **[Contributing Guide](../CONTRIBUTING.md)** - Frontend component guidelines
+2. **[API Guide](API_GUIDE.md)** - Complete API reference
+3. **[Authentication Guide](AUTHENTICATION_GUIDE.md)** - JWT tokens
+4. **HTTP Examples** - `src/TentMan.Api/TentMan.Api.http`
+5. **Scalar UI** - https://localhost:7123/scalar/v1
 
 ### For Backend Developers
 **Implementation and architecture:**
-1. **[Architecture Guide](ARCHITECTURE.md)** - System design
-2. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Code patterns
-3. **[Database Guide](DATABASE_GUIDE.md)** - Data access
-4. **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Feature development
+1. **[Contributing Guide](../CONTRIBUTING.md)** - Backend coding rules
+2. **[Architecture Guide](ARCHITECTURE.md)** - System design
+3. **[Development Guide](DEVELOPMENT_GUIDE.md)** - Code patterns
+4. **[Database Guide](DATABASE_GUIDE.md)** - Data access
+5. **[New Entity Guide](../src/README_NEW_ENTITY.md)** - Feature development
 
 ### For Administrators
 **System management:**
@@ -262,13 +286,16 @@ dotnet ef database update --startup-project ../TentMan.Api
 
 Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.md)**
 
+Remember to follow the coding guidelines in **[CONTRIBUTING.md](../CONTRIBUTING.md)**.
+
 ---
 
 ## 📊 Documentation Statistics
 
 | Metric | Value |
 |--------|-------|
-| **Total Documentation Files** | 12 essential docs |
+| **Total Documentation Files** | 13 essential docs + project READMEs |
+| **Project README Files** | 11 project-specific guides |
 | **Quick Start Time** | 10 minutes |
 | **Full Onboarding Time** | 45 minutes |
 | **HTTP Request Examples** | 71+ examples |
@@ -292,6 +319,7 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 ## 🤝 Getting Help
 
+- **Coding guidelines**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
 - **Getting started**: See [GETTING_STARTED.md](GETTING_STARTED.md)
 - **API questions**: See [API_GUIDE.md](API_GUIDE.md)
 - **Architecture questions**: See [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -306,6 +334,7 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.0 | 2026-01-08 | **Added CONTRIBUTING.md** with coding agent guidelines, project READMEs |
 | 4.0 | 2025-01-22 | **Major consolidation** (51 files → 12 files, 76% reduction) |
 | 3.0 | 2025-01-22 | Major API documentation overhaul (7 new docs, 71+ HTTP examples) |
 | 2.3 | 2025-01-22 | Added password policy and database seeding guides |
@@ -316,7 +345,7 @@ Follow the step-by-step guide: **[Adding New Entities](../src/README_NEW_ENTITY.
 
 ---
 
-**Last Updated**: 2025-01-22  
-**Version**: 4.0 ⚡ **CONSOLIDATED**  
+**Last Updated**: 2026-01-08  
+**Version**: 5.0 ⚡ **WITH CODING GUIDELINES**  
 **Maintainer**: TentMan Development Team  
 **Questions?** Open an issue on [GitHub](https://github.com/chethandvg/tentman/issues)
