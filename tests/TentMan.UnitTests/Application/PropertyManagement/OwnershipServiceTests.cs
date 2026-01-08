@@ -41,7 +41,7 @@ public class OwnershipServiceTests
     [Fact]
     public void ValidateOwnershipShares_WhenSumIs100WithinTolerance_ReturnsTrue()
     {
-        // Arrange - sum is 100.005 which is within default tolerance of 0.01
+        // Arrange - sum is 100.005 which is within default tolerance of 0.01 (difference: 0.005)
         var shares = new[] { 33.335m, 33.335m, 33.335m };
 
         // Act
