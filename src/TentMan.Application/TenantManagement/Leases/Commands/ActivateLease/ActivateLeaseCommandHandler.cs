@@ -91,11 +91,10 @@ public class ActivateLeaseCommandHandler : BaseCommandHandler, IRequestHandler<A
                 };
                 lease.Occupancies.Add(occupancy);
 
-                // Update unit occupancy status
-                var unit = await _unitOfWork.Units.GetByIdAsync(lease.UnitId, cancellationToken);
-                if (unit != null)
+                // Update unit occupancy status using the loaded unit from lease
+                if (lease.Unit != null)
                 {
-                    unit.OccupancyStatus = OccupancyStatus.Occupied;
+                    lease.Unit.OccupancyStatus = OccupancyStatus.Occupied;
                 }
 
                 await _unitOfWork.Leases.UpdateAsync(lease, request.RowVersion, cancellationToken);
@@ -103,9 +102,8 @@ public class ActivateLeaseCommandHandler : BaseCommandHandler, IRequestHandler<A
 
                 Logger.LogInformation("Lease {LeaseId} activated successfully", request.LeaseId);
 
-                // Reload to get updated data
-                lease = await _unitOfWork.Leases.GetByIdWithDetailsAsync(request.LeaseId, cancellationToken);
-                return MapToDetailDto(lease!);
+                // Use the existing lease entity (already loaded with details)
+                return MapToDetailDto(lease);
             }
             catch
             {
