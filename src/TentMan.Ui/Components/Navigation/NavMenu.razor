@@ -1,20 +1,20 @@
 <nav role="navigation" aria-label="Primary navigation">
-    <MudNavMenu TabIndex="0">
-        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" TabIndex="0">Home</MudNavLink>
+    <MudNavMenu>
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
 
         <AuthorizeView>
             <Authorized>
                 <MudNavGroup Title="Property Management" Icon="@Icons.Material.Filled.Business" Expanded="true">
-                    <MudNavLink Href="/buildings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Apartment" TabIndex="0">Buildings</MudNavLink>
-                    <MudNavLink Href="/owners" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People" TabIndex="0">Owners</MudNavLink>
+                    <MudNavLink Href="/buildings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Apartment">Buildings</MudNavLink>
+                    <MudNavLink Href="/owners" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">Owners</MudNavLink>
                 </MudNavGroup>
-                <MudNavLink Href="/products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ShoppingCart" TabIndex="0">Products</MudNavLink>
-                <MudNavLink Href="/counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add" TabIndex="0">Counter</MudNavLink>
-                <MudNavLink Href="/fetchdata" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List" TabIndex="0">Fetch data</MudNavLink>
+                <MudNavLink Href="/products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ShoppingCart">Products</MudNavLink>
+                <MudNavLink Href="/counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+                <MudNavLink Href="/fetchdata" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Fetch data</MudNavLink>
             </Authorized>
             <NotAuthorized>
-                <MudNavLink Href="/login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login" TabIndex="0">Login</MudNavLink>
-                <MudNavLink Href="/register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PersonAdd" TabIndex="0">Register</MudNavLink>
+                <MudNavLink Href="/login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login">Login</MudNavLink>
+                <MudNavLink Href="/register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PersonAdd">Register</MudNavLink>
             </NotAuthorized>
         </AuthorizeView>
     </MudNavMenu>
