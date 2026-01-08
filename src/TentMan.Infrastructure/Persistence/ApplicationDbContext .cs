@@ -24,6 +24,17 @@ public class ApplicationDbContext : DbContext
 
     // Business DbSets
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<Building> Buildings => Set<Building>();
+    public DbSet<BuildingAddress> BuildingAddresses => Set<BuildingAddress>();
+    public DbSet<Unit> Units => Set<Unit>();
+    public DbSet<Owner> Owners => Set<Owner>();
+    public DbSet<BuildingOwnershipShare> BuildingOwnershipShares => Set<BuildingOwnershipShare>();
+    public DbSet<UnitOwnershipShare> UnitOwnershipShares => Set<UnitOwnershipShare>();
+    public DbSet<UnitMeter> UnitMeters => Set<UnitMeter>();
+    public DbSet<FileMetadata> Files => Set<FileMetadata>();
+    public DbSet<BuildingFile> BuildingFiles => Set<BuildingFile>();
+    public DbSet<UnitFile> UnitFiles => Set<UnitFile>();
 
     // Identity DbSets
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
