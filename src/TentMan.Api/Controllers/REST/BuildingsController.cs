@@ -183,7 +183,7 @@ public class BuildingsController : ControllerBase
         try
         {
             await _mediator.Send(command, cancellationToken);
-            return Ok(ApiResponse<object>.Ok(null!, "Building address set successfully"));
+            return Ok(ApiResponse<object>.Ok(new { }, "Building address set successfully"));
         }
         catch (InvalidOperationException ex)
         {
@@ -214,7 +214,7 @@ public class BuildingsController : ControllerBase
         try
         {
             await _mediator.Send(command, cancellationToken);
-            return Ok(ApiResponse<object>.Ok(null!, "Building ownership set successfully"));
+            return Ok(ApiResponse<object>.Ok(new { }, "Building ownership set successfully"));
         }
         catch (InvalidOperationException ex)
         {
@@ -314,7 +314,7 @@ public class BuildingsController : ControllerBase
         try
         {
             await _mediator.Send(command, cancellationToken);
-            return Ok(ApiResponse<object>.Ok(null!, "File added to building successfully"));
+            return Ok(ApiResponse<object>.Ok(new { }, "File added to building successfully"));
         }
         catch (InvalidOperationException ex)
         {
