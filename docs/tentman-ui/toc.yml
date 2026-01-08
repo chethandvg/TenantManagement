@@ -2,5 +2,7 @@
   href: index.md
 - name: Busy & Error Workflow
   href: loading-boundaries.md
+- name: Property Management UI
+  href: property-management-ui.md
 - name: API Reference
   href: api/index.md

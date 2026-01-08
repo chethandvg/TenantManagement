@@ -32,10 +32,11 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Common workflows
    - Error handling
 
-5. **[Property Management Guide](PROPERTY_MANAGEMENT.md)** 🏢 **NEW!**
+5. **[Property Management Guide](PROPERTY_MANAGEMENT.md)** 🏢 **UPDATED!**
    - Multi-organization property management
    - Buildings, units, and ownership tracking
    - Complete API reference
+   - **Blazor WASM Frontend screens** ✨
    - Business rules and validation
    - Usage examples
 

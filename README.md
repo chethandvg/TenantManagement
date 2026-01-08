@@ -95,7 +95,7 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 
 ## 🎯 Key Features
 
-### Property Management 🏢 NEW!
+### Property Management 🏢 UPDATED!
 - **Multi-Organization Support**: Complete organization isolation for multi-tenancy
 - **Building Management**: Track properties with addresses, types, and metadata
 - **Unit Management**: Manage individual units (flats, shops, offices) within buildings
@@ -104,6 +104,12 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 - **Utility Meters**: Track electricity, water, and gas meters per unit
 - **Indian Tax IDs**: Support for PAN and GSTIN identifiers
 - **File Attachments**: Metadata storage for documents and photos
+- **Blazor WASM Frontend** ✨: Complete UI screens for buildings and owners management
+  - Buildings List with search, filters, and card/grid views
+  - 5-step Create Building Wizard (Info → Address → Units → Ownership → Documents)
+  - Building Details with tabbed interface (Units, Ownership, Documents)
+  - Owners List with add/edit functionality
+  - Reusable MudBlazor components (OwnershipEditor, FileUploader, SearchFilterPanel)
 
 📚 **[Read the Property Management Guide →](docs/PROPERTY_MANAGEMENT.md)**
 

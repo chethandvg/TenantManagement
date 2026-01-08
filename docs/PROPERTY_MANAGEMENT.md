@@ -689,10 +689,222 @@ dotnet test --filter "FullyQualifiedName~OwnershipServiceTests"
 
 ---
 
+## 🖥️ Blazor WASM Frontend
+
+The Property Management module includes a complete Blazor WASM frontend built with MudBlazor components.
+
+### Navigation Structure
+
+The frontend adds a "Property Management" navigation group with the following pages:
+
+| Route | Page | Description |
+|-------|------|-------------|
+| `/buildings` | Buildings List | View and search all buildings |
+| `/buildings/create` | Create Building | 5-step wizard for building creation |
+| `/buildings/{id}` | Building Details | Tabbed interface for building management |
+| `/owners` | Owners List | View and manage property owners |
+
+### Buildings List (`/buildings`)
+
+**Features:**
+- 🔍 **Search**: Filter by name, building code, or city
+- 🏠 **Property Type Filter**: Apartment, Independent House, Commercial, Mixed Use
+- 📊 **View Toggle**: Switch between card and grid views
+- ⚡ **Quick Actions**: View details, add unit buttons
+
+**Screenshot Elements:**
+- Search panel with property type dropdown
+- Card/grid toggle buttons
+- Building cards showing name, code, city/state, unit count
+- Quick action buttons
+
+### Create Building Wizard (`/buildings/create`)
+
+A 5-step wizard that avoids the "big form from hell" pattern:
+
+| Step | Name | Fields |
+|------|------|--------|
+| 1 | Building Info | Code, Name, Property Type, Total Floors, Has Lift, Notes |
+| 2 | Address | Line1, Line2, Locality, City, District, State, Postal Code, Landmark |
+| 3 | Units | Add individual units or bulk add with pattern (prefix, start, end, floor) |
+| 4 | Ownership | Add owners with share percentages (must sum to 100%) |
+| 5 | Documents | Upload photos and documents with tagging |
+
+**Wizard Features:**
+- Linear navigation (must complete each step before proceeding)
+- Validation at each step
+- Step icons and status indicators
+- Previous/Next navigation buttons
+
+### Building Details (`/buildings/{id}`)
+
+A tabbed interface for managing building details:
+
+#### Units Tab
+- **DataGrid** showing: Unit Number, Floor, Type, Furnishing, Status, Ownership Override badge
+- **Add Unit Modal**: Create individual units with full details
+- **Bulk Add Dialog**: Pattern-based unit creation
+  - Prefix (e.g., "A-")
+  - Start and end numbers
+  - Default floor
+  - Default unit type
+- **Row Click**: Navigate to unit details
+
+#### Ownership Tab
+- **Building Ownership Editor**:
+  - Add/remove owner rows
+  - Owner dropdown selection
+  - Share percentage input (0.01% to 100%, step 0.01%)
+  - Running total display
+  - Validation: sum must equal 100% (±0.01% tolerance)
+  - Duplicate owner prevention
+  - Effective date picker
+- **Save/Reset buttons** (enabled only when changes exist)
+
+#### Documents Tab
+- **Drag & Drop Upload**: File upload zone
+- **Thumbnails**: Image preview for photos
+- **File List**: List view for documents
+- **Tagging**: Photo, Document, Other
+- **Delete**: Soft-delete with confirmation
+
+### Owners List (`/owners`)
+
+**Features:**
+- 🔍 **Search**: Filter by display name, email, or phone
+- ➕ **Add Owner Dialog**: Create new owners with:
+  - Display Name
+  - Owner Type (Individual/Company)
+  - Phone
+  - Email
+  - PAN (optional)
+  - GSTIN (optional)
+- ✏️ **Edit Owner Dialog**: Update existing owner details
+- 🏷️ **Owner Type Badge**: Color-coded chips (Individual/Company)
+
+### Reusable Components
+
+The following modular components are available in `TentMan.Ui/Components/Common/`:
+
+#### OwnershipEditor
+Shared editor for building and unit ownership.
+
+```razor
+<OwnershipEditor
+    Title="Building Ownership"
+    Shares="@_ownershipShares"
+    AvailableOwners="@_owners"
+    ShowEffectiveDate="true"
+    @bind-EffectiveDate="@_effectiveDate"
+    SharesChanged="@OnSharesChanged" />
+```
+
+**Validations:**
+- Sum must equal 100% (shows error chip if not)
+- No duplicate owners
+- Share percentage must be > 0
+
+#### SearchFilterPanel
+Configurable search and filter controls.
+
+```razor
+<SearchFilterPanel
+    SearchText="@_searchText"
+    SearchTextChanged="@OnSearchChanged"
+    Filters="@_filterOptions"
+    FiltersChanged="@ApplyFilters" />
+```
+
+#### FileUploader
+Drag-and-drop file upload with tagging.
+
+```razor
+<FileUploader
+    Files="@_uploadedFiles"
+    FilesChanged="@OnFilesChanged"
+    OnFileUploaded="@HandleFileUpload" />
+```
+
+#### WizardStepper
+Multi-step form wizard with validation.
+
+```razor
+<WizardStepper Steps="@_steps" @bind-ActiveStep="@_activeStep">
+    <StepContent>@_stepContents[_activeStep]</StepContent>
+</WizardStepper>
+```
+
+### API Clients
+
+Two typed HTTP clients are registered for frontend use:
+
+#### BuildingsApiClient (`IBuildingsApiClient`)
+
+```csharp
+// List buildings
+var response = await BuildingsClient.GetBuildingsAsync(orgId);
+
+// Get building details
+var response = await BuildingsClient.GetBuildingAsync(buildingId);
+
+// Create building
+var response = await BuildingsClient.CreateBuildingAsync(request);
+
+// Update building
+var response = await BuildingsClient.UpdateBuildingAsync(buildingId, request);
+
+// Set address
+var response = await BuildingsClient.SetBuildingAddressAsync(buildingId, request);
+
+// Set ownership
+var response = await BuildingsClient.SetBuildingOwnershipAsync(buildingId, request);
+
+// Get units
+var response = await BuildingsClient.GetUnitsAsync(buildingId);
+
+// Create unit
+var response = await BuildingsClient.CreateUnitAsync(buildingId, request);
+
+// Bulk create units
+var response = await BuildingsClient.BulkCreateUnitsAsync(buildingId, request);
+```
+
+#### OwnersApiClient (`IOwnersApiClient`)
+
+```csharp
+// List owners
+var response = await OwnersClient.GetOwnersAsync(orgId);
+
+// Get owner details
+var response = await OwnersClient.GetOwnerAsync(orgId, ownerId);
+
+// Create owner
+var response = await OwnersClient.CreateOwnerAsync(orgId, request);
+```
+
+### Client Registration
+
+The API clients are automatically registered when adding TentMan services:
+
+```csharp
+// In Program.cs
+builder.Services.AddTentManApiClients(options =>
+{
+    options.BaseUrl = "https://localhost:7123";
+});
+```
+
+This registers:
+- `IBuildingsApiClient` / `BuildingsApiClient`
+- `IOwnersApiClient` / `OwnersApiClient`
+
+---
+
 ## 📝 Future Enhancements
 
 Features planned for future releases:
-- [ ] File upload implementation (metadata structure ready)
+- [x] Blazor WASM frontend screens ✅ Implemented
+- [ ] File upload implementation (UI ready, storage integration pending)
 - [ ] Tenant/lease management
 - [ ] Block unit deletion when active lease exists
 - [ ] Rent collection and payments
@@ -700,6 +912,8 @@ Features planned for future releases:
 - [ ] Maintenance request tracking
 - [ ] Ownership history reports
 - [ ] Multi-building ownership analytics
+- [ ] Unit details page
+- [ ] Owner linking to user accounts
 
 ---
 
@@ -713,6 +927,9 @@ When adding new features to the property management module:
 4. Add appropriate validation in command handlers
 5. Filter soft-deleted records in all queries
 6. Update this documentation
+7. **For UI changes**: Use code-behind pattern (`.razor` + `.razor.cs`)
+8. **For UI changes**: Keep components modular and reusable
+9. **For UI changes**: Follow MudBlazor component patterns
 
 ---
 
@@ -722,3 +939,4 @@ When adding new features to the property management module:
 - [API Guide](API_GUIDE.md)
 - [Database Guide](DATABASE_GUIDE.md)
 - [Development Guide](DEVELOPMENT_GUIDE.md)
+- [UI Loading Boundaries](tentman-ui/loading-boundaries.md)
