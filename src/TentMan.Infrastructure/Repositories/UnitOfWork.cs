@@ -25,6 +25,9 @@ public class UnitOfWork : IUnitOfWork
     private IUserRoleRepository? _userRoleRepository;
     private IEmailConfirmationTokenRepository? _emailConfirmationTokenRepository;
     private IPasswordResetTokenRepository? _passwordResetTokenRepository;
+    private ITenantRepository? _tenantRepository;
+    private ILeaseRepository? _leaseRepository;
+    private IFileMetadataRepository? _fileMetadataRepository;
 
     public UnitOfWork(
         ApplicationDbContext context,
@@ -54,6 +57,9 @@ public class UnitOfWork : IUnitOfWork
             _context,
             _timeProvider,
             _loggerFactory.CreateLogger<PasswordResetTokenRepository>());
+    public ITenantRepository Tenants => _tenantRepository ??= new TenantRepository(_context);
+    public ILeaseRepository Leases => _leaseRepository ??= new LeaseRepository(_context);
+    public IFileMetadataRepository FileMetadata => _fileMetadataRepository ??= new FileMetadataRepository(_context);
 
     public async Task<TResult> ExecuteWithRetryAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken = default)
     {

@@ -36,6 +36,22 @@ public class ApplicationDbContext : DbContext
     public DbSet<BuildingFile> BuildingFiles => Set<BuildingFile>();
     public DbSet<UnitFile> UnitFiles => Set<UnitFile>();
 
+    // Tenant Management DbSets
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<TenantAddress> TenantAddresses => Set<TenantAddress>();
+    public DbSet<TenantEmergencyContact> TenantEmergencyContacts => Set<TenantEmergencyContact>();
+    public DbSet<TenantDocument> TenantDocuments => Set<TenantDocument>();
+
+    // Lease Management DbSets
+    public DbSet<Lease> Leases => Set<Lease>();
+    public DbSet<LeaseParty> LeaseParties => Set<LeaseParty>();
+    public DbSet<LeaseTerm> LeaseTerms => Set<LeaseTerm>();
+    public DbSet<DepositTransaction> DepositTransactions => Set<DepositTransaction>();
+    public DbSet<UnitHandover> UnitHandovers => Set<UnitHandover>();
+    public DbSet<HandoverChecklistItem> HandoverChecklistItems => Set<HandoverChecklistItem>();
+    public DbSet<MeterReading> MeterReadings => Set<MeterReading>();
+    public DbSet<UnitOccupancy> UnitOccupancies => Set<UnitOccupancy>();
+
     // Identity DbSets
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();

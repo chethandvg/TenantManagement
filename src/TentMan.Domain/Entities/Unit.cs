@@ -33,4 +33,7 @@ public class Unit : BaseEntity
     public ICollection<UnitOwnershipShare> OwnershipShares { get; set; } = new List<UnitOwnershipShare>();
     public ICollection<UnitMeter> Meters { get; set; } = new List<UnitMeter>();
     public ICollection<UnitFile> UnitFiles { get; set; } = new List<UnitFile>();
+    public ICollection<Lease> Leases { get; set; } = new List<Lease>();
+    public ICollection<MeterReading> MeterReadings { get; set; } = new List<MeterReading>();
+    public ICollection<UnitOccupancy> Occupancies { get; set; } = new List<UnitOccupancy>();
 }

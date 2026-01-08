@@ -23,4 +23,6 @@ public class Organization : BaseEntity
     public ICollection<Building> Buildings { get; set; } = new List<Building>();
     public ICollection<Owner> Owners { get; set; } = new List<Owner>();
     public ICollection<FileMetadata> Files { get; set; } = new List<FileMetadata>();
+    public ICollection<Tenant> Tenants { get; set; } = new List<Tenant>();
+    public ICollection<Lease> Leases { get; set; } = new List<Lease>();
 }

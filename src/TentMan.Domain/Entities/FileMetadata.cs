@@ -21,9 +21,11 @@ public class FileMetadata : BaseEntity
     public string ContentType { get; set; } = string.Empty;
     public long SizeBytes { get; set; }
     public string? Sha256 { get; set; }
+    public Guid? CreatedByUserId { get; set; }
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public ICollection<BuildingFile> BuildingFiles { get; set; } = new List<BuildingFile>();
     public ICollection<UnitFile> UnitFiles { get; set; } = new List<UnitFile>();
+    public ICollection<TenantDocument> TenantDocuments { get; set; } = new List<TenantDocument>();
 }
