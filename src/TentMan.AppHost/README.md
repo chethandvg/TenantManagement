@@ -103,7 +103,7 @@ dotnet run
 
 | Service | URL |
 |---------|-----|
-| Aspire Dashboard | https://localhost:15XXX (see console) |
+| Aspire Dashboard | https://localhost:15000 (port varies - check console) |
 | Main API | https://localhost:7123 |
 | Admin API | https://localhost:7290 |
 | Web UI | https://localhost:7001 |
