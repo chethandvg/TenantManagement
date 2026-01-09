@@ -74,7 +74,7 @@ public class SubmitHandoverCommandHandler : BaseCommandHandler, IRequestHandler<
             throw new InvalidOperationException($"Signature image exceeds maximum size of {MaxSignatureSizeBytes / 1024 / 1024}MB");
         }
 
-        if (!AllowedSignatureTypes.Contains(request.SignatureContentType.ToLowerInvariant()))
+        if (!AllowedSignatureTypes.Contains((request.SignatureContentType ?? "").ToLowerInvariant()))
         {
             throw new InvalidOperationException($"Signature image type '{request.SignatureContentType}' is not allowed. Allowed types: PNG, JPEG");
         }

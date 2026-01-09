@@ -136,31 +136,21 @@ public sealed class TenantPortalApiClient : ApiClientServiceBase, ITenantPortalA
             signatureContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(signatureContentType);
             content.Add(signatureContent, "signatureImage", signatureFileName);
 
-            // Add request fields
-            using (var handoverIdContent = new StringContent(request.HandoverId.ToString()))
-            {
-                content.Add(handoverIdContent, "handoverId");
-            }
+            // Add request fields (MultipartFormDataContent will dispose the StringContent objects)
+            content.Add(new StringContent(request.HandoverId.ToString()), "handoverId");
             
             if (!string.IsNullOrEmpty(request.Notes))
             {
-                using var notesContent = new StringContent(request.Notes);
-                content.Add(notesContent, "notes");
+                content.Add(new StringContent(request.Notes), "notes");
             }
 
             // Add checklist items as JSON
             var checklistJson = JsonSerializer.Serialize(request.ChecklistItems, _jsonOptions);
-            using (var checklistItemsContent = new StringContent(checklistJson, System.Text.Encoding.UTF8, "application/json"))
-            {
-                content.Add(checklistItemsContent, "checklistItems");
-            }
+            content.Add(new StringContent(checklistJson, System.Text.Encoding.UTF8, "application/json"), "checklistItems");
 
             // Add meter readings as JSON
             var metersJson = JsonSerializer.Serialize(request.MeterReadings, _jsonOptions);
-            using (var meterReadingsContent = new StringContent(metersJson, System.Text.Encoding.UTF8, "application/json"))
-            {
-                content.Add(meterReadingsContent, "meterReadings");
-            }
+            content.Add(new StringContent(metersJson, System.Text.Encoding.UTF8, "application/json"), "meterReadings");
 
             var response = await _httpClient.PostAsync(uri, content, cancellationToken);
 
