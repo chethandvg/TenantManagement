@@ -157,7 +157,7 @@ public class InitializationApiClientTests : IDisposable
             Password = "SecurePassword123!"
         };
 
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         _mockHttp

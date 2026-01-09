@@ -129,7 +129,7 @@ public class RolesApiClientTests : IDisposable
     public async Task GetRolesAsync_ShouldHandleRequestCancellation()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         _mockHttp

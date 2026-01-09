@@ -24,7 +24,7 @@ public interface IUserRolesApiClient
     /// </summary>
     /// <param name="request">The assign role request containing userId and roleId.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>True if the role was assigned successfully.</returns>
+    /// <returns>An <see cref="ApiResponse{T}"/> containing an object that represents the result of the role assignment operation.</returns>
     Task<ApiResponse<object>> AssignRoleAsync(
         AssignRoleRequest request,
         CancellationToken cancellationToken = default);

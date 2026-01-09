@@ -257,26 +257,24 @@ public abstract class AdminApiClientServiceBase
 
         // Try to parse as ApiResponse to get structured errors
         IEnumerable<string>? errors = null;
-        try
+        if (!string.IsNullOrWhiteSpace(errorContent))
         {
-            var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<object>>(
-                _jsonOptions,
-                cancellationToken);
+            try
+            {
+                var errorResponse = JsonSerializer.Deserialize<ApiResponse<object>>(errorContent, _jsonOptions);
 
-            if (errorResponse?.Errors != null)
-            {
-                errors = errorResponse.Errors;
+                if (errorResponse?.Errors != null)
+                {
+                    errors = errorResponse.Errors;
+                }
+                else if (!string.IsNullOrWhiteSpace(errorResponse?.Message))
+                {
+                    errorMessage = errorResponse.Message;
+                }
             }
-            else if (!string.IsNullOrWhiteSpace(errorResponse?.Message))
+            catch
             {
-                errorMessage = errorResponse.Message;
-            }
-        }
-        catch
-        {
-            // If we can't parse as ApiResponse, use raw content
-            if (!string.IsNullOrWhiteSpace(errorContent))
-            {
+                // If we can't parse as ApiResponse, use raw content
                 errors = new[] { errorContent };
             }
         }
