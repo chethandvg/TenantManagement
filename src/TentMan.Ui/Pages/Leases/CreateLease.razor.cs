@@ -116,17 +116,34 @@ public partial class CreateLease : ComponentBase
 
     private async Task LoadUnitsAsync()
     {
-        // TODO: Load units from all buildings or a specific building
-        // For now, we'll need to load from a default building or show a building selector
         try
         {
-            // This is a placeholder - in a real implementation, you would load units
-            // from the Buildings API or have a building selector
-            _units = new List<UnitListDto>();
+            // First, load all buildings for the organization
+            var buildingsResponse = await BuildingsClient.GetBuildingsAsync(OrgId);
+            if (!buildingsResponse.Success || buildingsResponse.Data == null)
+            {
+                Snackbar.Add(buildingsResponse.Message ?? "Failed to load buildings.", Severity.Error);
+                _units = new List<UnitListDto>();
+                return;
+            }
+
+            // Then, load units from all buildings
+            var allUnits = new List<UnitListDto>();
+            foreach (var building in buildingsResponse.Data)
+            {
+                var unitsResponse = await BuildingsClient.GetUnitsAsync(building.Id);
+                if (unitsResponse.Success && unitsResponse.Data != null)
+                {
+                    allUnits.AddRange(unitsResponse.Data);
+                }
+            }
+
+            _units = allUnits;
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Error loading units: {ex.Message}", Severity.Error);
+            _units = new List<UnitListDto>();
         }
     }
 
