@@ -14,11 +14,15 @@ namespace TentMan.AdminApiClient.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the Admin API client services to the service collection using configuration.
+    /// Adds the Admin API client services to the service collection.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="configuration">The configuration containing Admin API client settings.</param>
+    /// <param name="configuration">The configuration.</param>
     /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    /// This method registers all Admin API client services with default configuration from appsettings.json.
+    /// Configure the client using the "AdminApiClient" section in appsettings.json.
+    /// </remarks>
     public static IServiceCollection AddAdminApiClient(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -42,6 +46,10 @@ public static class ServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="configureOptions">Action to configure the Admin API client options.</param>
     /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    /// This method registers all Admin API client services with custom configuration.
+    /// Use this method when you need to configure options programmatically.
+    /// </remarks>
     public static IServiceCollection AddAdminApiClient(
         this IServiceCollection services,
         Action<AdminApiClientOptions> configureOptions)
@@ -63,17 +71,17 @@ public static class ServiceCollectionExtensions
         IServiceCollection services,
         AdminApiClientOptions options)
     {
-        // Configure Users API Client
-        ConfigureHttpClient<IUsersApiClient, UsersApiClient>(services, options);
+        // Configure Initialization API Client (anonymous access for initial setup)
+        ConfigureHttpClient<IInitializationApiClient, InitializationApiClient>(services, options);
 
-        // Configure Roles API Client
+        // Configure Roles API Client (requires authentication)
         ConfigureHttpClient<IRolesApiClient, RolesApiClient>(services, options);
 
-        // Configure UserRoles API Client
-        ConfigureHttpClient<IUserRolesApiClient, UserRolesApiClient>(services, options);
+        // Configure Users API Client (requires authentication)
+        ConfigureHttpClient<IUsersApiClient, UsersApiClient>(services, options);
 
-        // Configure Initialization API Client
-        ConfigureHttpClient<IInitializationApiClient, InitializationApiClient>(services, options);
+        // Configure UserRoles API Client (requires authentication)
+        ConfigureHttpClient<IUserRolesApiClient, UserRolesApiClient>(services, options);
     }
 
     /// <summary>
@@ -114,7 +122,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Creates a retry policy with exponential backoff.
+    /// Gets the retry policy with exponential backoff.
     /// </summary>
     private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(
         int retryCount,
@@ -123,21 +131,16 @@ public static class ServiceCollectionExtensions
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
-            .Or<TaskCanceledException>() // Handle timeouts
+            .Or<TimeoutException>()
             .WaitAndRetryAsync(
                 retryCount,
-                retryAttempt => TimeSpan.FromSeconds(baseDelaySeconds * Math.Pow(2, retryAttempt - 1)),
+                retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt) * baseDelaySeconds),
                 onRetry: (outcome, timespan, retryAttempt, context) =>
                 {
-                    var statusCode = outcome.Result?.StatusCode.ToString() ?? "N/A";
-                    var exceptionType = outcome.Exception?.GetType().Name ?? "None";
-
+                    var statusCode = outcome.Result?.StatusCode;
                     logger.LogWarning(
-                        "Request to {RequestUri} failed (Status: {StatusCode}, Exception: {ExceptionType}). " +
-                        "Waiting {Delay:0.00}s before retry {RetryAttempt}/{RetryCount}",
-                        outcome.Result?.RequestMessage?.RequestUri ?? context.GetValueOrDefault("RequestUri"),
-                        statusCode,
-                        exceptionType,
+                        "Request failed with {StatusCode}. Waiting {Delay}s before retry attempt {RetryAttempt}/{RetryCount}",
+                        statusCode.HasValue ? (int)statusCode : 0,
                         timespan.TotalSeconds,
                         retryAttempt,
                         retryCount);
@@ -145,7 +148,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Creates a circuit breaker policy.
+    /// Gets the circuit breaker policy.
     /// </summary>
     private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(
         int failureThreshold,
@@ -154,33 +157,25 @@ public static class ServiceCollectionExtensions
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
-            .Or<TaskCanceledException>() // Handle timeouts
+            .Or<TimeoutException>()
             .CircuitBreakerAsync(
                 handledEventsAllowedBeforeBreaking: failureThreshold,
                 durationOfBreak: TimeSpan.FromSeconds(durationSeconds),
                 onBreak: (outcome, breakDelay) =>
                 {
-                    var statusCode = outcome.Result?.StatusCode.ToString() ?? "N/A";
-                    var exceptionType = outcome.Exception?.GetType().Name ?? "None";
-
+                    var statusCode = outcome.Result?.StatusCode;
                     logger.LogError(
-                        "Circuit breaker OPENED for {BreakDelay}s after {FailureThreshold} consecutive failures. " +
-                        "Last failure - Status: {StatusCode}, Exception: {ExceptionType}, Request: {RequestUri}",
+                        "Circuit breaker opened for {BreakDelay}s due to {StatusCode}",
                         breakDelay.TotalSeconds,
-                        failureThreshold,
-                        statusCode,
-                        exceptionType,
-                        outcome.Result?.RequestMessage?.RequestUri);
+                        statusCode.HasValue ? (int)statusCode : 0);
                 },
                 onReset: () =>
                 {
-                    logger.LogInformation(
-                        "Circuit breaker RESET - Normal operations resumed");
+                    logger.LogInformation("Circuit breaker reset, requests will be allowed through");
                 },
                 onHalfOpen: () =>
                 {
-                    logger.LogInformation(
-                        "Circuit breaker HALF-OPEN - Testing service availability with next request");
+                    logger.LogInformation("Circuit breaker is half-open, testing if service has recovered");
                 });
     }
 }

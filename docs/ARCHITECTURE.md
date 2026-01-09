@@ -230,6 +230,78 @@ public class ProductsController : ControllerBase
 
 ---
 
+### **TentMan.ApiClient** (HTTP Client Library)
+**Target Framework**: .NET 9
+
+**Purpose**: HTTP client library for the Main API (TentMan.Api) with resilience and authentication.
+
+**Dependencies**:
+- `TentMan.Contracts`
+- Microsoft.Extensions.Http
+- Microsoft.Extensions.Http.Polly (resilience)
+
+**Contents**:
+- `Configuration/` - Client configuration options
+- `Services/` - API client implementations (Products, Buildings, Authentication, etc.)
+- `Authentication/` - Token management, storage, and auto-refresh
+- `Exceptions/` - Custom exception types
+- `Extensions/` - DI registration
+
+**Key Features**:
+- HttpClientFactory pattern
+- Polly retry and circuit breaker policies
+- JWT authentication with auto-refresh
+- Blazor Server and WebAssembly support
+- Platform-specific token storage (browser vs. in-memory)
+- Comprehensive exception handling
+
+---
+
+### **TentMan.AdminApiClient** (Admin HTTP Client Library)
+**Target Framework**: .NET 9
+
+**Purpose**: HTTP client library for the Admin API (TentMan.AdminApi) with resilience.
+
+**Dependencies**:
+- `TentMan.Contracts`
+- `TentMan.Application` (for InitializationResult)
+- `TentMan.ApiClient` (for exception types)
+- Microsoft.Extensions.Http
+- Microsoft.Extensions.Http.Polly (resilience)
+
+**Contents**:
+- `Configuration/` - Client configuration options
+- `Services/` - API client implementations:
+  - `InitializationApiClient` - System initialization
+  - `RolesApiClient` - Role management
+  - `UsersApiClient` - User management
+  - `UserRolesApiClient` - User-role assignments
+- `Extensions/` - DI registration
+
+**Key Features**:
+- HttpClientFactory pattern
+- Polly retry and circuit breaker policies
+- Reuses exception types from ApiClient
+- Generic DeleteAsync<T> for type safety
+- Comprehensive XML documentation
+- Structured logging
+
+**Example**:
+```csharp
+// Registration in DI
+builder.Services.AddAdminApiClient(builder.Configuration);
+
+// Usage
+var initResult = await initializationClient.InitializeSystemAsync(new InitializeSystemRequest
+{
+    UserName = "superadmin",
+    Email = "admin@example.com",
+    Password = "SecurePassword123!"
+});
+```
+
+---
+
 ### **TentMan.Ui** (Component Library)
 **Target Framework**: .NET 9
 

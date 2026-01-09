@@ -31,9 +31,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TentMan.IntegrationTests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TentMan.ApiClient.Tests", "tests\TentMan.ApiClient.Tests\TentMan.ApiClient.Tests.csproj", "{4175A9B3-044F-D1D7-B67C-DAD3D769E808}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TentMan.AdminApiClient", "src\TentMan.AdminApiClient\TentMan.AdminApiClient\TentMan.AdminApiClient.csproj", "{4F792186-7151-4E9C-86CE-187497679F1B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TentMan.AdminApiClient", "src\TentMan.AdminApiClient\TentMan.AdminApiClient.csproj", "{4F792186-7151-4E9C-86CE-187497679F1B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TentMan.AdminApiClient.Tests", "tests\TentMan.AdminApiClient.Tests\TentMan.AdminApiClient.Tests\TentMan.AdminApiClient.Tests.csproj", "{0C74FE34-B367-4FAB-AEB6-29D8447A1DCF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TentMan.AdminApiClient.Tests", "tests\TentMan.AdminApiClient.Tests\TentMan.AdminApiClient.Tests.csproj", "{0C74FE34-B367-4FAB-AEB6-29D8447A1DCF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

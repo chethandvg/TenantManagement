@@ -1,30 +1,31 @@
-using TentMan.AdminApiClient.Configuration;
 using TentMan.Contracts.Admin;
 using TentMan.Contracts.Common;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace TentMan.AdminApiClient.Services;
 
 /// <summary>
-/// Implementation of the Users Admin API client.
-/// Provides methods for user management operations.
+/// Implementation of the Users API client.
 /// </summary>
+/// <remarks>
+/// Provides operations for user management.
+/// </remarks>
 public sealed class UsersApiClient : AdminApiClientServiceBase, IUsersApiClient
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="UsersApiClient"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client instance.</param>
-    /// <param name="options">The Admin API client options.</param>
     /// <param name="logger">The logger instance.</param>
-    public UsersApiClient(HttpClient httpClient, IOptions<AdminApiClientOptions> options, ILogger<UsersApiClient> logger)
-        : base(httpClient, options, logger)
+    public UsersApiClient(
+        HttpClient httpClient,
+        ILogger<UsersApiClient> logger)
+        : base(httpClient, logger)
     {
     }
 
     /// <inheritdoc/>
-    protected override string EndpointName => "users";
+    protected override string BasePath => "api/v1/admin/users";
 
     /// <inheritdoc/>
     public Task<ApiResponse<IEnumerable<UserDto>>> GetUsersAsync(
@@ -32,8 +33,9 @@ public sealed class UsersApiClient : AdminApiClientServiceBase, IUsersApiClient
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var endpoint = $"?pageNumber={pageNumber}&pageSize={pageSize}";
-        return GetAsync<IEnumerable<UserDto>>(endpoint, cancellationToken);
+        return GetAsync<IEnumerable<UserDto>>(
+            $"?pageNumber={pageNumber}&pageSize={pageSize}",
+            cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -47,9 +49,9 @@ public sealed class UsersApiClient : AdminApiClientServiceBase, IUsersApiClient
 
     /// <inheritdoc/>
     public Task<ApiResponse<bool>> DeleteUserAsync(
-        Guid userId,
+        Guid id,
         CancellationToken cancellationToken = default)
     {
-        return DeleteAsync(userId.ToString(), cancellationToken);
+        return DeleteAsync($"{id}", cancellationToken);
     }
 }

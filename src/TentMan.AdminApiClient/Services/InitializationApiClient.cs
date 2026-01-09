@@ -1,37 +1,42 @@
-using TentMan.AdminApiClient.Configuration;
+using TentMan.Application.Admin.Commands.InitializeSystem;
 using TentMan.Contracts.Admin;
 using TentMan.Contracts.Common;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace TentMan.AdminApiClient.Services;
 
 /// <summary>
-/// Implementation of the Initialization Admin API client.
-/// Provides methods for system initialization operations.
+/// Implementation of the Initialization API client.
 /// </summary>
+/// <remarks>
+/// Provides operations for system initialization and setup.
+/// </remarks>
 public sealed class InitializationApiClient : AdminApiClientServiceBase, IInitializationApiClient
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="InitializationApiClient"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client instance.</param>
-    /// <param name="options">The Admin API client options.</param>
     /// <param name="logger">The logger instance.</param>
-    public InitializationApiClient(HttpClient httpClient, IOptions<AdminApiClientOptions> options, ILogger<InitializationApiClient> logger)
-        : base(httpClient, options, logger)
+    public InitializationApiClient(
+        HttpClient httpClient,
+        ILogger<InitializationApiClient> logger)
+        : base(httpClient, logger)
     {
     }
 
     /// <inheritdoc/>
-    protected override string EndpointName => "initialization";
+    protected override string BasePath => "api/v1/admin/initialization";
 
     /// <inheritdoc/>
-    public Task<ApiResponse<InitializationResultDto>> InitializeSystemAsync(
+    public Task<ApiResponse<InitializationResult>> InitializeSystemAsync(
         InitializeSystemRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return PostAsync<InitializeSystemRequest, InitializationResultDto>("initialize", request, cancellationToken);
+        return PostAsync<InitializeSystemRequest, InitializationResult>(
+            "initialize",
+            request,
+            cancellationToken);
     }
 }

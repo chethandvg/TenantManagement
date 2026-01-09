@@ -1,37 +1,38 @@
-using TentMan.AdminApiClient.Configuration;
 using TentMan.Contracts.Admin;
 using TentMan.Contracts.Common;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace TentMan.AdminApiClient.Services;
 
 /// <summary>
-/// Implementation of the UserRoles Admin API client.
-/// Provides methods for user-role assignment management operations.
+/// Implementation of the UserRoles API client.
 /// </summary>
+/// <remarks>
+/// Provides operations for user-role assignment management.
+/// </remarks>
 public sealed class UserRolesApiClient : AdminApiClientServiceBase, IUserRolesApiClient
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="UserRolesApiClient"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client instance.</param>
-    /// <param name="options">The Admin API client options.</param>
     /// <param name="logger">The logger instance.</param>
-    public UserRolesApiClient(HttpClient httpClient, IOptions<AdminApiClientOptions> options, ILogger<UserRolesApiClient> logger)
-        : base(httpClient, options, logger)
+    public UserRolesApiClient(
+        HttpClient httpClient,
+        ILogger<UserRolesApiClient> logger)
+        : base(httpClient, logger)
     {
     }
 
     /// <inheritdoc/>
-    protected override string EndpointName => "userroles";
+    protected override string BasePath => "api/v1/admin/userroles";
 
     /// <inheritdoc/>
     public Task<ApiResponse<IEnumerable<RoleDto>>> GetUserRolesAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        return GetAsync<IEnumerable<RoleDto>>(userId.ToString(), cancellationToken);
+        return GetAsync<IEnumerable<RoleDto>>($"{userId}", cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -44,11 +45,11 @@ public sealed class UserRolesApiClient : AdminApiClientServiceBase, IUserRolesAp
     }
 
     /// <inheritdoc/>
-    public Task<ApiResponse<bool>> RemoveRoleAsync(
+    public Task<ApiResponse<object>> RemoveRoleAsync(
         Guid userId,
         Guid roleId,
         CancellationToken cancellationToken = default)
     {
-        return DeleteAsync($"{userId}/roles/{roleId}", cancellationToken);
+        return DeleteAsync<object>($"{userId}/roles/{roleId}", cancellationToken);
     }
 }

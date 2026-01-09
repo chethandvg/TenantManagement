@@ -1,36 +1,37 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using TentMan.AdminApiClient.Configuration;
-using TentMan.AdminApiClient.Exceptions;
+using TentMan.ApiClient.Exceptions;
 using TentMan.Contracts.Common;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace TentMan.AdminApiClient.Services;
 
 /// <summary>
 /// Base class for Admin API client services providing common HTTP operations.
 /// </summary>
+/// <remarks>
+/// This base class provides standardized HTTP operations (GET, POST, PUT, DELETE) with:
+/// - Automatic response deserialization
+/// - Comprehensive exception handling
+/// - Structured error parsing
+/// - Logging support
+/// </remarks>
 public abstract class AdminApiClientServiceBase
 {
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly ILogger _logger;
-    private readonly string _apiVersion;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AdminApiClientServiceBase"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client instance.</param>
-    /// <param name="options">The Admin API client options.</param>
     /// <param name="logger">The logger instance.</param>
-    protected AdminApiClientServiceBase(HttpClient httpClient, IOptions<AdminApiClientOptions> options, ILogger logger)
+    protected AdminApiClientServiceBase(HttpClient httpClient, ILogger logger)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        ArgumentNullException.ThrowIfNull(options);
-        _apiVersion = options.Value.ApiVersion;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -39,15 +40,9 @@ public abstract class AdminApiClientServiceBase
     }
 
     /// <summary>
-    /// Gets the endpoint name for this API client (e.g., "users", "roles").
-    /// This is combined with the configured API version to form the full base path.
+    /// Gets the base path for the API endpoint (e.g., "api/v1/admin/users").
     /// </summary>
-    protected abstract string EndpointName { get; }
-
-    /// <summary>
-    /// Gets the base path for the API endpoint, constructed from the configured API version.
-    /// </summary>
-    protected string BasePath => $"api/{_apiVersion}/admin/{EndpointName}";
+    protected abstract string BasePath { get; }
 
     /// <summary>
     /// Sends a GET request and returns the response data.
@@ -60,7 +55,7 @@ public abstract class AdminApiClientServiceBase
     /// <exception cref="AuthorizationException">Thrown when authorization fails (401/403).</exception>
     /// <exception cref="ServerException">Thrown when a server error occurs (5xx).</exception>
     /// <exception cref="NetworkException">Thrown when a network error occurs.</exception>
-    /// <exception cref="AdminApiClientException">Thrown for other API errors.</exception>
+    /// <exception cref="ApiClientException">Thrown for other API errors.</exception>
     protected async Task<ApiResponse<TResponse>> GetAsync<TResponse>(
         string endpoint,
         CancellationToken cancellationToken = default)
@@ -79,7 +74,7 @@ public abstract class AdminApiClientServiceBase
 
             return await ProcessResponseAsync<TResponse>(response, cancellationToken);
         }
-        catch (Exception ex) when (ex is not AdminApiClientException)
+        catch (Exception ex) when (ex is not ApiClientException)
         {
             _logger.LogError(ex, "Error during GET request to {Uri}", uri);
             return HandleException<TResponse>(ex);
@@ -99,7 +94,7 @@ public abstract class AdminApiClientServiceBase
     /// <exception cref="AuthorizationException">Thrown when authorization fails (401/403).</exception>
     /// <exception cref="ServerException">Thrown when a server error occurs (5xx).</exception>
     /// <exception cref="NetworkException">Thrown when a network error occurs.</exception>
-    /// <exception cref="AdminApiClientException">Thrown for other API errors.</exception>
+    /// <exception cref="ApiClientException">Thrown for other API errors.</exception>
     protected async Task<ApiResponse<TResponse>> PostAsync<TRequest, TResponse>(
         string endpoint,
         TRequest request,
@@ -123,9 +118,54 @@ public abstract class AdminApiClientServiceBase
 
             return await ProcessResponseAsync<TResponse>(response, cancellationToken);
         }
-        catch (Exception ex) when (ex is not AdminApiClientException)
+        catch (Exception ex) when (ex is not ApiClientException)
         {
             _logger.LogError(ex, "Error during POST request to {Uri}", uri);
+            return HandleException<TResponse>(ex);
+        }
+    }
+
+    /// <summary>
+    /// Sends a PUT request with a request body and returns the response data.
+    /// </summary>
+    /// <typeparam name="TRequest">The type of the request data.</typeparam>
+    /// <typeparam name="TResponse">The type of the response data.</typeparam>
+    /// <param name="endpoint">The endpoint path relative to the base path.</param>
+    /// <param name="request">The request data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The API response containing the updated resource.</returns>
+    /// <exception cref="ResourceNotFoundException">Thrown when the resource is not found (404).</exception>
+    /// <exception cref="ValidationException">Thrown when validation fails (400).</exception>
+    /// <exception cref="AuthorizationException">Thrown when authorization fails (401/403).</exception>
+    /// <exception cref="ServerException">Thrown when a server error occurs (5xx).</exception>
+    /// <exception cref="NetworkException">Thrown when a network error occurs.</exception>
+    /// <exception cref="ApiClientException">Thrown for other API errors.</exception>
+    protected async Task<ApiResponse<TResponse>> PutAsync<TRequest, TResponse>(
+        string endpoint,
+        TRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var uri = BuildUri(endpoint);
+        _logger.LogDebug("Sending PUT request to {Uri}", uri);
+
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync(
+                uri,
+                request,
+                _jsonOptions,
+                cancellationToken);
+
+            _logger.LogDebug(
+                "PUT request to {Uri} completed with status {StatusCode}",
+                uri,
+                (int)response.StatusCode);
+
+            return await ProcessResponseAsync<TResponse>(response, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not ApiClientException)
+        {
+            _logger.LogError(ex, "Error during PUT request to {Uri}", uri);
             return HandleException<TResponse>(ex);
         }
     }
@@ -140,7 +180,7 @@ public abstract class AdminApiClientServiceBase
     /// <exception cref="AuthorizationException">Thrown when authorization fails (401/403).</exception>
     /// <exception cref="ServerException">Thrown when a server error occurs (5xx).</exception>
     /// <exception cref="NetworkException">Thrown when a network error occurs.</exception>
-    /// <exception cref="AdminApiClientException">Thrown for other API errors.</exception>
+    /// <exception cref="ApiClientException">Thrown for other API errors.</exception>
     protected async Task<ApiResponse<bool>> DeleteAsync(
         string endpoint,
         CancellationToken cancellationToken = default)
@@ -168,10 +208,47 @@ public abstract class AdminApiClientServiceBase
             // This line won't be reached due to the throw above, but keeps the compiler happy
             return ApiResponse<bool>.Fail("Request failed");
         }
-        catch (Exception ex) when (ex is not AdminApiClientException)
+        catch (Exception ex) when (ex is not ApiClientException)
         {
             _logger.LogError(ex, "Error during DELETE request to {Uri}", uri);
             return HandleException<bool>(ex);
+        }
+    }
+
+    /// <summary>
+    /// Sends a DELETE request and returns the response with a generic type.
+    /// </summary>
+    /// <typeparam name="TResponse">The type of the response data.</typeparam>
+    /// <param name="endpoint">The endpoint path relative to the base path.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The API response indicating success or failure.</returns>
+    /// <exception cref="ResourceNotFoundException">Thrown when the resource is not found (404).</exception>
+    /// <exception cref="AuthorizationException">Thrown when authorization fails (401/403).</exception>
+    /// <exception cref="ServerException">Thrown when a server error occurs (5xx).</exception>
+    /// <exception cref="NetworkException">Thrown when a network error occurs.</exception>
+    /// <exception cref="ApiClientException">Thrown for other API errors.</exception>
+    protected async Task<ApiResponse<TResponse>> DeleteAsync<TResponse>(
+        string endpoint,
+        CancellationToken cancellationToken = default)
+    {
+        var uri = BuildUri(endpoint);
+        _logger.LogDebug("Sending DELETE request to {Uri}", uri);
+
+        try
+        {
+            var response = await _httpClient.DeleteAsync(uri, cancellationToken);
+
+            _logger.LogDebug(
+                "DELETE request to {Uri} completed with status {StatusCode}",
+                uri,
+                (int)response.StatusCode);
+
+            return await ProcessResponseAsync<TResponse>(response, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not ApiClientException)
+        {
+            _logger.LogError(ex, "Error during DELETE request to {Uri}", uri);
+            return HandleException<TResponse>(ex);
         }
     }
 
@@ -181,13 +258,13 @@ public abstract class AdminApiClientServiceBase
     private string BuildUri(string endpoint)
     {
         var trimmedEndpoint = endpoint.TrimStart('/');
-
+        
         // If endpoint starts with query string, don't add separator slash
         if (trimmedEndpoint.StartsWith('?'))
         {
             return $"{BasePath}{trimmedEndpoint}";
         }
-
+        
         return string.IsNullOrWhiteSpace(trimmedEndpoint)
             ? BasePath
             : $"{BasePath}/{trimmedEndpoint}";
@@ -231,7 +308,7 @@ public abstract class AdminApiClientServiceBase
                     response.RequestMessage?.RequestUri,
                     (int)response.StatusCode);
 
-                throw new AdminApiClientException(
+                throw new ApiClientException(
                     "Failed to deserialize response from server",
                     (int)response.StatusCode,
                     ex);
@@ -269,24 +346,26 @@ public abstract class AdminApiClientServiceBase
 
         // Try to parse as ApiResponse to get structured errors
         IEnumerable<string>? errors = null;
-        if (!string.IsNullOrWhiteSpace(errorContent))
+        try
         {
-            try
-            {
-                var errorResponse = JsonSerializer.Deserialize<ApiResponse<object>>(errorContent, _jsonOptions);
+            var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse<object>>(
+                _jsonOptions,
+                cancellationToken);
 
-                if (errorResponse?.Errors != null)
-                {
-                    errors = errorResponse.Errors;
-                }
-                else if (!string.IsNullOrWhiteSpace(errorResponse?.Message))
-                {
-                    errorMessage = errorResponse.Message;
-                }
-            }
-            catch
+            if (errorResponse?.Errors != null)
             {
-                // If we can't parse as ApiResponse, use raw content
+                errors = errorResponse.Errors;
+            }
+            else if (!string.IsNullOrWhiteSpace(errorResponse?.Message))
+            {
+                errorMessage = errorResponse.Message;
+            }
+        }
+        catch
+        {
+            // If we can't parse as ApiResponse, use raw content
+            if (!string.IsNullOrWhiteSpace(errorContent))
+            {
                 errors = new[] { errorContent };
             }
         }
@@ -305,11 +384,11 @@ public abstract class AdminApiClientServiceBase
             HttpStatusCode.Unauthorized => new AuthorizationException(errorMessage, 401),
             HttpStatusCode.Forbidden => new AuthorizationException(errorMessage, 403),
             HttpStatusCode.NotFound => new ResourceNotFoundException(errorMessage),
-            HttpStatusCode.Conflict => new AdminApiClientException(errorMessage, statusCode, errors),
+            HttpStatusCode.Conflict => new ApiClientException(errorMessage, statusCode, errors),
             HttpStatusCode.UnprocessableEntity => new ValidationException(errorMessage, errors),
-            HttpStatusCode.TooManyRequests => new AdminApiClientException("Rate limit exceeded", statusCode, errors),
+            HttpStatusCode.TooManyRequests => new ApiClientException("Rate limit exceeded", statusCode, errors),
             >= HttpStatusCode.InternalServerError => new ServerException(errorMessage, statusCode, errors),
-            _ => new AdminApiClientException(errorMessage, statusCode, errors)
+            _ => new ApiClientException(errorMessage, statusCode, errors)
         };
     }
 

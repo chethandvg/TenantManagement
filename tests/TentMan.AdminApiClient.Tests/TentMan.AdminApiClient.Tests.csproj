@@ -32,12 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\TentMan.AdminApiClient\TentMan.AdminApiClient\TentMan.AdminApiClient.csproj" />
-    <ProjectReference Include="..\..\..\src\TentMan.Contracts\TentMan.Contracts.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\..\src\TentMan.AdminApiClient\TentMan.AdminApiClient.csproj" />
+    <ProjectReference Include="..\..\src\TentMan.Contracts\TentMan.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\TentMan.Application\TentMan.Application.csproj" />
   </ItemGroup>
 
 </Project>
