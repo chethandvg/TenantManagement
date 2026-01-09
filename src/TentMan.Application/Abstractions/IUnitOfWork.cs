@@ -78,6 +78,11 @@ public interface IUnitOfWork : IDisposable
     ITenantInviteRepository TenantInvites { get; }
 
     /// <summary>
+    /// Gets the tenant document repository.
+    /// </summary>
+    ITenantDocumentRepository TenantDocuments { get; }
+
+    /// <summary>
     /// Executes an operation with retry logic for transient failures.
     /// Required when using transactions with database retry-on-failure strategies.
     /// </summary>
