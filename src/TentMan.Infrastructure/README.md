@@ -17,12 +17,20 @@ TentMan.Infrastructure/
 │   ├── Configurations/       # EF Core entity configurations
 │   │   ├── ProductConfiguration.cs
 │   │   ├── BuildingConfiguration.cs
+│   │   ├── TenantConfiguration.cs      # Tenant management
+│   │   ├── LeaseConfiguration.cs       # Lease management
+│   │   ├── LeasePartyConfiguration.cs
+│   │   ├── LeaseTermConfiguration.cs
+│   │   ├── DepositTransactionConfiguration.cs
 │   │   └── ...
 │   ├── Migrations/           # EF Core migrations
 │   └── Interceptors/         # EF Core interceptors
 ├── Repositories/              # Repository implementations
 │   ├── ProductRepository.cs
 │   ├── BuildingRepository.cs
+│   ├── TenantRepository.cs    # Tenant operations
+│   ├── LeaseRepository.cs     # Lease operations
+│   ├── FileMetadataRepository.cs
 │   └── ...
 ├── Time/                      # Time abstractions
 │   └── DateTimeProvider.cs
@@ -224,5 +232,5 @@ dotnet ef database update \
 
 ---
 
-**Last Updated**: 2026-01-08  
+**Last Updated**: 2026-01-09  
 **Maintainer**: TentMan Development Team

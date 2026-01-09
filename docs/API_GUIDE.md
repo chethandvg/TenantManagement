@@ -172,6 +172,77 @@ Response 200 OK:
 | `/health/ready` | GET | Readiness check |
 | `/health/live` | GET | Liveness check |
 
+#### 5. Tenants (`/api/v1/organizations/{orgId}/tenants`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/` | POST | ✅ Yes | Create a new tenant |
+| `/` | GET | ✅ Yes | List/search tenants |
+| `/{tenantId}` | GET | ✅ Yes | Get tenant details |
+| `/{tenantId}` | PUT | ✅ Yes | Update tenant |
+
+**Example - Create Tenant**:
+```json
+POST /api/v1/organizations/{orgId}/tenants
+Authorization: Bearer <token>
+
+{
+  "fullName": "Rajesh Kumar",
+  "phone": "+919876543210",
+  "email": "rajesh@example.com"
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "fullName": "Rajesh Kumar",
+    "phone": "+919876543210",
+    "email": "rajesh@example.com",
+    "isActive": true
+  }
+}
+```
+
+#### 6. Leases (`/api/v1/organizations/{orgId}/leases`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/` | POST | ✅ Yes | Create draft lease |
+| `/{leaseId}` | GET | ✅ Yes | Get lease details |
+| `/{leaseId}/parties` | POST | ✅ Yes | Add tenant to lease |
+| `/{leaseId}/terms` | POST | ✅ Yes | Add financial terms |
+| `/{leaseId}/activate` | POST | ✅ Yes | Activate lease |
+| `/units/{unitId}/leases` | GET | ✅ Yes | Get lease history for unit |
+
+**Example - Create Draft Lease**:
+```json
+POST /api/v1/organizations/{orgId}/leases
+Authorization: Bearer <token>
+
+{
+  "unitId": "unit-guid",
+  "leaseNumber": "LSE-2026-001",
+  "startDate": "2026-02-01",
+  "endDate": "2027-01-31",
+  "rentDueDay": 5,
+  "graceDays": 3
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "status": 0,
+    "leaseNumber": "LSE-2026-001"
+  }
+}
+```
+
+**See**: [Tenant and Lease Management Guide](TENANT_LEASE_MANAGEMENT.md) for complete API documentation.
+
 ### Role Requirements (Main API)
 
 | Operation | Public | User | Manager | Administrator |
@@ -182,6 +253,8 @@ Response 200 OK:
 | Create Products | ❌ | ❌ | ✅ | ✅ |
 | Update Products | ❌ | ❌ | ✅ | ✅ |
 | Delete Products | ❌ | ❌ | ❌ | ✅ |
+| Manage Tenants | ❌ | ❌ | ✅ | ✅ |
+| Manage Leases | ❌ | ❌ | ✅ | ✅ |
 
 ---
 
@@ -781,13 +854,14 @@ All APIs return errors in a consistent format:
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Initial setup guide
 - **[AUTHENTICATION_GUIDE.md](AUTHENTICATION_GUIDE.md)** - JWT and authentication details
 - **[AUTHORIZATION_GUIDE.md](AUTHORIZATION_GUIDE.md)** - Role-based authorization
+- **[TENANT_LEASE_MANAGEMENT.md](TENANT_LEASE_MANAGEMENT.md)** - Tenant and Lease API details
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture
 - **[Main API README](../src/TentMan.Api/README.md)** - Main API project details
 - **[Admin API README](../TentMan.AdminApi/README.md)** - Admin API project details
 
 ---
 
-**Last Updated**: 2025-01-22  
-**Version**: 1.0  
-**Total Endpoints**: 28 (16 Main + 12 Admin)  
+**Last Updated**: 2026-01-09  
+**Version**: 1.1  
+**Total Endpoints**: 38 (26 Main + 12 Admin)  
 **Maintainer**: TentMan Development Team

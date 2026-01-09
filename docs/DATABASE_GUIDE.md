@@ -369,14 +369,54 @@ Attempt 5 → Success ✅
 
 ---
 
+## 🗄️ Tenant and Lease Tables
+
+The following tables were added for tenant and lease management:
+
+| Table | Description |
+|-------|-------------|
+| **Tenants** | Tenant master profiles with phone/email |
+| **TenantAddresses** | Multiple addresses per tenant |
+| **TenantEmergencyContacts** | Emergency contact information |
+| **TenantDocuments** | Document metadata with masked numbers |
+| **Leases** | Lease contract headers |
+| **LeaseParties** | Join table for multiple tenants per lease |
+| **LeaseTerms** | Versioned financial terms (append-only) |
+| **DepositTransactions** | Deposit ledger |
+| **UnitHandovers** | Move-in/move-out records |
+| **HandoverChecklistItems** | Handover checklist details |
+| **MeterReadings** | Utility meter readings |
+| **UnitOccupancies** | Occupancy history |
+
+### Key Indexes
+
+```sql
+-- One active lease per unit
+CREATE UNIQUE NONCLUSTERED INDEX [IX_Leases_OrgId_UnitId_Active] 
+ON [Leases] ([OrgId], [UnitId])
+WHERE [Status] IN (1, 2) AND [IsDeleted] = 0;
+
+-- Unique phone per organization
+CREATE UNIQUE NONCLUSTERED INDEX [IX_Tenants_OrgId_Phone] 
+ON [Tenants] ([OrgId], [Phone])
+WHERE [IsDeleted] = 0;
+
+-- Lease party uniqueness
+CREATE UNIQUE NONCLUSTERED INDEX [IX_LeaseParties_LeaseId_TenantId] 
+ON [LeaseParties] ([LeaseId], [TenantId]);
+```
+
+---
+
 ## 📚 Related Documentation
 
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Initial setup
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture
 - **[DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)** - Development workflows
+- **[TENANT_LEASE_MANAGEMENT.md](TENANT_LEASE_MANAGEMENT.md)** - Tenant and Lease Management
 
 ---
 
-**Last Updated**: 2025-01-22  
-**Version**: 1.0  
+**Last Updated**: 2026-01-09  
+**Version**: 1.1  
 **Maintainer**: TentMan Development Team

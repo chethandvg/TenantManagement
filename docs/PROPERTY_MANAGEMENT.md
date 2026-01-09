@@ -904,8 +904,8 @@ This registers:
 
 Features planned for future releases:
 - [x] Blazor WASM frontend screens ✅ Implemented
+- [x] Tenant/lease management ✅ Implemented - See [Tenant and Lease Management Guide](TENANT_LEASE_MANAGEMENT.md)
 - [ ] File upload implementation (UI ready, storage integration pending)
-- [ ] Tenant/lease management
 - [ ] Block unit deletion when active lease exists
 - [ ] Rent collection and payments
 - [ ] Utility bill management
@@ -935,6 +935,7 @@ When adding new features to the property management module:
 
 ## 📚 Related Documentation
 
+- [Tenant and Lease Management Guide](TENANT_LEASE_MANAGEMENT.md)
 - [Architecture Guide](ARCHITECTURE.md)
 - [API Guide](API_GUIDE.md)
 - [Database Guide](DATABASE_GUIDE.md)

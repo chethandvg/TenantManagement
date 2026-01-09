@@ -21,7 +21,19 @@ TentMan.Domain/
 │   ├── Building.cs
 │   ├── Unit.cs
 │   ├── Owner.cs
-│   └── Organization.cs
+│   ├── Organization.cs
+│   ├── Tenant.cs          # Tenant management
+│   ├── TenantAddress.cs
+│   ├── TenantEmergencyContact.cs
+│   ├── TenantDocument.cs
+│   ├── Lease.cs           # Lease management
+│   ├── LeaseParty.cs
+│   ├── LeaseTerm.cs
+│   ├── DepositTransaction.cs
+│   ├── UnitHandover.cs
+│   ├── HandoverChecklistItem.cs
+│   ├── MeterReading.cs
+│   └── UnitOccupancy.cs
 ├── Enums/                  # Domain enumerations
 ├── Extensions/             # Domain extension methods
 └── ValueObjects/           # Value object types
@@ -141,5 +153,5 @@ Result.Failure("Error message")
 
 ---
 
-**Last Updated**: 2026-01-08  
+**Last Updated**: 2026-01-09  
 **Maintainer**: TentMan Development Team

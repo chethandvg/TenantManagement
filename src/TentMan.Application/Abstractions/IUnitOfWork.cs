@@ -58,6 +58,21 @@ public interface IUnitOfWork : IDisposable
     IPasswordResetTokenRepository PasswordResetTokens { get; }
 
     /// <summary>
+    /// Gets the tenant repository.
+    /// </summary>
+    ITenantRepository Tenants { get; }
+
+    /// <summary>
+    /// Gets the lease repository.
+    /// </summary>
+    ILeaseRepository Leases { get; }
+
+    /// <summary>
+    /// Gets the file metadata repository.
+    /// </summary>
+    IFileMetadataRepository FileMetadata { get; }
+
+    /// <summary>
     /// Executes an operation with retry logic for transient failures.
     /// Required when using transactions with database retry-on-failure strategies.
     /// </summary>

@@ -40,39 +40,48 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Business rules and validation
    - Usage examples
 
-6. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
+6. **[Tenant and Lease Management Guide](TENANT_LEASE_MANAGEMENT.md)** 📋 **NEW!**
+   - Tenant profiles and document management
+   - Lease creation and activation workflow
+   - One active lease per unit constraint
+   - Multi-tenant leases (Primary, CoTenant, Occupant, Guarantor)
+   - Versioned financial terms (rent, deposit, escalation)
+   - Deposit ledger tracking
+   - Lease activation validation rules
+
+7. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
    - JWT configuration
    - Token management
    - Security best practices
    - Troubleshooting
 
-7. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
+8. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
    - Role-based access control
    - Security restrictions
    - Policy configuration
 
-8. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
+9. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
    - Password policies
    - Complexity rules
    - Validation implementation
 
-9. **[Database Guide](DATABASE_GUIDE.md)**
-   - Database setup
-   - Migrations
-   - Seeding
-   - Retry strategy
+10. **[Database Guide](DATABASE_GUIDE.md)**
+    - Database setup
+    - Migrations
+    - Seeding
+    - Retry strategy
 
-10. **[Development Guide](DEVELOPMENT_GUIDE.md)**
+11. **[Development Guide](DEVELOPMENT_GUIDE.md)**
     - Development workflow
     - Code patterns
     - Best practices
     - Testing
 
-11. **[Project Structure](PROJECT_STRUCTURE.md)**
+12. **[Project Structure](PROJECT_STRUCTURE.md)**
     - Directory organization
     - File conventions
 
-12. **[Archive](ARCHIVE.md)**
+13. **[Archive](ARCHIVE.md)**
     - Historical documentation
     - Implementation summaries
     - Migration guides
@@ -295,12 +304,12 @@ Remember to follow the coding guidelines in **[CONTRIBUTING.md](../CONTRIBUTING.
 
 | Metric | Value |
 |--------|-------|
-| **Total Documentation Files** | 13 essential docs + project READMEs |
+| **Total Documentation Files** | 14 essential docs + project READMEs |
 | **Project README Files** | 11 project-specific guides |
 | **Quick Start Time** | 10 minutes |
 | **Full Onboarding Time** | 45 minutes |
-| **HTTP Request Examples** | 71+ examples |
-| **API Endpoints** | 28 total (16 Main + 12 Admin) |
+| **HTTP Request Examples** | 80+ examples |
+| **API Endpoints** | 38 total (26 Main + 12 Admin) |
 
 ---
 
@@ -335,6 +344,7 @@ Remember to follow the coding guidelines in **[CONTRIBUTING.md](../CONTRIBUTING.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 6.0 | 2026-01-09 | **Added Tenant and Lease Management** - Complete guide with API endpoints, business rules, and database schema |
 | 5.0 | 2026-01-08 | **Added CONTRIBUTING.md** with coding agent guidelines, project READMEs |
 | 4.0 | 2025-01-22 | **Major consolidation** (51 files → 12 files, 76% reduction) |
 | 3.0 | 2025-01-22 | Major API documentation overhaul (7 new docs, 71+ HTTP examples) |
@@ -346,7 +356,7 @@ Remember to follow the coding guidelines in **[CONTRIBUTING.md](../CONTRIBUTING.
 
 ---
 
-**Last Updated**: 2026-01-08  
-**Version**: 5.0 ⚡ **WITH CODING GUIDELINES**  
+**Last Updated**: 2026-01-09  
+**Version**: 6.0 ⚡ **WITH TENANT & LEASE MANAGEMENT**  
 **Maintainer**: TentMan Development Team  
 **Questions?** Open an issue on [GitHub](https://github.com/chethandvg/tentman/issues)

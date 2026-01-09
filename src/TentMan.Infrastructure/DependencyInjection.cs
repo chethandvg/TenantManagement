@@ -196,6 +196,9 @@ public static class DependencyInjection
         services.AddScoped<IUserRoleRepository, UserRoleRepository>();
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddScoped<IEmailConfirmationTokenRepository, EmailConfirmationTokenRepository>();
+        services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<ILeaseRepository, LeaseRepository>();
+        services.AddScoped<IFileMetadataRepository, FileMetadataRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;

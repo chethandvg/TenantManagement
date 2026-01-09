@@ -78,6 +78,14 @@ The projects follow Clean Architecture with dependency inversion:
 | **ServiceDefaults** | Aspire defaults | .NET Aspire |
 | **AppHost** | Service orchestration | .NET Aspire |
 
+### Feature Modules
+
+| Module | Description | Location |
+|--------|-------------|----------|
+| **Property Management** | Buildings, units, owners | Application/PropertyManagement |
+| **Tenant Management** | Tenant profiles, documents | Application/TenantManagement/Tenants |
+| **Lease Management** | Leases, parties, terms, deposits | Application/TenantManagement/Leases |
+
 ---
 
 ## 🔧 Development Guidelines
@@ -139,5 +147,5 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for complete coding guidelines.
 
 ---
 
-**Last Updated**: 2026-01-08  
+**Last Updated**: 2026-01-09  
 **Maintainer**: TentMan Development Team
