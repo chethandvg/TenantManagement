@@ -67,20 +67,21 @@ public sealed class TenantInvitesApiClient : ApiClientServiceBase, ITenantInvite
     }
 
     /// <inheritdoc/>
-    public Task<ApiResponse<object>> CancelInviteAsync(
+    public async Task<ApiResponse<object>> CancelInviteAsync(
         Guid orgId,
         Guid inviteId,
         CancellationToken cancellationToken = default)
     {
-        return DeleteAsync(
+        var result = await DeleteAsync(
             $"organizations/{orgId}/invites/{inviteId}",
-            cancellationToken)
-            .ContinueWith(t => new ApiResponse<object>
-            {
-                Success = t.Result.Success,
-                Data = null,
-                Message = t.Result.Message,
-                Errors = t.Result.Errors
-            }, cancellationToken);
+            cancellationToken);
+
+        return new ApiResponse<object>
+        {
+            Success = result.Success,
+            Data = null,
+            Message = result.Message,
+            Errors = result.Errors
+        };
     }
 }

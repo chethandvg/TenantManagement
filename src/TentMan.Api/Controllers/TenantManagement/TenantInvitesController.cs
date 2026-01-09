@@ -161,7 +161,7 @@ public class TenantInvitesController : ControllerBase
         try
         {
             await _mediator.Send(command, cancellationToken);
-            return Ok(ApiResponse<object>.Ok(null, "Invite canceled successfully"));
+            return Ok(ApiResponse<object>.Ok(new { }, "Invite canceled successfully"));
         }
         catch (InvalidOperationException ex)
         {
