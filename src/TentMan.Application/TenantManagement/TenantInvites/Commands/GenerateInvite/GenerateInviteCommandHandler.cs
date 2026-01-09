@@ -78,6 +78,10 @@ public class GenerateInviteCommandHandler : BaseCommandHandler, IRequestHandler<
 
     private static string GenerateToken()
     {
-        return Guid.NewGuid().ToString("N");
+        // Generate cryptographically secure random token (32 characters hex)
+        var bytes = new byte[16];
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 }

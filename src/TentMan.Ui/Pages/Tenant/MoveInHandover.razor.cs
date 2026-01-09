@@ -48,10 +48,11 @@ public partial class MoveInHandover : ComponentBase
             return;
         }
 
-        var unconfirmedItems = _handover.ChecklistItems.Count(x => !x.IsConfirmed);
-        if (unconfirmedItems > 0)
+        // Check for unconfirmed items more efficiently
+        var unconfirmedItems = _handover.ChecklistItems.Where(x => !x.IsConfirmed).ToList();
+        if (unconfirmedItems.Any())
         {
-            _error = $"Please confirm all checklist items ({unconfirmedItems} remaining)";
+            _error = $"Please confirm all checklist items ({unconfirmedItems.Count} remaining)";
             return;
         }
 

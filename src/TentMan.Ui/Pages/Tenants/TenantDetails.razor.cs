@@ -34,6 +34,9 @@ public partial class TenantDetails : ComponentBase
     public ISnackbar Snackbar { get; set; } = default!;
 
     [Inject]
+    public NavigationManager NavigationManager { get; set; } = default!;
+
+    [Inject]
     public UiState UiState { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
@@ -144,6 +147,19 @@ public partial class TenantDetails : ComponentBase
         LeaseStatus.Cancelled => Color.Error,
         _ => Color.Default
     };
+
+    private void GenerateInvite()
+    {
+        if (_tenant == null) return;
+
+        // TODO: Call API to generate invite
+        const string PlaceholderToken = "PLACEHOLDER_TOKEN";
+        var inviteUrl = $"{NavigationManager.BaseUri}accept-invite?token={PlaceholderToken}";
+        
+        Snackbar.Add("Invite generation feature in development", Severity.Info);
+        
+        // TODO: Show dialog with actual invite link and copy to clipboard functionality
+    }
 }
 
 /// <summary>

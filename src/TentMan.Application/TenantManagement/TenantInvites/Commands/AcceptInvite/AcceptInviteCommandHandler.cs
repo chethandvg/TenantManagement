@@ -59,7 +59,7 @@ public class AcceptInviteCommandHandler : BaseCommandHandler, IRequestHandler<Ac
         var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
         if (existingUser != null)
         {
-            throw new InvalidOperationException("User with this email already exists");
+            throw new InvalidOperationException("Unable to create account. Please contact support.");
         }
 
         // Create new user

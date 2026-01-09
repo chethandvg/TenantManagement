@@ -72,6 +72,7 @@ public partial class AcceptInvite : ComponentBase
             return;
         }
 
+        // Client-side validation as UX improvement (server validates too)
         if (_model.Password.Length < 8)
         {
             _submitError = "Password must be at least 8 characters";
@@ -84,6 +85,7 @@ public partial class AcceptInvite : ComponentBase
         try
         {
             // TODO: Call API to accept invite and create user
+            // Server will perform comprehensive password validation
             await Task.Delay(1000);
 
             Snackbar.Add("Account created successfully! Logging you in...", Severity.Success);
