@@ -61,6 +61,7 @@ public class GenerateInviteCommandHandler : BaseCommandHandler, IRequestHandler<
                 InviteUrl = string.Empty, // URL will be constructed by API layer
                 Phone = existingInvite.Phone,
                 Email = existingInvite.Email,
+                CreatedAtUtc = existingInvite.CreatedAtUtc,
                 ExpiresAtUtc = existingInvite.ExpiresAtUtc,
                 IsUsed = existingInvite.IsUsed,
                 UsedAtUtc = existingInvite.UsedAtUtc,
@@ -96,6 +97,7 @@ public class GenerateInviteCommandHandler : BaseCommandHandler, IRequestHandler<
             InviteUrl = string.Empty, // URL will be constructed by API layer
             Phone = invite.Phone,
             Email = invite.Email,
+            CreatedAtUtc = invite.CreatedAtUtc,
             ExpiresAtUtc = invite.ExpiresAtUtc,
             IsUsed = invite.IsUsed,
             UsedAtUtc = invite.UsedAtUtc,

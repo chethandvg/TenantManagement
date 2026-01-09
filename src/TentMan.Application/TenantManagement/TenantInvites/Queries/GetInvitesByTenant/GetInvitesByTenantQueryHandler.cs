@@ -50,6 +50,7 @@ public class GetInvitesByTenantQueryHandler : BaseCommandHandler, IRequestHandle
             InviteUrl = string.Empty, // URL will be constructed by API layer
             Phone = invite.Phone,
             Email = invite.Email,
+            CreatedAtUtc = invite.CreatedAtUtc,
             ExpiresAtUtc = invite.ExpiresAtUtc,
             IsUsed = invite.IsUsed,
             UsedAtUtc = invite.UsedAtUtc,

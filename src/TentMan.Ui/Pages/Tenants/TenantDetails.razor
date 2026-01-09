@@ -271,6 +271,66 @@
                         }
                     </MudStack>
                 </MudTabPanel>
+
+                @* Invites Tab *@
+                <MudTabPanel Text="Invites" Icon="@Icons.Material.Filled.Mail" BadgeData="@((_invites?.Count() ?? 0).ToString())">
+                    <MudStack Spacing="3">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Tenant Invites</MudText>
+                        </MudStack>
+
+                        @if (_invites != null && _invites.Any())
+                        {
+                            <MudDataGrid Items="@_invites" Hover="true" Dense="true" Striped="true">
+                                <Columns>
+                                    <TemplateColumn Title="Status">
+                                        <CellTemplate>
+                                            <MudChip T="string" Size="Size.Small" Color="@GetInviteStatusColor(context.Item)">
+                                                @GetInviteStatus(context.Item)
+                                            </MudChip>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="x => x.Phone" Title="Phone" />
+                                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                                    <TemplateColumn Title="Created">
+                                        <CellTemplate>
+                                            @context.Item.CreatedAtUtc.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Expires">
+                                        <CellTemplate>
+                                            @context.Item.ExpiresAtUtc.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Used">
+                                        <CellTemplate>
+                                            @(context.Item.UsedAtUtc?.ToLocalTime().ToString("dd MMM yyyy HH:mm") ?? "—")
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Actions" Sortable="false">
+                                        <CellTemplate>
+                                            <MudStack Row="true" Spacing="1">
+                                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" Color="Color.Primary"
+                                                               OnClick="@(() => CopyToClipboard(context.Item.InviteUrl))" 
+                                                               Title="Copy invite link" />
+                                                @if (CanCancelInvite(context.Item))
+                                                {
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error"
+                                                                   OnClick="@(() => CancelInvite(context.Item))" 
+                                                                   Title="Cancel invite" />
+                                                }
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">No invites generated yet.</MudAlert>
+                        }
+                    </MudStack>
+                </MudTabPanel>
             </MudTabs>
         </MudStack>
     }
@@ -373,3 +433,85 @@
         <MudButton Color="Color.Primary" OnClick="UploadDocument">Upload</MudButton>
     </DialogActions>
 </MudDialog>
+
+@* Generate Invite Dialog *@
+<MudDialog @bind-Visible="_showGenerateInviteDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 500px;">
+            <MudText Typo="Typo.h6">Generate Invite</MudText>
+            
+            @if (_generatedInvite == null)
+            {
+                <MudStack Spacing="3">
+                    <MudAlert Severity="Severity.Info">
+                        Generate an invite link for @_tenant?.FullName to create their account and access the tenant portal.
+                    </MudAlert>
+                    
+                    <MudNumericField @bind-Value="_generateInviteModel.ExpiryDays" 
+                                     Label="Expires in (days)" 
+                                     Variant="Variant.Outlined" 
+                                     Min="1" 
+                                     Max="90" 
+                                     Required="true"
+                                     HelperText="Number of days until the invite expires (1-90 days)" />
+                </MudStack>
+            }
+            else
+            {
+                <MudStack Spacing="3">
+                    <MudAlert Severity="Severity.Success">
+                        <MudText Typo="Typo.body2">Invite generated successfully!</MudText>
+                    </MudAlert>
+
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Invite Details</MudText>
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Phone</MudText>
+                            <MudText Typo="Typo.body2">@_generatedInvite.Phone</MudText>
+                        </MudStack>
+                        @if (!string.IsNullOrEmpty(_generatedInvite.Email))
+                        {
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Email</MudText>
+                                <MudText Typo="Typo.body2">@_generatedInvite.Email</MudText>
+                            </MudStack>
+                        }
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Expires</MudText>
+                            <MudText Typo="Typo.body2">@_generatedInvite.ExpiresAtUtc.ToLocalTime().ToString("dd MMM yyyy HH:mm")</MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    <MudDivider />
+
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Invite Link</MudText>
+                        <MudTextField @bind-Value="_generatedInvite.InviteUrl" 
+                                      Label="Invite URL" 
+                                      Variant="Variant.Outlined" 
+                                      ReadOnly="true"
+                                      Adornment="Adornment.End"
+                                      AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                      OnAdornmentClick="@(() => CopyToClipboard(_generatedInvite.InviteUrl))"
+                                      AdornmentAriaLabel="Copy to clipboard" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Share this link with the tenant to complete their registration.
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        @if (_generatedInvite == null)
+        {
+            <MudButton OnClick="@(() => _showGenerateInviteDialog = false)">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitGenerateInvite">Generate</MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => _showGenerateInviteDialog = false)">Close</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+

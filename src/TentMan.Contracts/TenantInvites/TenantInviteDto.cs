@@ -12,6 +12,7 @@ public sealed class TenantInviteDto
     public string InviteUrl { get; set; } = string.Empty; // Full URL for convenience
     public string Phone { get; set; } = string.Empty;
     public string? Email { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
     public DateTime ExpiresAtUtc { get; set; }
     public bool IsUsed { get; set; }
     public DateTime? UsedAtUtc { get; set; }
