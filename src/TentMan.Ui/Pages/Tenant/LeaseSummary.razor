@@ -1,4 +1,5 @@
 @page "/tenant/lease-summary"
+@using TentMan.Contracts.Enums
 @attribute [Authorize(Roles = "Tenant")]
 
 <PageTitle>My Lease - TentMan</PageTitle>
@@ -143,20 +144,20 @@
                         </MudAlert>
                     }
 
-                    @if (_leaseSummary.LateFeeType != TentMan.Contracts.Enums.LateFeeType.None && _leaseSummary.LateFeeValue.HasValue)
+                    @if (_leaseSummary.LateFeeType != LateFeeType.None && _leaseSummary.LateFeeValue.HasValue)
                     {
                         <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
                             <MudText Typo="Typo.body2">
                                 <strong>Late Fee:</strong> 
-                                @if (_leaseSummary.LateFeeType == TentMan.Contracts.Enums.LateFeeType.Flat)
+                                @if (_leaseSummary.LateFeeType == LateFeeType.Flat)
                                 {
                                     <text>₹@_leaseSummary.LateFeeValue.Value.ToString("N0") flat fee</text>
                                 }
-                                else if (_leaseSummary.LateFeeType == TentMan.Contracts.Enums.LateFeeType.PerDay)
+                                else if (_leaseSummary.LateFeeType == LateFeeType.PerDay)
                                 {
                                     <text>₹@_leaseSummary.LateFeeValue.Value.ToString("N0") per day</text>
                                 }
-                                else if (_leaseSummary.LateFeeType == TentMan.Contracts.Enums.LateFeeType.Percent)
+                                else if (_leaseSummary.LateFeeType == LateFeeType.Percent)
                                 {
                                     <text>@_leaseSummary.LateFeeValue.Value% of rent</text>
                                 }
@@ -197,7 +198,7 @@
                                 <MudTd DataLabel="Date">@context.TxnDate.ToString("dd MMM yyyy")</MudTd>
                                 <MudTd DataLabel="Type">
                                     <MudChip T="string" Size="Size.Small" 
-                                             Color="@(context.TxnType == TentMan.Contracts.Enums.DepositTransactionType.Collected ? Color.Success : Color.Warning)">
+                                             Color="@(context.TxnType == DepositTransactionType.Collected ? Color.Success : Color.Warning)">
                                         @context.TxnType
                                     </MudChip>
                                 </MudTd>

@@ -94,6 +94,7 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
                 .ThenInclude(p => p.Lease)
                     .ThenInclude(l => l.Unit)
                         .ThenInclude(u => u.Building)
+                            .ThenInclude(b => b!.Address)
             .Include(t => t.LeaseParties.Where(p => !p.IsDeleted))
                 .ThenInclude(p => p.Lease)
                     .ThenInclude(l => l.Parties.Where(lp => !lp.IsDeleted))
