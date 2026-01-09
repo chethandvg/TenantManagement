@@ -47,7 +47,7 @@ public class OwnerConfiguration : IEntityTypeConfiguration<Owner>
         b.HasOne(x => x.LinkedUser)
             .WithMany()
             .HasForeignKey(x => x.LinkedUserId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Indexes
         b.HasIndex(x => x.OrgId);

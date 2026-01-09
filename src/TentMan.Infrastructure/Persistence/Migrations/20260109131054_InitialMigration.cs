@@ -219,8 +219,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         name: "FK_Owners_Users_LinkedUserId",
                         column: x => x.LinkedUserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -889,14 +888,12 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         name: "FK_MeterReadings_Files_PhotoFileId",
                         column: x => x.PhotoFileId,
                         principalTable: "Files",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_MeterReadings_Leases_LeaseId",
                         column: x => x.LeaseId,
                         principalTable: "Leases",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_MeterReadings_Units_UnitId",
                         column: x => x.UnitId,
@@ -941,8 +938,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         name: "FK_TenantDocuments_Leases_LeaseId",
                         column: x => x.LeaseId,
                         principalTable: "Leases",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TenantDocuments_Tenants_TenantId",
                         column: x => x.TenantId,
@@ -981,14 +977,12 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         name: "FK_UnitHandovers_Files_SignatureOwnerFileId",
                         column: x => x.SignatureOwnerFileId,
                         principalTable: "Files",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_UnitHandovers_Files_SignatureTenantFileId",
                         column: x => x.SignatureTenantFileId,
                         principalTable: "Files",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_UnitHandovers_Leases_LeaseId",
                         column: x => x.LeaseId,
@@ -1060,8 +1054,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         name: "FK_HandoverChecklistItems_Files_PhotoFileId",
                         column: x => x.PhotoFileId,
                         principalTable: "Files",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_HandoverChecklistItems_UnitHandovers_HandoverId",
                         column: x => x.HandoverId,

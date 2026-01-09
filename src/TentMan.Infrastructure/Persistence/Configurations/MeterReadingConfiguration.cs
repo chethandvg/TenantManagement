@@ -33,12 +33,12 @@ public class MeterReadingConfiguration : IEntityTypeConfiguration<MeterReading>
         b.HasOne(x => x.Lease)
             .WithMany(x => x.MeterReadings)
             .HasForeignKey(x => x.LeaseId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         b.HasOne(x => x.PhotoFile)
             .WithMany()
             .HasForeignKey(x => x.PhotoFileId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Index for efficient querying by unit, meter type, and date
         b.HasIndex(x => new { x.UnitId, x.MeterType, x.ReadingDate })
