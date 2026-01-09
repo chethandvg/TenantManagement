@@ -70,9 +70,14 @@ public class TenantInvite : BaseEntity
 ### Infrastructure Layer
 
 **Repository**:
-- `ITenantInviteRepository` - CRUD operations
-- Implements token uniqueness checks
+- `ITenantInviteRepository` - Interface for CRUD operations
+- `TenantInviteRepository` - Implementation with token uniqueness checks
 - Supports optimistic concurrency control
+
+**DI Registration** (in `DependencyInjection.cs`):
+```csharp
+services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
+```
 
 ---
 

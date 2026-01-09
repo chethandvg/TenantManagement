@@ -29,6 +29,7 @@ TentMan.Infrastructure/
 │   ├── ProductRepository.cs
 │   ├── BuildingRepository.cs
 │   ├── TenantRepository.cs    # Tenant operations
+│   ├── TenantInviteRepository.cs  # Tenant invite operations
 │   ├── LeaseRepository.cs     # Lease operations
 │   ├── FileMetadataRepository.cs
 │   └── ...
@@ -155,6 +156,9 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
+        services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
+        services.AddScoped<ILeaseRepository, LeaseRepository>();
         
         // Services
         services.AddScoped<IAuthenticationService, AuthenticationService>();
