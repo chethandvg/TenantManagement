@@ -198,7 +198,14 @@
                                 <MudTd DataLabel="Date">@context.TxnDate.ToString("dd MMM yyyy")</MudTd>
                                 <MudTd DataLabel="Type">
                                     <MudChip T="string" Size="Size.Small" 
-                                             Color="@(context.TxnType == DepositTransactionType.Collected ? Color.Success : Color.Warning)">
+                                             Color="@(context.TxnType switch
+                                             {
+                                                 DepositTransactionType.Collected => Color.Success,
+                                                 DepositTransactionType.Refund => Color.Info,
+                                                 DepositTransactionType.Deduction => Color.Error,
+                                                 DepositTransactionType.Adjustment => Color.Warning,
+                                                 _ => Color.Default
+                                             })">
                                         @context.TxnType
                                     </MudChip>
                                 </MudTd>

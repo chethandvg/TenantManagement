@@ -218,7 +218,7 @@ Gets the current tenant's active lease summary with complete details.
 
 **Status Codes**:
 - `200 OK`: Lease summary retrieved successfully
-- `404 Not Found`: No active lease found for the tenant
+- `404 Not Found`: No active lease found for the tenant (returns structured `ApiResponse` with error message)
 - `401 Unauthorized`: Invalid authentication or missing Tenant role
 
 **Example**:

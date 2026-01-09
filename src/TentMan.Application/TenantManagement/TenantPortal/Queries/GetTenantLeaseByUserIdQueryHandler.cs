@@ -52,15 +52,22 @@ public class GetTenantLeaseByUserIdQueryHandler : IRequestHandler<GetTenantLease
 
     private static TenantLeaseSummaryResponse MapToTenantLeaseSummaryResponse(Lease lease, Guid currentTenantId)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
         var activeTerm = lease.Terms
-            .Where(t => !t.IsDeleted)
+            .Where(t => !t.IsDeleted &&
+                        t.EffectiveFrom <= today &&
+                        (t.EffectiveTo == null || t.EffectiveTo >= today))
             .OrderByDescending(t => t.EffectiveFrom)
-            .FirstOrDefault(t => t.EffectiveFrom <= DateOnly.FromDateTime(DateTime.UtcNow) && 
-                                 (t.EffectiveTo == null || t.EffectiveTo >= DateOnly.FromDateTime(DateTime.UtcNow)));
+            .FirstOrDefault();
 
         var totalCollected = lease.DepositTransactions
             .Where(d => !d.IsDeleted && d.TxnType == DepositTransactionType.Collected)
             .Sum(d => d.Amount);
+        
+        // Note: DepositTransactionType.Adjustment transactions are intentionally excluded
+        // from deposit balance calculations. Adjustments affect the deposit amount directly
+        // and are already reflected in the current deposit value, not as separate refunds/deductions.
         var totalRefunded = lease.DepositTransactions
             .Where(d => !d.IsDeleted && (d.TxnType == DepositTransactionType.Refund || d.TxnType == DepositTransactionType.Deduction))
             .Sum(d => d.Amount);
