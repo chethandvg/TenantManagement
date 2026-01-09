@@ -217,7 +217,7 @@
                 </MudTabPanel>
 
                 @* Leases Tab *@
-                <MudTabPanel Text="Leases" Icon="@Icons.Material.Filled.Description" BadgeData="@_leases?.Count().ToString()">
+                <MudTabPanel Text="Leases" Icon="@Icons.Material.Filled.Description" BadgeData="@((_leases?.Count() ?? 0).ToString())">
                     <MudStack Spacing="3">
                         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                             <MudText Typo="Typo.h6">Lease History</MudText>

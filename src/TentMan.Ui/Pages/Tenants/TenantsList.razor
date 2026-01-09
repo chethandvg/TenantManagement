@@ -16,7 +16,7 @@
         <MudTextField @bind-Value="_searchText" Label="Search" Placeholder="Search by name or phone..."
                       Variant="Variant.Outlined" Margin="Margin.Dense"
                       Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
-                      Immediate="true" DebounceInterval="300" OnDebounceIntervalElapsed="ApplyFilters" />
+                      Immediate="true" DebounceInterval="600" OnDebounceIntervalElapsed="ApplyFilters" />
     </MudPaper>
 
     <BusyBoundary Retry="LoadTenantsAsync">

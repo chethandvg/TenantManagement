@@ -18,17 +18,17 @@ public partial class CreateLease : ComponentBase
 {
     private int _activeStepIndex = 0;
     private bool _isActivating = false;
-    private List<string> _validationErrors = new();
+    private readonly List<string> _validationErrors = new();
 
     // Step 1: Unit selection
     private IEnumerable<UnitListDto>? _units;
     private UnitListDto? _selectedUnit => _units?.FirstOrDefault(u => u.Id == _leaseModel.UnitId);
 
     // Step 2: Lease dates & rules
-    private LeaseFormModel _leaseModel = new();
+    private readonly LeaseFormModel _leaseModel = new();
 
     // Step 3: Parties
-    private List<LeasePartyModel> _parties = new();
+    private readonly List<LeasePartyModel> _parties = new();
     private bool _showSearchTenantDialog = false;
     private bool _showCreateTenantDialog = false;
     private string _tenantSearchText = string.Empty;
@@ -36,7 +36,7 @@ public partial class CreateLease : ComponentBase
     private TenantFormModel _newTenantModel = new();
 
     // Step 4: Financial terms
-    private LeaseTermModel _termModel = new();
+    private readonly LeaseTermModel _termModel = new();
 
     // Step 5: Documents
     private List<FileUploadModel> _leaseDocuments = new();
@@ -49,9 +49,9 @@ public partial class CreateLease : ComponentBase
     private ChecklistItemModel _newChecklistItem = new();
 
     // Breadcrumbs
-    private List<BreadcrumbItem> _breadcrumbs = new()
+    private readonly List<BreadcrumbItem> _breadcrumbs = new()
     {
-        new("Buildings", "/buildings", false, Icons.Material.Filled.Apartment),
+        new("Leases", "/leases/create", false, Icons.Material.Filled.Description),
         new("Create Lease", null, true)
     };
 
@@ -76,8 +76,9 @@ public partial class CreateLease : ComponentBase
     [Inject]
     public UiState UiState { get; set; } = default!;
 
-    // TODO: Get from authenticated user context
-    private Guid OrgId => Guid.Parse("00000000-0000-0000-0000-000000000001");
+    // TODO: Replace with OrgId from authenticated user context before production use.
+    // WARNING: This placeholder MUST be replaced with the actual organization identifier.
+    private Guid OrgId => Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     protected override async Task OnInitializedAsync()
     {
@@ -252,6 +253,11 @@ public partial class CreateLease : ComponentBase
         if (_termModel.MonthlyRent <= 0)
         {
             _validationErrors.Add("Monthly rent must be greater than zero.");
+        }
+
+        if (_termModel.SecurityDeposit < 0)
+        {
+            _validationErrors.Add("Security deposit cannot be negative.");
         }
     }
 

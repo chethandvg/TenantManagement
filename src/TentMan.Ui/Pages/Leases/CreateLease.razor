@@ -9,7 +9,7 @@
     <MudText Typo="Typo.h4">Create New Lease</MudText>
 
     <MudPaper Elevation="2" Class="pa-4">
-        <MudStepper @bind-ActiveIndex="_activeStepIndex" Linear="true">
+        <MudStepper @bind-ActiveIndex="_activeStepIndex">
             @* Step 1: Select Unit *@
             <MudStep Title="Select Unit">
                 <MudStack Spacing="3">
@@ -85,7 +85,7 @@
                         </MudItem>
                         <MudItem xs="12" sm="4">
                             <MudNumericField T="byte" @bind-Value="_leaseModel.RentDueDay" Label="Rent Due Day" Variant="Variant.Outlined" 
-                                             Min="1" Max="28" Required="true" HelperText="1-28 recommended" />
+                                             Min="1" Max="28" Required="true" HelperText="Must be between 1 and 28" />
                         </MudItem>
                         <MudItem xs="12" sm="4">
                             <MudNumericField T="byte" @bind-Value="_leaseModel.GraceDays" Label="Grace Days" Variant="Variant.Outlined" 

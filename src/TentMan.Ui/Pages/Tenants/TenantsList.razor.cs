@@ -29,8 +29,9 @@ public partial class TenantsList : ComponentBase
     [Inject]
     public UiState UiState { get; set; } = default!;
 
-    // TODO: Get from authenticated user context
-    private Guid OrgId => Guid.Parse("00000000-0000-0000-0000-000000000001");
+    // TODO: Replace with OrgId from authenticated user context before production use.
+    // WARNING: This placeholder MUST be replaced with the actual organization identifier.
+    private Guid OrgId => Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,17 +78,8 @@ public partial class TenantsList : ComponentBase
             return;
         }
 
-        var filtered = _tenants.AsEnumerable();
-
-        if (!string.IsNullOrWhiteSpace(_searchText))
-        {
-            var search = _searchText.ToLowerInvariant();
-            filtered = filtered.Where(t =>
-                (!string.IsNullOrEmpty(t.FullName) && t.FullName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(t.Phone) && t.Phone.Contains(search, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        _filteredTenants = filtered.ToList();
+        // Note: API already filters by search text, so we just assign the results directly
+        _filteredTenants = _tenants.ToList();
         StateHasChanged();
     }
 
