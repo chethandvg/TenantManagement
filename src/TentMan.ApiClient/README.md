@@ -516,6 +516,8 @@ TentMan.ApiClient/
 │   ├── OwnersApiClient.cs               # Owners API client implementation
 │   ├── ITenantsApiClient.cs             # Tenants API client interface
 │   ├── TenantsApiClient.cs              # Tenants API client implementation
+│   ├── ITenantInvitesApiClient.cs       # Tenant Invites API client interface
+│   ├── TenantInvitesApiClient.cs        # Tenant Invites API client implementation
 │   ├── ILeasesApiClient.cs              # Leases API client interface
 │   └── LeasesApiClient.cs               # Leases API client implementation
 └── README.md

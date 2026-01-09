@@ -37,7 +37,7 @@ public class HandoverChecklistItemConfiguration : IEntityTypeConfiguration<Hando
         b.HasOne(x => x.PhotoFile)
             .WithMany()
             .HasForeignKey(x => x.PhotoFileId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Indexes
         b.HasIndex(x => x.HandoverId);

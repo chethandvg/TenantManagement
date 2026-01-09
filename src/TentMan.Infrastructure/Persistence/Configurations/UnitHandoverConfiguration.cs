@@ -37,12 +37,12 @@ public class UnitHandoverConfiguration : IEntityTypeConfiguration<UnitHandover>
         b.HasOne(x => x.SignatureTenantFile)
             .WithMany()
             .HasForeignKey(x => x.SignatureTenantFileId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         b.HasOne(x => x.SignatureOwnerFile)
             .WithMany()
             .HasForeignKey(x => x.SignatureOwnerFileId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Indexes
         b.HasIndex(x => x.LeaseId);

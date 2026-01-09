@@ -12,8 +12,8 @@ using TentMan.Infrastructure.Persistence;
 namespace TentMan.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260109104924_AddTenantInvites")]
-    partial class AddTenantInvites
+    [Migration("20260109131054_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1385,6 +1385,9 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("LinkedUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("ModifiedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -1411,6 +1414,8 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("LinkedUserId");
 
                     b.HasIndex("OrgId");
 
@@ -2231,7 +2236,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.HasOne("TentMan.Domain.Entities.FileMetadata", "PhotoFile")
                         .WithMany()
                         .HasForeignKey("PhotoFileId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Handover");
 
@@ -2333,12 +2338,12 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.HasOne("TentMan.Domain.Entities.Lease", "Lease")
                         .WithMany("MeterReadings")
                         .HasForeignKey("LeaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("TentMan.Domain.Entities.FileMetadata", "PhotoFile")
                         .WithMany()
                         .HasForeignKey("PhotoFileId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("TentMan.Domain.Entities.Unit", "Unit")
                         .WithMany("MeterReadings")
@@ -2358,7 +2363,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.HasOne("TentMan.Domain.Entities.Identity.ApplicationUser", "LinkedUser")
                         .WithMany()
                         .HasForeignKey("LinkedUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("TentMan.Domain.Entities.Organization", "Organization")
                         .WithMany("Owners")
@@ -2382,11 +2387,18 @@ namespace TentMan.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TentMan.Domain.Entities.Tenant", b =>
                 {
+                    b.HasOne("TentMan.Domain.Entities.Identity.ApplicationUser", "LinkedUser")
+                        .WithMany()
+                        .HasForeignKey("LinkedUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TentMan.Domain.Entities.Organization", "Organization")
                         .WithMany("Tenants")
                         .HasForeignKey("OrgId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("LinkedUser");
 
                     b.Navigation("Organization");
                 });
@@ -2413,7 +2425,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.HasOne("TentMan.Domain.Entities.Lease", "Lease")
                         .WithMany("Documents")
                         .HasForeignKey("LeaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("TentMan.Domain.Entities.Tenant", "Tenant")
                         .WithMany("Documents")
@@ -2506,12 +2518,12 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.HasOne("TentMan.Domain.Entities.FileMetadata", "SignatureOwnerFile")
                         .WithMany()
                         .HasForeignKey("SignatureOwnerFileId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("TentMan.Domain.Entities.FileMetadata", "SignatureTenantFile")
                         .WithMany()
                         .HasForeignKey("SignatureTenantFileId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Lease");
 
