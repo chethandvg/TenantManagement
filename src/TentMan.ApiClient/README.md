@@ -509,7 +509,15 @@ TentMan.ApiClient/
 ├── Services/
 │   ├── ApiClientServiceBase.cs          # Base HTTP client
 │   ├── IProductsApiClient.cs            # Products API client interface
-│   └── ProductsApiClient.cs             # Products API client implementation
+│   ├── ProductsApiClient.cs             # Products API client implementation
+│   ├── IBuildingsApiClient.cs           # Buildings & Units API client interface
+│   ├── BuildingsApiClient.cs            # Buildings & Units API client implementation
+│   ├── IOwnersApiClient.cs              # Owners API client interface
+│   ├── OwnersApiClient.cs               # Owners API client implementation
+│   ├── ITenantsApiClient.cs             # Tenants API client interface
+│   ├── TenantsApiClient.cs              # Tenants API client implementation
+│   ├── ILeasesApiClient.cs              # Leases API client interface
+│   └── LeasesApiClient.cs               # Leases API client implementation
 └── README.md
 ```
 

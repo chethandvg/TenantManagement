@@ -39,6 +39,9 @@ The catalog below reflects the components that currently ship in the library.
 | `Products` | `/products` | `Pages/Products.razor`<br/>`Pages/Products.razor.cs` | Authenticated catalog view that fetches products from `IProductsApiClient` and reports load/error states. |
 | `Counter` | `/counter` | `Pages/Counter.razor`<br/>`Pages/Counter.razor.cs` | Sample counter experience used for diagnostics and template parity. |
 | `FetchData` | `/fetchdata` | `Pages/FetchData.razor`<br/>`Pages/FetchData.razor.cs` | Weather forecast sample that demonstrates basic API calls through `HttpClient`. |
+| `TenantsList` | `/tenants` | `Pages/Tenants/TenantsList.razor`<br/>`Pages/Tenants/TenantsList.razor.cs` | Displays all tenants with search by phone/name and add/edit capabilities. |
+| `TenantDetails` | `/tenants/{id}` | `Pages/Tenants/TenantDetails.razor`<br/>`Pages/Tenants/TenantDetails.razor.cs` | Tabbed view for tenant profile, addresses, documents, and lease history. |
+| `CreateLease` | `/leases/create`<br/>`/leases/create/{unitId}` | `Pages/Leases/CreateLease.razor`<br/>`Pages/Leases/CreateLease.razor.cs` | 7-step wizard for creating new leases with parties, financial terms, and move-in handover. |
 
 ### State Containers
 

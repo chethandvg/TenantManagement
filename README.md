@@ -113,7 +113,32 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 
 📚 **[Read the Property Management Guide →](docs/PROPERTY_MANAGEMENT.md)**
 
-### Tenant Management
+### Tenant Management 👥 NEW!
+- **Tenant Registry**: Complete tenant (renter) management with profile, addresses, documents
+- **Tenant Search**: Search by phone number or name with 600ms debounce
+- **Document Management**: Upload and preview tenant documents (ID proofs, address proofs)
+- **Lease History**: View tenant's lease history with status tracking
+- **Blazor WASM Frontend** ✨: Complete UI screens for tenant management
+  - Tenants List with search by phone/name
+  - Tenant Details with tabbed interface (Profile, Addresses, Documents, Leases)
+  - Add/Edit tenant dialogs
+
+📚 **[Read the Tenant & Lease Management Guide →](docs/TENANT_LEASE_MANAGEMENT.md)**
+
+### Lease Management 📝 NEW!
+- **7-Step Lease Creation Wizard**: Guided workflow for creating leases
+  - Step 1: Select Unit (dropdown with unit summary)
+  - Step 2: Dates & Rules (start/end, due day, grace period, late fee, notice)
+  - Step 3: Add Parties (search existing or create inline, role assignment)
+  - Step 4: Financial Terms (rent, deposit, maintenance, escalation)
+  - Step 5: Documents (upload lease agreement and proofs)
+  - Step 6: Move-in Handover (checklist, meter readings, photos)
+  - Step 7: Review & Activate (validation summary and confirmation)
+- **Party Management**: Add tenants with roles (Primary, Co-Tenant, Occupant, Guarantor)
+- **Financial Terms**: Monthly rent, security deposit, maintenance charges, escalation rules
+- **Validation Summary**: Comprehensive validation before lease activation
+
+### Multi-Tenant Architecture
 - **Multi-Tenant Architecture**: Support for unlimited tenants with data isolation
 - **Tenant Provisioning**: Automated tenant setup and configuration
 - **Tenant-Specific Settings**: Customizable configurations per tenant

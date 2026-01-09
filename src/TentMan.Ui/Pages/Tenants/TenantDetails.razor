@@ -1,0 +1,369 @@
+@page "/tenants/{TenantId:guid}"
+@attribute [Authorize]
+
+<PageTitle>@(_tenant?.FullName ?? "Tenant Details")</PageTitle>
+
+<BusyBoundary Retry="LoadTenantAsync">
+    @if (_tenant != null)
+    {
+        <MudStack Spacing="4">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                <MudStack>
+                    <MudBreadcrumbs Items="_breadcrumbs" />
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h4">@_tenant.FullName</MudText>
+                        <MudChip T="string" Size="Size.Small" Color="@(_tenant.IsActive ? Color.Success : Color.Error)">
+                            @(_tenant.IsActive ? "Active" : "Inactive")
+                        </MudChip>
+                    </MudStack>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@_tenant.Phone</MudText>
+                </MudStack>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
+                           OnClick="ShowEditDialog">
+                    Edit Tenant
+                </MudButton>
+            </MudStack>
+
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" @bind-ActivePanelIndex="_activeTab">
+                @* Profile Tab *@
+                <MudTabPanel Text="Profile" Icon="@Icons.Material.Filled.Person">
+                    <MudStack Spacing="3">
+                        <MudPaper Elevation="1" Class="pa-4">
+                            <MudGrid Spacing="3">
+                                <MudItem xs="12" sm="6">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Full Name</MudText>
+                                        <MudText Typo="Typo.body1">@_tenant.FullName</MudText>
+                                    </MudStack>
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Phone</MudText>
+                                        <MudText Typo="Typo.body1">@_tenant.Phone</MudText>
+                                    </MudStack>
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Email</MudText>
+                                        <MudText Typo="Typo.body1">@(_tenant.Email ?? "—")</MudText>
+                                    </MudStack>
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Date of Birth</MudText>
+                                        <MudText Typo="Typo.body1">@(_tenant.DateOfBirth?.ToString("dd MMM yyyy") ?? "—")</MudText>
+                                    </MudStack>
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Gender</MudText>
+                                        <MudText Typo="Typo.body1">@(_tenant.Gender?.ToString() ?? "—")</MudText>
+                                    </MudStack>
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Member Since</MudText>
+                                        <MudText Typo="Typo.body1">@_tenant.CreatedAtUtc.ToString("dd MMM yyyy")</MudText>
+                                    </MudStack>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+
+                        @if (_tenant.EmergencyContacts.Any())
+                        {
+                            <MudText Typo="Typo.h6">Emergency Contacts</MudText>
+                            <MudSimpleTable Hover="true" Dense="true">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Relationship</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var contact in _tenant.EmergencyContacts)
+                                    {
+                                        <tr>
+                                            <td>@contact.Name</td>
+                                            <td>@contact.Relationship</td>
+                                            <td>@contact.Phone</td>
+                                            <td>@(contact.Email ?? "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    </MudStack>
+                </MudTabPanel>
+
+                @* Addresses Tab *@
+                <MudTabPanel Text="Addresses" Icon="@Icons.Material.Filled.LocationOn" BadgeData="@_tenant.Addresses.Count.ToString()">
+                    <MudStack Spacing="3">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Addresses (@_tenant.Addresses.Count)</MudText>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.Add" OnClick="ShowAddAddressDialog">
+                                Add Address
+                            </MudButton>
+                        </MudStack>
+
+                        @if (_tenant.Addresses.Any())
+                        {
+                            <MudGrid>
+                                @foreach (var address in _tenant.Addresses)
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <MudCard Elevation="1">
+                                            <MudCardHeader>
+                                                <CardHeaderContent>
+                                                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">@address.Type</MudChip>
+                                                        @if (address.IsPrimary)
+                                                        {
+                                                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Primary</MudChip>
+                                                        }
+                                                    </MudStack>
+                                                </CardHeaderContent>
+                                            </MudCardHeader>
+                                            <MudCardContent>
+                                                <MudText>@address.Line1</MudText>
+                                                @if (!string.IsNullOrEmpty(address.Line2))
+                                                {
+                                                    <MudText>@address.Line2</MudText>
+                                                }
+                                                <MudText>@address.City, @address.State @address.Pincode</MudText>
+                                                <MudText Color="Color.Secondary">@address.Country</MudText>
+                                                @if (address.FromDate.HasValue || address.ToDate.HasValue)
+                                                {
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                                                        @(address.FromDate?.ToString("MMM yyyy") ?? "Start") — @(address.ToDate?.ToString("MMM yyyy") ?? "Present")
+                                                    </MudText>
+                                                }
+                                            </MudCardContent>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">No addresses added yet.</MudAlert>
+                        }
+                    </MudStack>
+                </MudTabPanel>
+
+                @* Documents Tab *@
+                <MudTabPanel Text="Documents" Icon="@Icons.Material.Filled.AttachFile" BadgeData="@_tenant.Documents.Count.ToString()">
+                    <MudStack Spacing="3">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Documents (@_tenant.Documents.Count)</MudText>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.Upload" OnClick="ShowUploadDocumentDialog">
+                                Upload Document
+                            </MudButton>
+                        </MudStack>
+
+                        @if (_tenant.Documents.Any())
+                        {
+                            <MudDataGrid Items="@_tenant.Documents" Hover="true" Dense="true" Striped="true">
+                                <Columns>
+                                    <TemplateColumn Title="Type">
+                                        <CellTemplate>
+                                            <MudChip T="string" Size="Size.Small" Color="@GetDocTypeColor(context.Item.DocType)">
+                                                @context.Item.DocType
+                                            </MudChip>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="x => x.DocNumberMasked" Title="Number" />
+                                    <TemplateColumn Title="Issue Date">
+                                        <CellTemplate>
+                                            @(context.Item.IssueDate?.ToString("dd MMM yyyy") ?? "—")
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Expiry Date">
+                                        <CellTemplate>
+                                            @if (context.Item.ExpiryDate.HasValue)
+                                            {
+                                                var isExpired = context.Item.ExpiryDate.Value < DateOnly.FromDateTime(DateTime.Today);
+                                                <MudText Color="@(isExpired ? Color.Error : Color.Default)">
+                                                    @context.Item.ExpiryDate.Value.ToString("dd MMM yyyy")
+                                                </MudText>
+                                            }
+                                            else
+                                            {
+                                                <MudText>—</MudText>
+                                            }
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="x => x.FileName" Title="File" />
+                                    <TemplateColumn Title="Actions" Sortable="false">
+                                        <CellTemplate>
+                                            <MudStack Row="true" Spacing="1">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Primary"
+                                                               OnClick="@(() => PreviewDocument(context.Item))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" />
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">No documents uploaded yet.</MudAlert>
+                        }
+                    </MudStack>
+                </MudTabPanel>
+
+                @* Leases Tab *@
+                <MudTabPanel Text="Leases" Icon="@Icons.Material.Filled.Description" BadgeData="@((_leases?.Count() ?? 0).ToString())">
+                    <MudStack Spacing="3">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Lease History</MudText>
+                        </MudStack>
+
+                        @if (_leases != null && _leases.Any())
+                        {
+                            <MudDataGrid Items="@_leases" Hover="true" Dense="true" Striped="true">
+                                <Columns>
+                                    <PropertyColumn Property="x => x.LeaseNumber" Title="Lease #" />
+                                    <PropertyColumn Property="x => x.BuildingName" Title="Building" />
+                                    <PropertyColumn Property="x => x.UnitNumber" Title="Unit" />
+                                    <TemplateColumn Title="Status">
+                                        <CellTemplate>
+                                            <MudChip T="string" Size="Size.Small" Color="@GetLeaseStatusColor(context.Item.Status)">
+                                                @context.Item.Status
+                                            </MudChip>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Period">
+                                        <CellTemplate>
+                                            @context.Item.StartDate.ToString("dd MMM yyyy") — @(context.Item.EndDate?.ToString("dd MMM yyyy") ?? "Ongoing")
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Rent">
+                                        <CellTemplate>
+                                            @if (context.Item.CurrentRent.HasValue)
+                                            {
+                                                <MudText>₹@context.Item.CurrentRent.Value.ToString("N0")</MudText>
+                                            }
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Actions" Sortable="false">
+                                        <CellTemplate>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Primary"
+                                                           Href="@($"/leases/{context.Item.Id}")" />
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">No lease history found.</MudAlert>
+                        }
+                    </MudStack>
+                </MudTabPanel>
+            </MudTabs>
+        </MudStack>
+    }
+</BusyBoundary>
+
+@* Add Address Dialog *@
+<MudDialog @bind-Visible="_showAddressDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 500px;">
+            <MudText Typo="Typo.h6">Add Address</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudSelect T="AddressType" @bind-Value="_addressModel.Type" Label="Address Type" Variant="Variant.Outlined" Required="true">
+                        @foreach (AddressType type in Enum.GetValues<AddressType>())
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudCheckBox @bind-Value="_addressModel.IsPrimary" Label="Primary Address" Color="Color.Primary" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_addressModel.Line1" Label="Address Line 1" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_addressModel.Line2" Label="Address Line 2" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_addressModel.City" Label="City" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_addressModel.District" Label="District" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_addressModel.State" Label="State" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_addressModel.Pincode" Label="Pincode" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showAddressDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SaveAddress">Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* Upload Document Dialog *@
+<MudDialog @bind-Visible="_showDocumentDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 500px;">
+            <MudText Typo="Typo.h6">Upload Document</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="6">
+                    <MudSelect T="DocumentType" @bind-Value="_documentModel.DocType" Label="Document Type" Variant="Variant.Outlined" Required="true">
+                        @foreach (DocumentType type in Enum.GetValues<DocumentType>())
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_documentModel.DocNumberMasked" Label="Document Number" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_documentModel.IssueDate" Label="Issue Date" Variant="Variant.Outlined" Editable="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_documentModel.ExpiryDate" Label="Expiry Date" Variant="Variant.Outlined" Editable="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudFileUpload T="IBrowserFile" FilesChanged="OnDocumentFileSelected" Accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                        <ActivatorContent>
+                            <MudPaper Outlined="true" Class="pa-4 d-flex flex-column align-center justify-center" Style="border-style: dashed; cursor: pointer;">
+                                <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" />
+                                <MudText Typo="Typo.body2" Class="mt-2">
+                                    @if (_documentModel.File != null)
+                                    {
+                                        @_documentModel.File.Name
+                                    }
+                                    else
+                                    {
+                                        @:Click or drag to upload document
+                                    }
+                                </MudText>
+                            </MudPaper>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_documentModel.Notes" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showDocumentDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="UploadDocument">Upload</MudButton>
+    </DialogActions>
+</MudDialog>

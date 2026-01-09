@@ -195,6 +195,12 @@ public static class ServiceCollectionExtensions
         // Configure Owners API Client (requires authentication)
         ConfigureHttpClient<IOwnersApiClient, OwnersApiClient>(services, options, authOptions, useAuthHandler: true);
 
+        // Configure Tenants API Client (requires authentication)
+        ConfigureHttpClient<ITenantsApiClient, TenantsApiClient>(services, options, authOptions, useAuthHandler: true);
+
+        // Configure Leases API Client (requires authentication)
+        ConfigureHttpClient<ILeasesApiClient, LeasesApiClient>(services, options, authOptions, useAuthHandler: true);
+
         // Configure Authentication API Client
         // The implementation will handle token attachment internally based on endpoint
         ConfigureHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(services, options, authOptions, useAuthHandler: true);

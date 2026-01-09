@@ -1,0 +1,94 @@
+@page "/tenants"
+@attribute [Authorize]
+
+<PageTitle>Tenants</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Tenants</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="ShowAddTenantDialog">
+            Add Tenant
+        </MudButton>
+    </MudStack>
+
+    <MudPaper Elevation="1" Class="pa-4">
+        <MudTextField @bind-Value="_searchText" Label="Search" Placeholder="Search by name or phone..."
+                      Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true" DebounceInterval="600" OnDebounceIntervalElapsed="ApplyFilters" />
+    </MudPaper>
+
+    <BusyBoundary Retry="LoadTenantsAsync">
+        @if (_filteredTenants == null || !_filteredTenants.Any())
+        {
+            <MudAlert Severity="Severity.Info">No tenants found.</MudAlert>
+        }
+        else
+        {
+            <MudDataGrid Items="@_filteredTenants" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.FullName" Title="Name" />
+                    <PropertyColumn Property="x => x.Phone" Title="Phone" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            <MudChip T="string" Size="Size.Small" Color="@(context.Item.IsActive ? Color.Success : Color.Error)">
+                                @(context.Item.IsActive ? "Active" : "Inactive")
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                        <CellTemplate>
+                            <MudStack Row="true" Spacing="1">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                                               Href="@($"/tenants/{context.Item.Id}")" Color="Color.Primary" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                               OnClick="@(() => ShowEditTenantDialog(context.Item))" Color="Color.Secondary" />
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    </BusyBoundary>
+</MudStack>
+
+@* Add/Edit Tenant Dialog *@
+<MudDialog @bind-Visible="_showTenantDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 450px;">
+            <MudText Typo="Typo.h6">@(_isEditMode ? "Edit Tenant" : "Add Tenant")</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_tenantModel.FullName" Label="Full Name" 
+                                  Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_tenantModel.Phone" Label="Phone" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_tenantModel.Email" Label="Email" Variant="Variant.Outlined" 
+                                  InputType="InputType.Email" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_tenantModel.DateOfBirth" Label="Date of Birth" Variant="Variant.Outlined" 
+                                   Editable="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="Gender?" @bind-Value="_tenantModel.Gender" Label="Gender" 
+                               Variant="Variant.Outlined" Clearable="true">
+                        @foreach (Gender gender in Enum.GetValues<Gender>())
+                        {
+                            <MudSelectItem Value="@((Gender?)gender)">@gender</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseTenantDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SaveTenant">@(_isEditMode ? "Update" : "Create")</MudButton>
+    </DialogActions>
+</MudDialog>
