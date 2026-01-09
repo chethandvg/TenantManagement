@@ -1,0 +1,319 @@
+@page "/tenant/lease-summary"
+@using TentMan.Contracts.Enums
+@attribute [Authorize(Roles = "Tenant")]
+
+<PageTitle>My Lease - TentMan</PageTitle>
+
+<BusyBoundary Retry="LoadDataAsync">
+    <MudStack Spacing="4">
+        <MudText Typo="Typo.h4">My Lease Summary</MudText>
+
+        @if (_leaseSummary != null)
+        {
+            <!-- Lease Status Card -->
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Spacing="3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.h5">Lease Information</MudText>
+                        <MudChip T="string" 
+                                 Color="@GetStatusColor(_leaseSummary.Status)" 
+                                 Size="Size.Small">
+                            @_leaseSummary.Status
+                        </MudChip>
+                    </MudStack>
+
+                    <MudDivider />
+
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Lease Number</MudText>
+                                <MudText Typo="Typo.body1">@_leaseSummary.LeaseNumber</MudText>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Start Date</MudText>
+                                <MudText Typo="Typo.body1">@_leaseSummary.StartDate.ToString("dd MMM yyyy")</MudText>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">End Date</MudText>
+                                <MudText Typo="Typo.body1">@(_leaseSummary.EndDate?.ToString("dd MMM yyyy") ?? "Open-ended")</MudText>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Rent Due Day</MudText>
+                                <MudText Typo="Typo.body1">@_leaseSummary.RentDueDay of each month</MudText>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Grace Period</MudText>
+                                <MudText Typo="Typo.body1">@_leaseSummary.GraceDays days</MudText>
+                            </MudStack>
+                        </MudItem>
+                        @if (_leaseSummary.NoticePeriodDays.HasValue)
+                        {
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Notice Period</MudText>
+                                    <MudText Typo="Typo.body1">@_leaseSummary.NoticePeriodDays days</MudText>
+                                </MudStack>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Unit Details Card -->
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Unit Details</MudText>
+                    <MudDivider />
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" sm="6">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Unit Number</MudText>
+                                <MudText Typo="Typo.body1">@_leaseSummary.UnitNumber</MudText>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Building</MudText>
+                                <MudText Typo="Typo.body1">@_leaseSummary.BuildingName</MudText>
+                            </MudStack>
+                        </MudItem>
+                        @if (!string.IsNullOrWhiteSpace(_leaseSummary.BuildingAddress))
+                        {
+                            <MudItem xs="12">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Address</MudText>
+                                    <MudText Typo="Typo.body1">@_leaseSummary.BuildingAddress</MudText>
+                                </MudStack>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Financial Details Card -->
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Financial Details</MudText>
+                    <MudDivider />
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Monthly Rent</MudText>
+                                <MudText Typo="Typo.h6" Color="Color.Primary">₹@_leaseSummary.MonthlyRent.ToString("N0")</MudText>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Security Deposit</MudText>
+                                <MudText Typo="Typo.h6">₹@_leaseSummary.SecurityDeposit.ToString("N0")</MudText>
+                            </MudStack>
+                        </MudItem>
+                        @if (_leaseSummary.MaintenanceCharge.HasValue)
+                        {
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Maintenance</MudText>
+                                    <MudText Typo="Typo.body1">₹@_leaseSummary.MaintenanceCharge.Value.ToString("N0")</MudText>
+                                </MudStack>
+                            </MudItem>
+                        }
+                        @if (_leaseSummary.OtherFixedCharge.HasValue)
+                        {
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Other Charges</MudText>
+                                    <MudText Typo="Typo.body1">₹@_leaseSummary.OtherFixedCharge.Value.ToString("N0")</MudText>
+                                </MudStack>
+                            </MudItem>
+                        }
+                    </MudGrid>
+
+                    @if (!string.IsNullOrWhiteSpace(_leaseSummary.PaymentMethodNote))
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                            <MudText Typo="Typo.body2"><strong>Payment Method:</strong> @_leaseSummary.PaymentMethodNote</MudText>
+                        </MudAlert>
+                    }
+
+                    @if (_leaseSummary.LateFeeType != LateFeeType.None && _leaseSummary.LateFeeValue.HasValue)
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                            <MudText Typo="Typo.body2">
+                                <strong>Late Fee:</strong> 
+                                @if (_leaseSummary.LateFeeType == LateFeeType.Flat)
+                                {
+                                    <text>₹@_leaseSummary.LateFeeValue.Value.ToString("N0") flat fee</text>
+                                }
+                                else if (_leaseSummary.LateFeeType == LateFeeType.PerDay)
+                                {
+                                    <text>₹@_leaseSummary.LateFeeValue.Value.ToString("N0") per day</text>
+                                }
+                                else if (_leaseSummary.LateFeeType == LateFeeType.Percent)
+                                {
+                                    <text>@_leaseSummary.LateFeeValue.Value% of rent</text>
+                                }
+                            </MudText>
+                        </MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
+
+            <!-- Deposit Transactions -->
+            @if (_leaseSummary.DepositTransactions.Any())
+            {
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudStack Spacing="3">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Deposit History</MudText>
+                            <MudStack Row="true" Spacing="3">
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Total Collected</MudText>
+                                    <MudText Typo="Typo.body1">₹@_leaseSummary.TotalDepositCollected.ToString("N0")</MudText>
+                                </MudStack>
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Balance</MudText>
+                                    <MudText Typo="Typo.body1" Color="Color.Success">₹@_leaseSummary.DepositBalance.ToString("N0")</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudStack>
+                        <MudDivider />
+                        <MudTable Items="_leaseSummary.DepositTransactions" Dense="true" Hover="true">
+                            <HeaderContent>
+                                <MudTh>Date</MudTh>
+                                <MudTh>Type</MudTh>
+                                <MudTh>Amount</MudTh>
+                                <MudTh>Reference</MudTh>
+                                <MudTh>Notes</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Date">@context.TxnDate.ToString("dd MMM yyyy")</MudTd>
+                                <MudTd DataLabel="Type">
+                                    <MudChip T="string" Size="Size.Small" 
+                                             Color="@(context.TxnType switch
+                                             {
+                                                 DepositTransactionType.Collected => Color.Success,
+                                                 DepositTransactionType.Refund => Color.Info,
+                                                 DepositTransactionType.Deduction => Color.Error,
+                                                 DepositTransactionType.Adjustment => Color.Warning,
+                                                 _ => Color.Default
+                                             })">
+                                        @context.TxnType
+                                    </MudChip>
+                                </MudTd>
+                                <MudTd DataLabel="Amount">₹@context.Amount.ToString("N0")</MudTd>
+                                <MudTd DataLabel="Reference">@context.Reference</MudTd>
+                                <MudTd DataLabel="Notes">@context.Notes</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudStack>
+                </MudPaper>
+            }
+
+            <!-- Lease Parties (Other Tenants) -->
+            @if (_leaseSummary.LeaseParties.Any())
+            {
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">Other Lease Parties</MudText>
+                        <MudDivider />
+                        <MudGrid Spacing="2">
+                            @foreach (var party in _leaseSummary.LeaseParties)
+                            {
+                                <MudItem xs="12" sm="6" md="4">
+                                    <MudCard Outlined="true">
+                                        <MudCardContent>
+                                            <MudStack Spacing="1">
+                                                <MudText Typo="Typo.body1"><strong>@party.FullName</strong></MudText>
+                                                <MudText Typo="Typo.caption">@party.Role</MudText>
+                                                @if (party.IsResponsibleForPayment)
+                                                {
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Info">Responsible for Payment</MudChip>
+                                                }
+                                            </MudStack>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudStack>
+                </MudPaper>
+            }
+
+            <!-- Terms History -->
+            @if (_leaseSummary.TermsHistory.Count > 1)
+            {
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">Rent History</MudText>
+                        <MudDivider />
+                        <MudTimeline TimelineOrientation="TimelineOrientation.Vertical">
+                            @foreach (var term in _leaseSummary.TermsHistory)
+                            {
+                                <MudTimelineItem Color="@(term.IsActive ? Color.Primary : Color.Default)" Size="Size.Small">
+                                    <ItemContent>
+                                        <MudStack Spacing="1">
+                                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                                <MudText Typo="Typo.body1">
+                                                    <strong>₹@term.MonthlyRent.ToString("N0")/month</strong>
+                                                </MudText>
+                                                @if (term.IsActive)
+                                                {
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Success">Current</MudChip>
+                                                }
+                                            </MudStack>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                @term.EffectiveFrom.ToString("dd MMM yyyy") - @(term.EffectiveTo?.ToString("dd MMM yyyy") ?? "Present")
+                                            </MudText>
+                                        </MudStack>
+                                    </ItemContent>
+                                </MudTimelineItem>
+                            }
+                        </MudTimeline>
+                    </MudStack>
+                </MudPaper>
+            }
+
+            <!-- Terms and Conditions -->
+            @if (!string.IsNullOrWhiteSpace(_leaseSummary.TermsText))
+            {
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">Terms and Conditions</MudText>
+                        <MudDivider />
+                        <MudText Typo="Typo.body2" Style="white-space: pre-wrap;">@_leaseSummary.TermsText</MudText>
+                    </MudStack>
+                </MudPaper>
+            }
+        }
+        else
+        {
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6">No Active Lease</MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center">
+                        You don't have an active lease at the moment.
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        }
+
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/tenant/dashboard">
+                Back to Dashboard
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/tenant/documents">
+                My Documents
+            </MudButton>
+        </MudStack>
+    </MudStack>
+</BusyBoundary>

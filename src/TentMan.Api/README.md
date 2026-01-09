@@ -16,6 +16,8 @@ TentMan.Api/
 │   ├── TenantManagement/      # Tenant and Lease controllers
 │   │   ├── TenantsController.cs
 │   │   └── LeasesController.cs
+│   ├── TenantPortal/          # Tenant portal endpoints
+│   │   └── TenantPortalController.cs
 │   └── ...
 ├── Health/                    # Health check endpoints
 ├── Middleware/                # Custom middleware
@@ -188,6 +190,41 @@ Or with Aspire:
 ```bash
 cd src/TentMan.AppHost
 dotnet run
+```
+
+---
+
+## 📝 Tenant Portal Endpoints
+
+The Tenant Portal provides read-only access for tenants to view their lease information.
+
+### GET /api/v1/tenant-portal/lease-summary
+
+Gets the current tenant's active lease summary with complete details.
+
+**Authorization**: Requires `Tenant` role
+
+**Response**: `ApiResponse<TenantLeaseSummaryResponse>`
+
+**Returns**:
+- Lease information (number, dates, status, terms)
+- Unit details (number, building, address)
+- Current financial terms (rent, deposit, charges)
+- Deposit transaction history
+- Other lease parties (roommates, occupants)
+- Historical rent terms (timeline)
+- Late fee policy
+- Payment method information
+
+**Status Codes**:
+- `200 OK`: Lease summary retrieved successfully
+- `404 Not Found`: No active lease found for the tenant (returns structured `ApiResponse` with error message)
+- `401 Unauthorized`: Invalid authentication or missing Tenant role
+
+**Example**:
+```bash
+GET /api/v1/tenant-portal/lease-summary
+Authorization: Bearer {tenant-jwt-token}
 ```
 
 ---
