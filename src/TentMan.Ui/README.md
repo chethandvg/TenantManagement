@@ -41,6 +41,7 @@ The catalog below reflects the components that currently ship in the library.
 | `FetchData` | `/fetchdata` | `Pages/FetchData.razor`<br/>`Pages/FetchData.razor.cs` | Weather forecast sample that demonstrates basic API calls through `HttpClient`. |
 | `TenantsList` | `/tenants` | `Pages/Tenants/TenantsList.razor`<br/>`Pages/Tenants/TenantsList.razor.cs` | Displays all tenants with search by phone/name and add/edit capabilities. |
 | `TenantDetails` | `/tenants/{id}` | `Pages/Tenants/TenantDetails.razor`<br/>`Pages/Tenants/TenantDetails.razor.cs` | Tabbed view for tenant profile, addresses, documents, and lease history. |
+| `AcceptInvite` | `/accept-invite` | `Pages/Tenant/AcceptInvite.razor`<br/>`Pages/Tenant/AcceptInvite.razor.cs` | Public page for tenants to accept invite links and create accounts. Validates token, displays registration form, and redirects to tenant dashboard on success. |
 | `CreateLease` | `/leases/create`<br/>`/leases/create/{unitId}` | `Pages/Leases/CreateLease.razor`<br/>`Pages/Leases/CreateLease.razor.cs` | 7-step wizard for creating new leases with parties, financial terms, and move-in handover. |
 
 ### State Containers

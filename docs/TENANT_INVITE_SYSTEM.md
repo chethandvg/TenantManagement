@@ -448,6 +448,82 @@ Important events to log:
 
 ---
 
+## 🎨 Frontend Implementation
+
+### Accept Invite Page (`/accept-invite`)
+
+**Location**: `src/TentMan.Ui/Pages/Tenant/AcceptInvite.razor`
+
+**Features**:
+- Token validation on page load
+- Pre-filled email field (if available in invite)
+- Password confirmation field
+- Real-time error display
+- Loading states during API calls
+- Automatic redirect to tenant dashboard on success
+
+**Flow**:
+1. Parse token from query string parameter (`?token={token}`)
+2. Call `ValidateInviteAsync` to check token validity
+3. Display error if token is invalid/expired/used
+4. Show registration form if token is valid
+5. On submit, call `AcceptInviteAsync`
+6. Automatically log user in and redirect to `/tenant/dashboard`
+
+**Error Handling**:
+- No token provided
+- Invalid/expired/used token
+- Email already exists
+- Password too weak
+- Username already taken
+- Network errors
+
+### Tenant Login Page (`/login`)
+
+**Location**: `src/TentMan.Ui/Pages/Login.razor`
+
+**Features**:
+- Email/password authentication
+- Remember Me checkbox (UI element)
+- Return URL support (`?ReturnUrl=/path`)
+- Loading states
+- Error message display
+
+**Flow**:
+1. User enters credentials
+2. Call `AuthenticationService.LoginAsync`
+3. Store tokens on successful authentication
+4. Redirect to ReturnUrl or home page
+
+### API Client
+
+**TenantInvitesApiClient**:
+```csharp
+public interface ITenantInvitesApiClient
+{
+    Task<ApiResponse<ValidateInviteResponse>> ValidateInviteAsync(
+        string token, 
+        CancellationToken cancellationToken = default);
+    
+    Task<ApiResponse<AuthenticationResponse>> AcceptInviteAsync(
+        AcceptInviteRequest request, 
+        CancellationToken cancellationToken = default);
+        
+    Task<ApiResponse<TenantInviteDto>> GenerateInviteAsync(
+        Guid orgId, 
+        Guid tenantId, 
+        GenerateInviteRequest request, 
+        CancellationToken cancellationToken = default);
+}
+```
+
+**Registration**:
+- Registered in DI container via `ServiceCollectionExtensions`
+- Configured with HTTP client, retry policies, and authentication handler
+- Base URL configured in `appsettings.json`
+
+---
+
 ## 🔗 Related Documentation
 
 - [API Guide](API_GUIDE.md) - Complete API reference
