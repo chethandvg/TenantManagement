@@ -83,6 +83,11 @@ public interface IUnitOfWork : IDisposable
     ITenantDocumentRepository TenantDocuments { get; }
 
     /// <summary>
+    /// Gets the unit handover repository.
+    /// </summary>
+    IUnitHandoverRepository UnitHandovers { get; }
+
+    /// <summary>
     /// Executes an operation with retry logic for transient failures.
     /// Required when using transactions with database retry-on-failure strategies.
     /// </summary>

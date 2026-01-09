@@ -30,6 +30,7 @@ public class UnitOfWork : IUnitOfWork
     private IFileMetadataRepository? _fileMetadataRepository;
     private ITenantInviteRepository? _tenantInviteRepository;
     private ITenantDocumentRepository? _tenantDocumentRepository;
+    private IUnitHandoverRepository? _unitHandoverRepository;
 
     public UnitOfWork(
         ApplicationDbContext context,
@@ -64,6 +65,7 @@ public class UnitOfWork : IUnitOfWork
     public IFileMetadataRepository FileMetadata => _fileMetadataRepository ??= new FileMetadataRepository(_context);
     public ITenantInviteRepository TenantInvites => _tenantInviteRepository ??= new TenantInviteRepository(_context);
     public ITenantDocumentRepository TenantDocuments => _tenantDocumentRepository ??= new TenantDocumentRepository(_context);
+    public IUnitHandoverRepository UnitHandovers => _unitHandoverRepository ??= new UnitHandoverRepository(_context);
 
     public async Task<TResult> ExecuteWithRetryAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken = default)
     {
