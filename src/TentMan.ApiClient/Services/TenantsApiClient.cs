@@ -41,7 +41,7 @@ public sealed class TenantsApiClient : ApiClientServiceBase, ITenantsApiClient
         Guid tenantId,
         CancellationToken cancellationToken = default)
     {
-        return GetAsync<TenantDetailDto>($"../tenants/{tenantId}", cancellationToken);
+        return GetAsync<TenantDetailDto>($"../../tenants/{tenantId}", cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -61,6 +61,6 @@ public sealed class TenantsApiClient : ApiClientServiceBase, ITenantsApiClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return PutAsync<UpdateTenantRequest, TenantDetailDto>($"../tenants/{tenantId}", request, cancellationToken);
+        return PutAsync<UpdateTenantRequest, TenantDetailDto>($"../../tenants/{tenantId}", request, cancellationToken);
     }
 }

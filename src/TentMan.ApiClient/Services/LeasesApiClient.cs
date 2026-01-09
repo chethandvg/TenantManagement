@@ -37,7 +37,7 @@ public sealed class LeasesApiClient : ApiClientServiceBase, ILeasesApiClient
         Guid leaseId,
         CancellationToken cancellationToken = default)
     {
-        return GetAsync<LeaseDetailDto>($"../leases/{leaseId}", cancellationToken);
+        return GetAsync<LeaseDetailDto>($"../../leases/{leaseId}", cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -45,7 +45,7 @@ public sealed class LeasesApiClient : ApiClientServiceBase, ILeasesApiClient
         Guid unitId,
         CancellationToken cancellationToken = default)
     {
-        return GetAsync<IEnumerable<LeaseListDto>>($"../units/{unitId}/leases", cancellationToken);
+        return GetAsync<IEnumerable<LeaseListDto>>($"../../units/{unitId}/leases", cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -55,7 +55,7 @@ public sealed class LeasesApiClient : ApiClientServiceBase, ILeasesApiClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return PostAsync<AddLeasePartyRequest, LeaseDetailDto>($"../leases/{leaseId}/parties", request, cancellationToken);
+        return PostAsync<AddLeasePartyRequest, LeaseDetailDto>($"../../leases/{leaseId}/parties", request, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -65,7 +65,7 @@ public sealed class LeasesApiClient : ApiClientServiceBase, ILeasesApiClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return PostAsync<AddLeaseTermRequest, LeaseDetailDto>($"../leases/{leaseId}/terms", request, cancellationToken);
+        return PostAsync<AddLeaseTermRequest, LeaseDetailDto>($"../../leases/{leaseId}/terms", request, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -75,6 +75,6 @@ public sealed class LeasesApiClient : ApiClientServiceBase, ILeasesApiClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return PostAsync<ActivateLeaseRequest, LeaseDetailDto>($"../leases/{leaseId}/activate", request, cancellationToken);
+        return PostAsync<ActivateLeaseRequest, LeaseDetailDto>($"../../leases/{leaseId}/activate", request, cancellationToken);
     }
 }
