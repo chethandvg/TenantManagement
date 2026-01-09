@@ -1,0 +1,582 @@
+@page "/leases/create"
+@page "/leases/create/{UnitId:guid}"
+@attribute [Authorize]
+
+<PageTitle>Create Lease</PageTitle>
+
+<MudStack Spacing="4">
+    <MudBreadcrumbs Items="_breadcrumbs" />
+    <MudText Typo="Typo.h4">Create New Lease</MudText>
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudStepper @bind-ActiveIndex="_activeStepIndex" Linear="true">
+            @* Step 1: Select Unit *@
+            <MudStep Title="Select Unit">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Step 1: Select Unit</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Choose the unit for this lease</MudText>
+                    
+                    @if (_units == null || !_units.Any())
+                    {
+                        <MudAlert Severity="Severity.Info">Loading units...</MudAlert>
+                    }
+                    else
+                    {
+                        <MudSelect T="Guid?" @bind-Value="_leaseModel.UnitId" Label="Select Unit" Variant="Variant.Outlined" 
+                                   Required="true" RequiredError="Please select a unit">
+                            @foreach (var unit in _units)
+                            {
+                                <MudSelectItem Value="@((Guid?)unit.Id)">
+                                    @unit.UnitNumber - @unit.UnitType (@unit.Bedrooms BR, @unit.Bathrooms BA) - @unit.OccupancyStatus
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+
+                        @if (_leaseModel.UnitId.HasValue && _selectedUnit != null)
+                        {
+                            <MudPaper Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2">Unit Summary</MudText>
+                                <MudGrid Spacing="2" Class="mt-2">
+                                    <MudItem xs="6" sm="3">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Unit Number</MudText>
+                                            <MudText>@_selectedUnit.UnitNumber</MudText>
+                                        </MudStack>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="3">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Type</MudText>
+                                            <MudText>@_selectedUnit.UnitType</MudText>
+                                        </MudStack>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="3">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Area</MudText>
+                                            <MudText>@_selectedUnit.AreaSqFt sq ft</MudText>
+                                        </MudStack>
+                                    </MudItem>
+                                    <MudItem xs="6" sm="3">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Configuration</MudText>
+                                            <MudText>@_selectedUnit.Bedrooms BR / @_selectedUnit.Bathrooms BA</MudText>
+                                        </MudStack>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudPaper>
+                        }
+                    }
+                </MudStack>
+            </MudStep>
+
+            @* Step 2: Lease Dates & Rules *@
+            <MudStep Title="Dates & Rules">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Step 2: Lease Dates & Rules</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Set the lease period and payment rules</MudText>
+
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6">
+                            <MudDatePicker @bind-Date="_leaseModel.StartDate" Label="Start Date" Variant="Variant.Outlined" 
+                                           Required="true" Editable="true" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudDatePicker @bind-Date="_leaseModel.EndDate" Label="End Date" Variant="Variant.Outlined" 
+                                           Editable="true" HelperText="Leave empty for open-ended lease" />
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudNumericField T="byte" @bind-Value="_leaseModel.RentDueDay" Label="Rent Due Day" Variant="Variant.Outlined" 
+                                             Min="1" Max="28" Required="true" HelperText="1-28 recommended" />
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudNumericField T="byte" @bind-Value="_leaseModel.GraceDays" Label="Grace Days" Variant="Variant.Outlined" 
+                                             Min="0" Max="15" HelperText="Days before late fee applies" />
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudNumericField T="short?" @bind-Value="_leaseModel.NoticePeriodDays" Label="Notice Period (Days)" Variant="Variant.Outlined" 
+                                             Min="0" HelperText="Days required before termination" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudSelect T="LateFeeType" @bind-Value="_leaseModel.LateFeeType" Label="Late Fee Type" Variant="Variant.Outlined">
+                                @foreach (LateFeeType type in Enum.GetValues<LateFeeType>())
+                                {
+                                    <MudSelectItem Value="@type">@type</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal?" @bind-Value="_leaseModel.LateFeeValue" Label="Late Fee Value" Variant="Variant.Outlined"
+                                             Disabled="@(_leaseModel.LateFeeType == LateFeeType.None)"
+                                             HelperText="@(_leaseModel.LateFeeType == LateFeeType.Percent ? "Percentage" : "Amount in ₹")" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudCheckBox @bind-Value="_leaseModel.IsAutoRenew" Label="Auto-renew lease" Color="Color.Primary" />
+                        </MudItem>
+                    </MudGrid>
+                </MudStack>
+            </MudStep>
+
+            @* Step 3: Add Parties *@
+            <MudStep Title="Parties">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Step 3: Add Parties</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Add tenants and occupants to this lease</MudText>
+
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudText Typo="Typo.subtitle2">Lease Parties (@_parties.Count)</MudText>
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.Search" OnClick="ShowSearchTenantDialog">
+                                Search Existing Tenant
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="ShowCreateTenantDialog">
+                                Create New Tenant
+                            </MudButton>
+                        </MudStack>
+                    </MudStack>
+
+                    @if (_parties.Any())
+                    {
+                        <MudDataGrid Items="@_parties" Hover="true" Dense="true">
+                            <Columns>
+                                <PropertyColumn Property="x => x.TenantName" Title="Name" />
+                                <PropertyColumn Property="x => x.TenantPhone" Title="Phone" />
+                                <TemplateColumn Title="Role">
+                                    <CellTemplate>
+                                        <MudSelect T="LeasePartyRole" Value="@context.Item.Role" 
+                                                   ValueChanged="@((value) => context.Item.Role = value)"
+                                                   Variant="Variant.Text" Dense="true" Margin="Margin.None">
+                                            @foreach (LeasePartyRole role in Enum.GetValues<LeasePartyRole>())
+                                            {
+                                                <MudSelectItem Value="@role">@role</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Responsible for Payment">
+                                    <CellTemplate>
+                                        <MudCheckBox @bind-Value="context.Item.IsResponsibleForPayment" Color="Color.Primary" Dense="true" />
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Actions" Sortable="false">
+                                    <CellTemplate>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                                       OnClick="@(() => RemoveParty(context.Item))" />
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Warning">Please add at least one tenant to the lease.</MudAlert>
+                    }
+                </MudStack>
+            </MudStep>
+
+            @* Step 4: Financial Terms *@
+            <MudStep Title="Financial Terms">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Step 4: Financial Terms</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Set the rent and deposit amounts</MudText>
+
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal" @bind-Value="_termModel.MonthlyRent" Label="Monthly Rent (₹)" Variant="Variant.Outlined"
+                                             Required="true" Min="0" Format="N0" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal" @bind-Value="_termModel.SecurityDeposit" Label="Security Deposit (₹)" Variant="Variant.Outlined"
+                                             Min="0" Format="N0" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal?" @bind-Value="_termModel.MaintenanceCharge" Label="Maintenance Charge (₹)" Variant="Variant.Outlined"
+                                             Min="0" Format="N0" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudNumericField T="decimal?" @bind-Value="_termModel.OtherFixedCharge" Label="Other Fixed Charges (₹)" Variant="Variant.Outlined"
+                                             Min="0" Format="N0" />
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudSelect T="EscalationType" @bind-Value="_termModel.EscalationType" Label="Escalation Type" Variant="Variant.Outlined">
+                                @foreach (EscalationType type in Enum.GetValues<EscalationType>())
+                                {
+                                    <MudSelectItem Value="@type">@type</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudNumericField T="decimal?" @bind-Value="_termModel.EscalationValue" Label="Escalation Value" Variant="Variant.Outlined"
+                                             Disabled="@(_termModel.EscalationType == EscalationType.None)"
+                                             HelperText="@(_termModel.EscalationType == EscalationType.Percent ? "%" : "₹")" />
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudNumericField T="short?" @bind-Value="_termModel.EscalationEveryMonths" Label="Escalation Every (Months)" Variant="Variant.Outlined"
+                                             Disabled="@(_termModel.EscalationType == EscalationType.None)" Min="1" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="_termModel.Notes" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudPaper Elevation="1" Class="pa-3">
+                        <MudText Typo="Typo.subtitle2">Monthly Summary</MudText>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-2">
+                            <MudText>Total Monthly Payment</MudText>
+                            <MudText Typo="Typo.h6" Color="Color.Primary">
+                                ₹@((_termModel.MonthlyRent + (_termModel.MaintenanceCharge ?? 0) + (_termModel.OtherFixedCharge ?? 0)).ToString("N0"))
+                            </MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudStack>
+            </MudStep>
+
+            @* Step 5: Documents *@
+            <MudStep Title="Documents">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Step 5: Documents</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Upload lease agreement and other documents</MudText>
+
+                    <FileUploader Title="Lease Documents"
+                                  HelpText="Upload agreement, ID proofs, address proofs"
+                                  Files="@_leaseDocuments"
+                                  FilesChanged="@((files) => _leaseDocuments = files)"
+                                  AcceptedFileTypes=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                                  MaxFiles="20"
+                                  ShowThumbnails="true" />
+                </MudStack>
+            </MudStep>
+
+            @* Step 6: Move-in Handover *@
+            <MudStep Title="Move-in Handover">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Step 6: Move-in Handover</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Record the unit condition and meter readings</MudText>
+
+                    <MudText Typo="Typo.subtitle2">Handover Checklist</MudText>
+                    <MudDataGrid Items="@_checklistItems" Hover="true" Dense="true">
+                        <Columns>
+                            <PropertyColumn Property="x => x.Category" Title="Category" />
+                            <PropertyColumn Property="x => x.ItemName" Title="Item" />
+                            <TemplateColumn Title="Condition">
+                                <CellTemplate>
+                                    <MudSelect T="ItemCondition" Value="@context.Item.Condition" 
+                                               ValueChanged="@((value) => context.Item.Condition = value)"
+                                               Variant="Variant.Text" Dense="true" Margin="Margin.None">
+                                        @foreach (ItemCondition condition in Enum.GetValues<ItemCondition>())
+                                        {
+                                            <MudSelectItem Value="@condition">@condition</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Remarks">
+                                <CellTemplate>
+                                    <MudTextField @bind-Value="context.Item.Remarks" Variant="Variant.Text" Margin="Margin.None" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="AddChecklistItem">
+                        Add Checklist Item
+                    </MudButton>
+
+                    <MudDivider Class="my-2" />
+
+                    <MudText Typo="Typo.subtitle2">Initial Meter Readings</MudText>
+                    <MudGrid Spacing="2">
+                        @foreach (var reading in _meterReadings)
+                        {
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudNumericField T="decimal" @bind-Value="reading.ReadingValue" Label="@reading.MeterType.ToString()" 
+                                                 Variant="Variant.Outlined" Format="N2" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+
+                    <MudDivider Class="my-2" />
+
+                    <MudText Typo="Typo.subtitle2">Handover Photos</MudText>
+                    <FileUploader Title="Unit Photos"
+                                  HelpText="Upload photos of unit condition"
+                                  Files="@_handoverPhotos"
+                                  FilesChanged="@((files) => _handoverPhotos = files)"
+                                  AcceptedFileTypes=".jpg,.jpeg,.png"
+                                  MaxFiles="50"
+                                  ShowThumbnails="true" />
+                </MudStack>
+            </MudStep>
+
+            @* Step 7: Review & Activate *@
+            <MudStep Title="Review & Activate">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Step 7: Review & Activate</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Review the lease details before activation</MudText>
+
+                    @* Validation Summary *@
+                    @if (_validationErrors.Any())
+                    {
+                        <MudAlert Severity="Severity.Error">
+                            <MudText Typo="Typo.subtitle2">Please fix the following issues:</MudText>
+                            <MudList T="string" Dense="true">
+                                @foreach (var error in _validationErrors)
+                                {
+                                    <MudListItem Icon="@Icons.Material.Filled.Error" IconColor="Color.Error">@error</MudListItem>
+                                }
+                            </MudList>
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Success">All validations passed. Ready to activate!</MudAlert>
+                    }
+
+                    @* Summary Sections *@
+                    <MudGrid Spacing="3">
+                        @* Unit Summary *@
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Unit</MudText>
+                                @if (_selectedUnit != null)
+                                {
+                                    <MudText>@_selectedUnit.UnitNumber - @_selectedUnit.UnitType</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedUnit.Bedrooms BR, @_selectedUnit.Bathrooms BA, @_selectedUnit.AreaSqFt sq ft</MudText>
+                                }
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Dates Summary *@
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Lease Period</MudText>
+                                <MudText>@(_leaseModel.StartDate?.ToString("dd MMM yyyy") ?? "Not set") — @(_leaseModel.EndDate?.ToString("dd MMM yyyy") ?? "Open-ended")</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Rent due: Day @_leaseModel.RentDueDay | Grace: @_leaseModel.GraceDays days</MudText>
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Parties Summary *@
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Parties (@_parties.Count)</MudText>
+                                @foreach (var party in _parties)
+                                {
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText>@party.TenantName (@party.Role)</MudText>
+                                        @if (party.IsResponsibleForPayment)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Primary">Pays</MudChip>
+                                        }
+                                    </MudStack>
+                                }
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Financial Summary *@
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Financial Terms</MudText>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText>Monthly Rent</MudText>
+                                    <MudText>₹@_termModel.MonthlyRent.ToString("N0")</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText>Security Deposit</MudText>
+                                    <MudText>₹@_termModel.SecurityDeposit.ToString("N0")</MudText>
+                                </MudStack>
+                                @if (_termModel.MaintenanceCharge > 0)
+                                {
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText>Maintenance</MudText>
+                                        <MudText>₹@_termModel.MaintenanceCharge?.ToString("N0")</MudText>
+                                    </MudStack>
+                                }
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Documents Summary *@
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Documents (@_leaseDocuments.Count)</MudText>
+                                @foreach (var doc in _leaseDocuments.Take(3))
+                                {
+                                    <MudText Typo="Typo.body2">@doc.FileName</MudText>
+                                }
+                                @if (_leaseDocuments.Count > 3)
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">+@(_leaseDocuments.Count - 3) more</MudText>
+                                }
+                            </MudPaper>
+                        </MudItem>
+
+                        @* Handover Summary *@
+                        <MudItem xs="12" md="6">
+                            <MudPaper Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Move-in Handover</MudText>
+                                <MudText Typo="Typo.body2">@_checklistItems.Count checklist items</MudText>
+                                <MudText Typo="Typo.body2">@_meterReadings.Count meter readings</MudText>
+                                <MudText Typo="Typo.body2">@_handoverPhotos.Count photos</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudStack>
+            </MudStep>
+        </MudStepper>
+
+        @* Navigation Buttons *@
+        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="GoToPreviousStep"
+                       Disabled="@(_activeStepIndex == 0)">
+                Previous
+            </MudButton>
+            <MudStack Row="true" Spacing="2">
+                @if (_activeStepIndex < 6)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToNextStep">
+                        Next
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ActivateLease"
+                               Disabled="@(_validationErrors.Any() || _isActivating)">
+                        @if (_isActivating)
+                        {
+                            <MudProgressCircular Size="Size.Small" Color="Color.Inherit" Indeterminate="true" Class="mr-2" />
+                        }
+                        Activate Lease
+                    </MudButton>
+                }
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudStack>
+
+@* Search Tenant Dialog *@
+<MudDialog @bind-Visible="_showSearchTenantDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 500px;">
+            <MudText Typo="Typo.h6">Search Existing Tenant</MudText>
+            <MudTextField @bind-Value="_tenantSearchText" Label="Search by phone or name" Variant="Variant.Outlined"
+                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" DebounceInterval="300" OnDebounceIntervalElapsed="SearchTenants" />
+
+            @if (_searchResults != null && _searchResults.Any())
+            {
+                <MudSimpleTable Hover="true" Dense="true">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tenant in _searchResults)
+                        {
+                            <tr>
+                                <td>@tenant.FullName</td>
+                                <td>@tenant.Phone</td>
+                                <td>@(tenant.Email ?? "—")</td>
+                                <td>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                               OnClick="@(() => SelectTenant(tenant))">
+                                        Select
+                                    </MudButton>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+            else if (!string.IsNullOrWhiteSpace(_tenantSearchText))
+            {
+                <MudAlert Severity="Severity.Info">No tenants found. Try a different search or create a new tenant.</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showSearchTenantDialog = false)">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* Create Tenant Dialog *@
+<MudDialog @bind-Visible="_showCreateTenantDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 450px;">
+            <MudText Typo="Typo.h6">Create New Tenant</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_newTenantModel.FullName" Label="Full Name" 
+                                  Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_newTenantModel.Phone" Label="Phone" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="_newTenantModel.Email" Label="Email" Variant="Variant.Outlined" 
+                                  InputType="InputType.Email" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_newTenantModel.DateOfBirth" Label="Date of Birth" Variant="Variant.Outlined" 
+                                   Editable="true" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudSelect T="Gender?" @bind-Value="_newTenantModel.Gender" Label="Gender" 
+                               Variant="Variant.Outlined" Clearable="true">
+                        @foreach (Gender gender in Enum.GetValues<Gender>())
+                        {
+                            <MudSelectItem Value="@((Gender?)gender)">@gender</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showCreateTenantDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="CreateAndAddTenant">Create & Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* Add Checklist Item Dialog *@
+<MudDialog @bind-Visible="_showChecklistDialog">
+    <DialogContent>
+        <MudStack Spacing="3" Class="pa-4" Style="min-width: 400px;">
+            <MudText Typo="Typo.h6">Add Checklist Item</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudSelect T="string" @bind-Value="_newChecklistItem.Category" Label="Category" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("Electrical")">Electrical</MudSelectItem>
+                        <MudSelectItem Value="@("Plumbing")">Plumbing</MudSelectItem>
+                        <MudSelectItem Value="@("Furniture")">Furniture</MudSelectItem>
+                        <MudSelectItem Value="@("Appliances")">Appliances</MudSelectItem>
+                        <MudSelectItem Value="@("Walls & Flooring")">Walls & Flooring</MudSelectItem>
+                        <MudSelectItem Value="@("Doors & Windows")">Doors & Windows</MudSelectItem>
+                        <MudSelectItem Value="@("Other")">Other</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_newChecklistItem.ItemName" Label="Item Name" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudSelect T="ItemCondition" @bind-Value="_newChecklistItem.Condition" Label="Condition" Variant="Variant.Outlined">
+                        @foreach (ItemCondition condition in Enum.GetValues<ItemCondition>())
+                        {
+                            <MudSelectItem Value="@condition">@condition</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_newChecklistItem.Remarks" Label="Remarks" Variant="Variant.Outlined" Lines="2" />
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showChecklistDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="AddChecklistItemConfirm">Add</MudButton>
+    </DialogActions>
+</MudDialog>
