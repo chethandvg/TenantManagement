@@ -59,4 +59,6 @@ public class TenantDocumentDto
     public Guid FileId { get; set; }
     public string? FileName { get; set; }
     public string? Notes { get; set; }
+    public DocumentStatus Status { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
 }

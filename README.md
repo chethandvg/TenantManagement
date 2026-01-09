@@ -116,7 +116,13 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 ### Tenant Management 👥 NEW!
 - **Tenant Registry**: Complete tenant (renter) management with profile, addresses, documents
 - **Tenant Search**: Search by phone number or name with 600ms debounce
-- **Document Management**: Upload and preview tenant documents (ID proofs, address proofs)
+- **Document Management** ✨: Full document upload and management for tenants
+  - Upload documents via tenant portal (ID proofs, address proofs, photos, etc.)
+  - File validation (type, size up to 10MB)
+  - Support for PDF, JPEG, PNG, DOC, DOCX formats
+  - Document metadata with masked numbers, dates, and notes
+  - Secure storage in **Azure Blob Storage** with SHA256 hash verification
+  - List and view uploaded documents with status tracking
 - **Lease History**: View tenant's lease history with status tracking
 - **Tenant Invite System** ✨: Secure invite-based tenant onboarding
   - Generate cryptographically secure invite tokens (32-char hex)
@@ -128,7 +134,7 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 - **Tenant Portal Pages** ✨: Self-service portal for tenants
   - Accept Invite page with token validation
   - Dashboard with lease summary (read-only)
-  - Document upload page
+  - Document upload page with drag-and-drop interface
   - Move-in handover checklist with digital signature
 - **Blazor WASM Frontend** ✨: Complete UI screens for tenant management
   - Tenants List with search by phone/name

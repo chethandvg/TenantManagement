@@ -356,6 +356,77 @@ Response 201 Created:
 }
 ```
 
+### Tenant Portal
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/tenant-portal/lease-summary` | GET | Get current tenant's active lease summary |
+| `/api/v1/tenant-portal/documents` | GET | Get all documents for current tenant |
+| `/api/v1/tenant-portal/documents` | POST | Upload a document for current tenant |
+
+**Authentication**: All tenant portal endpoints require authentication with the "Tenant" role. The tenant is identified by the linked user ID from the JWT token.
+
+**Example - Get Documents**:
+```json
+GET /api/v1/tenant-portal/documents
+Authorization: Bearer {token}
+
+Response 200 OK:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "document-guid",
+      "docType": 1,  // IDProof
+      "docNumberMasked": "XXXX1234",
+      "issueDate": "2020-01-15",
+      "expiryDate": null,
+      "fileId": "file-guid",
+      "fileName": "aadhar_card.pdf",
+      "notes": "Aadhar card for verification"
+    }
+  ],
+  "message": "Documents retrieved successfully"
+}
+```
+
+**Example - Upload Document**:
+```http
+POST /api/v1/tenant-portal/documents
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+
+file: [binary file data]
+docType: 1  // IDProof
+docNumberMasked: XXXX1234
+issueDate: 2020-01-15
+notes: Aadhar card for verification
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "document-guid",
+    "docType": 1,
+    "docNumberMasked": "XXXX1234",
+    "issueDate": "2020-01-15",
+    "expiryDate": null,
+    "fileId": "file-guid",
+    "fileName": "aadhar_card.pdf",
+    "notes": "Aadhar card for verification"
+  },
+  "message": "Document uploaded successfully"
+}
+```
+
+**File Upload Validation**:
+- Maximum file size: 10MB
+- Allowed file types: PDF, JPEG, PNG, DOC, DOCX
+- Document type is required
+- Files are stored in **Azure Blob Storage** in the `tenant-documents` container
+- SHA256 hash is computed for file integrity
+- Storage key format: `container-name/blob-name`
+
 **Example - Activate Lease**:
 ```json
 POST /api/leases/{leaseId}/activate

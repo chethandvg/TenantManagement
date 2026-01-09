@@ -1,11 +1,14 @@
 using System.Text;
+using Azure.Storage.Blobs;
 using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Authentication;
 using TentMan.Application.Abstractions.Repositories;
+using TentMan.Application.Abstractions.Storage;
 using TentMan.Domain.ValueObjects;
 using TentMan.Infrastructure.Authentication;
 using TentMan.Infrastructure.Persistence;
 using TentMan.Infrastructure.Repositories;
+using TentMan.Infrastructure.Storage;
 using TentMan.Infrastructure.Time;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +46,9 @@ public static class DependencyInjection
 
         // Add repositories
         services.AddRepositories();
+
+        // Add storage services
+        services.AddStorageServices(configuration);
 
         // Add other infrastructure services
         services.AddInfrastructureServices();
@@ -177,6 +183,40 @@ public static class DependencyInjection
                 }
             };
         });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers storage services (Azure Blob Storage).
+    /// </summary>
+    private static IServiceCollection AddStorageServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Configure Azure Blob Storage options
+        services.Configure<AzureBlobStorageOptions>(
+            configuration.GetSection(AzureBlobStorageOptions.SectionName));
+
+        // Register BlobServiceClient
+        services.AddSingleton(sp =>
+        {
+            var options = configuration
+                .GetSection(AzureBlobStorageOptions.SectionName)
+                .Get<AzureBlobStorageOptions>();
+
+            if (string.IsNullOrWhiteSpace(options?.ConnectionString))
+            {
+                throw new InvalidOperationException(
+                    "Azure Blob Storage connection string is not configured. " +
+                    "Please set AzureBlobStorage:ConnectionString in configuration.");
+            }
+
+            return new BlobServiceClient(options.ConnectionString);
+        });
+
+        // Register file storage service
+        services.AddScoped<IFileStorageService, AzureBlobStorageService>();
 
         return services;
     }
