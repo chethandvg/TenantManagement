@@ -14,7 +14,8 @@ src/
 ├── TentMan.Contracts/        # DTOs, request/response models
 ├── TentMan.Api/              # Main REST API
 ├── TentMan.AdminApi/         # Administrative API
-├── TentMan.ApiClient/        # HTTP client library
+├── TentMan.ApiClient/        # HTTP client library for Main API
+├── TentMan.AdminApiClient/   # HTTP client library for Admin API
 ├── TentMan.Ui/               # Blazor UI component library
 ├── TentMan.Web/              # Blazor Web host application
 ├── TentMan.ServiceDefaults/  # .NET Aspire service defaults
@@ -72,7 +73,8 @@ The projects follow Clean Architecture with dependency inversion:
 | **Contracts** | DTOs, API models | Records, validation attributes |
 | **Api** | REST endpoints, middleware | ASP.NET Core, Scalar |
 | **AdminApi** | Admin endpoints, system init | ASP.NET Core |
-| **ApiClient** | HTTP client, resilience | HttpClientFactory, Polly |
+| **ApiClient** | HTTP client for Main API | HttpClientFactory, Polly |
+| **AdminApiClient** | HTTP client for Admin API | HttpClientFactory, Polly |
 | **Ui** | Blazor components, layouts | Blazor, MudBlazor |
 | **Web** | Blazor host application | Blazor Server/WASM |
 | **ServiceDefaults** | Aspire defaults | .NET Aspire |

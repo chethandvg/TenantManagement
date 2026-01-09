@@ -927,6 +927,203 @@ All APIs return errors in a consistent format:
 
 ---
 
+---
+
+## 💻 API Client Libraries
+
+TentMan provides **two HTTP client libraries** for programmatic API access with built-in resilience, authentication, and type safety.
+
+### TentMan.ApiClient (Main API Client)
+
+**Purpose**: HTTP client for the Main API (TentMan.Api)
+
+**Features**:
+- ✅ HttpClientFactory pattern with Polly resilience
+- ✅ Automatic retry with exponential backoff
+- ✅ Circuit breaker pattern
+- ✅ JWT authentication with auto-refresh
+- ✅ Blazor Server and WebAssembly support
+- ✅ Comprehensive exception handling
+- ✅ Structured logging
+
+**Installation**:
+```xml
+<ProjectReference Include="..\TentMan.ApiClient\TentMan.ApiClient.csproj" />
+```
+
+**Quick Start**:
+```csharp
+// Register in DI
+builder.Services.AddApiClient(builder.Configuration);
+
+// Use in your code
+@inject IAuthenticationApiClient AuthClient
+@inject IProductsApiClient ProductsClient
+
+// Login
+var loginResult = await AuthClient.LoginAsync(new LoginRequest
+{
+    Email = "user@example.com",
+    Password = "SecurePassword123!"
+});
+
+// Get products
+var products = await ProductsClient.GetProductsAsync();
+```
+
+**Available Clients**:
+- `IAuthenticationApiClient` - Login, register, refresh tokens, logout
+- `IProductsApiClient` - Product CRUD operations
+- `IBuildingsApiClient` - Building management
+- `IOwnersApiClient` - Owner management
+- `ITenantsApiClient` - Tenant management
+- `ILeasesApiClient` - Lease management
+
+**Documentation**: [TentMan.ApiClient README](../src/TentMan.ApiClient/README.md)
+
+---
+
+### TentMan.AdminApiClient (Admin API Client)
+
+**Purpose**: HTTP client for the Admin API (TentMan.AdminApi)
+
+**Features**:
+- ✅ HttpClientFactory pattern with Polly resilience
+- ✅ Automatic retry with exponential backoff
+- ✅ Circuit breaker pattern
+- ✅ Comprehensive exception handling (reuses ApiClient exceptions)
+- ✅ Structured logging
+- ✅ Full XML documentation
+
+**Installation**:
+```xml
+<ProjectReference Include="..\TentMan.AdminApiClient\TentMan.AdminApiClient.csproj" />
+```
+
+**Quick Start**:
+```csharp
+// Register in DI
+builder.Services.AddAdminApiClient(builder.Configuration);
+
+// Use in your code
+@inject IInitializationApiClient InitializationClient
+@inject IRolesApiClient RolesClient
+@inject IUsersApiClient UsersClient
+@inject IUserRolesApiClient UserRolesClient
+
+// Initialize system (first-time setup)
+var initResult = await InitializationClient.InitializeSystemAsync(new InitializeSystemRequest
+{
+    UserName = "superadmin",
+    Email = "admin@example.com",
+    Password = "SecurePassword123!"
+});
+
+// Get all roles
+var roles = await RolesClient.GetRolesAsync();
+
+// Create a new user
+var user = await UsersClient.CreateUserAsync(new CreateUserRequest
+{
+    UserName = "john.doe",
+    Email = "john.doe@example.com",
+    Password = "SecurePassword123!",
+    EmailConfirmed = true
+});
+
+// Assign role to user
+await UserRolesClient.AssignRoleAsync(new AssignRoleRequest
+{
+    UserId = user.Data!.Id,
+    RoleId = managerRoleId
+});
+```
+
+**Available Clients**:
+- `IInitializationApiClient` - System initialization with roles and super admin
+- `IRolesApiClient` - Role management (get, create)
+- `IUsersApiClient` - User management (get, create, delete)
+- `IUserRolesApiClient` - User-role assignments (get, assign, remove)
+
+**Documentation**: [TentMan.AdminApiClient README](../src/TentMan.AdminApiClient/README.md)
+
+---
+
+### Client Library Configuration
+
+Both client libraries support extensive configuration via `appsettings.json`:
+
+**ApiClient Configuration**:
+```json
+{
+  "ApiClient": {
+    "BaseUrl": "https://localhost:7123",
+    "TimeoutSeconds": 30,
+    "RetryCount": 3,
+    "EnableCircuitBreaker": true,
+    "CircuitBreakerFailureThreshold": 5,
+    "CircuitBreakerDurationSeconds": 30
+  },
+  "Authentication": {
+    "AutoAttachToken": true,
+    "AutoRefreshToken": true,
+    "UseBrowserStorage": true
+  }
+}
+```
+
+**AdminApiClient Configuration**:
+```json
+{
+  "AdminApiClient": {
+    "BaseUrl": "https://localhost:7290",
+    "TimeoutSeconds": 30,
+    "RetryCount": 3,
+    "EnableCircuitBreaker": true,
+    "CircuitBreakerFailureThreshold": 5,
+    "CircuitBreakerDurationSeconds": 30
+  }
+}
+```
+
+### Exception Handling
+
+Both libraries share the same exception types:
+
+```csharp
+try
+{
+    var user = await UsersClient.CreateUserAsync(request);
+}
+catch (ValidationException ex)
+{
+    // 400/422 - validation errors
+    foreach (var error in ex.Errors)
+    {
+        Console.WriteLine(error);
+    }
+}
+catch (AuthorizationException ex)
+{
+    // 401/403 - auth errors
+    // Re-authenticate or show access denied
+}
+catch (ResourceNotFoundException ex)
+{
+    // 404 - not found
+}
+catch (ServerException ex)
+{
+    // 5xx - server errors
+}
+catch (ApiClientException ex)
+{
+    // Other API errors
+}
+```
+
+---
+
 ## 📚 Related Documentation
 
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Initial setup guide
