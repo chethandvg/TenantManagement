@@ -1,11 +1,13 @@
 using System.Net;
 using System.Text.Json;
+using TentMan.AdminApiClient.Configuration;
 using TentMan.AdminApiClient.Exceptions;
 using TentMan.AdminApiClient.Services;
 using TentMan.Contracts.Admin;
 using TentMan.Contracts.Common;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using RichardSzalay.MockHttp;
 using Xunit;
@@ -28,8 +30,9 @@ public class InitializationApiClientTests : IDisposable
         _httpClient = _mockHttp.ToHttpClient();
         _httpClient.BaseAddress = new Uri("https://api.test.com");
 
+        var options = Options.Create(new AdminApiClientOptions { ApiVersion = "v1" });
         _mockLogger = new Mock<ILogger<InitializationApiClient>>();
-        _apiClient = new InitializationApiClient(_httpClient, _mockLogger.Object);
+        _apiClient = new InitializationApiClient(_httpClient, options, _mockLogger.Object);
     }
 
     public void Dispose()

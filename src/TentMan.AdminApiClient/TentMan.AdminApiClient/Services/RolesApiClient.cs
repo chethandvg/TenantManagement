@@ -1,6 +1,8 @@
+using TentMan.AdminApiClient.Configuration;
 using TentMan.Contracts.Admin;
 using TentMan.Contracts.Common;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace TentMan.AdminApiClient.Services;
 
@@ -14,14 +16,15 @@ public sealed class RolesApiClient : AdminApiClientServiceBase, IRolesApiClient
     /// Initializes a new instance of the <see cref="RolesApiClient"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client instance.</param>
+    /// <param name="options">The Admin API client options.</param>
     /// <param name="logger">The logger instance.</param>
-    public RolesApiClient(HttpClient httpClient, ILogger<RolesApiClient> logger)
-        : base(httpClient, logger)
+    public RolesApiClient(HttpClient httpClient, IOptions<AdminApiClientOptions> options, ILogger<RolesApiClient> logger)
+        : base(httpClient, options, logger)
     {
     }
 
     /// <inheritdoc/>
-    protected override string BasePath => "api/v1/admin/roles";
+    protected override string EndpointName => "roles";
 
     /// <inheritdoc/>
     public Task<ApiResponse<IEnumerable<RoleDto>>> GetRolesAsync(

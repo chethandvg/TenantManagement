@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using TentMan.AdminApiClient.Configuration;
 using TentMan.AdminApiClient.Exceptions;
 using TentMan.Contracts.Common;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace TentMan.AdminApiClient.Services;
 
@@ -15,16 +17,20 @@ public abstract class AdminApiClientServiceBase
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly ILogger _logger;
+    private readonly string _apiVersion;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AdminApiClientServiceBase"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client instance.</param>
+    /// <param name="options">The Admin API client options.</param>
     /// <param name="logger">The logger instance.</param>
-    protected AdminApiClientServiceBase(HttpClient httpClient, ILogger logger)
+    protected AdminApiClientServiceBase(HttpClient httpClient, IOptions<AdminApiClientOptions> options, ILogger logger)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(options);
+        _apiVersion = options.Value.ApiVersion;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
@@ -33,9 +39,15 @@ public abstract class AdminApiClientServiceBase
     }
 
     /// <summary>
-    /// Gets the base path for the API endpoint (e.g., "admin/users", "admin/roles").
+    /// Gets the endpoint name for this API client (e.g., "users", "roles").
+    /// This is combined with the configured API version to form the full base path.
     /// </summary>
-    protected abstract string BasePath { get; }
+    protected abstract string EndpointName { get; }
+
+    /// <summary>
+    /// Gets the base path for the API endpoint, constructed from the configured API version.
+    /// </summary>
+    protected string BasePath => $"api/{_apiVersion}/admin/{EndpointName}";
 
     /// <summary>
     /// Sends a GET request and returns the response data.

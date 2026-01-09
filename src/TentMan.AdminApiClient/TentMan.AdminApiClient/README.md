@@ -49,8 +49,18 @@ services.AddAdminApiClient(options =>
     options.BaseUrl = "https://your-admin-api.com";
     options.TimeoutSeconds = 30;
     options.RetryCount = 3;
+    options.ApiVersion = "v2"; // Configure API version (default: "v1")
 });
 ```
+
+### API Version Configuration
+
+The `ApiVersion` option controls which API version the clients will use. This is used to construct the base path for all endpoints:
+
+- When `ApiVersion = "v1"` (default): endpoints are `api/v1/admin/{resource}`
+- When `ApiVersion = "v2"`: endpoints are `api/v2/admin/{resource}`
+
+This allows the client to work with different API versions without code changes.
 
 ## Usage
 
