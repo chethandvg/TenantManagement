@@ -1,5 +1,36 @@
 # TentMan.Ui - Changelog
 
+## v1.1.0 - Tenant Management & Lease Creation
+
+### New Features
+
+#### Tenant Management Pages
+- **Pages/Tenants/TenantsList** – Displays all tenants with search by phone/name (600ms debounce), add/edit dialogs, and status badges
+- **Pages/Tenants/TenantDetails** – Tabbed interface for tenant profile, addresses, documents, and lease history
+
+#### Lease Creation Wizard
+- **Pages/Leases/CreateLease** – 7-step wizard for creating leases:
+  1. Select Unit (dropdown with unit summary)
+  2. Dates & Rules (start/end, due day, grace, late fee, notice)
+  3. Add Parties (search existing or create inline, role assignment)
+  4. Financial Terms (rent, deposit, maintenance, escalation)
+  5. Documents (upload lease agreement and proofs)
+  6. Move-in Handover (checklist, meter readings, photos)
+  7. Review & Activate (validation summary and confirmation)
+
+#### Navigation Updates
+- Added "Tenant Management" navigation group under authenticated section
+- Added links to Tenants list and Create Lease wizard
+
+### API Clients Added
+- **ITenantsApiClient / TenantsApiClient** – CRUD operations for tenants with search by phone/name
+- **ILeasesApiClient / LeasesApiClient** – Create draft leases, add parties/terms, activate
+
+### Dependencies
+- No new external dependencies
+
+---
+
 ## Initial Release (v1.0.0)
 
 ### Project Structure

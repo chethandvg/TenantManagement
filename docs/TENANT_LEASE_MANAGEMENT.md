@@ -686,13 +686,127 @@ dotnet test --filter "FullyQualifiedName~TenantManagement"
 ## 📝 Future Enhancements
 
 Features planned for future releases:
+- [x] Blazor WASM frontend screens for tenant and lease management ✅
 - [ ] End lease workflow with deposit settlement
 - [ ] Rent collection and payment tracking
 - [ ] Utility bill management
 - [ ] Maintenance request tracking
 - [ ] Lease renewal automation
 - [ ] Tenant portal/login
-- [ ] Blazor WASM frontend screens for lease management
+- [ ] Tenant document upload to storage (API integration)
+- [ ] Lease document storage
+- [ ] Move-in handover data persistence to API
+
+---
+
+## 🖥️ Blazor UI Pages
+
+The Tenant and Lease Management module includes complete Blazor WASM frontend screens.
+
+### Navigation
+
+The UI adds a "Tenant Management" navigation group:
+
+```
+📁 Tenant Management
+├── 👥 Tenants
+└── 📝 Create Lease
+```
+
+### Tenants List (`/tenants`)
+
+**File**: `Pages/Tenants/TenantsList.razor`
+
+Displays all tenants with search and add/edit capabilities.
+
+**Features:**
+- 🔍 **Search**: Filter by name or phone (600ms debounce to reduce API calls)
+- ➕ **Add Tenant Dialog**: Create new tenants with profile information
+- ✏️ **Edit Tenant Dialog**: Update existing tenant details
+- 🏷️ **Status Badges**: Color-coded Active/Inactive chips
+- 👁️ **View Details**: Navigate to tenant details page
+
+### Tenant Details (`/tenants/{id}`)
+
+**File**: `Pages/Tenants/TenantDetails.razor`
+
+Tabbed interface for managing tenant details.
+
+**Tabs:**
+
+| Tab | Features |
+|-----|----------|
+| **Profile** | View tenant personal information (name, phone, email, DOB, gender) |
+| **Addresses** | View and add tenant addresses (Current, Permanent, etc.) |
+| **Documents** | Upload and preview documents (ID proofs, address proofs) with FileUploader |
+| **Leases** | View tenant's lease history with status badges and count |
+
+### Create Lease Wizard (`/leases/create`)
+
+**File**: `Pages/Leases/CreateLease.razor`
+
+A 7-step wizard for creating new leases:
+
+| Step | Name | Description |
+|------|------|-------------|
+| 1 | **Select Unit** | Dropdown with unit summary (type, area, bedrooms, bathrooms) |
+| 2 | **Dates & Rules** | Start date, end date, rent due day (1-28), grace days, notice period, late fee settings, auto-renew |
+| 3 | **Add Parties** | Search existing tenant by phone/name or create inline; set role and payment responsibility |
+| 4 | **Financial Terms** | Monthly rent, security deposit, maintenance, other charges, escalation rules |
+| 5 | **Documents** | Upload lease agreement, ID proofs, address proofs using FileUploader |
+| 6 | **Move-in Handover** | Checklist items with condition, meter readings, handover photos |
+| 7 | **Review & Activate** | Validation summary panel, lease summary, activate button |
+
+**Validation Rules Enforced:**
+- Unit must be selected
+- Start date is required
+- At least one party is required
+- At least one party must be Primary Tenant
+- At least one party must be responsible for payment
+- Monthly rent must be greater than zero
+- Security deposit cannot be negative
+
+### API Clients
+
+Two API clients are provided for the Blazor frontend:
+
+#### ITenantsApiClient
+
+```csharp
+// List/search tenants
+var response = await TenantsClient.GetTenantsAsync(orgId, search: "9876543210");
+
+// Get tenant details
+var response = await TenantsClient.GetTenantAsync(tenantId);
+
+// Create tenant
+var response = await TenantsClient.CreateTenantAsync(orgId, request);
+
+// Update tenant
+var response = await TenantsClient.UpdateTenantAsync(tenantId, request);
+```
+
+#### ILeasesApiClient
+
+```csharp
+// Create draft lease
+var response = await LeasesClient.CreateLeaseAsync(orgId, request);
+
+// Get lease details
+var response = await LeasesClient.GetLeaseAsync(leaseId);
+
+// Get leases for unit
+var response = await LeasesClient.GetLeasesByUnitAsync(unitId);
+
+// Add party to lease
+var response = await LeasesClient.AddLeasePartyAsync(leaseId, request);
+
+// Add financial terms
+var response = await LeasesClient.AddLeaseTermAsync(leaseId, request);
+
+// Activate lease
+var response = await LeasesClient.ActivateLeaseAsync(leaseId, request);
+```
 
 ---
 

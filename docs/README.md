@@ -40,7 +40,7 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Business rules and validation
    - Usage examples
 
-6. **[Tenant and Lease Management Guide](TENANT_LEASE_MANAGEMENT.md)** 📋 **NEW!**
+6. **[Tenant and Lease Management Guide](TENANT_LEASE_MANAGEMENT.md)** 📋 **UPDATED!**
    - Tenant profiles and document management
    - Lease creation and activation workflow
    - One active lease per unit constraint
@@ -48,6 +48,7 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Versioned financial terms (rent, deposit, escalation)
    - Deposit ledger tracking
    - Lease activation validation rules
+   - **Blazor WASM Frontend screens** ✨ NEW!
 
 7. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
    - JWT configuration
@@ -344,6 +345,7 @@ Remember to follow the coding guidelines in **[CONTRIBUTING.md](../CONTRIBUTING.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 6.1 | 2026-01-09 | **Added Blazor UI for Tenant & Lease Management** - Tenants list, tenant details, 7-step lease creation wizard |
 | 6.0 | 2026-01-09 | **Added Tenant and Lease Management** - Complete guide with API endpoints, business rules, and database schema |
 | 5.0 | 2026-01-08 | **Added CONTRIBUTING.md** with coding agent guidelines, project READMEs |
 | 4.0 | 2025-01-22 | **Major consolidation** (51 files → 12 files, 76% reduction) |
@@ -357,6 +359,6 @@ Remember to follow the coding guidelines in **[CONTRIBUTING.md](../CONTRIBUTING.
 ---
 
 **Last Updated**: 2026-01-09  
-**Version**: 6.0 ⚡ **WITH TENANT & LEASE MANAGEMENT**  
+**Version**: 6.1 ⚡ **WITH TENANT & LEASE MANAGEMENT UI**  
 **Maintainer**: TentMan Development Team  
 **Questions?** Open an issue on [GitHub](https://github.com/chethandvg/tentman/issues)

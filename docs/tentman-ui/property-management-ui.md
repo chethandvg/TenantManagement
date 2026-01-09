@@ -8,6 +8,7 @@ This guide covers the Blazor WASM frontend components for the Property Managemen
 
 - [Overview](#overview)
 - [Pages](#pages)
+- [Tenant Management Pages](#tenant-management-pages)
 - [Reusable Components](#reusable-components)
 - [API Clients](#api-clients)
 - [Usage Patterns](#usage-patterns)
@@ -16,16 +17,20 @@ This guide covers the Blazor WASM frontend components for the Property Managemen
 
 ## 🎯 Overview
 
-The Property Management UI provides a complete frontend experience for managing buildings, units, and owners. All components follow the code-behind pattern with separate `.razor` and `.razor.cs` files.
+The Property Management UI provides a complete frontend experience for managing buildings, units, owners, tenants, and leases. All components follow the code-behind pattern with separate `.razor` and `.razor.cs` files.
 
 ### Navigation
 
-The UI adds a "Property Management" navigation group under the authenticated section:
+The UI adds navigation groups under the authenticated section:
 
 ```
 📁 Property Management
 ├── 🏢 Buildings
 └── 👥 Owners
+
+📁 Tenant Management
+├── 👥 Tenants
+└── 📝 Create Lease
 ```
 
 ---
@@ -103,6 +108,88 @@ Displays all owners for the current organization with search and add/edit capabi
 - Add new owner dialog
 - Edit existing owner dialog
 - Owner type badges (Individual/Company)
+
+---
+
+## 👥 Tenant Management Pages
+
+### Tenants List (`/tenants`)
+
+**File**: `Pages/Tenants/TenantsList.razor`
+
+Displays all tenants for the current organization with search and add/edit capabilities.
+
+**Features:**
+- Search by name or phone (600ms debounce to reduce API calls)
+- Add new tenant dialog
+- Edit existing tenant dialog
+- Active/Inactive status badges
+- Link to view tenant details
+
+**Usage:**
+```razor
+@page "/tenants"
+@inject ITenantsApiClient TenantsClient
+@inject UiState UiState
+
+<TenantsList />
+```
+
+### Tenant Details (`/tenants/{id}`)
+
+**File**: `Pages/Tenants/TenantDetails.razor`
+
+Tabbed interface for managing tenant details.
+
+**Tabs:**
+1. **Profile**: Tenant personal information (name, phone, email, date of birth, gender)
+2. **Addresses**: View and add tenant addresses
+3. **Documents**: Upload and preview tenant documents (ID proofs, address proofs)
+4. **Leases**: View tenant's lease history with status badges
+
+**Example:**
+```razor
+@page "/tenants/{TenantId:guid}"
+@inject ITenantsApiClient TenantsClient
+@inject ILeasesApiClient LeasesClient
+
+<TenantDetails TenantId="@TenantId" />
+```
+
+### Create Lease Wizard (`/leases/create`)
+
+**File**: `Pages/Leases/CreateLease.razor`
+
+A 7-step wizard for creating new leases with comprehensive validation.
+
+**Steps:**
+1. **Select Unit**: Dropdown with unit summary (type, bedrooms, bathrooms, area)
+2. **Dates & Rules**: Start date, end date, rent due day (1-28), grace days, notice period, late fee settings, auto-renew option
+3. **Add Parties**: Search existing tenant by phone/name or create tenant inline, set role (Primary/Co-Tenant/Occupant/Guarantor), mark as responsible for payment
+4. **Financial Terms**: Monthly rent, security deposit, maintenance charge, other fixed charges, escalation type and value
+5. **Documents**: Upload lease agreement, ID proofs, address proofs using FileUploader component
+6. **Move-in Handover**: Checklist with condition tracking, initial meter readings, handover photos
+7. **Review & Activate**: Validation summary panel, complete lease summary, activate button
+
+**Validation Rules:**
+- Unit selection is required
+- Start date is required
+- At least one party is required
+- At least one party must be a Primary Tenant
+- At least one party must be responsible for payment
+- Monthly rent must be greater than zero
+- Security deposit cannot be negative
+
+**Example:**
+```razor
+@page "/leases/create"
+@page "/leases/create/{UnitId:guid}"
+@inject ILeasesApiClient LeasesClient
+@inject ITenantsApiClient TenantsClient
+@inject IBuildingsApiClient BuildingsClient
+
+<CreateLease UnitId="@UnitId" />
+```
 
 ---
 
@@ -300,6 +387,40 @@ Task<ApiResponse<OwnerDto>> GetOwnerAsync(Guid orgId, Guid ownerId, Cancellation
 Task<ApiResponse<OwnerDto>> CreateOwnerAsync(Guid orgId, CreateOwnerRequest request, CancellationToken ct = default);
 ```
 
+### ITenantsApiClient
+
+Typed HTTP client for tenant operations.
+
+**Methods:**
+```csharp
+// Tenants
+Task<ApiResponse<IEnumerable<TenantListDto>>> GetTenantsAsync(Guid orgId, string? search = null, CancellationToken ct = default);
+Task<ApiResponse<TenantDetailDto>> GetTenantAsync(Guid tenantId, CancellationToken ct = default);
+Task<ApiResponse<TenantListDto>> CreateTenantAsync(Guid orgId, CreateTenantRequest request, CancellationToken ct = default);
+Task<ApiResponse<TenantDetailDto>> UpdateTenantAsync(Guid tenantId, UpdateTenantRequest request, CancellationToken ct = default);
+```
+
+### ILeasesApiClient
+
+Typed HTTP client for lease operations.
+
+**Methods:**
+```csharp
+// Leases
+Task<ApiResponse<LeaseListDto>> CreateLeaseAsync(Guid orgId, CreateLeaseRequest request, CancellationToken ct = default);
+Task<ApiResponse<LeaseDetailDto>> GetLeaseAsync(Guid leaseId, CancellationToken ct = default);
+Task<ApiResponse<IEnumerable<LeaseListDto>>> GetLeasesByUnitAsync(Guid unitId, CancellationToken ct = default);
+
+// Lease Parties
+Task<ApiResponse<LeaseDetailDto>> AddLeasePartyAsync(Guid leaseId, AddLeasePartyRequest request, CancellationToken ct = default);
+
+// Lease Terms
+Task<ApiResponse<LeaseDetailDto>> AddLeaseTermAsync(Guid leaseId, AddLeaseTermRequest request, CancellationToken ct = default);
+
+// Activation
+Task<ApiResponse<LeaseDetailDto>> ActivateLeaseAsync(Guid leaseId, ActivateLeaseRequest request, CancellationToken ct = default);
+```
+
 ---
 
 ## 🎨 Usage Patterns
@@ -381,5 +502,6 @@ private bool ValidateOwnership()
 ## 📚 Related Documentation
 
 - [Property Management Guide](../PROPERTY_MANAGEMENT.md)
+- [Tenant & Lease Management Guide](../TENANT_LEASE_MANAGEMENT.md)
 - [Busy & Error Workflow](loading-boundaries.md)
 - [Contributing Guide](../../CONTRIBUTING.md)
