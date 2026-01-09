@@ -10,6 +10,7 @@ TentMan.Ui is a Razor Class Library that delivers the layout, navigation, and ro
 - ✅ Ready-to-use sample pages that demonstrate authentication and data loading patterns
 - ✅ Busy and error boundaries that wrap MudBlazor primitives for consistent loading workflows
 - ✅ Runtime theme token service that keeps MudBlazor styling in sync across components
+- ✅ **Tenant invite management UI** with generate invite dialog, status tracking, and lifecycle management
 
 ## Component Inventory
 
@@ -40,7 +41,7 @@ The catalog below reflects the components that currently ship in the library.
 | `Counter` | `/counter` | `Pages/Counter.razor`<br/>`Pages/Counter.razor.cs` | Sample counter experience used for diagnostics and template parity. |
 | `FetchData` | `/fetchdata` | `Pages/FetchData.razor`<br/>`Pages/FetchData.razor.cs` | Weather forecast sample that demonstrates basic API calls through `HttpClient`. |
 | `TenantsList` | `/tenants` | `Pages/Tenants/TenantsList.razor`<br/>`Pages/Tenants/TenantsList.razor.cs` | Displays all tenants with search by phone/name and add/edit capabilities. |
-| `TenantDetails` | `/tenants/{id}` | `Pages/Tenants/TenantDetails.razor`<br/>`Pages/Tenants/TenantDetails.razor.cs` | Tabbed view for tenant profile, addresses, documents, and lease history. |
+| `TenantDetails` | `/tenants/{id}` | `Pages/Tenants/TenantDetails.razor`<br/>`Pages/Tenants/TenantDetails.razor.cs` | Tabbed view for tenant profile, addresses, documents, lease history, and **invite management**. Includes Generate Invite dialog with configurable expiry, invite status tracking (Pending/Used/Expired), copy-to-clipboard for invite URLs, and cancel invite functionality. |
 | `AcceptInvite` | `/accept-invite` | `Pages/Tenant/AcceptInvite.razor`<br/>`Pages/Tenant/AcceptInvite.razor.cs` | Public page for tenants to accept invite links and create accounts. Validates token, displays registration form, and redirects to tenant dashboard on success. |
 | `TenantDashboard` | `/tenant/dashboard` | `Pages/Tenant/Dashboard.razor`<br/>`Pages/Tenant/Dashboard.razor.cs` | Authenticated dashboard for tenants showing their active lease summary and quick actions. |
 | `TenantLeaseSummary` | `/tenant/lease-summary` | `Pages/Tenant/LeaseSummary.razor`<br/>`Pages/Tenant/LeaseSummary.razor.cs` | Detailed view of tenant's active lease including financial details, deposit history, rent timeline, lease parties, and terms. Protected by Tenant role authorization. |
