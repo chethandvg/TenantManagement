@@ -203,7 +203,8 @@ public static class ServiceCollectionExtensions
 
         // Configure Tenant Invites API Client
         // Includes public endpoints (ValidateInvite, AcceptInvite) and authenticated endpoint (GenerateInvite)
-        // Auth handler automatically skips token attachment for public endpoints
+        // Auth handler (AuthenticationMessageHandler) automatically skips token attachment for public endpoints
+        // by inspecting the request path and checking against a list of unauthenticated endpoints
         ConfigureHttpClient<ITenantInvitesApiClient, TenantInvitesApiClient>(services, options, authOptions, useAuthHandler: true);
 
         // Configure Authentication API Client
