@@ -14,6 +14,8 @@ Complete guide to the Tenant and Lease Management module in TentMan - a comprehe
 - [Architecture](#architecture)
 - [Usage Examples](#usage-examples)
 - [Database Schema](#database-schema)
+- [Move-In Handover Checklist Feature](#move-in-handover-checklist-feature)
+- [Related Documentation](#related-documentation)
 
 ---
 
@@ -758,15 +760,14 @@ dotnet test --filter "FullyQualifiedName~TenantManagement"
 
 Features planned for future releases:
 - [x] Blazor WASM frontend screens for tenant and lease management ✅
+- [x] Move-in handover checklist with digital signature ✅
 - [ ] End lease workflow with deposit settlement
 - [ ] Rent collection and payment tracking
 - [ ] Utility bill management
 - [ ] Maintenance request tracking
 - [ ] Lease renewal automation
-- [ ] Tenant portal/login
 - [ ] Tenant document upload to storage (API integration)
 - [ ] Lease document storage
-- [ ] Move-in handover data persistence to API
 
 ---
 
@@ -877,6 +878,219 @@ var response = await LeasesClient.AddLeaseTermAsync(leaseId, request);
 
 // Activate lease
 var response = await LeasesClient.ActivateLeaseAsync(leaseId, request);
+```
+
+---
+
+## 📋 Move-In Handover Checklist Feature
+
+The Move-In Handover Checklist provides a digital, signature-based system for documenting property condition at tenant move-in.
+
+### Overview
+
+When a lease is created, a move-in handover record is automatically generated with checklist items documenting the condition of the property. Tenants can access this through their portal, review the checklist, and submit their digital signature to confirm the property condition.
+
+### Key Features
+
+✅ **Digital Signature** - HTML5 Canvas-based signature pad for capturing tenant signatures  
+✅ **Checklist Items** - Categorized items (Electrical, Plumbing, Furniture, etc.) with condition tracking  
+✅ **Condition States** - Good, Ok, Bad, Missing  
+✅ **Meter Readings** - Initial utility meter readings (Electricity, Water, Gas)  
+✅ **Photo Attachments** - Support for attaching photos to checklist items  
+✅ **Immutable After Submission** - Read-only view once tenant signs  
+✅ **Secure Storage** - Signatures stored in Azure Blob Storage with SHA256 verification  
+
+### Data Model
+
+#### UnitHandover Entity
+
+```csharp
+public class UnitHandover : BaseEntity
+{
+    public Guid LeaseId { get; set; }
+    public HandoverType Type { get; set; }  // MoveIn or MoveOut
+    public DateOnly Date { get; set; }
+    public string? Notes { get; set; }
+    public bool SignedByTenant { get; set; }
+    public bool SignedByOwner { get; set; }
+    public Guid? SignatureTenantFileId { get; set; }
+    public Guid? SignatureOwnerFileId { get; set; }
+    
+    // Navigation properties
+    public Lease Lease { get; set; }
+    public FileMetadata? SignatureTenantFile { get; set; }
+    public FileMetadata? SignatureOwnerFile { get; set; }
+    public ICollection<HandoverChecklistItem> ChecklistItems { get; set; }
+}
+```
+
+#### HandoverChecklistItem Entity
+
+```csharp
+public class HandoverChecklistItem : BaseEntity
+{
+    public Guid HandoverId { get; set; }
+    public string Category { get; set; }        // Electrical, Plumbing, Furniture
+    public string ItemName { get; set; }
+    public ItemCondition Condition { get; set; } // Good, Ok, Bad, Missing
+    public string? Remarks { get; set; }
+    public Guid? PhotoFileId { get; set; }
+    
+    // Navigation properties
+    public UnitHandover Handover { get; set; }
+    public FileMetadata? PhotoFile { get; set; }
+}
+```
+
+### Tenant Portal API Endpoints
+
+#### Get Move-In Handover
+
+```http
+GET /api/v1/tenant-portal/move-in-handover
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "handoverId": "guid",
+    "leaseId": "guid",
+    "unitNumber": "A-101",
+    "buildingName": "Building A",
+    "date": "2026-01-09",
+    "isCompleted": false,
+    "notes": "Additional notes",
+    "checklistItems": [
+      {
+        "id": "guid",
+        "category": "Electrical",
+        "itemName": "Living Room - Light Fixtures",
+        "condition": "Good",
+        "remarks": "All working",
+        "photoFileId": null,
+        "photoFileName": null
+      }
+    ],
+    "meterReadings": [
+      {
+        "meterId": "guid",
+        "meterType": "Electricity",
+        "reading": 1234.5,
+        "readingDate": "2026-01-09"
+      }
+    ]
+  }
+}
+```
+
+#### Submit Move-In Handover
+
+```http
+POST /api/v1/tenant-portal/move-in-handover/submit
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+```
+
+**Request (Form Data):**
+- `handoverId` (guid) - ID of the handover record
+- `notes` (string, optional) - Additional notes
+- `signatureImage` (file) - PNG/JPEG signature image (max 2MB)
+- `checklistItems` (JSON array) - Updated checklist items
+- `meterReadings` (JSON array) - Updated meter readings
+
+**Response:** Same as GET response with `isCompleted: true`
+
+### Blazor UI Components
+
+#### Tenant Portal Page
+
+**Route**: `/tenant/move-in`  
+**File**: `Pages/Tenant/MoveInHandover.razor`
+
+**Features:**
+- 📋 **Checklist Display** - Shows all checklist items grouped by category
+- 🎨 **Digital Signature Pad** - HTML5 Canvas for drawing signature
+- 📊 **Meter Readings** - Display of utility meter readings
+- 📝 **Notes Section** - Additional remarks field
+- ✅ **Validation** - Ensures signature is provided before submission
+- 🔒 **Read-Only After Submission** - Locks UI once signed
+- 📱 **Touch Support** - Works on mobile devices
+
+#### Signature Pad Implementation
+
+**File**: `wwwroot/signature-pad.js`
+
+Uses HTML5 Canvas API with:
+- Mouse event handling for desktop
+- Touch event handling for mobile devices
+- Base64 PNG export for signature image
+- Clear functionality to restart signature
+- JavaScript Interop with Blazor component
+
+**Usage:**
+```javascript
+// Initialize signature pad
+await JS.InvokeVoidAsync("initSignaturePad", DotNetObjectReference.Create(this));
+
+// Clear signature
+await JS.InvokeVoidAsync("clearSignaturePad");
+
+// Signature data is automatically sent to Blazor via JSInvokable callback
+[JSInvokable]
+public void SetSignatureData(string dataUrl) { ... }
+```
+
+### Workflow
+
+1. **Lease Creation** - Handover record created automatically with Step 6 of Create Lease Wizard
+2. **Tenant Access** - Tenant navigates to `/tenant/move-in` in tenant portal
+3. **Review Checklist** - Tenant reviews pre-filled checklist items and meter readings
+4. **Add Remarks** - Tenant can add notes/remarks to any checklist item
+5. **Draw Signature** - Tenant draws signature on canvas pad
+6. **Submit** - Signature converted to PNG and uploaded with checklist data
+7. **Lock** - Handover becomes read-only after submission
+
+### Business Rules
+
+- ✅ Tenant must be logged in and linked to an active lease
+- ✅ Only one move-in handover per lease (move-out is separate)
+- ✅ Signature image is required for submission
+- ✅ Signature must be PNG or JPEG format
+- ✅ Signature file size limited to 2MB
+- ✅ Once signed by tenant, handover cannot be modified
+- ✅ Signature stored securely in Azure Blob Storage with SHA256 hash
+- ✅ Handover snapshot saved in lease record for audit trail
+
+### Security
+
+- 🔒 **Authorization** - Tenant can only access their own lease handover
+- 🔒 **Validation** - Server-side validation of all submitted data
+- 🔒 **Immutability** - Signed handovers cannot be modified
+- 🔒 **Audit Trail** - All changes tracked with user ID and timestamp
+- 🔒 **File Integrity** - SHA256 hash verification for signature images
+- 🔒 **Secure Storage** - Azure Blob Storage with access controls
+
+### Testing
+
+Unit tests are provided for the handover query and command handlers:
+
+**File**: `tests/TentMan.UnitTests/.../GetMoveInHandoverQueryHandlerTests.cs`
+
+```csharp
+[Fact]
+public async Task Handle_ValidHandover_ReturnsHandoverResponse()
+{
+    // Test that valid handover data is returned correctly
+}
+
+[Fact]
+public async Task Handle_NoTenantFound_ReturnsNull()
+{
+    // Test that null is returned when tenant not found
+}
 ```
 
 ---

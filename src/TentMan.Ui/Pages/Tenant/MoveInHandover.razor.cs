@@ -1,58 +1,77 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using TentMan.ApiClient.Services;
+using TentMan.Contracts.TenantPortal;
+using Microsoft.JSInterop;
 
 namespace TentMan.Ui.Pages.Tenant;
 
-public partial class MoveInHandover : ComponentBase
+public partial class MoveInHandover : ComponentBase, IDisposable
 {
-    private HandoverViewModel? _handover;
+    private MoveInHandoverResponse? _handover;
     private bool _isSubmitting;
     private bool _isSubmitted;
     private string? _error;
+    private string? _signatureDataUrl;
+    private DotNetObjectReference<MoveInHandover>? _dotNetRef;
 
     [Inject]
     public ISnackbar Snackbar { get; set; } = default!;
+
+    [Inject]
+    public ITenantPortalApiClient TenantPortalApi { get; set; } = default!;
+
+    [Inject]
+    public IJSRuntime JS { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _handover != null && !_isSubmitted)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initSignaturePad", _dotNetRef);
+        }
+    }
+
     private async Task LoadDataAsync()
     {
-        // TODO: Call API to get handover checklist
-        await Task.Delay(500);
-
-        // Mock data
-        _handover = new HandoverViewModel
+        try
         {
-            UnitNumber = "A-101",
-            Date = DateOnly.FromDateTime(DateTime.Today),
-            TenantSignature = "",
-            ChecklistItems = new List<ChecklistItemViewModel>
+            var response = await TenantPortalApi.GetMoveInHandoverAsync();
+            
+            if (response.Success && response.Data != null)
             {
-                new() { ItemName = "Living Room - Walls", Condition = "Good", IsConfirmed = false, Notes = "" },
-                new() { ItemName = "Living Room - Flooring", Condition = "Good", IsConfirmed = false, Notes = "" },
-                new() { ItemName = "Kitchen - Appliances", Condition = "Good", IsConfirmed = false, Notes = "" },
-                new() { ItemName = "Bathroom - Fixtures", Condition = "Good", IsConfirmed = false, Notes = "" },
-                new() { ItemName = "Bedroom - Windows", Condition = "Good", IsConfirmed = false, Notes = "" },
+                _handover = response.Data;
+                _isSubmitted = _handover.IsCompleted;
             }
-        };
+            else
+            {
+                // No handover found - this is normal
+                _handover = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error loading handover: {ex.Message}";
+        }
     }
 
     private async Task SubmitHandover()
     {
-        if (string.IsNullOrWhiteSpace(_handover?.TenantSignature))
+        if (_handover == null)
         {
-            _error = "Please sign by typing your full name";
+            _error = "No handover data available";
             return;
         }
 
-        // Check for unconfirmed items more efficiently
-        var unconfirmedItems = _handover.ChecklistItems.Where(x => !x.IsConfirmed).ToList();
-        if (unconfirmedItems.Any())
+        if (string.IsNullOrWhiteSpace(_signatureDataUrl))
         {
-            _error = $"Please confirm all checklist items ({unconfirmedItems.Count} remaining)";
+            _error = "Please provide your signature";
             return;
         }
 
@@ -61,15 +80,49 @@ public partial class MoveInHandover : ComponentBase
 
         try
         {
-            // TODO: Call API to submit handover
-            await Task.Delay(1000);
+            // Convert signature data URL to stream
+            var signatureBytes = Convert.FromBase64String(_signatureDataUrl.Split(',')[1]);
+            using var signatureStream = new MemoryStream(signatureBytes);
 
-            _isSubmitted = true;
-            Snackbar.Add("Handover checklist submitted successfully!", Severity.Success);
+            // Prepare submission request
+            var request = new SubmitHandoverRequest
+            {
+                HandoverId = _handover.HandoverId,
+                Notes = _handover.Notes,
+                ChecklistItems = _handover.ChecklistItems.Select(ci => new HandoverChecklistItemUpdateDto
+                {
+                    Id = ci.Id,
+                    Condition = ci.Condition,
+                    Remarks = ci.Remarks
+                }).ToList(),
+                MeterReadings = _handover.MeterReadings.Select(mr => new MeterReadingUpdateDto
+                {
+                    MeterId = mr.MeterId,
+                    Reading = mr.Reading,
+                    ReadingDate = mr.ReadingDate
+                }).ToList()
+            };
+
+            var response = await TenantPortalApi.SubmitMoveInHandoverAsync(
+                request,
+                signatureStream,
+                "signature.png",
+                "image/png");
+
+            if (response.Success && response.Data != null)
+            {
+                _handover = response.Data;
+                _isSubmitted = true;
+                Snackbar.Add("Handover checklist submitted successfully!", Severity.Success);
+            }
+            else
+            {
+                _error = response.Message ?? "Failed to submit handover";
+            }
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            _error = $"Error submitting handover: {ex.Message}";
         }
         finally
         {
@@ -77,19 +130,21 @@ public partial class MoveInHandover : ComponentBase
         }
     }
 
-    private sealed class HandoverViewModel
+    private async Task ClearSignature()
     {
-        public string UnitNumber { get; set; } = string.Empty;
-        public DateOnly Date { get; set; }
-        public string TenantSignature { get; set; } = string.Empty;
-        public List<ChecklistItemViewModel> ChecklistItems { get; set; } = new();
+        _signatureDataUrl = null;
+        await JS.InvokeVoidAsync("clearSignaturePad");
     }
 
-    private sealed class ChecklistItemViewModel
+    [JSInvokable]
+    public void SetSignatureData(string dataUrl)
     {
-        public string ItemName { get; set; } = string.Empty;
-        public string Condition { get; set; } = string.Empty;
-        public bool IsConfirmed { get; set; }
-        public string Notes { get; set; } = string.Empty;
+        _signatureDataUrl = dataUrl;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
     }
 }

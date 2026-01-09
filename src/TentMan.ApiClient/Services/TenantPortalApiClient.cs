@@ -108,4 +108,77 @@ public sealed class TenantPortalApiClient : ApiClientServiceBase, ITenantPortalA
             return ApiResponse<TenantDocumentDto>.Fail($"Upload error: {ex.Message}");
         }
     }
+
+    /// <inheritdoc/>
+    public Task<ApiResponse<MoveInHandoverResponse>> GetMoveInHandoverAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return GetAsync<MoveInHandoverResponse>("move-in-handover", cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<ApiResponse<MoveInHandoverResponse>> SubmitMoveInHandoverAsync(
+        SubmitHandoverRequest request,
+        Stream signatureImage,
+        string signatureFileName,
+        string signatureContentType,
+        CancellationToken cancellationToken = default)
+    {
+        var uri = $"{BasePath}/move-in-handover/submit";
+        _logger.LogDebug("Submitting move-in handover to {Uri}", uri);
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            
+            // Add signature image
+            using var signatureContent = new StreamContent(signatureImage);
+            signatureContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(signatureContentType);
+            content.Add(signatureContent, "signatureImage", signatureFileName);
+
+            // Add request fields (MultipartFormDataContent will dispose the StringContent objects)
+            content.Add(new StringContent(request.HandoverId.ToString()), "handoverId");
+            
+            if (!string.IsNullOrEmpty(request.Notes))
+            {
+                content.Add(new StringContent(request.Notes), "notes");
+            }
+
+            // Add checklist items as JSON
+            var checklistJson = JsonSerializer.Serialize(request.ChecklistItems, _jsonOptions);
+            content.Add(new StringContent(checklistJson, System.Text.Encoding.UTF8, "application/json"), "checklistItems");
+
+            // Add meter readings as JSON
+            var metersJson = JsonSerializer.Serialize(request.MeterReadings, _jsonOptions);
+            content.Add(new StringContent(metersJson, System.Text.Encoding.UTF8, "application/json"), "meterReadings");
+
+            var response = await _httpClient.PostAsync(uri, content, cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<MoveInHandoverResponse>>(
+                    _jsonOptions,
+                    cancellationToken);
+
+                if (apiResponse == null)
+                {
+                    _logger.LogWarning("Received null response from server for {RequestUri}", uri);
+                    return ApiResponse<MoveInHandoverResponse>.Fail("Received null response from server");
+                }
+
+                return apiResponse;
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogWarning("Handover submission failed with status {StatusCode}: {Error}",
+                (int)response.StatusCode, errorContent);
+
+            return ApiResponse<MoveInHandoverResponse>.Fail($"Submission failed: {errorContent}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error submitting handover to {Uri}", uri);
+            return ApiResponse<MoveInHandoverResponse>.Fail($"Submission error: {ex.Message}");
+        }
+    }
 }

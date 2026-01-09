@@ -1,5 +1,6 @@
 @page "/tenant/move-in"
 @attribute [Authorize]
+@using Microsoft.JSInterop
 
 <PageTitle>Move-In Handover - TentMan</PageTitle>
 
@@ -12,7 +13,18 @@
             <MudPaper Elevation="2" Class="pa-4">
                 <MudStack Spacing="3">
                     <MudText Typo="Typo.h6">Unit: @_handover.UnitNumber</MudText>
+                    <MudText Typo="Typo.body2">Building: @_handover.BuildingName</MudText>
                     <MudText Typo="Typo.body2">Date: @_handover.Date.ToString("dd MMM yyyy")</MudText>
+                    
+                    @if (_isSubmitted)
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mt-2">
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                <MudText>This handover has been completed and signed.</MudText>
+                            </MudStack>
+                        </MudAlert>
+                    }
                     
                     <MudDivider />
 
@@ -22,58 +34,107 @@
                     {
                         <MudCard Elevation="1" Class="pa-3">
                             <MudStack Spacing="2">
-                                <MudCheckBox @bind-Value="item.IsConfirmed" 
-                                           T="bool"
-                                           Label="@item.ItemName"
-                                           Color="Color.Primary" />
-                                <MudText Typo="Typo.caption">Condition: @item.Condition</MudText>
-                                <MudTextField @bind-Value="item.Notes"
-                                            Label="Notes (optional)"
+                                <MudText Typo="Typo.body1">
+                                    <strong>@item.Category</strong> - @item.ItemName
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Primary">
+                                    Condition: @item.Condition.ToString()
+                                </MudText>
+                                <MudTextField @bind-Value="item.Remarks"
+                                            Label="Remarks"
                                             Variant="Variant.Outlined"
                                             Lines="2"
-                                            FullWidth="true" />
+                                            FullWidth="true"
+                                            ReadOnly="_isSubmitted" />
                             </MudStack>
                         </MudCard>
                     }
 
-                    <MudDivider Class="mt-4" />
+                    @if (_handover.MeterReadings.Any())
+                    {
+                        <MudDivider Class="mt-4" />
+                        <MudText Typo="Typo.subtitle1">Meter Readings</MudText>
+                        
+                        @foreach (var meter in _handover.MeterReadings)
+                        {
+                            <MudCard Elevation="1" Class="pa-3">
+                                <MudStack Row="true" Spacing="3">
+                                    <MudText Typo="Typo.body1">
+                                        <strong>@meter.MeterType:</strong>
+                                    </MudText>
+                                    <MudText Typo="Typo.body1">@meter.Reading</MudText>
+                                    <MudText Typo="Typo.caption">(@meter.ReadingDate.ToString("dd MMM yyyy"))</MudText>
+                                </MudStack>
+                            </MudCard>
+                        }
+                    }
 
-                    <MudStack Spacing="2" Class="mt-4">
-                        <MudText Typo="Typo.subtitle1">Tenant Signature</MudText>
-                        <MudTextField @bind-Value="_handover.TenantSignature"
-                                    Label="Type your full name to sign"
+                    @if (!_isSubmitted)
+                    {
+                        <MudDivider Class="mt-4" />
+                        <MudTextField @bind-Value="_handover.Notes"
+                                    Label="Additional Notes"
                                     Variant="Variant.Outlined"
+                                    Lines="3"
                                     FullWidth="true"
-                                    HelperText="By typing your name, you confirm the handover checklist" />
-                    </MudStack>
-
-                    @if (!string.IsNullOrEmpty(_error))
+                                    ReadOnly="_isSubmitted" />
+                    }
+                    else if (!string.IsNullOrEmpty(_handover.Notes))
                     {
-                        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+                        <MudDivider Class="mt-4" />
+                        <MudTextField @bind-Value="_handover.Notes"
+                                    Label="Additional Notes"
+                                    Variant="Variant.Outlined"
+                                    Lines="3"
+                                    FullWidth="true"
+                                    ReadOnly="true" />
                     }
 
-                    @if (_isSubmitted)
+                    @if (!_isSubmitted)
                     {
-                        <MudAlert Severity="Severity.Success">
-                            Handover checklist submitted successfully!
-                        </MudAlert>
-                    }
+                        <MudDivider Class="mt-4" />
 
-                    <MudButton Variant="Variant.Filled"
-                              Color="Color.Primary"
-                              Size="Size.Large"
-                              OnClick="SubmitHandover"
-                              Disabled="@(_isSubmitting || _isSubmitted || string.IsNullOrWhiteSpace(_handover.TenantSignature))">
-                        @if (_isSubmitting)
+                        <MudStack Spacing="2" Class="mt-4">
+                            <MudText Typo="Typo.subtitle1">Tenant Signature</MudText>
+                            <MudText Typo="Typo.caption">Please draw your signature below</MudText>
+                            
+                            <MudPaper Elevation="1" Class="pa-2" Style="background-color: #f5f5f5;">
+                                <canvas id="signatureCanvas" 
+                                        width="600" 
+                                        height="200" 
+                                        style="border: 2px dashed #ccc; background-color: white; cursor: crosshair; touch-action: none;"></canvas>
+                            </MudPaper>
+                            
+                            <MudButton Variant="Variant.Text" 
+                                      Color="Color.Secondary"
+                                      Size="Size.Small"
+                                      OnClick="ClearSignature"
+                                      StartIcon="@Icons.Material.Filled.Clear">
+                                Clear Signature
+                            </MudButton>
+                        </MudStack>
+
+                        @if (!string.IsNullOrEmpty(_error))
                         {
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                            <span>Submitting...</span>
+                            <MudAlert Severity="Severity.Error">@_error</MudAlert>
                         }
-                        else
-                        {
-                            <span>Submit Handover Checklist</span>
-                        }
-                    </MudButton>
+
+                        <MudButton Variant="Variant.Filled"
+                                  Color="Color.Primary"
+                                  Size="Size.Large"
+                                  OnClick="SubmitHandover"
+                                  Disabled="@(_isSubmitting || string.IsNullOrWhiteSpace(_signatureDataUrl))">
+                            @if (_isSubmitting)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <span>Submitting...</span>
+                            }
+                            else
+                            {
+                                <span>Submit Handover Checklist</span>
+                            }
+                        </MudButton>
+                    }
                 </MudStack>
             </MudPaper>
         }

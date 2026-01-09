@@ -1,4 +1,5 @@
 using TentMan.Application.TenantManagement.TenantPortal.Commands.UploadTenantDocument;
+using TentMan.Application.TenantManagement.TenantPortal.Commands.SubmitHandover;
 using TentMan.Application.TenantManagement.TenantPortal.Queries;
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Tenants;
@@ -152,6 +153,95 @@ public class TenantPortalController : ControllerBase
             var documents = await _mediator.Send(query, cancellationToken);
 
             return Ok(ApiResponse<IEnumerable<TenantDocumentDto>>.Ok(documents, "Documents retrieved successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Gets the move-in handover checklist for the current tenant.
+    /// </summary>
+    [HttpGet("api/v{version:apiVersion}/tenant-portal/move-in-handover")]
+    [ProducesResponseType(typeof(ApiResponse<MoveInHandoverResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<MoveInHandoverResponse>>> GetMoveInHandover(
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogWarning("Invalid user ID claim for move-in handover");
+            return Unauthorized(ApiResponse<object>.Fail("Invalid user authentication"));
+        }
+
+        _logger.LogInformation("Getting move-in handover for user {UserId}", userId);
+
+        var query = new GetMoveInHandoverQuery(userId);
+        var handover = await _mediator.Send(query, cancellationToken);
+
+        if (handover == null)
+        {
+            return NotFound(ApiResponse<object>.Fail("No move-in handover found for the current tenant"));
+        }
+
+        return Ok(ApiResponse<MoveInHandoverResponse>.Ok(handover, "Move-in handover retrieved successfully"));
+    }
+
+    /// <summary>
+    /// Submits the move-in handover checklist with tenant signature.
+    /// </summary>
+    [HttpPost("api/v{version:apiVersion}/tenant-portal/move-in-handover/submit")]
+    [ProducesResponseType(typeof(ApiResponse<MoveInHandoverResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<MoveInHandoverResponse>>> SubmitMoveInHandover(
+        [FromForm] SubmitHandoverRequest request,
+        IFormFile signatureImage,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogWarning("Invalid user ID claim for submit handover");
+            return Unauthorized(ApiResponse<object>.Fail("Invalid user authentication"));
+        }
+
+        _logger.LogInformation("Submitting move-in handover for user {UserId}", userId);
+
+        if (signatureImage == null)
+        {
+            return BadRequest(ApiResponse<object>.Fail("Signature image is required"));
+        }
+
+        try
+        {
+            byte[] signatureBytes;
+            using (var stream = signatureImage.OpenReadStream())
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream, cancellationToken);
+                signatureBytes = memoryStream.ToArray();
+            }
+
+            var command = new SubmitHandoverCommand(
+                userId,
+                request,
+                signatureBytes,
+                signatureImage.FileName,
+                signatureImage.ContentType);
+
+            var result = await _mediator.Send(command, cancellationToken);
+            
+            return Ok(ApiResponse<MoveInHandoverResponse>.Ok(result, "Move-in handover submitted successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
         }
         catch (UnauthorizedAccessException ex)
         {
