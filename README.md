@@ -135,7 +135,14 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
   - Accept Invite page with token validation
   - Dashboard with lease summary (read-only)
   - Document upload page with drag-and-drop interface
-  - Move-in handover checklist with digital signature
+  - **Move-in Handover Checklist** ✨ NEW!
+    - Digital signature pad using HTML5 Canvas
+    - Checklist items with condition tracking (Good, Ok, Bad, Missing)
+    - Meter readings display (Electricity, Water, Gas)
+    - Photo/document attachments for checklist items
+    - Signature image capture and submission
+    - Read-only view after completion
+    - Secure signature storage in Azure Blob Storage
 - **Blazor WASM Frontend** ✨: Complete UI screens for tenant management
   - Tenants List with search by phone/name
   - Tenant Details with tabbed interface (Profile, Addresses, Documents, Leases)
