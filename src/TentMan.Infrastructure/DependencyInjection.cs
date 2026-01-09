@@ -199,6 +199,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<ILeaseRepository, LeaseRepository>();
         services.AddScoped<IFileMetadataRepository, FileMetadataRepository>();
+        services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
