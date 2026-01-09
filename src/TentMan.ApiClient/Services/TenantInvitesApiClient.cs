@@ -54,4 +54,33 @@ public sealed class TenantInvitesApiClient : ApiClientServiceBase, ITenantInvite
             request, 
             cancellationToken);
     }
+
+    /// <inheritdoc/>
+    public Task<ApiResponse<IEnumerable<TenantInviteDto>>> GetInvitesByTenantAsync(
+        Guid orgId,
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        return GetAsync<IEnumerable<TenantInviteDto>>(
+            $"organizations/{orgId}/tenants/{tenantId}/invites",
+            cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<ApiResponse<object>> CancelInviteAsync(
+        Guid orgId,
+        Guid inviteId,
+        CancellationToken cancellationToken = default)
+    {
+        return DeleteAsync(
+            $"organizations/{orgId}/invites/{inviteId}",
+            cancellationToken)
+            .ContinueWith(t => new ApiResponse<object>
+            {
+                Success = t.Result.Success,
+                Data = null,
+                Message = t.Result.Message,
+                Errors = t.Result.Errors
+            }, cancellationToken);
+    }
 }

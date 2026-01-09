@@ -34,6 +34,15 @@ public class TenantInviteRepository : BaseRepository<TenantInvite>, ITenantInvit
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<TenantInvite>> GetAllByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .Include(i => i.Tenant)
+            .Where(i => i.TenantId == tenantId && !i.IsDeleted)
+            .OrderByDescending(i => i.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<TenantInvite> AddAsync(TenantInvite invite, CancellationToken cancellationToken = default)
     {
         var entry = await DbSet.AddAsync(invite, cancellationToken);

@@ -42,4 +42,28 @@ public interface ITenantInvitesApiClient
         Guid tenantId,
         GenerateInviteRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all invites for a tenant.
+    /// </summary>
+    /// <param name="orgId">The organization ID.</param>
+    /// <param name="tenantId">The tenant ID.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The list of invites for the tenant.</returns>
+    Task<ApiResponse<IEnumerable<TenantInviteDto>>> GetInvitesByTenantAsync(
+        Guid orgId,
+        Guid tenantId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cancels an invite.
+    /// </summary>
+    /// <param name="orgId">The organization ID.</param>
+    /// <param name="inviteId">The invite ID.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The result of the cancel operation.</returns>
+    Task<ApiResponse<object>> CancelInviteAsync(
+        Guid orgId,
+        Guid inviteId,
+        CancellationToken cancellationToken = default);
 }

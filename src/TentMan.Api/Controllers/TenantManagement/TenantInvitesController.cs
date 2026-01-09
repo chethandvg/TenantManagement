@@ -1,6 +1,8 @@
 using TentMan.Application.TenantManagement.TenantInvites.Commands.GenerateInvite;
 using TentMan.Application.TenantManagement.TenantInvites.Commands.AcceptInvite;
+using TentMan.Application.TenantManagement.TenantInvites.Commands.CancelInvite;
 using TentMan.Application.TenantManagement.TenantInvites.Queries.ValidateInvite;
+using TentMan.Application.TenantManagement.TenantInvites.Queries.GetInvitesByTenant;
 using TentMan.Contracts.Common;
 using TentMan.Contracts.TenantInvites;
 using TentMan.Contracts.Authentication;
@@ -104,6 +106,62 @@ public class TenantInvitesController : ControllerBase
         {
             var authResponse = await _mediator.Send(command, cancellationToken);
             return Ok(ApiResponse<AuthenticationResponse>.Ok(authResponse, "Invite accepted and user created successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Gets all invites for a tenant.
+    /// </summary>
+    [HttpGet("api/v{version:apiVersion}/organizations/{orgId}/tenants/{tenantId}/invites")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<TenantInviteDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<TenantInviteDto>>>> GetInvitesByTenant(
+        Guid orgId,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Fetching invites for tenant {TenantId} in organization {OrgId}", tenantId, orgId);
+
+        var query = new GetInvitesByTenantQuery(orgId, tenantId);
+
+        try
+        {
+            var invites = await _mediator.Send(query, cancellationToken);
+            return Ok(ApiResponse<IEnumerable<TenantInviteDto>>.Ok(invites, "Invites retrieved successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Cancels an invite.
+    /// </summary>
+    [HttpDelete("api/v{version:apiVersion}/organizations/{orgId}/invites/{inviteId}")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<object>>> CancelInvite(
+        Guid orgId,
+        Guid inviteId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Canceling invite {InviteId} in organization {OrgId}", inviteId, orgId);
+
+        var command = new CancelInviteCommand(orgId, inviteId);
+
+        try
+        {
+            await _mediator.Send(command, cancellationToken);
+            return Ok(ApiResponse<object>.Ok(null, "Invite canceled successfully"));
         }
         catch (InvalidOperationException ex)
         {
