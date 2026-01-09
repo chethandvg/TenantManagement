@@ -42,6 +42,10 @@ The catalog below reflects the components that currently ship in the library.
 | `TenantsList` | `/tenants` | `Pages/Tenants/TenantsList.razor`<br/>`Pages/Tenants/TenantsList.razor.cs` | Displays all tenants with search by phone/name and add/edit capabilities. |
 | `TenantDetails` | `/tenants/{id}` | `Pages/Tenants/TenantDetails.razor`<br/>`Pages/Tenants/TenantDetails.razor.cs` | Tabbed view for tenant profile, addresses, documents, and lease history. |
 | `AcceptInvite` | `/accept-invite` | `Pages/Tenant/AcceptInvite.razor`<br/>`Pages/Tenant/AcceptInvite.razor.cs` | Public page for tenants to accept invite links and create accounts. Validates token, displays registration form, and redirects to tenant dashboard on success. |
+| `TenantDashboard` | `/tenant/dashboard` | `Pages/Tenant/Dashboard.razor`<br/>`Pages/Tenant/Dashboard.razor.cs` | Authenticated dashboard for tenants showing their active lease summary and quick actions. |
+| `TenantLeaseSummary` | `/tenant/lease-summary` | `Pages/Tenant/LeaseSummary.razor`<br/>`Pages/Tenant/LeaseSummary.razor.cs` | Detailed view of tenant's active lease including financial details, deposit history, rent timeline, lease parties, and terms. Protected by Tenant role authorization. |
+| `TenantDocuments` | `/tenant/documents` | `Pages/Tenant/Documents.razor`<br/>`Pages/Tenant/Documents.razor.cs` | View and manage tenant's documents related to their lease. |
+| `TenantMoveIn` | `/tenant/move-in` | `Pages/Tenant/MoveInHandover.razor`<br/>`Pages/Tenant/MoveInHandover.razor.cs` | Move-in handover form for tenants to complete unit inspection. |
 | `CreateLease` | `/leases/create`<br/>`/leases/create/{unitId}` | `Pages/Leases/CreateLease.razor`<br/>`Pages/Leases/CreateLease.razor.cs` | 7-step wizard for creating new leases with parties, financial terms, and move-in handover. |
 
 ### State Containers
