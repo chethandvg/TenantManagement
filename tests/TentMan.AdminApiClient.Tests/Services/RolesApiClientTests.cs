@@ -208,14 +208,14 @@ public class RolesApiClientTests : IDisposable
             Description = "Test description"
         };
 
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
 
         _mockHttp
             .When("https://api.test.com/api/v1/admin/roles")
             .Respond(async (req) =>
             {
-                await Task.Delay(100);
+                cts.Cancel(); // Cancel during the request
+                await Task.Delay(100, CancellationToken.None);
                 return new HttpResponseMessage(HttpStatusCode.OK);
             });
 

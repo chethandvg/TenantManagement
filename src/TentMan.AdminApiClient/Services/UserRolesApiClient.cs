@@ -45,12 +45,11 @@ public sealed class UserRolesApiClient : AdminApiClientServiceBase, IUserRolesAp
     }
 
     /// <inheritdoc/>
-    public async Task<ApiResponse<object>> RemoveRoleAsync(
+    public Task<ApiResponse<object>> RemoveRoleAsync(
         Guid userId,
         Guid roleId,
         CancellationToken cancellationToken = default)
     {
-        var result = await DeleteAsync($"{userId}/roles/{roleId}", cancellationToken);
-        return ApiResponse<object>.Ok(new { }, result.Message ?? "Role removed successfully");
+        return DeleteAsync<object>($"{userId}/roles/{roleId}", cancellationToken);
     }
 }

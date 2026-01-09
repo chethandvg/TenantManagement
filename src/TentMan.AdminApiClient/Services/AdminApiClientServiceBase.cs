@@ -216,6 +216,43 @@ public abstract class AdminApiClientServiceBase
     }
 
     /// <summary>
+    /// Sends a DELETE request and returns the response with a generic type.
+    /// </summary>
+    /// <typeparam name="TResponse">The type of the response data.</typeparam>
+    /// <param name="endpoint">The endpoint path relative to the base path.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The API response indicating success or failure.</returns>
+    /// <exception cref="ResourceNotFoundException">Thrown when the resource is not found (404).</exception>
+    /// <exception cref="AuthorizationException">Thrown when authorization fails (401/403).</exception>
+    /// <exception cref="ServerException">Thrown when a server error occurs (5xx).</exception>
+    /// <exception cref="NetworkException">Thrown when a network error occurs.</exception>
+    /// <exception cref="ApiClientException">Thrown for other API errors.</exception>
+    protected async Task<ApiResponse<TResponse>> DeleteAsync<TResponse>(
+        string endpoint,
+        CancellationToken cancellationToken = default)
+    {
+        var uri = BuildUri(endpoint);
+        _logger.LogDebug("Sending DELETE request to {Uri}", uri);
+
+        try
+        {
+            var response = await _httpClient.DeleteAsync(uri, cancellationToken);
+
+            _logger.LogDebug(
+                "DELETE request to {Uri} completed with status {StatusCode}",
+                uri,
+                (int)response.StatusCode);
+
+            return await ProcessResponseAsync<TResponse>(response, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not ApiClientException)
+        {
+            _logger.LogError(ex, "Error during DELETE request to {Uri}", uri);
+            return HandleException<TResponse>(ex);
+        }
+    }
+
+    /// <summary>
     /// Builds a complete URI from the base path and endpoint.
     /// </summary>
     private string BuildUri(string endpoint)

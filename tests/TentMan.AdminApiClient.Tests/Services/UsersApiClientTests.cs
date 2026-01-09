@@ -79,7 +79,7 @@ public class UsersApiClientTests : IDisposable
             .Respond("application/json", JsonSerializer.Serialize(apiResponse));
 
         // Act
-        var result = await _apiClient.GetUsersAsync(pageNumber, pageSize);
+        await _apiClient.GetUsersAsync(pageNumber, pageSize);
 
         // Assert
         _mockHttp.VerifyNoOutstandingExpectation();
@@ -96,7 +96,7 @@ public class UsersApiClientTests : IDisposable
             .Respond("application/json", JsonSerializer.Serialize(apiResponse));
 
         // Act
-        var result = await _apiClient.GetUsersAsync();
+        await _apiClient.GetUsersAsync();
 
         // Assert
         _mockHttp.VerifyNoOutstandingExpectation();
