@@ -229,6 +229,95 @@ Authorization: Bearer {tenant-jwt-token}
 
 ---
 
+## 📧 Tenant Invite Endpoints
+
+Owners can generate and manage invite tokens for tenants to create their accounts and access the portal.
+
+### POST /api/v1/organizations/{orgId}/tenants/{tenantId}/invites
+
+Generates an invite token for a tenant.
+
+**Authorization**: Requires authentication
+
+**Request Body**: `GenerateInviteRequest`
+```json
+{
+  "tenantId": "guid",
+  "expiryDays": 7
+}
+```
+
+**Response**: `ApiResponse<TenantInviteDto>`
+
+**Status Codes**:
+- `201 Created`: Invite generated successfully
+- `400 Bad Request`: Validation error (tenant not found, missing phone, etc.)
+- `401 Unauthorized`: Not authenticated
+
+### GET /api/v1/organizations/{orgId}/tenants/{tenantId}/invites
+
+Gets all invites for a specific tenant.
+
+**Authorization**: Requires authentication
+
+**Response**: `ApiResponse<IEnumerable<TenantInviteDto>>`
+
+**Status Codes**:
+- `200 OK`: Invites retrieved successfully
+- `400 Bad Request`: Tenant not found or doesn't belong to organization
+- `401 Unauthorized`: Not authenticated
+
+### DELETE /api/v1/organizations/{orgId}/invites/{inviteId}
+
+Cancels an existing invite.
+
+**Authorization**: Requires authentication
+
+**Response**: `ApiResponse<object>`
+
+**Status Codes**:
+- `200 OK`: Invite canceled successfully
+- `400 Bad Request`: Invite not found, already used, or doesn't belong to organization
+- `401 Unauthorized`: Not authenticated
+
+### GET /api/v1/invites/validate
+
+Validates an invite token (public endpoint).
+
+**Authorization**: None (anonymous)
+
+**Query Parameters**:
+- `token`: The invite token to validate
+
+**Response**: `ApiResponse<ValidateInviteResponse>`
+
+**Status Codes**:
+- `200 OK`: Validation complete (check `IsValid` property in response)
+
+### POST /api/v1/invites/accept
+
+Accepts an invite and creates a user account.
+
+**Authorization**: None (anonymous)
+
+**Request Body**: `AcceptInviteRequest`
+```json
+{
+  "inviteToken": "string",
+  "userName": "string",
+  "email": "string",
+  "password": "string"
+}
+```
+
+**Response**: `ApiResponse<AuthenticationResponse>`
+
+**Status Codes**:
+- `200 OK`: Invite accepted and user created successfully
+- `400 Bad Request`: Invalid token, expired, already used, or validation errors
+
+---
+
 ## ✅ Checklist for New Endpoints
 
 - [ ] Create controller in Controllers folder
