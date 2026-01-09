@@ -1,4 +1,5 @@
 using TentMan.Application.Abstractions;
+using TentMan.Application.Abstractions.Storage;
 using TentMan.Application.TenantManagement.TenantPortal.Commands.UploadTenantDocument;
 using TentMan.Contracts.Enums;
 using TentMan.Contracts.Tenants;
@@ -15,6 +16,7 @@ namespace TentMan.UnitTests.Application.TenantManagement.TenantPortal.Commands;
 public class UploadTenantDocumentCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+    private readonly Mock<IFileStorageService> _mockFileStorageService;
     private readonly Mock<ICurrentUser> _mockCurrentUser;
     private readonly Mock<ILogger<UploadTenantDocumentCommandHandler>> _mockLogger;
     private readonly UploadTenantDocumentCommandHandler _handler;
@@ -22,11 +24,13 @@ public class UploadTenantDocumentCommandHandlerTests
     public UploadTenantDocumentCommandHandlerTests()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
+        _mockFileStorageService = new Mock<IFileStorageService>();
         _mockCurrentUser = new Mock<ICurrentUser>();
         _mockLogger = new Mock<ILogger<UploadTenantDocumentCommandHandler>>();
 
         _handler = new UploadTenantDocumentCommandHandler(
             _mockUnitOfWork.Object,
+            _mockFileStorageService.Object,
             _mockCurrentUser.Object,
             _mockLogger.Object);
     }

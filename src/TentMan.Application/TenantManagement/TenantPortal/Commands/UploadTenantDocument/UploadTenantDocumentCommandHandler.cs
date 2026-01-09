@@ -1,4 +1,5 @@
 using TentMan.Application.Abstractions;
+using TentMan.Application.Abstractions.Storage;
 using TentMan.Application.Common;
 using TentMan.Contracts.Enums;
 using TentMan.Contracts.Tenants;
@@ -12,6 +13,7 @@ namespace TentMan.Application.TenantManagement.TenantPortal.Commands.UploadTenan
 public class UploadTenantDocumentCommandHandler : BaseCommandHandler, IRequestHandler<UploadTenantDocumentCommand, TenantDocumentDto>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileStorageService _fileStorageService;
     private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10MB
     private static readonly string[] AllowedContentTypes = {
         "application/pdf",
@@ -24,11 +26,13 @@ public class UploadTenantDocumentCommandHandler : BaseCommandHandler, IRequestHa
 
     public UploadTenantDocumentCommandHandler(
         IUnitOfWork unitOfWork,
+        IFileStorageService fileStorageService,
         ICurrentUser currentUser,
         ILogger<UploadTenantDocumentCommandHandler> logger)
         : base(currentUser, logger)
     {
         _unitOfWork = unitOfWork;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<TenantDocumentDto> Handle(UploadTenantDocumentCommand request, CancellationToken cancellationToken)
@@ -113,16 +117,6 @@ public class UploadTenantDocumentCommandHandler : BaseCommandHandler, IRequestHa
         Guid orgId,
         CancellationToken cancellationToken)
     {
-        // Create storage directory if it doesn't exist
-        var storageRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "tenant-documents");
-        Directory.CreateDirectory(storageRoot);
-
-        // Generate unique file name
-        var fileId = Guid.NewGuid();
-        var extension = Path.GetExtension(fileName);
-        var storageFileName = $"{fileId}{extension}";
-        var storagePath = Path.Combine(storageRoot, storageFileName);
-
         // Calculate SHA256 hash
         string sha256Hash;
         using (var sha256 = SHA256.Create())
@@ -132,19 +126,21 @@ public class UploadTenantDocumentCommandHandler : BaseCommandHandler, IRequestHa
             sha256Hash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
         }
 
-        // Save file to disk
+        // Upload file to Azure Blob Storage
         fileStream.Position = 0;
-        using (var fileOutput = File.Create(storagePath))
-        {
-            await fileStream.CopyToAsync(fileOutput, cancellationToken);
-        }
+        var storageKey = await _fileStorageService.UploadFileAsync(
+            fileStream,
+            fileName,
+            contentType,
+            "tenant-documents",
+            cancellationToken);
 
         // Create file metadata
         var fileMetadata = new FileMetadata
         {
             OrgId = orgId,
-            StorageProvider = StorageProvider.Local,
-            StorageKey = Path.Combine("uploads", "tenant-documents", storageFileName),
+            StorageProvider = StorageProvider.AzureBlob,
+            StorageKey = storageKey,
             FileName = fileName,
             ContentType = contentType,
             SizeBytes = sizeBytes,

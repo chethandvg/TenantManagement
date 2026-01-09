@@ -423,8 +423,9 @@ Response 201 Created:
 - Maximum file size: 10MB
 - Allowed file types: PDF, JPEG, PNG, DOC, DOCX
 - Document type is required
-- Files are stored in local storage under `wwwroot/uploads/tenant-documents/`
+- Files are stored in **Azure Blob Storage** in the `tenant-documents` container
 - SHA256 hash is computed for file integrity
+- Storage key format: `container-name/blob-name`
 
 **Example - Activate Lease**:
 ```json

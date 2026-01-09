@@ -121,7 +121,7 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
   - File validation (type, size up to 10MB)
   - Support for PDF, JPEG, PNG, DOC, DOCX formats
   - Document metadata with masked numbers, dates, and notes
-  - Secure storage with SHA256 hash verification
+  - Secure storage in **Azure Blob Storage** with SHA256 hash verification
   - List and view uploaded documents with status tracking
 - **Lease History**: View tenant's lease history with status tracking
 - **Tenant Invite System** ✨: Secure invite-based tenant onboarding
