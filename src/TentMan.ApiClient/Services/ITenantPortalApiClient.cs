@@ -40,4 +40,28 @@ public interface ITenantPortalApiClient
         string contentType,
         TenantDocumentUploadRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the move-in handover checklist for the current tenant.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The move-in handover checklist.</returns>
+    Task<ApiResponse<MoveInHandoverResponse>> GetMoveInHandoverAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Submits the move-in handover checklist with tenant signature.
+    /// </summary>
+    /// <param name="request">The handover submission request.</param>
+    /// <param name="signatureImage">The signature image stream.</param>
+    /// <param name="signatureFileName">The signature file name.</param>
+    /// <param name="signatureContentType">The signature content type.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated handover details.</returns>
+    Task<ApiResponse<MoveInHandoverResponse>> SubmitMoveInHandoverAsync(
+        SubmitHandoverRequest request,
+        Stream signatureImage,
+        string signatureFileName,
+        string signatureContentType,
+        CancellationToken cancellationToken = default);
 }
