@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using TentMan.ApiClient.Services;
+using TentMan.Contracts.Enums;
+using TentMan.Contracts.Tenants;
 
 namespace TentMan.Ui.Pages.Tenant;
 
@@ -16,6 +19,9 @@ public partial class Documents : ComponentBase
     [Inject]
     public ISnackbar Snackbar { get; set; } = default!;
 
+    [Inject]
+    public ITenantPortalApiClient TenantPortalApiClient { get; set; } = default!;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
@@ -23,29 +29,30 @@ public partial class Documents : ComponentBase
 
     private async Task LoadDataAsync()
     {
-        // TODO: Call API to get tenant documents
-        await Task.Delay(500);
-
-        // Mock data
-        _documents = new List<DocumentViewModel>
+        try
         {
-            new()
+            var response = await TenantPortalApiClient.GetDocumentsAsync();
+
+            if (response.Success && response.Data != null)
             {
-                Id = Guid.NewGuid(),
-                FileName = "Aadhar_Card.pdf",
-                DocumentType = "ID Proof",
-                UploadedDate = DateTime.Now.AddDays(-10),
-                Status = "Verified"
-            },
-            new()
-            {
-                Id = Guid.NewGuid(),
-                FileName = "Bank_Statement.pdf",
-                DocumentType = "Address Proof",
-                UploadedDate = DateTime.Now.AddDays(-5),
-                Status = "Pending"
+                _documents = response.Data.Select(d => new DocumentViewModel
+                {
+                    Id = d.Id,
+                    FileName = d.FileName ?? "Unknown",
+                    DocumentType = d.DocType.ToString(),
+                    UploadedDate = DateTime.Now, // Would need CreatedAt from server
+                    Status = "Uploaded" // Would need status from server
+                }).ToList();
             }
-        };
+            else
+            {
+                Snackbar.Add(response.Message ?? "Failed to load documents", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading documents: {ex.Message}", Severity.Error);
+        }
     }
 
     private void OpenUploadDialog()
@@ -63,7 +70,16 @@ public partial class Documents : ComponentBase
 
     private void HandleFileSelected(IBrowserFile file)
     {
+        const long maxFileSize = 10 * 1024 * 1024; // 10MB
+
+        if (file.Size > maxFileSize)
+        {
+            _uploadError = $"File size exceeds maximum allowed size of 10MB";
+            return;
+        }
+
         _uploadModel.SelectedFile = file;
+        _uploadError = null;
     }
 
     private async Task UploadDocument()
@@ -79,26 +95,44 @@ public partial class Documents : ComponentBase
 
         try
         {
-            // TODO: Call API to upload document
-            await Task.Delay(1500);
+            using var stream = _uploadModel.SelectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
 
-            var newDoc = new DocumentViewModel
+            var request = new TenantDocumentUploadRequest
             {
-                Id = Guid.NewGuid(),
-                FileName = _uploadModel.SelectedFile.Name,
-                DocumentType = _uploadModel.DocumentType,
-                UploadedDate = DateTime.Now,
-                Status = "Pending"
+                DocType = Enum.Parse<DocumentType>(_uploadModel.DocumentType),
+                Notes = _uploadModel.Notes
             };
 
-            _documents.Add(newDoc);
+            var response = await TenantPortalApiClient.UploadDocumentAsync(
+                stream,
+                _uploadModel.SelectedFile.Name,
+                _uploadModel.SelectedFile.ContentType,
+                request);
 
-            Snackbar.Add("Document uploaded successfully!", Severity.Success);
-            CloseUploadDialog();
+            if (response.Success && response.Data != null)
+            {
+                var newDoc = new DocumentViewModel
+                {
+                    Id = response.Data.Id,
+                    FileName = response.Data.FileName ?? _uploadModel.SelectedFile.Name,
+                    DocumentType = response.Data.DocType.ToString(),
+                    UploadedDate = DateTime.Now,
+                    Status = "Uploaded"
+                };
+
+                _documents.Insert(0, newDoc);
+
+                Snackbar.Add("Document uploaded successfully!", Severity.Success);
+                CloseUploadDialog();
+            }
+            else
+            {
+                _uploadError = response.Message ?? "Upload failed";
+            }
         }
         catch (Exception ex)
         {
-            _uploadError = ex.Message;
+            _uploadError = $"Upload error: {ex.Message}";
         }
         finally
         {
@@ -108,9 +142,9 @@ public partial class Documents : ComponentBase
 
     private async Task DownloadDocument(Guid documentId)
     {
-        // TODO: Call API to download document
+        // TODO: Implement download functionality
         await Task.Delay(100);
-        Snackbar.Add("Download started", Severity.Info);
+        Snackbar.Add("Download functionality coming soon", Severity.Info);
     }
 
     private Color GetStatusColor(string status)
@@ -118,7 +152,7 @@ public partial class Documents : ComponentBase
         return status switch
         {
             "Verified" => Color.Success,
-            "Pending" => Color.Warning,
+            "Uploaded" or "Pending" => Color.Warning,
             "Rejected" => Color.Error,
             _ => Color.Default
         };
@@ -137,5 +171,6 @@ public partial class Documents : ComponentBase
     {
         public string DocumentType { get; set; } = string.Empty;
         public IBrowserFile? SelectedFile { get; set; }
+        public string? Notes { get; set; }
     }
 }
