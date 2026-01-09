@@ -153,12 +153,13 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
         
-        // Repositories
+        // Repositories (partial list - see DependencyInjection.cs for full registrations)
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
         services.AddScoped<ILeaseRepository, LeaseRepository>();
+        // ... additional repositories
         
         // Services
         services.AddScoped<IAuthenticationService, AuthenticationService>();
