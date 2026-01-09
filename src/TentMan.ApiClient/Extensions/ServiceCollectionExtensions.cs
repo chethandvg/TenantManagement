@@ -201,7 +201,9 @@ public static class ServiceCollectionExtensions
         // Configure Leases API Client (requires authentication)
         ConfigureHttpClient<ILeasesApiClient, LeasesApiClient>(services, options, authOptions, useAuthHandler: true);
 
-        // Configure Tenant Invites API Client (public endpoints, no auth required)
+        // Configure Tenant Invites API Client
+        // Includes public endpoints (ValidateInvite, AcceptInvite) and authenticated endpoint (GenerateInvite)
+        // Auth handler automatically skips token attachment for public endpoints
         ConfigureHttpClient<ITenantInvitesApiClient, TenantInvitesApiClient>(services, options, authOptions, useAuthHandler: true);
 
         // Configure Authentication API Client

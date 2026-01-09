@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using TentMan.ApiClient.Services;
 using TentMan.ApiClient.Authentication.Services;
+using TentMan.ApiClient.Authentication.Providers;
+using TentMan.ApiClient.Authentication.Models;
 using TentMan.Contracts.TenantInvites;
 
 namespace TentMan.Ui.Pages.Tenant;
@@ -31,7 +33,10 @@ public partial class AcceptInvite : ComponentBase
     public ITenantInvitesApiClient TenantInvitesClient { get; set; } = default!;
 
     [Inject]
-    public IAuthenticationService AuthService { get; set; } = default!;
+    public ITokenManager TokenManager { get; set; } = default!;
+
+    [Inject]
+    public ApiAuthenticationStateProvider? AuthStateProvider { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -126,6 +131,23 @@ public partial class AcceptInvite : ComponentBase
             {
                 _submitError = response.Message ?? "Failed to accept invite. Please try again.";
                 return;
+            }
+
+            // Store authentication tokens
+            var authResponse = response.Data;
+            var tokenResponse = new TokenResponse
+            {
+                AccessToken = authResponse.AccessToken,
+                RefreshToken = authResponse.RefreshToken,
+                ExpiresIn = authResponse.ExpiresIn
+            };
+
+            await TokenManager.StoreTokenAsync(tokenResponse);
+
+            // Notify authentication state provider
+            if (AuthStateProvider != null)
+            {
+                await AuthStateProvider.MarkUserAsAuthenticatedAsync(authResponse.User.UserName);
             }
 
             // Successfully accepted invite and received authentication tokens
