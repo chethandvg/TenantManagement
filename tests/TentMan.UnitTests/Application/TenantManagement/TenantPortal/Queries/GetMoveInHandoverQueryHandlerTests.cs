@@ -72,13 +72,26 @@ public class GetMoveInHandoverQueryHandlerTests
         var tenantId = Guid.NewGuid();
         var leaseId = Guid.NewGuid();
         var handoverId = Guid.NewGuid();
+        var checklistItemId = Guid.NewGuid();
+        var meterReadingId = Guid.NewGuid();
         var query = new GetMoveInHandoverQuery(userId);
 
         var lease = new Lease
         {
             Id = leaseId,
             Status = LeaseStatus.Active,
-            Unit = new Unit { UnitNumber = "A-101", Building = new Building { Name = "Building A" } }
+            Unit = new Unit { UnitNumber = "A-101", Building = new Building { Name = "Building A" } },
+            MeterReadings = new List<MeterReading>
+            {
+                new MeterReading 
+                { 
+                    Id = meterReadingId, 
+                    MeterType = TentMan.Contracts.Enums.MeterType.Electricity, 
+                    ReadingValue = 1234.5m, 
+                    ReadingDate = DateOnly.FromDateTime(DateTime.Today),
+                    IsDeleted = false
+                }
+            }
         };
 
         var tenant = new Tenant
@@ -98,7 +111,18 @@ public class GetMoveInHandoverQueryHandlerTests
             Date = DateOnly.FromDateTime(DateTime.Today),
             SignedByTenant = false,
             Lease = lease,
-            ChecklistItems = new List<HandoverChecklistItem>()
+            ChecklistItems = new List<HandoverChecklistItem>
+            {
+                new HandoverChecklistItem
+                {
+                    Id = checklistItemId,
+                    Category = "Electrical",
+                    ItemName = "Light Fixtures",
+                    Condition = TentMan.Contracts.Enums.ItemCondition.Good,
+                    Remarks = "All working",
+                    IsDeleted = false
+                }
+            }
         };
 
         _mockUnitOfWork.Setup(u => u.Tenants.GetByLinkedUserIdAsync(userId, It.IsAny<CancellationToken>()))
@@ -117,5 +141,22 @@ public class GetMoveInHandoverQueryHandlerTests
         result.UnitNumber.Should().Be("A-101");
         result.BuildingName.Should().Be("Building A");
         result.IsCompleted.Should().BeFalse();
+        
+        // Verify checklist items are mapped correctly
+        result.ChecklistItems.Should().HaveCount(1);
+        var checklistItem = result.ChecklistItems.First();
+        checklistItem.Id.Should().Be(checklistItemId);
+        checklistItem.Category.Should().Be("Electrical");
+        checklistItem.ItemName.Should().Be("Light Fixtures");
+        checklistItem.Condition.Should().Be(TentMan.Contracts.Enums.ItemCondition.Good);
+        checklistItem.Remarks.Should().Be("All working");
+        
+        // Verify meter readings are mapped correctly
+        result.MeterReadings.Should().HaveCount(1);
+        var meterReading = result.MeterReadings.First();
+        meterReading.MeterId.Should().Be(meterReadingId);
+        meterReading.MeterType.Should().Be("Electricity");
+        meterReading.Reading.Should().Be(1234.5m);
+        meterReading.ReadingDate.Should().Be(DateOnly.FromDateTime(DateTime.Today));
     }
 }

@@ -6,13 +6,14 @@ using Microsoft.JSInterop;
 
 namespace TentMan.Ui.Pages.Tenant;
 
-public partial class MoveInHandover : ComponentBase
+public partial class MoveInHandover : ComponentBase, IDisposable
 {
     private MoveInHandoverResponse? _handover;
     private bool _isSubmitting;
     private bool _isSubmitted;
     private string? _error;
     private string? _signatureDataUrl;
+    private DotNetObjectReference<MoveInHandover>? _dotNetRef;
 
     [Inject]
     public ISnackbar Snackbar { get; set; } = default!;
@@ -26,6 +27,15 @@ public partial class MoveInHandover : ComponentBase
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _handover != null && !_isSubmitted)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initSignaturePad", _dotNetRef);
+        }
     }
 
     private async Task LoadDataAsync()
@@ -126,9 +136,15 @@ public partial class MoveInHandover : ComponentBase
         await JS.InvokeVoidAsync("clearSignaturePad");
     }
 
-    private async Task OnSignatureChanged(string dataUrl)
+    [JSInvokable]
+    public void SetSignatureData(string dataUrl)
     {
         _signatureDataUrl = dataUrl;
-        await Task.CompletedTask;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
     }
 }

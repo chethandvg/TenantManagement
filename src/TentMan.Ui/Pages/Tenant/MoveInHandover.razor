@@ -40,15 +40,12 @@
                                 <MudText Typo="Typo.caption" Color="Color.Primary">
                                     Condition: @item.Condition.ToString()
                                 </MudText>
-                                @if (!string.IsNullOrEmpty(item.Remarks))
-                                {
-                                    <MudTextField @bind-Value="item.Remarks"
-                                                Label="Remarks"
-                                                Variant="Variant.Outlined"
-                                                Lines="2"
-                                                FullWidth="true"
-                                                ReadOnly="_isSubmitted" />
-                                }
+                                <MudTextField @bind-Value="item.Remarks"
+                                            Label="Remarks"
+                                            Variant="Variant.Outlined"
+                                            Lines="2"
+                                            FullWidth="true"
+                                            ReadOnly="_isSubmitted" />
                             </MudStack>
                         </MudCard>
                     }
@@ -72,7 +69,7 @@
                         }
                     }
 
-                    @if (!string.IsNullOrEmpty(_handover.Notes))
+                    @if (!_isSubmitted)
                     {
                         <MudDivider Class="mt-4" />
                         <MudTextField @bind-Value="_handover.Notes"
@@ -81,6 +78,16 @@
                                     Lines="3"
                                     FullWidth="true"
                                     ReadOnly="_isSubmitted" />
+                    }
+                    else if (!string.IsNullOrEmpty(_handover.Notes))
+                    {
+                        <MudDivider Class="mt-4" />
+                        <MudTextField @bind-Value="_handover.Notes"
+                                    Label="Additional Notes"
+                                    Variant="Variant.Outlined"
+                                    Lines="3"
+                                    FullWidth="true"
+                                    ReadOnly="true" />
                     }
 
                     @if (!_isSubmitted)
@@ -145,20 +152,3 @@
         }
     </MudStack>
 </BusyBoundary>
-
-@code {
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && _handover != null && !_isSubmitted)
-        {
-            await JS.InvokeVoidAsync("initSignaturePad", DotNetObjectReference.Create(this));
-        }
-    }
-
-    [JSInvokable]
-    public void SetSignatureData(string dataUrl)
-    {
-        _signatureDataUrl = dataUrl;
-        StateHasChanged();
-    }
-}

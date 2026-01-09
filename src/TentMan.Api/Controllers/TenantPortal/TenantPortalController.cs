@@ -213,16 +213,27 @@ public class TenantPortalController : ControllerBase
 
         _logger.LogInformation("Submitting move-in handover for user {UserId}", userId);
 
+        if (signatureImage == null)
+        {
+            return BadRequest(ApiResponse<object>.Fail("Signature image is required"));
+        }
+
         try
         {
-            using var stream = signatureImage.OpenReadStream();
+            byte[] signatureBytes;
+            using (var stream = signatureImage.OpenReadStream())
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream, cancellationToken);
+                signatureBytes = memoryStream.ToArray();
+            }
+
             var command = new SubmitHandoverCommand(
                 userId,
                 request,
-                stream,
+                signatureBytes,
                 signatureImage.FileName,
-                signatureImage.ContentType,
-                signatureImage.Length);
+                signatureImage.ContentType);
 
             var result = await _mediator.Send(command, cancellationToken);
             

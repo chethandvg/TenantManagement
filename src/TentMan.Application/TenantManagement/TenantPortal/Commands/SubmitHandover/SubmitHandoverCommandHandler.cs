@@ -64,17 +64,17 @@ public class SubmitHandoverCommandHandler : BaseCommandHandler, IRequestHandler<
         }
 
         // Validate signature image
-        if (request.SignatureImageStream == null || string.IsNullOrEmpty(request.SignatureFileName))
+        if (request.SignatureImageBytes == null || request.SignatureImageBytes.Length == 0)
         {
             throw new InvalidOperationException("Signature image is required");
         }
 
-        if (request.SignatureSize > MaxSignatureSizeBytes)
+        if (request.SignatureImageBytes.Length > MaxSignatureSizeBytes)
         {
             throw new InvalidOperationException($"Signature image exceeds maximum size of {MaxSignatureSizeBytes / 1024 / 1024}MB");
         }
 
-        if (request.SignatureContentType != null && !AllowedSignatureTypes.Contains(request.SignatureContentType.ToLowerInvariant()))
+        if (!AllowedSignatureTypes.Contains(request.SignatureContentType.ToLowerInvariant()))
         {
             throw new InvalidOperationException($"Signature image type '{request.SignatureContentType}' is not allowed. Allowed types: PNG, JPEG");
         }
@@ -105,25 +105,55 @@ public class SubmitHandoverCommandHandler : BaseCommandHandler, IRequestHandler<
             }
         }
 
-        // Store signature image
-        var signatureFile = await StoreSignatureAsync(
-            request.SignatureImageStream,
-            request.SignatureFileName,
-            request.SignatureContentType ?? "image/png",
-            request.SignatureSize,
-            handover.Lease.OrgId,
-            cancellationToken);
-
-        // Update handover
+        // Update handover (prepare for DB save)
         var originalRowVersion = handover.RowVersion;
         handover.SignedByTenant = true;
-        handover.SignatureTenantFileId = signatureFile.Id;
         handover.Notes = request.Request.Notes;
         handover.ModifiedAtUtc = DateTime.UtcNow;
         handover.ModifiedBy = request.UserId.ToString();
 
+        // Save to database first to get FileMetadata ID
+        var fileMetadata = new FileMetadata
+        {
+            OrgId = handover.Lease.OrgId,
+            StorageProvider = StorageProvider.AzureBlob,
+            StorageKey = string.Empty, // Will be updated after upload
+            FileName = request.SignatureFileName,
+            ContentType = request.SignatureContentType,
+            SizeBytes = request.SignatureImageBytes.Length,
+            Sha256 = string.Empty, // Will be calculated during upload
+            CreatedByUserId = Guid.Parse(CurrentUser.UserId!),
+            CreatedBy = CurrentUser.UserId!
+        };
+
+        await _unitOfWork.FileMetadata.AddAsync(fileMetadata, cancellationToken);
+        handover.SignatureTenantFileId = fileMetadata.Id;
+
         await _unitOfWork.UnitHandovers.UpdateAsync(handover, originalRowVersion, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Now upload the file to blob storage
+        try
+        {
+            using var signatureStream = new MemoryStream(request.SignatureImageBytes);
+            var (storageKey, sha256Hash) = await StoreSignatureAsync(
+                signatureStream,
+                request.SignatureFileName,
+                request.SignatureContentType,
+                cancellationToken);
+
+            // Update file metadata with storage details
+            fileMetadata.StorageKey = storageKey;
+            fileMetadata.Sha256 = sha256Hash;
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            // If file upload fails, we should ideally rollback the database changes
+            // For now, log the error and rethrow
+            Logger.LogError("Failed to upload signature file for handover {HandoverId}", handover.Id);
+            throw;
+        }
 
         Logger.LogInformation("Handover {HandoverId} signed by tenant {TenantId}", handover.Id, tenant.Id);
 
@@ -161,12 +191,10 @@ public class SubmitHandoverCommandHandler : BaseCommandHandler, IRequestHandler<
         };
     }
 
-    private async Task<FileMetadata> StoreSignatureAsync(
+    private async Task<(string storageKey, string sha256Hash)> StoreSignatureAsync(
         Stream signatureStream,
         string fileName,
         string contentType,
-        long sizeBytes,
-        Guid orgId,
         CancellationToken cancellationToken)
     {
         // Calculate SHA256 hash
@@ -187,22 +215,6 @@ public class SubmitHandoverCommandHandler : BaseCommandHandler, IRequestHandler<
             "handover-signatures",
             cancellationToken);
 
-        // Create file metadata
-        var fileMetadata = new FileMetadata
-        {
-            OrgId = orgId,
-            StorageProvider = StorageProvider.AzureBlob,
-            StorageKey = storageKey,
-            FileName = fileName,
-            ContentType = contentType,
-            SizeBytes = sizeBytes,
-            Sha256 = sha256Hash,
-            CreatedByUserId = CurrentUser.UserId != null ? Guid.Parse(CurrentUser.UserId) : null,
-            CreatedBy = CurrentUser.UserId ?? "System"
-        };
-
-        await _unitOfWork.FileMetadata.AddAsync(fileMetadata, cancellationToken);
-
-        return fileMetadata;
+        return (storageKey, sha256Hash);
     }
 }

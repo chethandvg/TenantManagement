@@ -54,11 +54,11 @@ public class UnitHandoverRepository : BaseRepository<UnitHandover>, IUnitHandove
         return handover;
     }
 
-    public async Task UpdateAsync(UnitHandover handover, byte[] originalRowVersion, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(UnitHandover handover, byte[] originalRowVersion, CancellationToken cancellationToken = default)
     {
         Context.Entry(handover).Property(h => h.RowVersion).OriginalValue = originalRowVersion;
         DbSet.Update(handover);
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)

@@ -137,18 +137,30 @@ public sealed class TenantPortalApiClient : ApiClientServiceBase, ITenantPortalA
             content.Add(signatureContent, "signatureImage", signatureFileName);
 
             // Add request fields
-            content.Add(new StringContent(request.HandoverId.ToString()), "handoverId");
+            using (var handoverIdContent = new StringContent(request.HandoverId.ToString()))
+            {
+                content.Add(handoverIdContent, "handoverId");
+            }
             
             if (!string.IsNullOrEmpty(request.Notes))
-                content.Add(new StringContent(request.Notes), "notes");
+            {
+                using var notesContent = new StringContent(request.Notes);
+                content.Add(notesContent, "notes");
+            }
 
             // Add checklist items as JSON
             var checklistJson = JsonSerializer.Serialize(request.ChecklistItems, _jsonOptions);
-            content.Add(new StringContent(checklistJson, System.Text.Encoding.UTF8, "application/json"), "checklistItems");
+            using (var checklistItemsContent = new StringContent(checklistJson, System.Text.Encoding.UTF8, "application/json"))
+            {
+                content.Add(checklistItemsContent, "checklistItems");
+            }
 
             // Add meter readings as JSON
             var metersJson = JsonSerializer.Serialize(request.MeterReadings, _jsonOptions);
-            content.Add(new StringContent(metersJson, System.Text.Encoding.UTF8, "application/json"), "meterReadings");
+            using (var meterReadingsContent = new StringContent(metersJson, System.Text.Encoding.UTF8, "application/json"))
+            {
+                content.Add(meterReadingsContent, "meterReadings");
+            }
 
             var response = await _httpClient.PostAsync(uri, content, cancellationToken);
 

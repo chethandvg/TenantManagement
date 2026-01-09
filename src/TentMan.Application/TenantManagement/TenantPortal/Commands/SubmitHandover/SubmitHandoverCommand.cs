@@ -9,7 +9,6 @@ namespace TentMan.Application.TenantManagement.TenantPortal.Commands.SubmitHando
 public record SubmitHandoverCommand(
     Guid UserId,
     SubmitHandoverRequest Request,
-    Stream? SignatureImageStream,
-    string? SignatureFileName,
-    string? SignatureContentType,
-    long SignatureSize) : IRequest<MoveInHandoverResponse>;
+    byte[] SignatureImageBytes,
+    string SignatureFileName,
+    string SignatureContentType) : IRequest<MoveInHandoverResponse>;
