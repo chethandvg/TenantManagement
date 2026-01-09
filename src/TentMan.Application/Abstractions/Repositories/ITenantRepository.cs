@@ -15,4 +15,5 @@ public interface ITenantRepository
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> PhoneExistsAsync(Guid orgId, string phone, Guid? excludeTenantId = null, CancellationToken cancellationToken = default);
     Task<bool> EmailExistsAsync(Guid orgId, string email, Guid? excludeTenantId = null, CancellationToken cancellationToken = default);
+    Task<Tenant?> GetByLinkedUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }

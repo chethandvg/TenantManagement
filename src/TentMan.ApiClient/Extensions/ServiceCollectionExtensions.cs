@@ -207,6 +207,9 @@ public static class ServiceCollectionExtensions
         // only for authenticated endpoints and automatically skips token attachment for known public endpoints.
         ConfigureHttpClient<ITenantInvitesApiClient, TenantInvitesApiClient>(services, options, authOptions, useAuthHandler: true);
 
+        // Configure Tenant Portal API Client (requires authentication with Tenant role)
+        ConfigureHttpClient<ITenantPortalApiClient, TenantPortalApiClient>(services, options, authOptions, useAuthHandler: true);
+
         // Configure Authentication API Client
         // The implementation will handle token attachment internally based on endpoint
         ConfigureHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(services, options, authOptions, useAuthHandler: true);

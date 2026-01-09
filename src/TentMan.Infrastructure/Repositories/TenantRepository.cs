@@ -86,4 +86,24 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
 
         return await query.AnyAsync(cancellationToken);
     }
+
+    public async Task<Tenant?> GetByLinkedUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .Include(t => t.LeaseParties.Where(p => !p.IsDeleted))
+                .ThenInclude(p => p.Lease)
+                    .ThenInclude(l => l.Unit)
+                        .ThenInclude(u => u.Building)
+            .Include(t => t.LeaseParties.Where(p => !p.IsDeleted))
+                .ThenInclude(p => p.Lease)
+                    .ThenInclude(l => l.Parties.Where(lp => !lp.IsDeleted))
+                        .ThenInclude(lp => lp.Tenant)
+            .Include(t => t.LeaseParties.Where(p => !p.IsDeleted))
+                .ThenInclude(p => p.Lease)
+                    .ThenInclude(l => l.Terms.Where(lt => !lt.IsDeleted))
+            .Include(t => t.LeaseParties.Where(p => !p.IsDeleted))
+                .ThenInclude(p => p.Lease)
+                    .ThenInclude(l => l.DepositTransactions.Where(dt => !dt.IsDeleted))
+            .FirstOrDefaultAsync(t => t.LinkedUserId == userId && !t.IsDeleted, cancellationToken);
+    }
 }
