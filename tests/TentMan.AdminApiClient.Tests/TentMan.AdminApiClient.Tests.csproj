@@ -34,6 +34,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\TentMan.AdminApiClient\TentMan.AdminApiClient.csproj" />
     <ProjectReference Include="..\..\src\TentMan.Contracts\TentMan.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\TentMan.Application\TentMan.Application.csproj" />
   </ItemGroup>
 
 </Project>

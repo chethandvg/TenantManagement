@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using TentMan.AdminApiClient.Services;
 using TentMan.ApiClient.Exceptions;
+using TentMan.Application.Admin.Commands.InitializeSystem;
 using TentMan.Contracts.Admin;
 using TentMan.Contracts.Common;
 using FluentAssertions;
@@ -50,14 +51,13 @@ public class InitializationApiClientTests : IDisposable
             Password = "SecurePassword123!"
         };
 
-        var initResult = new InitializationResult
-        {
-            RolesCreated = true,
-            RolesCount = 5,
-            UserCreated = true,
-            UserId = Guid.NewGuid(),
-            Message = "System initialized successfully"
-        };
+        var initResult = new InitializationResult(
+            RolesCreated: true,
+            RolesCount: 5,
+            UserCreated: true,
+            UserId: Guid.NewGuid(),
+            Message: "System initialized successfully"
+        );
 
         var apiResponse = ApiResponse<InitializationResult>.Ok(
             initResult,

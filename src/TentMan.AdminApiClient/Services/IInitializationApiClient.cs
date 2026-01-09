@@ -1,3 +1,4 @@
+using TentMan.Application.Admin.Commands.InitializeSystem;
 using TentMan.Contracts.Admin;
 using TentMan.Contracts.Common;
 
