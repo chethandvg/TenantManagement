@@ -159,6 +159,11 @@ public partial class AcceptInvite : ComponentBase
                 _submitError = response.Message ?? "Failed to create account. Please try again.";
             }
         }
+        catch (TentMan.ApiClient.Exceptions.ValidationException ex)
+        {
+            // Extract specific validation errors for better user feedback
+            _submitError = string.Join(", ", ex.Errors);
+        }
         catch (Exception ex)
         {
             _submitError = $"An error occurred: {ex.Message}";
