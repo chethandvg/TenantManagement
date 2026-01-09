@@ -122,8 +122,8 @@ public class SubmitHandoverCommandHandler : BaseCommandHandler, IRequestHandler<
             ContentType = request.SignatureContentType,
             SizeBytes = request.SignatureImageBytes.Length,
             Sha256 = string.Empty, // Will be calculated during upload
-            CreatedByUserId = Guid.Parse(CurrentUser.UserId!),
-            CreatedBy = CurrentUser.UserId!
+            CreatedByUserId = CurrentUser.UserId != null ? Guid.Parse(CurrentUser.UserId) : null,
+            CreatedBy = CurrentUser.UserId ?? "System"
         };
 
         await _unitOfWork.FileMetadata.AddAsync(fileMetadata, cancellationToken);
