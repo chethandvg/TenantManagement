@@ -35,7 +35,7 @@ public class TenantDocumentConfiguration : IEntityTypeConfiguration<TenantDocume
         b.HasOne(x => x.Lease)
             .WithMany(x => x.Documents)
             .HasForeignKey(x => x.LeaseId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         b.HasOne(x => x.File)
             .WithMany(x => x.TenantDocuments)

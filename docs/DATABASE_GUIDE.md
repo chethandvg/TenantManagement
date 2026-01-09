@@ -255,6 +255,29 @@ dotnet ef migrations remove --startup-project ../TentMan.Api
 - Delete migrations that have been applied
 - Skip migration testing
 
+### Foreign Key Cascade Behavior
+
+SQL Server does not support multiple cascade paths or cycles in foreign key constraints. When configuring relationships, use `DeleteBehavior.NoAction` for optional foreign keys that could create cascade conflicts.
+
+**Example** - Relationships that use `NoAction` to avoid cascade conflicts:
+- `UnitHandover.SignatureTenantFileId` → Files
+- `UnitHandover.SignatureOwnerFileId` → Files
+- `MeterReading.LeaseId` → Leases
+- `MeterReading.PhotoFileId` → Files
+- `HandoverChecklistItem.PhotoFileId` → Files
+- `TenantDocument.LeaseId` → Leases
+- `Owner.LinkedUserId` → Users
+
+**Configuration Pattern**:
+```csharp
+b.HasOne(x => x.PhotoFile)
+    .WithMany()
+    .HasForeignKey(x => x.PhotoFileId)
+    .OnDelete(DeleteBehavior.NoAction);  // Avoids cascade path conflicts
+```
+
+**Note**: When using `NoAction`, the application must handle null setting or deletion of related records manually before deleting the parent entity.
+
 ---
 
 ## 🔁 Retry Strategy
@@ -379,6 +402,7 @@ The following tables were added for tenant and lease management:
 | **TenantAddresses** | Multiple addresses per tenant |
 | **TenantEmergencyContacts** | Emergency contact information |
 | **TenantDocuments** | Document metadata with masked numbers |
+| **TenantInvites** | Tenant invite tokens for account creation |
 | **Leases** | Lease contract headers |
 | **LeaseParties** | Join table for multiple tenants per lease |
 | **LeaseTerms** | Versioned financial terms (append-only) |
@@ -404,6 +428,10 @@ WHERE [IsDeleted] = 0;
 -- Lease party uniqueness
 CREATE UNIQUE NONCLUSTERED INDEX [IX_LeaseParties_LeaseId_TenantId] 
 ON [LeaseParties] ([LeaseId], [TenantId]);
+
+-- Unique invite token
+CREATE UNIQUE NONCLUSTERED INDEX [IX_TenantInvites_InviteToken]
+ON [TenantInvites] ([InviteToken]);
 ```
 
 ---
@@ -414,6 +442,7 @@ ON [LeaseParties] ([LeaseId], [TenantId]);
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture
 - **[DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)** - Development workflows
 - **[TENANT_LEASE_MANAGEMENT.md](TENANT_LEASE_MANAGEMENT.md)** - Tenant and Lease Management
+- **[TENANT_INVITE_SYSTEM.md](TENANT_INVITE_SYSTEM.md)** - Tenant Invite System
 
 ---
 
