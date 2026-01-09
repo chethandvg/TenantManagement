@@ -51,7 +51,7 @@ public partial class CreateLease : ComponentBase
     // Breadcrumbs
     private readonly List<BreadcrumbItem> _breadcrumbs = new()
     {
-        new("Leases", "/leases/create", false, Icons.Material.Filled.Description),
+        new("Tenants", "/tenants", false, Icons.Material.Filled.People),
         new("Create Lease", null, true)
     };
 
