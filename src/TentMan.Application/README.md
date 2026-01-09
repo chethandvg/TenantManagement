@@ -44,15 +44,23 @@ TentMan.Application/
 │   │   │   │   ├── GenerateInviteCommand.cs
 │   │   │   │   ├── GenerateInviteCommandHandler.cs
 │   │   │   │   └── GenerateInviteCommandValidator.cs
-│   │   │   └── AcceptInvite/
-│   │   │       ├── AcceptInviteCommand.cs
-│   │   │       ├── AcceptInviteCommandHandler.cs
-│   │   │       └── AcceptInviteCommandValidator.cs
+│   │   │   ├── AcceptInvite/
+│   │   │   │   ├── AcceptInviteCommand.cs
+│   │   │   │   ├── AcceptInviteCommandHandler.cs
+│   │   │   │   └── AcceptInviteCommandValidator.cs
+│   │   │   └── CancelInvite/
+│   │   │       ├── CancelInviteCommand.cs
+│   │   │       ├── CancelInviteCommandHandler.cs
+│   │   │       └── CancelInviteCommandValidator.cs
 │   │   └── Queries/
-│   │       └── ValidateInvite/
-│   │           ├── ValidateInviteQuery.cs
-│   │           ├── ValidateInviteQueryHandler.cs
-│   │           └── ValidateInviteQueryValidator.cs
+│   │       ├── ValidateInvite/
+│   │       │   ├── ValidateInviteQuery.cs
+│   │       │   ├── ValidateInviteQueryHandler.cs
+│   │       │   └── ValidateInviteQueryValidator.cs
+│   │       └── GetInvitesByTenant/
+│   │           ├── GetInvitesByTenantQuery.cs
+│   │           ├── GetInvitesByTenantQueryHandler.cs
+│   │           └── GetInvitesByTenantQueryValidator.cs
 │   └── Leases/
 │       ├── Commands/         # CreateLease, AddParty, AddTerm, Activate
 │       └── Queries/          # GetLeaseById, GetLeasesByUnit
