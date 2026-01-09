@@ -65,7 +65,7 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
 
     public async Task<bool> PhoneExistsAsync(Guid orgId, string phone, Guid? excludeTenantId = null, CancellationToken cancellationToken = default)
     {
-        var query = DbSet.Where(t => t.OrgId == orgId && t.Phone == phone);
+        var query = DbSet.Where(t => t.OrgId == orgId && t.Phone == phone && !t.IsDeleted);
 
         if (excludeTenantId.HasValue)
         {
@@ -77,7 +77,7 @@ public class TenantRepository : BaseRepository<Tenant>, ITenantRepository
 
     public async Task<bool> EmailExistsAsync(Guid orgId, string email, Guid? excludeTenantId = null, CancellationToken cancellationToken = default)
     {
-        var query = DbSet.Where(t => t.OrgId == orgId && t.Email == email);
+        var query = DbSet.Where(t => t.OrgId == orgId && t.Email == email && !t.IsDeleted);
 
         if (excludeTenantId.HasValue)
         {
