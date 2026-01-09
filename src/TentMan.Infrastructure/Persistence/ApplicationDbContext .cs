@@ -41,6 +41,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TenantAddress> TenantAddresses => Set<TenantAddress>();
     public DbSet<TenantEmergencyContact> TenantEmergencyContacts => Set<TenantEmergencyContact>();
     public DbSet<TenantDocument> TenantDocuments => Set<TenantDocument>();
+    public DbSet<TenantInvite> TenantInvites => Set<TenantInvite>();
 
     // Lease Management DbSets
     public DbSet<Lease> Leases => Set<Lease>();

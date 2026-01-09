@@ -1,0 +1,93 @@
+@page "/tenant/move-in"
+@attribute [Authorize]
+
+<PageTitle>Move-In Handover - TentMan</PageTitle>
+
+<BusyBoundary Retry="LoadDataAsync">
+    <MudStack Spacing="4">
+        <MudText Typo="Typo.h4">Move-In Handover Checklist</MudText>
+
+        @if (_handover != null)
+        {
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Unit: @_handover.UnitNumber</MudText>
+                    <MudText Typo="Typo.body2">Date: @_handover.Date.ToString("dd MMM yyyy")</MudText>
+                    
+                    <MudDivider />
+
+                    <MudText Typo="Typo.subtitle1">Checklist Items</MudText>
+                    
+                    @foreach (var item in _handover.ChecklistItems)
+                    {
+                        <MudCard Elevation="1" Class="pa-3">
+                            <MudStack Spacing="2">
+                                <MudCheckBox @bind-Value="item.IsConfirmed" 
+                                           T="bool"
+                                           Label="@item.ItemName"
+                                           Color="Color.Primary" />
+                                <MudText Typo="Typo.caption">Condition: @item.Condition</MudText>
+                                <MudTextField @bind-Value="item.Notes"
+                                            Label="Notes (optional)"
+                                            Variant="Variant.Outlined"
+                                            Lines="2"
+                                            FullWidth="true" />
+                            </MudStack>
+                        </MudCard>
+                    }
+
+                    <MudDivider Class="mt-4" />
+
+                    <MudStack Spacing="2" Class="mt-4">
+                        <MudText Typo="Typo.subtitle1">Tenant Signature</MudText>
+                        <MudTextField @bind-Value="_handover.TenantSignature"
+                                    Label="Type your full name to sign"
+                                    Variant="Variant.Outlined"
+                                    FullWidth="true"
+                                    HelperText="By typing your name, you confirm the handover checklist" />
+                    </MudStack>
+
+                    @if (!string.IsNullOrEmpty(_error))
+                    {
+                        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+                    }
+
+                    @if (_isSubmitted)
+                    {
+                        <MudAlert Severity="Severity.Success">
+                            Handover checklist submitted successfully!
+                        </MudAlert>
+                    }
+
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              Size="Size.Large"
+                              OnClick="SubmitHandover"
+                              Disabled="@(_isSubmitting || _isSubmitted || string.IsNullOrWhiteSpace(_handover.TenantSignature))">
+                        @if (_isSubmitting)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Submitting...</span>
+                        }
+                        else
+                        {
+                            <span>Submit Handover Checklist</span>
+                        }
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6">No Handover Pending</MudText>
+                    <MudText Typo="Typo.body1">
+                        There is no move-in handover checklist pending at this time.
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+</BusyBoundary>

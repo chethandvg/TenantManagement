@@ -1,0 +1,120 @@
+@page "/tenant/documents"
+@attribute [Authorize]
+
+<PageTitle>My Documents - TentMan</PageTitle>
+
+<BusyBoundary Retry="LoadDataAsync">
+    <MudStack Spacing="4">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h4">My Documents</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenUploadDialog">
+                Upload Document
+            </MudButton>
+        </MudStack>
+
+        @if (_documents.Any())
+        {
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudTable Items="@_documents" Hover="true" Dense="true">
+                    <HeaderContent>
+                        <MudTh>Document Name</MudTh>
+                        <MudTh>Type</MudTh>
+                        <MudTh>Uploaded Date</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Document Name">@context.FileName</MudTd>
+                        <MudTd DataLabel="Type">@context.DocumentType</MudTd>
+                        <MudTd DataLabel="Uploaded Date">@context.UploadedDate.ToString("dd MMM yyyy")</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">
+                                @context.Status
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                         Color="Color.Primary" 
+                                         Size="Size.Small"
+                                         OnClick="@(() => DownloadDocument(context.Id))" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        }
+        else
+        {
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6">No Documents Yet</MudText>
+                    <MudText Typo="Typo.body1">
+                        Upload your documents to share with your landlord.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenUploadDialog">
+                        Upload First Document
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+</BusyBoundary>
+
+<MudDialog @bind-Visible="_uploadDialogVisible" Options="@_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Upload Document</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudSelect @bind-Value="_uploadModel.DocumentType" 
+                      T="string"
+                      Label="Document Type" 
+                      Variant="Variant.Outlined"
+                      Required="true">
+                <MudSelectItem T="string" Value="@("ID Proof")">ID Proof</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Address Proof")">Address Proof</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Employment Letter")">Employment Letter</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Other")">Other</MudSelectItem>
+            </MudSelect>
+
+            <MudFileUpload T="IBrowserFile" FilesChanged="HandleFileSelected">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              StartIcon="@Icons.Material.Filled.CloudUpload">
+                        Select File
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+
+            @if (_uploadModel.SelectedFile != null)
+            {
+                <MudChip T="string" Color="Color.Info" OnClose="@(() => _uploadModel.SelectedFile = null)">
+                    @_uploadModel.SelectedFile.Name
+                </MudChip>
+            }
+
+            @if (!string.IsNullOrEmpty(_uploadError))
+            {
+                <MudAlert Severity="Severity.Error">@_uploadError</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseUploadDialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" 
+                  Color="Color.Primary" 
+                  OnClick="UploadDocument"
+                  Disabled="@(_uploadModel.SelectedFile == null || string.IsNullOrEmpty(_uploadModel.DocumentType) || _isUploading)">
+            @if (_isUploading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Uploading...</span>
+            }
+            else
+            {
+                <span>Upload</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>

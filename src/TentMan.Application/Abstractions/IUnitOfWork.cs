@@ -73,6 +73,11 @@ public interface IUnitOfWork : IDisposable
     IFileMetadataRepository FileMetadata { get; }
 
     /// <summary>
+    /// Gets the tenant invite repository.
+    /// </summary>
+    ITenantInviteRepository TenantInvites { get; }
+
+    /// <summary>
     /// Executes an operation with retry logic for transient failures.
     /// Required when using transactions with database retry-on-failure strategies.
     /// </summary>

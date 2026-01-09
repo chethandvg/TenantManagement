@@ -118,12 +118,26 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 - **Tenant Search**: Search by phone number or name with 600ms debounce
 - **Document Management**: Upload and preview tenant documents (ID proofs, address proofs)
 - **Lease History**: View tenant's lease history with status tracking
+- **Tenant Invite System** ✨: Secure invite-based tenant onboarding
+  - Generate cryptographically secure invite tokens (32-char hex)
+  - Email validation and uniqueness checks
+  - Configurable expiry (1-90 days, default 7 days)
+  - Automatic role assignment ("Tenant" role)
+  - User-tenant account linking
+  - Optimistic concurrency control
+- **Tenant Portal Pages** ✨: Self-service portal for tenants
+  - Accept Invite page with token validation
+  - Dashboard with lease summary (read-only)
+  - Document upload page
+  - Move-in handover checklist with digital signature
 - **Blazor WASM Frontend** ✨: Complete UI screens for tenant management
   - Tenants List with search by phone/name
   - Tenant Details with tabbed interface (Profile, Addresses, Documents, Leases)
   - Add/Edit tenant dialogs
+  - Generate Invite button with token management
 
-📚 **[Read the Tenant & Lease Management Guide →](docs/TENANT_LEASE_MANAGEMENT.md)**
+📚 **[Read the Tenant & Lease Management Guide →](docs/TENANT_LEASE_MANAGEMENT.md)**  
+📚 **[Read the Tenant Invite System Guide →](docs/TENANT_INVITE_SYSTEM.md)**
 
 ### Lease Management 📝 NEW!
 - **7-Step Lease Creation Wizard**: Guided workflow for creating leases

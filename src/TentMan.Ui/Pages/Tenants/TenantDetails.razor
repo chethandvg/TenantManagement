@@ -18,10 +18,16 @@
                     </MudStack>
                     <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@_tenant.Phone</MudText>
                 </MudStack>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                           OnClick="ShowEditDialog">
-                    Edit Tenant
-                </MudButton>
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
+                               OnClick="ShowEditDialog">
+                        Edit Tenant
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Mail"
+                               OnClick="GenerateInvite">
+                        Generate Invite
+                    </MudButton>
+                </MudStack>
             </MudStack>
 
             <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-4" @bind-ActivePanelIndex="_activeTab">

@@ -50,39 +50,48 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Lease activation validation rules
    - **Blazor WASM Frontend screens** ✨ NEW!
 
-7. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
+7. **[Tenant Invite System Guide](TENANT_INVITE_SYSTEM.md)** 🔐 **NEW!**
+   - Secure invite-based tenant onboarding
+   - Token generation and validation
+   - Email validation and uniqueness checks
+   - Role assignment and user-tenant linking
+   - Tenant portal pages (Dashboard, Documents, Handover)
+   - Complete API reference
+   - Security features and best practices
+
+8. **[Authentication Guide](AUTHENTICATION_GUIDE.md)**
    - JWT configuration
    - Token management
    - Security best practices
    - Troubleshooting
 
-8. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
+9. **[Authorization Guide](AUTHORIZATION_GUIDE.md)**
    - Role-based access control
    - Security restrictions
    - Policy configuration
 
-9. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
-   - Password policies
-   - Complexity rules
-   - Validation implementation
+10. **[Password Security Guide](PASSWORD_SECURITY_GUIDE.md)**
+    - Password policies
+    - Complexity rules
+    - Validation implementation
 
-10. **[Database Guide](DATABASE_GUIDE.md)**
+11. **[Database Guide](DATABASE_GUIDE.md)**
     - Database setup
     - Migrations
     - Seeding
     - Retry strategy
 
-11. **[Development Guide](DEVELOPMENT_GUIDE.md)**
+12. **[Development Guide](DEVELOPMENT_GUIDE.md)**
     - Development workflow
     - Code patterns
     - Best practices
     - Testing
 
-12. **[Project Structure](PROJECT_STRUCTURE.md)**
+13. **[Project Structure](PROJECT_STRUCTURE.md)**
     - Directory organization
     - File conventions
 
-13. **[Archive](ARCHIVE.md)**
+14. **[Archive](ARCHIVE.md)**
     - Historical documentation
     - Implementation summaries
     - Migration guides

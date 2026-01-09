@@ -42,6 +42,11 @@ public static class ApplicationRoles
     public const string Viewer = "Viewer";
 
     /// <summary>
+    /// Tenant role for tenants using the tenant portal.
+    /// </summary>
+    public const string Tenant = "Tenant";
+
+    /// <summary>
     /// Gets all defined role names.
     /// </summary>
     public static IEnumerable<string> All => new[]
@@ -52,7 +57,8 @@ public static class ApplicationRoles
         Supervisor,
         ProductManager,
         Editor,
-        Viewer
+        Viewer,
+        Tenant
     };
 
     /// <summary>

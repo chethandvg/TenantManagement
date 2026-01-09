@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TentMan.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using TentMan.Infrastructure.Persistence;
 namespace TentMan.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260109104924_AddTenantInvites")]
+    partial class AddTenantInvites
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1382,9 +1385,6 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("LinkedUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("ModifiedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -1411,8 +1411,6 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsActive");
-
-                    b.HasIndex("LinkedUserId");
 
                     b.HasIndex("OrgId");
 
@@ -2384,18 +2382,11 @@ namespace TentMan.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("TentMan.Domain.Entities.Tenant", b =>
                 {
-                    b.HasOne("TentMan.Domain.Entities.Identity.ApplicationUser", "LinkedUser")
-                        .WithMany()
-                        .HasForeignKey("LinkedUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("TentMan.Domain.Entities.Organization", "Organization")
                         .WithMany("Tenants")
                         .HasForeignKey("OrgId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("LinkedUser");
 
                     b.Navigation("Organization");
                 });

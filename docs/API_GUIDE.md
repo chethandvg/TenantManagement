@@ -180,6 +180,7 @@ Response 200 OK:
 | `/` | GET | ✅ Yes | List/search tenants |
 | `/{tenantId}` | GET | ✅ Yes | Get tenant details |
 | `/{tenantId}` | PUT | ✅ Yes | Update tenant |
+| `/{tenantId}/invites` | POST | ✅ Yes | Generate tenant invite |
 
 **Example - Create Tenant**:
 ```json
@@ -204,6 +205,83 @@ Response 201 Created:
   }
 }
 ```
+
+**Example - Generate Invite**:
+```json
+POST /api/v1/organizations/{orgId}/tenants/{tenantId}/invites
+Authorization: Bearer <token>
+
+{
+  "tenantId": "guid",
+  "expiryDays": 7
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "inviteToken": "a1b2c3d4e5f67890abcdef1234567890",
+    "tenantFullName": "Rajesh Kumar",
+    "email": "rajesh@example.com",
+    "expiresAtUtc": "2026-01-16T10:00:00Z",
+    "isUsed": false
+  },
+  "message": "Invite generated successfully"
+}
+```
+
+#### 5b. Tenant Invites (`/api/v1/invites`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/validate?token={token}` | GET | ❌ No | Validate invite token |
+| `/accept` | POST | ❌ No | Accept invite & create account |
+
+**Example - Validate Invite**:
+```json
+GET /api/v1/invites/validate?token=a1b2c3d4...
+
+Response 200 OK:
+{
+  "success": true,
+  "data": {
+    "isValid": true,
+    "tenantFullName": "Rajesh Kumar",
+    "email": "rajesh@example.com"
+  }
+}
+```
+
+**Example - Accept Invite**:
+```json
+POST /api/v1/invites/accept
+
+{
+  "inviteToken": "a1b2c3d4e5f67890abcdef1234567890",
+  "userName": "rajeshk",
+  "email": "rajesh@example.com",
+  "password": "SecurePass123!@#"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGc...",
+    "refreshToken": "abc123...",
+    "expiresIn": 3600,
+    "user": {
+      "id": "guid",
+      "userName": "rajeshk",
+      "email": "rajesh@example.com",
+      "roles": ["Tenant"]
+    }
+  }
+}
+```
+
+**See**: [Tenant Invite System Guide](TENANT_INVITE_SYSTEM.md) for complete documentation.
 
 #### 6. Leases (`/api/v1/organizations/{orgId}/leases`)
 

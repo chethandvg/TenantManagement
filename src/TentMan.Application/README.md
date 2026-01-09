@@ -38,6 +38,21 @@ TentMan.Application/
 │   ├── Tenants/
 │   │   ├── Commands/         # CreateTenant, UpdateTenant
 │   │   └── Queries/          # GetTenants, GetTenantById
+│   ├── TenantInvites/         # Tenant invite system
+│   │   ├── Commands/
+│   │   │   ├── GenerateInvite/
+│   │   │   │   ├── GenerateInviteCommand.cs
+│   │   │   │   ├── GenerateInviteCommandHandler.cs
+│   │   │   │   └── GenerateInviteCommandValidator.cs
+│   │   │   └── AcceptInvite/
+│   │   │       ├── AcceptInviteCommand.cs
+│   │   │       ├── AcceptInviteCommandHandler.cs
+│   │   │       └── AcceptInviteCommandValidator.cs
+│   │   └── Queries/
+│   │       └── ValidateInvite/
+│   │           ├── ValidateInviteQuery.cs
+│   │           ├── ValidateInviteQueryHandler.cs
+│   │           └── ValidateInviteQueryValidator.cs
 │   └── Leases/
 │       ├── Commands/         # CreateLease, AddParty, AddTerm, Activate
 │       └── Queries/          # GetLeaseById, GetLeasesByUnit

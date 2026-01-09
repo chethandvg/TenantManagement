@@ -26,6 +26,7 @@ TentMan.Domain/
 │   ├── TenantAddress.cs
 │   ├── TenantEmergencyContact.cs
 │   ├── TenantDocument.cs
+│   ├── TenantInvite.cs    # Tenant invite system
 │   ├── Lease.cs           # Lease management
 │   ├── LeaseParty.cs
 │   ├── LeaseTerm.cs

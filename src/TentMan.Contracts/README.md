@@ -45,6 +45,11 @@ TentMan.Contracts/
 │   ├── CreateTenantRequest.cs
 │   ├── UpdateTenantRequest.cs
 │   └── AddTenantAddressRequest.cs
+├── TenantInvites/             # Tenant invite contracts
+│   ├── TenantInviteDto.cs
+│   ├── GenerateInviteRequest.cs
+│   ├── AcceptInviteRequest.cs
+│   └── ValidateInviteResponse.cs
 ├── Files/                     # File metadata contracts
 │   └── FileMetadataDto.cs
 ├── Owners/                    # Owner contracts
