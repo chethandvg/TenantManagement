@@ -30,12 +30,6 @@ The Tenant Invite System provides a secure workflow for property owners to invit
 - ✅ **Concurrency Control**: Optimistic locking prevents race conditions
 - ✅ **Role Assignment**: Automatically assigns "Tenant" role to new users
 - ✅ **User-Tenant Linking**: Links created user account to tenant record
-- ✅ **Invite Management** ✨ NEW!: Full lifecycle management for invites
-  - List all invites for a tenant
-  - Cancel pending invites
-  - Track invite status (Pending, Used, Expired)
-  - View invite history with timestamps
-  - Copy invite links to clipboard
 
 ---
 
@@ -64,11 +58,9 @@ public class TenantInvite : BaseEntity
 **Commands**:
 - `GenerateInviteCommand` - Creates invite for tenant
 - `AcceptInviteCommand` - Validates invite and creates user account
-- `CancelInviteCommand` ✨ NEW! - Cancels pending invite (soft delete)
 
 **Queries**:
 - `ValidateInviteQuery` - Validates invite token before signup
-- `GetInvitesByTenantQuery` ✨ NEW! - Retrieves all invites for a tenant
 
 **Validators** (FluentValidation):
 - `GenerateInviteCommandValidator`
@@ -117,7 +109,6 @@ services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
     "inviteUrl": "",
     "phone": "+1234567890",
     "email": "john.doe@example.com",
-    "createdAtUtc": "2026-01-09T10:00:00Z",
     "expiresAtUtc": "2026-01-16T10:00:00Z",
     "isUsed": false,
     "tenantFullName": "John Doe"
@@ -126,61 +117,7 @@ services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
 }
 ```
 
-### 2. Get Invites by Tenant (Owner/Admin) ✨ NEW!
-
-**Endpoint**: `GET /api/v1/organizations/{orgId}/tenants/{tenantId}/invites`
-
-**Authorization**: Required (Bearer token)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-      "orgId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "tenantId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "inviteToken": "a1b2c3d4e5f67890abcdef1234567890",
-      "inviteUrl": "https://app.tentman.com/accept-invite?token=a1b2c3d4e5f67890abcdef1234567890",
-      "phone": "+1234567890",
-      "email": "john.doe@example.com",
-      "createdAtUtc": "2026-01-09T10:00:00Z",
-      "expiresAtUtc": "2026-01-16T10:00:00Z",
-      "isUsed": false,
-      "usedAtUtc": null,
-      "tenantFullName": "John Doe"
-    }
-  ],
-  "message": "Invites retrieved successfully"
-}
-```
-
-### 3. Cancel Invite (Owner/Admin) ✨ NEW!
-
-**Endpoint**: `DELETE /api/v1/organizations/{orgId}/invites/{inviteId}`
-
-**Authorization**: Required (Bearer token)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": null,
-  "message": "Invite canceled successfully"
-}
-```
-
-**Error Response** (400 Bad Request - Already Used):
-```json
-{
-  "success": false,
-  "data": null,
-  "message": "Cannot cancel an invite that has already been used"
-}
-```
-
-### 4. Validate Invite (Public)
+### 2. Validate Invite (Public)
 
 **Endpoint**: `GET /api/v1/invites/validate?token={token}`
 
@@ -216,7 +153,7 @@ services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
 }
 ```
 
-### 5. Accept Invite (Public)
+### 3. Accept Invite (Public)
 
 **Endpoint**: `POST /api/v1/invites/accept`
 
@@ -513,52 +450,6 @@ Important events to log:
 
 ## 🎨 Frontend Implementation
 
-### Tenant Details Page - Invites Tab ✨ NEW!
-
-**Location**: `src/TentMan.Ui/Pages/Tenants/TenantDetails.razor`
-
-**Features**:
-- **Invites Tab**: Display all invites for the tenant with status tracking
-- **Generate Invite Dialog**: 
-  - Configurable expiry days selector (1-90 days)
-  - Instant token generation
-  - Display invite link with copy-to-clipboard button
-  - Show invite details (phone, email, expiry date)
-- **Invite Status Display**:
-  - Status badges (Pending, Used, Expired)
-  - Created and expiry timestamps
-  - Used date (if applicable)
-  - Action buttons (copy link, cancel)
-- **Cancel Invite**: 
-  - Confirmation dialog before cancellation
-  - Only available for pending invites
-  - Cannot cancel used invites
-
-**Invite Status Logic**:
-```csharp
-public string GetInviteStatus(TenantInviteDto invite)
-{
-    if (invite.IsUsed)
-        return "Used";
-    if (invite.ExpiresAtUtc < DateTime.UtcNow)
-        return "Expired";
-    return "Pending";
-}
-```
-
-**Data Grid Columns**:
-1. Status (chip with color coding)
-2. Phone
-3. Email
-4. Created (timestamp)
-5. Expires (timestamp)
-6. Used (timestamp or "—")
-7. Actions (copy link, cancel button)
-
----
-
-## 🎨 Frontend Implementation
-
 ### Accept Invite Page (`/accept-invite`)
 
 **Location**: `src/TentMan.Ui/Pages/Tenant/AcceptInvite.razor`
@@ -622,17 +513,6 @@ public interface ITenantInvitesApiClient
         Guid orgId, 
         Guid tenantId, 
         GenerateInviteRequest request, 
-        CancellationToken cancellationToken = default);
-    
-    // ✨ NEW! Management methods
-    Task<ApiResponse<IEnumerable<TenantInviteDto>>> GetInvitesByTenantAsync(
-        Guid orgId, 
-        Guid tenantId, 
-        CancellationToken cancellationToken = default);
-    
-    Task<ApiResponse<object>> CancelInviteAsync(
-        Guid orgId, 
-        Guid inviteId, 
         CancellationToken cancellationToken = default);
 }
 ```

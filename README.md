@@ -124,17 +124,12 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
   - Secure storage in **Azure Blob Storage** with SHA256 hash verification
   - List and view uploaded documents with status tracking
 - **Lease History**: View tenant's lease history with status tracking
-- **Tenant Invite System** ✨: Secure invite-based tenant onboarding and management
+- **Tenant Invite System** ✨: Secure invite-based tenant onboarding
   - Generate cryptographically secure invite tokens (32-char hex)
   - Email validation and uniqueness checks
   - Configurable expiry (1-90 days, default 7 days)
   - Automatic role assignment ("Tenant" role)
   - User-tenant account linking
-  - **Invite Management** ✨ NEW!
-    - List all invites for a tenant with status tracking (Pending, Used, Expired)
-    - Cancel pending invites
-    - Copy invite links to clipboard
-    - View invite history (created date, expiry, used date)
   - Optimistic concurrency control
 - **Tenant Portal Pages** ✨: Self-service portal for tenants
   - Accept Invite page with token validation
@@ -150,18 +145,9 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
     - Secure signature storage in Azure Blob Storage
 - **Blazor WASM Frontend** ✨: Complete UI screens for tenant management
   - Tenants List with search by phone/name
-  - Tenant Details with tabbed interface (Profile, Addresses, Documents, Leases, **Invites** ✨)
+  - Tenant Details with tabbed interface (Profile, Addresses, Documents, Leases)
   - Add/Edit tenant dialogs
-  - **Generate Invite Dialog** ✨ NEW!
-    - Configurable expiry days (1-90 days)
-    - Instant invite link generation
-    - One-click copy to clipboard
-    - Display of invite details (phone, email, expiry)
-  - **Invites Tab** ✨ NEW!
-    - View all invites with status badges (Pending, Used, Expired)
-    - Copy invite URLs to share with tenants
-    - Cancel pending invites with confirmation
-    - Track invite usage history
+  - Generate Invite button with token management
 
 📚 **[Read the Tenant & Lease Management Guide →](docs/TENANT_LEASE_MANAGEMENT.md)**  
 📚 **[Read the Tenant Invite System Guide →](docs/TENANT_INVITE_SYSTEM.md)**

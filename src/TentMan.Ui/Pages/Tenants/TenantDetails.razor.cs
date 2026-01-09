@@ -221,10 +221,20 @@ public partial class TenantDetails : ComponentBase
             var response = await TenantInvitesClient.GetInvitesByTenantAsync(_tenant.OrgId, _tenant.Id);
             if (response.Success && response.Data != null)
             {
-                _invites = response.Data.Select(invite =>
+                _invites = response.Data.Select(invite => new TenantInviteDto
                 {
-                    invite.InviteUrl = $"{NavigationManager.BaseUri}accept-invite?token={invite.InviteToken}";
-                    return invite;
+                    Id = invite.Id,
+                    OrgId = invite.OrgId,
+                    TenantId = invite.TenantId,
+                    InviteToken = invite.InviteToken,
+                    InviteUrl = $"{NavigationManager.BaseUri}accept-invite?token={invite.InviteToken}",
+                    Phone = invite.Phone,
+                    Email = invite.Email,
+                    CreatedAtUtc = invite.CreatedAtUtc,
+                    ExpiresAtUtc = invite.ExpiresAtUtc,
+                    IsUsed = invite.IsUsed,
+                    UsedAtUtc = invite.UsedAtUtc,
+                    TenantFullName = invite.TenantFullName
                 }).ToList();
             }
         }
@@ -286,12 +296,6 @@ public partial class TenantDetails : ComponentBase
 
     private async Task<bool?> ShowConfirmationDialog(string title, string message)
     {
-        var parameters = new DialogParameters
-        {
-            ["DialogContent"] = message
-        };
-
-        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small };
         var dialog = await DialogService.ShowMessageBox(title, message, "Confirm", "Cancel");
         return dialog;
     }
