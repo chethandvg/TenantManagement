@@ -32,10 +32,17 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         b.Property(x => x.IsActive)
             .IsRequired();
 
+        b.Property(x => x.LinkedUserId);
+
         // Relationships
         b.HasOne(x => x.Organization)
             .WithMany(x => x.Tenants)
             .HasForeignKey(x => x.OrgId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.HasOne(x => x.LinkedUser)
+            .WithMany()
+            .HasForeignKey(x => x.LinkedUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Unique constraints

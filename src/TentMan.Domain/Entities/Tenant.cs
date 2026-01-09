@@ -1,5 +1,6 @@
 using TentMan.Domain.Common;
 using TentMan.Contracts.Enums;
+using TentMan.Domain.Entities.Identity;
 
 namespace TentMan.Domain.Entities;
 
@@ -22,11 +23,13 @@ public class Tenant : BaseEntity
     public DateOnly? DateOfBirth { get; set; }
     public Gender? Gender { get; set; }
     public bool IsActive { get; set; }
+    public Guid? LinkedUserId { get; set; } // Link to user account for tenant portal
     public Guid? CreatedByUserId { get; set; }
     public Guid? UpdatedByUserId { get; set; }
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
+    public ApplicationUser? LinkedUser { get; set; }
     public ICollection<TenantAddress> Addresses { get; set; } = new List<TenantAddress>();
     public ICollection<TenantEmergencyContact> EmergencyContacts { get; set; } = new List<TenantEmergencyContact>();
     public ICollection<TenantDocument> Documents { get; set; } = new List<TenantDocument>();

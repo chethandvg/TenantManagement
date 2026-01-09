@@ -55,66 +55,110 @@ public class AcceptInviteCommandHandler : BaseCommandHandler, IRequestHandler<Ac
             throw new InvalidOperationException("Invite has expired");
         }
 
-        // Check if user already exists
-        var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
-        if (existingUser != null)
+        // Validate email matches invite (if invite has email)
+        if (!string.IsNullOrWhiteSpace(invite.Email) && 
+            !string.Equals(invite.Email, request.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Email does not match the invite");
+        }
+
+        // Check if user with email already exists
+        var existingUserByEmail = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+        if (existingUserByEmail != null)
         {
             throw new InvalidOperationException("Unable to create account. Please contact support.");
         }
 
-        // Create new user
-        var user = new ApplicationUser
+        // Check if user with username already exists
+        var existingUserByUsername = await _userRepository.GetByUserNameAsync(request.UserName, cancellationToken);
+        if (existingUserByUsername != null)
         {
-            UserName = request.UserName,
-            Email = request.Email,
-            NormalizedEmail = request.Email.ToUpperInvariant(),
-            EmailConfirmed = true,
-            PasswordHash = _passwordHasher.HashPassword(request.Password),
-            SecurityStamp = Guid.NewGuid().ToString(),
-            LockoutEnabled = false
-        };
+            throw new InvalidOperationException("Username is already taken");
+        }
 
-        await _userRepository.AddAsync(user, cancellationToken);
-
-        // Mark invite as used
-        invite.IsUsed = true;
-        invite.UsedAtUtc = DateTime.UtcNow;
-        invite.AcceptedByUserId = user.Id;
-        await _inviteRepository.UpdateAsync(invite, invite.RowVersion, cancellationToken);
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        Logger.LogInformation("Invite accepted and user created: {UserId}", user.Id);
-
-        // Generate JWT tokens
-        var accessToken = _jwtTokenService.GenerateAccessToken(
-            user.Id.ToString(),
-            user.Email,
-            user.UserName,
-            new List<string>()
-        );
-        var refreshToken = _jwtTokenService.GenerateRefreshToken();
-        var expiresIn = (int)_jwtTokenService.GetAccessTokenExpiration().TotalSeconds;
-        
-        user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiryTime = _jwtTokenService.GetRefreshTokenExpiryUtc();
-        await _userRepository.UpdateAsync(user, user.RowVersion, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return new AuthenticationResponse
+        // Use optimistic concurrency to prevent race condition on invite usage
+        try
         {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            ExpiresIn = expiresIn,
-            TokenType = "Bearer",
-            User = new UserInfoDto
+            // Create new user
+            var user = new ApplicationUser
             {
-                Id = user.Id.ToString(),
-                UserName = user.UserName,
-                Email = user.Email,
-                EmailConfirmed = user.EmailConfirmed,
-                Roles = new List<string>()
+                UserName = request.UserName,
+                Email = request.Email,
+                NormalizedEmail = request.Email.ToUpperInvariant(),
+                EmailConfirmed = true,
+                PasswordHash = _passwordHasher.HashPassword(request.Password),
+                SecurityStamp = Guid.NewGuid().ToString(),
+                LockoutEnabled = false
+            };
+
+            await _userRepository.AddAsync(user, cancellationToken);
+
+            // Mark invite as used (with original row version for concurrency control)
+            invite.IsUsed = true;
+            invite.UsedAtUtc = DateTime.UtcNow;
+            invite.AcceptedByUserId = user.Id;
+            await _inviteRepository.UpdateAsync(invite, invite.RowVersion, cancellationToken);
+
+            // Link user to tenant
+            var tenant = await _unitOfWork.Tenants.GetByIdAsync(invite.TenantId, cancellationToken);
+            if (tenant != null)
+            {
+                tenant.LinkedUserId = user.Id;
+                await _unitOfWork.Tenants.UpdateAsync(tenant, tenant.RowVersion, cancellationToken);
             }
-        };
+
+            // Assign Tenant role to the user
+            var tenantRole = await _unitOfWork.Roles.GetByNameAsync(ApplicationRoles.Tenant, cancellationToken);
+            if (tenantRole != null)
+            {
+                var userRole = new Domain.Entities.Identity.UserRole
+                {
+                    UserId = user.Id,
+                    RoleId = tenantRole.Id
+                };
+                await _unitOfWork.UserRoles.AddAsync(userRole, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            Logger.LogInformation("Invite accepted and user created: {UserId}, linked to tenant: {TenantId}", user.Id, invite.TenantId);
+
+            // Generate JWT tokens
+            var roles = tenantRole != null ? new List<string> { ApplicationRoles.Tenant } : new List<string>();
+            var accessToken = _jwtTokenService.GenerateAccessToken(
+                user.Id.ToString(),
+                user.Email,
+                user.UserName,
+                roles
+            );
+            var refreshToken = _jwtTokenService.GenerateRefreshToken();
+            var expiresIn = (int)_jwtTokenService.GetAccessTokenExpiration().TotalSeconds;
+            
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = _jwtTokenService.GetRefreshTokenExpiryUtc();
+            await _userRepository.UpdateAsync(user, user.RowVersion, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return new AuthenticationResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresIn = expiresIn,
+                TokenType = "Bearer",
+                User = new UserInfoDto
+                {
+                    Id = user.Id.ToString(),
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    EmailConfirmed = user.EmailConfirmed,
+                    Roles = roles
+                }
+            };
+        }
+        catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
+        {
+            Logger.LogWarning("Concurrency conflict when accepting invite - invite may have been used by another request");
+            throw new InvalidOperationException("Invite has already been used");
+        }
     }
 }

@@ -41,8 +41,35 @@ public class GenerateInviteCommandHandler : BaseCommandHandler, IRequestHandler<
             throw new InvalidOperationException($"Tenant does not belong to organization {request.OrgId}");
         }
 
+        // Validate tenant has required contact information
+        if (string.IsNullOrWhiteSpace(tenant.Phone))
+        {
+            throw new InvalidOperationException("Tenant must have a phone number to generate an invite");
+        }
+
+        // Invalidate any previous unused invites for this tenant
+        var existingInvite = await _inviteRepository.GetByTenantIdAsync(request.TenantId, cancellationToken);
+        if (existingInvite != null && !existingInvite.IsUsed && existingInvite.ExpiresAtUtc > DateTime.UtcNow)
+        {
+            Logger.LogInformation("Found existing active invite for tenant {TenantId}, returning it", request.TenantId);
+            return new TenantInviteDto
+            {
+                Id = existingInvite.Id,
+                OrgId = existingInvite.OrgId,
+                TenantId = existingInvite.TenantId,
+                InviteToken = existingInvite.InviteToken,
+                InviteUrl = string.Empty, // URL will be constructed by API layer
+                Phone = existingInvite.Phone,
+                Email = existingInvite.Email,
+                ExpiresAtUtc = existingInvite.ExpiresAtUtc,
+                IsUsed = existingInvite.IsUsed,
+                UsedAtUtc = existingInvite.UsedAtUtc,
+                TenantFullName = tenant.FullName
+            };
+        }
+
         // Generate unique token
-        var token = GenerateToken();
+        var token = await GenerateUniqueTokenAsync(cancellationToken);
 
         var invite = new TenantInvite
         {
@@ -66,7 +93,7 @@ public class GenerateInviteCommandHandler : BaseCommandHandler, IRequestHandler<
             OrgId = invite.OrgId,
             TenantId = invite.TenantId,
             InviteToken = invite.InviteToken,
-            InviteUrl = $"/accept-invite?token={invite.InviteToken}",
+            InviteUrl = string.Empty, // URL will be constructed by API layer
             Phone = invite.Phone,
             Email = invite.Email,
             ExpiresAtUtc = invite.ExpiresAtUtc,
@@ -74,6 +101,22 @@ public class GenerateInviteCommandHandler : BaseCommandHandler, IRequestHandler<
             UsedAtUtc = invite.UsedAtUtc,
             TenantFullName = tenant.FullName
         };
+    }
+
+    private async Task<string> GenerateUniqueTokenAsync(CancellationToken cancellationToken)
+    {
+        // Generate cryptographically secure random token and ensure uniqueness
+        const int maxAttempts = 10;
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            var token = GenerateToken();
+            if (!await _inviteRepository.TokenExistsAsync(token, cancellationToken))
+            {
+                return token;
+            }
+        }
+
+        throw new InvalidOperationException("Failed to generate unique invite token after multiple attempts");
     }
 
     private static string GenerateToken()

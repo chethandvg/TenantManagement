@@ -40,11 +40,11 @@ public class TenantInviteRepository : BaseRepository<TenantInvite>, ITenantInvit
         return entry.Entity;
     }
 
-    public async Task UpdateAsync(TenantInvite invite, byte[] originalRowVersion, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(TenantInvite invite, byte[] originalRowVersion, CancellationToken cancellationToken = default)
     {
         Context.Entry(invite).OriginalValues[nameof(TenantInvite.RowVersion)] = originalRowVersion;
         DbSet.Update(invite);
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     public async Task<bool> TokenExistsAsync(string token, CancellationToken cancellationToken = default)

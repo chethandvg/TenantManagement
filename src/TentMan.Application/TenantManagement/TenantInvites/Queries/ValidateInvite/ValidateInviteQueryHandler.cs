@@ -58,11 +58,21 @@ public class ValidateInviteQueryHandler : BaseCommandHandler, IRequestHandler<Va
 
         // Get tenant details
         var tenant = await _unitOfWork.Tenants.GetByIdAsync(invite.TenantId, cancellationToken);
+        
+        if (tenant == null)
+        {
+            Logger.LogWarning("Tenant {TenantId} not found for valid invite {InviteId}", invite.TenantId, invite.Id);
+            return new ValidateInviteResponse
+            {
+                IsValid = false,
+                ErrorMessage = "Invite data is incomplete. Please contact support."
+            };
+        }
 
         return new ValidateInviteResponse
         {
             IsValid = true,
-            TenantFullName = tenant?.FullName,
+            TenantFullName = tenant.FullName,
             Phone = invite.Phone,
             Email = invite.Email
         };
