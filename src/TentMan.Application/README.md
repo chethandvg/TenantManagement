@@ -33,6 +33,14 @@ TentMan.Application/
 │   ├── Units/
 │   ├── Owners/
 │   └── Organizations/
+├── TenantManagement/          # Tenant and lease management
+│   ├── Common/                # Shared mappers (LeaseMapper, TenantMapper)
+│   ├── Tenants/
+│   │   ├── Commands/         # CreateTenant, UpdateTenant
+│   │   └── Queries/          # GetTenants, GetTenantById
+│   └── Leases/
+│       ├── Commands/         # CreateLease, AddParty, AddTerm, Activate
+│       └── Queries/          # GetLeaseById, GetLeasesByUnit
 └── docs/                      # Application layer documentation
 ```
 
@@ -223,5 +231,5 @@ public interface IRepository<T> where T : Entity
 
 ---
 
-**Last Updated**: 2026-01-08  
+**Last Updated**: 2026-01-09  
 **Maintainer**: TentMan Development Team

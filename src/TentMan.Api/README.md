@@ -13,6 +13,9 @@ TentMan.Api/
 │   ├── AuthenticationController.cs
 │   ├── ProductsController.cs
 │   ├── BuildingsController.cs
+│   ├── TenantManagement/      # Tenant and Lease controllers
+│   │   ├── TenantsController.cs
+│   │   └── LeasesController.cs
 │   └── ...
 ├── Health/                    # Health check endpoints
 ├── Middleware/                # Custom middleware
@@ -202,5 +205,5 @@ dotnet run
 
 ---
 
-**Last Updated**: 2026-01-08  
+**Last Updated**: 2026-01-09  
 **Maintainer**: TentMan Development Team

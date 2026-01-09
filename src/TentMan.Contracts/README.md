@@ -25,6 +25,28 @@ TentMan.Contracts/
 │   ├── PagedResult.cs
 │   └── ErrorResponse.cs
 ├── Enums/                     # Shared enumerations
+│   ├── LeaseStatus.cs         # Lease statuses
+│   ├── LeasePartyRole.cs      # Tenant roles in lease
+│   ├── LateFeeType.cs
+│   ├── DepositTransactionType.cs
+│   ├── AddressType.cs
+│   ├── Gender.cs
+│   └── ...
+├── Leases/                    # Lease contracts
+│   ├── LeaseDetailDto.cs
+│   ├── LeaseListDto.cs
+│   ├── CreateLeaseRequest.cs
+│   ├── AddLeasePartyRequest.cs
+│   ├── AddLeaseTermRequest.cs
+│   └── ActivateLeaseRequest.cs
+├── Tenants/                   # Tenant contracts
+│   ├── TenantDetailDto.cs
+│   ├── TenantListDto.cs
+│   ├── CreateTenantRequest.cs
+│   ├── UpdateTenantRequest.cs
+│   └── AddTenantAddressRequest.cs
+├── Files/                     # File metadata contracts
+│   └── FileMetadataDto.cs
 ├── Owners/                    # Owner contracts
 ├── Products/                  # Product contracts
 │   ├── ProductDto.cs
@@ -182,5 +204,5 @@ public sealed record PagedResult<T>(
 
 ---
 
-**Last Updated**: 2026-01-08  
+**Last Updated**: 2026-01-09  
 **Maintainer**: TentMan Development Team
