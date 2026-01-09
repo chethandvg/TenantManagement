@@ -49,8 +49,9 @@ public class LeaseTermConfiguration : IEntityTypeConfiguration<LeaseTerm>
             .HasForeignKey(x => x.LeaseId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Index for enforcing uniqueness of effective date per lease
-        b.HasIndex(x => new { x.LeaseId, x.EffectiveFrom });
+        // Unique index to enforce at most one term per lease per effective date
+        b.HasIndex(x => new { x.LeaseId, x.EffectiveFrom })
+            .IsUnique();
 
         // Indexes
         b.HasIndex(x => x.LeaseId);

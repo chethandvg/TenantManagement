@@ -36,6 +36,15 @@ public class AddLeaseTermCommandHandler : BaseCommandHandler, IRequestHandler<Ad
             throw new InvalidOperationException("EffectiveTo must be after EffectiveFrom");
         }
 
+        // Check for duplicate effective date - enforce at most one term per lease per effective date
+        var existingTerm = lease.Terms.FirstOrDefault(t => t.EffectiveFrom == request.EffectiveFrom);
+        if (existingTerm != null)
+        {
+            throw new InvalidOperationException(
+                $"A term with effective date {request.EffectiveFrom:yyyy-MM-dd} already exists for this lease. " +
+                "Each lease can only have one term per effective date.");
+        }
+
         var leaseTerm = new LeaseTerm
         {
             LeaseId = request.LeaseId,
