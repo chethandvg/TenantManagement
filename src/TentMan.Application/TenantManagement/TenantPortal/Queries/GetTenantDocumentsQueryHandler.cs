@@ -46,7 +46,9 @@ public class GetTenantDocumentsQueryHandler : IRequestHandler<GetTenantDocuments
             ExpiryDate = d.ExpiryDate,
             FileId = d.FileId,
             FileName = d.File?.FileName,
-            Notes = d.Notes
+            Notes = d.Notes,
+            Status = d.Status,
+            CreatedAtUtc = d.CreatedAtUtc
         });
     }
 }

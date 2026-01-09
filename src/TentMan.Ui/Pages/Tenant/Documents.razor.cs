@@ -40,8 +40,8 @@ public partial class Documents : ComponentBase
                     Id = d.Id,
                     FileName = d.FileName ?? "Unknown",
                     DocumentType = d.DocType.ToString(),
-                    UploadedDate = DateTime.Now, // Would need CreatedAt from server
-                    Status = "Uploaded" // Would need status from server
+                    UploadedDate = d.CreatedAtUtc.ToLocalTime(),
+                    Status = d.Status.ToString()
                 }).ToList();
             }
             else
@@ -116,8 +116,8 @@ public partial class Documents : ComponentBase
                     Id = response.Data.Id,
                     FileName = response.Data.FileName ?? _uploadModel.SelectedFile.Name,
                     DocumentType = response.Data.DocType.ToString(),
-                    UploadedDate = DateTime.Now,
-                    Status = "Uploaded"
+                    UploadedDate = response.Data.CreatedAtUtc.ToLocalTime(),
+                    Status = response.Data.Status.ToString()
                 };
 
                 _documents.Insert(0, newDoc);
@@ -152,7 +152,7 @@ public partial class Documents : ComponentBase
         return status switch
         {
             "Verified" => Color.Success,
-            "Uploaded" or "Pending" => Color.Warning,
+            "Pending" => Color.Warning,
             "Rejected" => Color.Error,
             _ => Color.Default
         };

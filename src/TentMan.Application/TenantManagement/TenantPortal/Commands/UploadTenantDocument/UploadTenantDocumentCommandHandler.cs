@@ -105,7 +105,9 @@ public class UploadTenantDocumentCommandHandler : BaseCommandHandler, IRequestHa
             ExpiryDate = document.ExpiryDate,
             FileId = document.FileId,
             FileName = fileMetadata.FileName,
-            Notes = document.Notes
+            Notes = document.Notes,
+            Status = document.Status,
+            CreatedAtUtc = document.CreatedAtUtc
         };
     }
 

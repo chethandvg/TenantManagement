@@ -22,6 +22,7 @@ public class TenantDocument : BaseEntity
     public DateOnly? ExpiryDate { get; set; }
     public Guid FileId { get; set; }
     public string? Notes { get; set; }
+    public DocumentStatus Status { get; set; } = DocumentStatus.Pending; // Default to Pending
     public Guid? CreatedByUserId { get; set; }
 
     // Navigation properties
