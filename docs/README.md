@@ -50,7 +50,15 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Lease activation validation rules
    - **Blazor WASM Frontend screens** ✨ NEW!
 
-7. **[Tenant Invite System Guide](TENANT_INVITE_SYSTEM.md)** 🔐 **NEW!**
+7. **[Billing Engine Guide](BILLING_ENGINE.md)** 💰 **NEW!**
+   - Flexible charge types and recurring charges
+   - Utility billing (meter-based and amount-based)
+   - Invoice generation and payment tracking
+   - Credit notes and adjustments
+   - Batch billing with invoice runs
+   - Complete database schema reference
+
+8. **[Tenant Invite System Guide](TENANT_INVITE_SYSTEM.md)** 🔐 **NEW!**
    - Secure invite-based tenant onboarding
    - Token generation and validation
    - Email validation and uniqueness checks
