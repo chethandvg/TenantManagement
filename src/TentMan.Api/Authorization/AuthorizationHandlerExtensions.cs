@@ -20,6 +20,7 @@ public static class AuthorizationHandlerExtensions
         services.AddScoped<IAuthorizationHandler, TwoFactorEnabledRequirementHandler>();
         services.AddScoped<IAuthorizationHandler, MinimumRoleRequirementHandler>();
         services.AddScoped<IAuthorizationHandler, ResourceOwnerRequirementHandler>();
+        services.AddScoped<IAuthorizationHandler, LeaseAccessRequirementHandler>();
 
         return services;
     }

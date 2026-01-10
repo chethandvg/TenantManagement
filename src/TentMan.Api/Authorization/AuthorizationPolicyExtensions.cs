@@ -66,6 +66,13 @@ public static class AuthorizationPolicyExtensions
             policy.Requirements.Add(new ResourceOwnerRequirement());
         });
 
+        // Lease access policy
+        options.AddPolicy(PolicyNames.LeaseAccess, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new LeaseAccessRequirement());
+        });
+
         // Permission-based policies for Products
         ConfigureProductPolicies(options);
     }

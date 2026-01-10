@@ -20,6 +20,9 @@ public static class PolicyNames
     // Resource ownership policy
     public const string ResourceOwner = "ResourceOwner";
 
+    // Lease access policy (for tenants and admins)
+    public const string LeaseAccess = "LeaseAccess";
+
     // Product policies
     public static class Products
     {

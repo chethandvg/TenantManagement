@@ -49,4 +49,16 @@ public interface IFileStorageService
     Task<bool> FileExistsAsync(
         string storageKey,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates a short-lived signed URL for secure file access.
+    /// </summary>
+    /// <param name="storageKey">The storage key/path of the file.</param>
+    /// <param name="expiresInMinutes">URL expiration time in minutes (default: 60).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A signed URL that grants temporary access to the file.</returns>
+    Task<string> GenerateSignedUrlAsync(
+        string storageKey,
+        int expiresInMinutes = 60,
+        CancellationToken cancellationToken = default);
 }

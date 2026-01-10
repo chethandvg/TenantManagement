@@ -35,6 +35,7 @@ The Aspire Dashboard will open automatically, showing all running services.
 ### Essential Reading
 - **[Documentation Hub](docs/README.md)** - Start here for all documentation
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Understanding the solution structure
+- **[Security & Privacy](docs/SECURITY.md)** - Security controls and best practices
 - **[Concurrency Guide](docs/CONCURRENCY_GUIDE.md)** - Data integrity and optimistic concurrency
 - **[Adding New Entities](src/README_NEW_ENTITY.md)** - Step-by-step development guide
 
@@ -42,6 +43,7 @@ The Aspire Dashboard will open automatically, showing all running services.
 | Topic | Document |
 |-------|----------|
 | 🏗️ Architecture & Design | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| 🔒 Security & Privacy | [docs/SECURITY.md](docs/SECURITY.md) |
 | 🔒 Concurrency & Data | [docs/CONCURRENCY_GUIDE.md](docs/CONCURRENCY_GUIDE.md) |
 | ➕ Adding Features | [src/README_NEW_ENTITY.md](src/README_NEW_ENTITY.md) |
 | 📖 API Reference | [src/TentMan.Api/README.md](src/TentMan.Api/README.md) |
@@ -196,11 +198,25 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 - **Tenant Lifecycle**: Complete onboarding, management, and offboarding workflows
 - **Cross-Tenant Administration**: Centralized management of all tenants
 
-### Security & Access Control
+### Security & Access Control ✨ ENHANCED!
 - **Role-Based Access Control (RBAC)**: Granular permissions per tenant
-- **JWT Authentication**: Secure token-based authentication
+  - **Owner/Admin**: Full CRUD operations on tenants, leases, and all resources
+  - **Tenant**: Read-only access to their own leases, can upload documents
+- **JWT Authentication**: Secure token-based authentication with refresh tokens
+- **Authorization Policies**: Resource-based authorization for leases and files
+- **Data Masking**: Automatic masking of sensitive document numbers (****1234)
+- **Secure File Access**: Short-lived signed URLs (Azure Blob SAS) for temporary file access
+- **File Authorization**: All file downloads require authentication and authorization checks
 - **Data Isolation**: Complete separation of tenant data
 - **Admin APIs**: Secure administrative endpoints for system management
+
+📚 **[Read the Security & Privacy Guide →](docs/SECURITY.md)**
+
+### Audit Logging & Compliance ✨ NEW!
+- **Automatic Audit Logging**: All changes to Lease, LeaseTerm, and DepositTransaction are logged
+- **Complete Audit Trail**: Records who, when, what changed, and before/after state
+- **File Access Logging**: All file access attempts (successful and denied) are logged
+- **Compliance Ready**: Audit logs support GDPR and regulatory requirements
 
 ### Data Integrity
 - **Optimistic Concurrency**: Prevents lost updates using SQL Server `rowversion`

@@ -31,11 +31,14 @@ public class LeasesController : ControllerBase
 
     /// <summary>
     /// Creates a new lease (draft).
+    /// Only Admins/Managers can create leases.
     /// </summary>
     [HttpPost("api/v{version:apiVersion}/organizations/{orgId}/leases")]
+    [Authorize(Roles = "Administrator,SuperAdmin,Manager")]
     [ProducesResponseType(typeof(ApiResponse<LeaseListDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<LeaseListDto>>> CreateLease(
         Guid orgId,
         CreateLeaseRequest request,
