@@ -2,7 +2,18 @@
     <MudNavMenu>
         <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
 
-        <AuthorizeView>
+        <AuthorizeView Roles="Tenant">
+            <Authorized>
+                <MudNavGroup Title="Tenant Portal" Icon="@Icons.Material.Filled.Person" Expanded="true">
+                    <MudNavLink Href="/tenant/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+                    <MudNavLink Href="/tenant/lease-summary" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Description">Lease Details</MudNavLink>
+                    <MudNavLink Href="/tenant/documents" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Folder">My Documents</MudNavLink>
+                    <MudNavLink Href="/tenant/move-in" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Assignment">Move-in Handover</MudNavLink>
+                </MudNavGroup>
+            </Authorized>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="Admin,Manager,User">
             <Authorized>
                 <MudNavGroup Title="Property Management" Icon="@Icons.Material.Filled.Business" Expanded="true">
                     <MudNavLink Href="/buildings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Apartment">Buildings</MudNavLink>
@@ -16,6 +27,9 @@
                 <MudNavLink Href="/counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
                 <MudNavLink Href="/fetchdata" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Fetch data</MudNavLink>
             </Authorized>
+        </AuthorizeView>
+
+        <AuthorizeView>
             <NotAuthorized>
                 <MudNavLink Href="/login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login">Login</MudNavLink>
                 <MudNavLink Href="/register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PersonAdd">Register</MudNavLink>

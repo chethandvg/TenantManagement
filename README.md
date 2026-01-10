@@ -137,10 +137,20 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
     - View invite history (created date, expiry, used date)
   - Optimistic concurrency control
 - **Tenant Portal Pages** ✨: Self-service portal for tenants
-  - Accept Invite page with token validation
-  - Dashboard with lease summary (read-only)
-  - Document upload page with drag-and-drop interface
-  - **Move-in Handover Checklist** ✨ NEW!
+  - **Accept Invite** ✨: Complete invite acceptance flow
+    - Token validation with real-time feedback
+    - User account creation (username, email, password)
+    - Automatic "Tenant" role assignment
+    - Automatic linking to tenant record via LinkedUserId
+    - JWT token generation and auto-login
+    - Redirect to tenant dashboard after successful signup
+  - **Tenant Dashboard** ✨: Personalized overview for tenants
+    - Active lease summary display
+    - Quick access to lease details, documents, and handover
+    - **Role-aware navigation** - Only shown to users with "Tenant" role
+  - **Lease Summary**: Read-only view of active lease details
+  - **Document Upload**: Drag-and-drop interface for document management
+  - **Move-in Handover Checklist** ✨:
     - Digital signature pad using HTML5 Canvas
     - Checklist items with condition tracking (Good, Ok, Bad, Missing)
     - Meter readings display (Electricity, Water, Gas)

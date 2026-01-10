@@ -71,6 +71,14 @@ public static class ApplicationRoles
     };
 
     /// <summary>
+    /// Gets tenant-specific roles for tenant portal access.
+    /// </summary>
+    public static IEnumerable<string> TenantPortal => new[]
+    {
+        Tenant
+    };
+
+    /// <summary>
     /// Gets roles that can manage products (create, update, delete).
     /// </summary>
     public static IEnumerable<string> ProductManagement => new[]

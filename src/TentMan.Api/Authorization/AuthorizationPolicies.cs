@@ -29,6 +29,12 @@ public static class AuthorizationPolicies
     public const string RequireUserRole = "RequireUserRole";
 
     /// <summary>
+    /// Policy that requires the user to be a Tenant.
+    /// Used for tenant portal access.
+    /// </summary>
+    public const string RequireTenantRole = "RequireTenantRole";
+
+    /// <summary>
     /// Policy that requires the user to be either Admin or Manager.
     /// Used for operations that require elevated permissions.
     /// </summary>
