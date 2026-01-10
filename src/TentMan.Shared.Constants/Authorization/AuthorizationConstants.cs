@@ -42,6 +42,7 @@ public static class RoleNames
 /// </summary>
 public static class PolicyNames
 {
+    // UI Navigation policies
     /// <summary>
     /// Policy for viewing the tenant portal.
     /// </summary>
@@ -66,6 +67,82 @@ public static class PolicyNames
     /// Policy for viewing leases.
     /// </summary>
     public const string CanViewLeases = "CanViewLeases";
+
+    // Email & MFA policies
+    /// <summary>
+    /// Policy requiring email verification.
+    /// </summary>
+    public const string EmailVerified = "EmailVerified";
+
+    /// <summary>
+    /// Policy requiring two-factor authentication.
+    /// </summary>
+    public const string TwoFactorEnabled = "TwoFactorEnabled";
+
+    // Role-based policies
+    /// <summary>
+    /// Policy requiring User role.
+    /// </summary>
+    public const string RequireUserRole = "RequireUserRole";
+
+    /// <summary>
+    /// Policy requiring Manager role.
+    /// </summary>
+    public const string RequireManagerRole = "RequireManagerRole";
+
+    /// <summary>
+    /// Policy requiring Administrator role.
+    /// </summary>
+    public const string RequireAdminRole = "RequireAdminRole";
+
+    /// <summary>
+    /// Policy requiring SuperAdmin role.
+    /// </summary>
+    public const string RequireSuperAdminRole = "RequireSuperAdminRole";
+
+    /// <summary>
+    /// Policy requiring Tenant role.
+    /// </summary>
+    public const string RequireTenantRole = "RequireTenantRole";
+
+    // Resource ownership policy
+    /// <summary>
+    /// Policy requiring resource ownership.
+    /// </summary>
+    public const string ResourceOwner = "ResourceOwner";
+
+    // Lease access policy (for tenants and admins)
+    /// <summary>
+    /// Policy for lease access (tenants and admins).
+    /// </summary>
+    public const string LeaseAccess = "LeaseAccess";
+
+    // Product policies
+    /// <summary>
+    /// Product-related policy names.
+    /// </summary>
+    public static class Products
+    {
+        /// <summary>
+        /// Policy for viewing products.
+        /// </summary>
+        public const string View = "Products.View";
+
+        /// <summary>
+        /// Policy for creating products.
+        /// </summary>
+        public const string Create = "Products.Create";
+
+        /// <summary>
+        /// Policy for updating products.
+        /// </summary>
+        public const string Update = "Products.Update";
+
+        /// <summary>
+        /// Policy for deleting products.
+        /// </summary>
+        public const string Delete = "Products.Delete";
+    }
 }
 
 /// <summary>

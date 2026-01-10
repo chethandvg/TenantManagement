@@ -2,7 +2,6 @@ using TentMan.Api.Authorization.Requirements;
 using TentMan.Shared.Constants.Authorization;
 using Microsoft.AspNetCore.Authorization;
 
-using SharedPolicyNames = TentMan.Shared.Constants.Authorization.PolicyNames;
 using SharedClaimTypes = TentMan.Shared.Constants.Authorization.ClaimTypes;
 using SharedPermissionValues = TentMan.Shared.Constants.Authorization.PermissionValues;
 
@@ -93,7 +92,7 @@ public static class AuthorizationPolicyExtensions
     private static void ConfigureNavigationPolicies(AuthorizationOptions options)
     {
         // Tenant Portal policy - allow Tenant role or explicit permission
-        options.AddPolicy(SharedPolicyNames.CanViewTenantPortal, policy =>
+        options.AddPolicy(PolicyNames.CanViewTenantPortal, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
@@ -103,7 +102,7 @@ public static class AuthorizationPolicyExtensions
         });
 
         // Property Management policy
-        options.AddPolicy(SharedPolicyNames.CanViewPropertyManagement, policy =>
+        options.AddPolicy(PolicyNames.CanViewPropertyManagement, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
@@ -121,7 +120,7 @@ public static class AuthorizationPolicyExtensions
     private static void ConfigurePropertyManagementPolicies(AuthorizationOptions options)
     {
         // Buildings policies
-        options.AddPolicy(SharedPolicyNames.CanViewBuildings, policy =>
+        options.AddPolicy(PolicyNames.CanViewBuildings, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
@@ -133,7 +132,7 @@ public static class AuthorizationPolicyExtensions
         });
 
         // Tenants policies
-        options.AddPolicy(SharedPolicyNames.CanViewTenants, policy =>
+        options.AddPolicy(PolicyNames.CanViewTenants, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
@@ -145,7 +144,7 @@ public static class AuthorizationPolicyExtensions
         });
 
         // Leases policies
-        options.AddPolicy(SharedPolicyNames.CanViewLeases, policy =>
+        options.AddPolicy(PolicyNames.CanViewLeases, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
