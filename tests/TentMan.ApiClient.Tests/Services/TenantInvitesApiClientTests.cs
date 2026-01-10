@@ -467,4 +467,145 @@ public sealed class TenantInvitesApiClientTests : IDisposable
     }
 
     #endregion
+
+    #region GetInvitesByTenantAsync Tests
+
+    [Fact]
+    public async Task GetInvitesByTenantAsync_ShouldReturnInvitesList_WhenInvitesExist()
+    {
+        // Arrange
+        var orgId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+
+        var invites = new List<TenantInviteDto>
+        {
+            new TenantInviteDto
+            {
+                Id = Guid.NewGuid(),
+                OrgId = orgId,
+                TenantId = tenantId,
+                InviteToken = "token1",
+                Phone = "+1234567890",
+                Email = "john@example.com",
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-3),
+                ExpiresAtUtc = DateTime.UtcNow.AddDays(4),
+                IsUsed = false,
+                TenantFullName = "John Doe"
+            },
+            new TenantInviteDto
+            {
+                Id = Guid.NewGuid(),
+                OrgId = orgId,
+                TenantId = tenantId,
+                InviteToken = "token2",
+                Phone = "+1234567890",
+                Email = "john@example.com",
+                CreatedAtUtc = DateTime.UtcNow.AddDays(-10),
+                ExpiresAtUtc = DateTime.UtcNow.AddDays(-3),
+                IsUsed = false,
+                TenantFullName = "John Doe"
+            }
+        };
+
+        var apiResponse = ApiResponse<IEnumerable<TenantInviteDto>>.Ok(invites, "Invites retrieved successfully");
+
+        _mockHttp
+            .When(HttpMethod.Get, $"https://api.test.com/api/v1/organizations/{orgId}/tenants/{tenantId}/invites")
+            .Respond("application/json", JsonSerializer.Serialize(apiResponse));
+
+        // Act
+        var result = await _apiClient.GetInvitesByTenantAsync(orgId, tenantId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetInvitesByTenantAsync_ShouldReturnEmptyList_WhenNoInvitesExist()
+    {
+        // Arrange
+        var orgId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+
+        var apiResponse = ApiResponse<IEnumerable<TenantInviteDto>>.Ok(
+            new List<TenantInviteDto>(), 
+            "Invites retrieved successfully");
+
+        _mockHttp
+            .When(HttpMethod.Get, $"https://api.test.com/api/v1/organizations/{orgId}/tenants/{tenantId}/invites")
+            .Respond("application/json", JsonSerializer.Serialize(apiResponse));
+
+        // Act
+        var result = await _apiClient.GetInvitesByTenantAsync(orgId, tenantId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data.Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region CancelInviteAsync Tests
+
+    [Fact]
+    public async Task CancelInviteAsync_ShouldReturnSuccess_WhenInviteCanceled()
+    {
+        // Arrange
+        var orgId = Guid.NewGuid();
+        var inviteId = Guid.NewGuid();
+
+        var apiResponse = ApiResponse<bool>.Ok(true, "Invite canceled successfully");
+
+        _mockHttp
+            .When(HttpMethod.Delete, $"https://api.test.com/api/v1/organizations/{orgId}/invites/{inviteId}")
+            .Respond("application/json", JsonSerializer.Serialize(apiResponse));
+
+        // Act
+        var result = await _apiClient.CancelInviteAsync(orgId, inviteId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CancelInviteAsync_ShouldThrowValidationException_WhenInviteAlreadyUsed()
+    {
+        // Arrange
+        var orgId = Guid.NewGuid();
+        var inviteId = Guid.NewGuid();
+
+        _mockHttp
+            .When(HttpMethod.Delete, $"https://api.test.com/api/v1/organizations/{orgId}/invites/{inviteId}")
+            .Respond(HttpStatusCode.BadRequest, "application/json", 
+                "{\"success\":false,\"message\":\"Cannot cancel an invite that has already been used\"}");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(
+            async () => await _apiClient.CancelInviteAsync(orgId, inviteId));
+    }
+
+    [Fact]
+    public async Task CancelInviteAsync_ShouldThrowValidationException_WhenInviteNotFound()
+    {
+        // Arrange
+        var orgId = Guid.NewGuid();
+        var inviteId = Guid.NewGuid();
+
+        _mockHttp
+            .When(HttpMethod.Delete, $"https://api.test.com/api/v1/organizations/{orgId}/invites/{inviteId}")
+            .Respond(HttpStatusCode.BadRequest, "application/json", 
+                "{\"success\":false,\"message\":\"Invite not found\"}");
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(
+            async () => await _apiClient.CancelInviteAsync(orgId, inviteId));
+    }
+
+    #endregion
 }

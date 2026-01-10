@@ -597,6 +597,91 @@ services.AddHttpClient<IOrdersApiClient, OrdersApiClient>(client =>
 .AddHttpMessageHandler<AuthenticationMessageHandler>(); // Automatic token attachment
 ```
 
+## Tenant Invites API Client
+
+The `ITenantInvitesApiClient` provides methods for managing tenant invite lifecycle:
+
+### Generate Invite
+
+```csharp
+@inject ITenantInvitesApiClient InvitesClient
+
+var request = new GenerateInviteRequest 
+{ 
+    TenantId = tenantId,
+    ExpiryDays = 7 
+};
+
+var response = await InvitesClient.GenerateInviteAsync(orgId, tenantId, request);
+
+if (response.Success)
+{
+    var inviteUrl = $"{baseUrl}/accept-invite?token={response.Data.InviteToken}";
+    // Share inviteUrl with tenant
+}
+```
+
+### List Invites for Tenant
+
+```csharp
+var response = await InvitesClient.GetInvitesByTenantAsync(orgId, tenantId);
+
+if (response.Success)
+{
+    foreach (var invite in response.Data)
+    {
+        Console.WriteLine($"Status: {(invite.IsUsed ? "Used" : invite.ExpiresAtUtc < DateTime.UtcNow ? "Expired" : "Pending")}");
+        Console.WriteLine($"Token: {invite.InviteToken}");
+        Console.WriteLine($"Created: {invite.CreatedAtUtc}");
+    }
+}
+```
+
+### Cancel Invite
+
+```csharp
+var response = await InvitesClient.CancelInviteAsync(orgId, inviteId);
+
+if (response.Success)
+{
+    Console.WriteLine("Invite canceled successfully");
+}
+```
+
+### Validate Invite (Public)
+
+```csharp
+var response = await InvitesClient.ValidateInviteAsync(token);
+
+if (response.Success && response.Data.IsValid)
+{
+    // Show signup form with pre-filled data
+    Console.WriteLine($"Tenant: {response.Data.TenantFullName}");
+    Console.WriteLine($"Phone: {response.Data.Phone}");
+}
+```
+
+### Accept Invite (Public)
+
+```csharp
+var request = new AcceptInviteRequest
+{
+    InviteToken = token,
+    UserName = "johndoe",
+    Email = "john@example.com",
+    Password = "SecurePass123!@#"
+};
+
+var response = await InvitesClient.AcceptInviteAsync(request);
+
+if (response.Success)
+{
+    // User created and authenticated
+    var accessToken = response.Data.AccessToken;
+    // Store token and redirect to dashboard
+}
+```
+
 ## Best Practices
 
 1. **Always use interfaces** for dependency injection
