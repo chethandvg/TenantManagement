@@ -18,7 +18,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    EntityType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EntityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     EntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BeforeState = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -40,11 +40,49 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("PK_AuditLogs", x => x.Id);
                 });
+
+            // Add indexes for query performance
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_EntityType_EntityId_CreatedAtUtc",
+                table: "AuditLogs",
+                columns: new[] { "EntityType", "EntityId", "CreatedAtUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_OrgId_CreatedAtUtc",
+                table: "AuditLogs",
+                columns: new[] { "OrgId", "CreatedAtUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_UserId_CreatedAtUtc",
+                table: "AuditLogs",
+                columns: new[] { "UserId", "CreatedAtUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_CreatedAtUtc",
+                table: "AuditLogs",
+                column: "CreatedAtUtc");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            // Drop indexes
+            migrationBuilder.DropIndex(
+                name: "IX_AuditLogs_EntityType_EntityId_CreatedAtUtc",
+                table: "AuditLogs");
+
+            migrationBuilder.DropIndex(
+                name: "IX_AuditLogs_OrgId_CreatedAtUtc",
+                table: "AuditLogs");
+
+            migrationBuilder.DropIndex(
+                name: "IX_AuditLogs_UserId_CreatedAtUtc",
+                table: "AuditLogs");
+
+            migrationBuilder.DropIndex(
+                name: "IX_AuditLogs_CreatedAtUtc",
+                table: "AuditLogs");
+
             migrationBuilder.DropTable(
                 name: "AuditLogs");
         }

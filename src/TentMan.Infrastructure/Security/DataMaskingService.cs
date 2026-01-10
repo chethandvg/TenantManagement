@@ -18,6 +18,12 @@ public class DataMaskingService : IDataMaskingService
             return string.Empty;
         }
 
+        // Validate visibleChars parameter
+        if (visibleChars < 0 || visibleChars > value.Length)
+        {
+            visibleChars = Math.Min(DefaultVisibleChars, value.Length);
+        }
+
         if (value.Length <= visibleChars)
         {
             return new string('*', value.Length);
@@ -63,6 +69,12 @@ public class DataMaskingService : IDataMaskingService
         // Remove non-digit characters for masking logic
         var digits = new string(phone.Where(char.IsDigit).ToArray());
         
+        // Validate visibleChars parameter
+        if (visibleChars < 0 || visibleChars > digits.Length)
+        {
+            visibleChars = Math.Min(DefaultVisibleChars, digits.Length);
+        }
+
         if (digits.Length <= visibleChars)
         {
             return phone; // Too short to mask effectively

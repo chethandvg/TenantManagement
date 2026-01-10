@@ -1,4 +1,5 @@
 using TentMan.Application.Abstractions;
+using TentMan.Domain.Abstractions;
 using TentMan.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -51,22 +52,15 @@ public class AuditLoggingInterceptor : SaveChangesInterceptor
 
     private void CreateAuditLogs(DbContext context)
     {
-        var auditLogs = new List<AuditLog>();
-        var entries = context.ChangeTracker.Entries()
+        var auditLogs = context.ChangeTracker.Entries()
             .Where(e => AuditedEntityTypes.Contains(e.Entity.GetType()) &&
                        (e.State == EntityState.Added ||
                         e.State == EntityState.Modified ||
                         e.State == EntityState.Deleted))
+            .Select(CreateAuditLog)
+            .Where(auditLog => auditLog != null)
+            .Cast<AuditLog>()
             .ToList();
-
-        foreach (var entry in entries)
-        {
-            var auditLog = CreateAuditLog(entry);
-            if (auditLog != null)
-            {
-                auditLogs.Add(auditLog);
-            }
-        }
 
         if (auditLogs.Any())
         {
@@ -84,9 +78,16 @@ public class AuditLoggingInterceptor : SaveChangesInterceptor
             return null;
         }
 
+        // Check if this is a soft delete (Modified state with IsDeleted = true)
+        var isSoftDelete = entry.State == EntityState.Modified &&
+                          entry.Entity is ISoftDeletable softDeletable &&
+                          entry.Property(nameof(ISoftDeletable.IsDeleted)).IsModified &&
+                          softDeletable.IsDeleted;
+
         var action = entry.State switch
         {
             EntityState.Added => "Create",
+            EntityState.Modified when isSoftDelete => "Delete",
             EntityState.Modified => "Update",
             EntityState.Deleted => "Delete",
             _ => null

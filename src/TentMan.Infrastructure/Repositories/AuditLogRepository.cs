@@ -26,11 +26,19 @@ public class AuditLogRepository : IAuditLogRepository
     public async Task<IEnumerable<AuditLog>> GetByEntityAsync(
         string entityType,
         Guid entityId,
+        int page = 1,
+        int pageSize = 100,
         CancellationToken cancellationToken = default)
     {
+        // Validate pagination parameters
+        page = Math.Max(1, page);
+        pageSize = Math.Min(Math.Max(1, pageSize), 1000); // Max 1000 per page
+
         return await _context.AuditLogs
             .Where(a => a.EntityType == entityType && a.EntityId == entityId)
             .OrderByDescending(a => a.CreatedAtUtc)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
     }
 
@@ -38,8 +46,14 @@ public class AuditLogRepository : IAuditLogRepository
         Guid orgId,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        int page = 1,
+        int pageSize = 100,
         CancellationToken cancellationToken = default)
     {
+        // Validate pagination parameters
+        page = Math.Max(1, page);
+        pageSize = Math.Min(Math.Max(1, pageSize), 1000); // Max 1000 per page
+
         var query = _context.AuditLogs
             .Where(a => a.OrgId == orgId);
 
@@ -55,6 +69,8 @@ public class AuditLogRepository : IAuditLogRepository
 
         return await query
             .OrderByDescending(a => a.CreatedAtUtc)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
     }
 
@@ -62,8 +78,14 @@ public class AuditLogRepository : IAuditLogRepository
         Guid userId,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        int page = 1,
+        int pageSize = 100,
         CancellationToken cancellationToken = default)
     {
+        // Validate pagination parameters
+        page = Math.Max(1, page);
+        pageSize = Math.Min(Math.Max(1, pageSize), 1000); // Max 1000 per page
+
         var query = _context.AuditLogs
             .Where(a => a.UserId == userId);
 
@@ -79,6 +101,8 @@ public class AuditLogRepository : IAuditLogRepository
 
         return await query
             .OrderByDescending(a => a.CreatedAtUtc)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
     }
 }

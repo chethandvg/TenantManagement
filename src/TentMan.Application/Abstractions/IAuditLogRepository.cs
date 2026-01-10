@@ -18,6 +18,8 @@ public interface IAuditLogRepository
     Task<IEnumerable<AuditLog>> GetByEntityAsync(
         string entityType,
         Guid entityId,
+        int page = 1,
+        int pageSize = 100,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -27,6 +29,8 @@ public interface IAuditLogRepository
         Guid orgId,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        int page = 1,
+        int pageSize = 100,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -36,5 +40,7 @@ public interface IAuditLogRepository
         Guid userId,
         DateTime? startDate = null,
         DateTime? endDate = null,
+        int page = 1,
+        int pageSize = 100,
         CancellationToken cancellationToken = default);
 }

@@ -22,6 +22,7 @@ public class FilesController : ControllerBase
     private readonly ApplicationDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
     private readonly IAuditLogRepository _auditLogRepository;
+    private readonly ITimeProvider _timeProvider;
     private readonly ILogger<FilesController> _logger;
 
     public FilesController(
@@ -29,12 +30,14 @@ public class FilesController : ControllerBase
         ApplicationDbContext dbContext,
         ICurrentUser currentUser,
         IAuditLogRepository auditLogRepository,
+        ITimeProvider timeProvider,
         ILogger<FilesController> logger)
     {
         _fileStorageService = fileStorageService;
         _dbContext = dbContext;
         _currentUser = currentUser;
         _auditLogRepository = auditLogRepository;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -55,10 +58,10 @@ public class FilesController : ControllerBase
         [FromQuery] int expiresInMinutes = 60,
         CancellationToken cancellationToken = default)
     {
-        // Validate expiration time
-        if (expiresInMinutes < 1 || expiresInMinutes > 1440)
+        // Validate expiration time (minimum 10 minutes to account for 5-minute clock skew)
+        if (expiresInMinutes < 10 || expiresInMinutes > 1440)
         {
-            return BadRequest(ApiResponse<object>.Fail("Expiration time must be between 1 and 1440 minutes (24 hours)"));
+            return BadRequest(ApiResponse<object>.Fail("Expiration time must be between 10 and 1440 minutes (24 hours)"));
         }
 
         _logger.LogInformation("User {UserId} requesting signed URL for file {FileId}", _currentUser.UserId, fileId);
@@ -103,7 +106,7 @@ public class FilesController : ControllerBase
                 FileName = fileMetadata.FileName,
                 SignedUrl = signedUrl,
                 ExpiresInMinutes = expiresInMinutes,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(expiresInMinutes)
+                ExpiresAt = _timeProvider.UtcNow.AddMinutes(expiresInMinutes)
             };
 
             _logger.LogInformation("Signed URL generated for file {FileId}, expires in {Minutes} minutes", fileId, expiresInMinutes);
@@ -181,8 +184,6 @@ public class FilesController : ControllerBase
     /// </summary>
     private async Task<bool> CheckFileAccessAsync(Guid fileId, CancellationToken cancellationToken)
     {
-        var userRoles = _currentUser.GetRoles().ToList();
-
         // Admins have full access
         if (_currentUser.IsInRole("Administrator") ||
             _currentUser.IsInRole("SuperAdmin") ||
@@ -224,8 +225,9 @@ public class FilesController : ControllerBase
         var isBuildingFile = await _dbContext.BuildingFiles
             .Include(bf => bf.Building)
             .ThenInclude(b => b.OwnershipShares)
+            .ThenInclude(os => os.Owner)
             .AnyAsync(bf => bf.FileId == fileId &&
-                           bf.Building.OwnershipShares.Any(os => os.Owner.Id == userId),
+                           bf.Building.OwnershipShares.Any(os => os.Owner.LinkedUserId == userId),
                       cancellationToken);
 
         if (isBuildingFile)
@@ -236,8 +238,9 @@ public class FilesController : ControllerBase
         var isUnitFile = await _dbContext.UnitFiles
             .Include(uf => uf.Unit)
             .ThenInclude(u => u.OwnershipShares)
+            .ThenInclude(os => os.Owner)
             .AnyAsync(uf => uf.FileId == fileId &&
-                           uf.Unit.OwnershipShares.Any(os => os.Owner.Id == userId),
+                           uf.Unit.OwnershipShares.Any(os => os.Owner.LinkedUserId == userId),
                       cancellationToken);
 
         return isUnitFile;
@@ -259,7 +262,7 @@ public class FilesController : ControllerBase
                 Action = action,
                 IpAddress = HttpContext.Connection?.RemoteIpAddress?.ToString(),
                 UserAgent = HttpContext.Request?.Headers["User-Agent"].ToString(),
-                CreatedAtUtc = DateTime.UtcNow,
+                CreatedAtUtc = _timeProvider.UtcNow,
                 CreatedBy = _currentUser.UserId ?? "System"
             };
 

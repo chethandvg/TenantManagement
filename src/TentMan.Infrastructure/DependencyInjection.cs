@@ -264,6 +264,7 @@ public static class DependencyInjection
     /// </summary>
     private static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
+        services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ITimeProvider, SystemTimeProvider>();
