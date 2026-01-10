@@ -52,12 +52,12 @@ public interface IUtilityCalculationService
 /// </summary>
 public class UtilityCalculationResult
 {
-    public UtilityType UtilityType { get; set; }
-    public bool IsMeterBased { get; set; }
-    public decimal? UnitsConsumed { get; set; }
-    public decimal TotalAmount { get; set; }
-    public List<UtilitySlabLineItem> SlabBreakdown { get; set; } = new();
-    public string Description { get; set; } = string.Empty;
+    public UtilityType UtilityType { get; init; }
+    public bool IsMeterBased { get; init; }
+    public decimal? UnitsConsumed { get; init; }
+    public decimal TotalAmount { get; init; }
+    public List<UtilitySlabLineItem> SlabBreakdown { get; init; } = new();
+    public string Description { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -65,10 +65,10 @@ public class UtilityCalculationResult
 /// </summary>
 public class UtilitySlabLineItem
 {
-    public decimal FromUnits { get; set; }
-    public decimal ToUnits { get; set; }
-    public decimal UnitsInSlab { get; set; }
-    public decimal RatePerUnit { get; set; }
-    public decimal Amount { get; set; }
-    public decimal? FixedCharge { get; set; }
+    public decimal FromUnits { get; init; }
+    public decimal ToUnits { get; init; }
+    public decimal UnitsInSlab { get; init; }
+    public decimal RatePerUnit { get; init; }
+    public decimal Amount { get; init; }
+    public decimal? FixedCharge { get; init; }
 }

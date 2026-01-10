@@ -76,6 +76,12 @@ public class UtilityCalculationService : IUtilityCalculationService
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// This method assumes that rate slabs are contiguous and properly ordered.
+    /// The first slab should start at 0 or below, and each subsequent slab's FromUnits
+    /// should equal or exceed the previous slab's ToUnits. If slabs are not properly
+    /// configured, the calculation may produce incorrect results.
+    /// </remarks>
     public async Task<UtilityCalculationResult> CalculateMeterBasedSlabsAsync(
         decimal unitsConsumed,
         Guid ratePlanId,
@@ -96,16 +102,26 @@ public class UtilityCalculationService : IUtilityCalculationService
         if (!slabs.Any())
             throw new InvalidOperationException($"Utility rate plan {ratePlanId} has no rate slabs defined");
 
-        var result = new UtilityCalculationResult
+        // Validate slab configuration
+        if (slabs[0].FromUnits > 0)
+            throw new InvalidOperationException($"First slab must start at 0 or below, but starts at {slabs[0].FromUnits}");
+
+        for (int i = 1; i < slabs.Count; i++)
         {
-            UtilityType = utilityType,
-            IsMeterBased = true,
-            UnitsConsumed = unitsConsumed,
-            Description = $"{utilityType} - {unitsConsumed} units (Slab-based)"
-        };
+            var prevSlab = slabs[i - 1];
+            var currentSlab = slabs[i];
+            
+            if (prevSlab.ToUnits.HasValue && currentSlab.FromUnits > prevSlab.ToUnits.Value)
+            {
+                throw new InvalidOperationException(
+                    $"Slab gap detected: Slab {prevSlab.SlabOrder} ends at {prevSlab.ToUnits}, " +
+                    $"but slab {currentSlab.SlabOrder} starts at {currentSlab.FromUnits}");
+            }
+        }
 
         decimal remainingUnits = unitsConsumed;
         decimal totalAmount = 0;
+        var slabBreakdown = new List<UtilitySlabLineItem>();
 
         foreach (var slab in slabs)
         {
@@ -126,7 +142,7 @@ public class UtilityCalculationService : IUtilityCalculationService
             var slabFixedCharge = slab.FixedCharge ?? 0;
             totalAmount += slabAmount + slabFixedCharge;
 
-            result.SlabBreakdown.Add(new UtilitySlabLineItem
+            slabBreakdown.Add(new UtilitySlabLineItem
             {
                 FromUnits = slabFromUnits,
                 ToUnits = slabToUnits == decimal.MaxValue ? unitsConsumed : slabToUnits,
@@ -139,7 +155,14 @@ public class UtilityCalculationService : IUtilityCalculationService
             remainingUnits -= unitsInSlab;
         }
 
-        result.TotalAmount = Math.Round(totalAmount, 2, MidpointRounding.AwayFromZero);
-        return result;
+        return new UtilityCalculationResult
+        {
+            UtilityType = utilityType,
+            IsMeterBased = true,
+            UnitsConsumed = unitsConsumed,
+            TotalAmount = Math.Round(totalAmount, 2, MidpointRounding.AwayFromZero),
+            SlabBreakdown = slabBreakdown,
+            Description = $"{utilityType} - {unitsConsumed} units (Slab-based)"
+        };
     }
 }

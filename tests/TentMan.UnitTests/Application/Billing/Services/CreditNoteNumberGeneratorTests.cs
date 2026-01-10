@@ -217,7 +217,7 @@ public class CreditNoteNumberGeneratorTests
             .ReturnsAsync(1L);
 
         // Act
-        var result = await _generator.GenerateNextAsync(orgId);
+        _ = await _generator.GenerateNextAsync(orgId);
 
         // Assert
         // Verify it calls with "CreditNote" not "Invoice"

@@ -31,24 +31,22 @@ public class RecurringChargeCalculationService : IRecurringChargeCalculationServ
         if (billingPeriodEnd < billingPeriodStart)
             throw new ArgumentException("Billing period end cannot be before start", nameof(billingPeriodEnd));
 
-        var result = new RecurringChargeCalculationResult();
         var calculator = GetCalculator(prorationMethod);
 
         // Get active recurring charges for the lease
         var recurringCharges = await _recurringChargeRepository.GetActiveByLeaseIdAsync(leaseId, cancellationToken);
 
-        foreach (var charge in recurringCharges)
+        // Filter charges applicable for this billing period
+        var applicableCharges = recurringCharges
+            .Where(charge => charge.Frequency == BillingFrequency.Monthly
+                && charge.StartDate <= billingPeriodEnd
+                && (!charge.EndDate.HasValue || charge.EndDate >= billingPeriodStart));
+
+        var lineItems = new List<RecurringChargeLineItem>();
+        decimal totalAmount = 0;
+
+        foreach (var charge in applicableCharges)
         {
-            // Only process monthly charges for now (can extend for other frequencies)
-            if (charge.Frequency != BillingFrequency.Monthly)
-                continue;
-
-            // Check if charge is applicable for this billing period
-            if (charge.StartDate > billingPeriodEnd)
-                continue; // Charge starts after billing period
-
-            if (charge.EndDate.HasValue && charge.EndDate < billingPeriodStart)
-                continue; // Charge ended before billing period
 
             // Calculate effective period
             var effectiveStart = charge.StartDate > billingPeriodStart 
@@ -82,11 +80,15 @@ public class RecurringChargeCalculationService : IRecurringChargeCalculationServ
                 Frequency = charge.Frequency
             };
 
-            result.LineItems.Add(lineItem);
-            result.TotalAmount += amount;
+            lineItems.Add(lineItem);
+            totalAmount += amount;
         }
 
-        return result;
+        return new RecurringChargeCalculationResult
+        {
+            TotalAmount = totalAmount,
+            LineItems = lineItems
+        };
     }
 
     private IProrationCalculator GetCalculator(ProrationMethod method)

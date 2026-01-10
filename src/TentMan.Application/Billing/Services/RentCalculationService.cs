@@ -35,7 +35,6 @@ public class RentCalculationService : IRentCalculationService
         if (lease == null)
             throw new InvalidOperationException($"Lease with ID {leaseId} not found");
 
-        var result = new RentCalculationResult();
         var calculator = GetCalculator(prorationMethod);
 
         // Get applicable terms for the billing period
@@ -47,8 +46,11 @@ public class RentCalculationService : IRentCalculationService
 
         if (!applicableTerms.Any())
         {
-            return result; // No terms applicable for this period
+            return new RentCalculationResult(); // No terms applicable for this period
         }
+
+        var lineItems = new List<RentLineItem>();
+        decimal totalAmount = 0;
 
         foreach (var term in applicableTerms)
         {
@@ -80,11 +82,15 @@ public class RentCalculationService : IRentCalculationService
                     : $"Rent for {termStart:MMM yyyy}"
             };
 
-            result.LineItems.Add(lineItem);
-            result.TotalAmount += amount;
+            lineItems.Add(lineItem);
+            totalAmount += amount;
         }
 
-        return result;
+        return new RentCalculationResult 
+        { 
+            TotalAmount = totalAmount,
+            LineItems = lineItems
+        };
     }
 
     private IProrationCalculator GetCalculator(ProrationMethod method)

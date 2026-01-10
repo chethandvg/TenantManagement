@@ -30,8 +30,8 @@ public interface IRecurringChargeCalculationService
 /// </summary>
 public class RecurringChargeCalculationResult
 {
-    public decimal TotalAmount { get; set; }
-    public List<RecurringChargeLineItem> LineItems { get; set; } = new();
+    public decimal TotalAmount { get; init; }
+    public List<RecurringChargeLineItem> LineItems { get; init; } = new();
 }
 
 /// <summary>
@@ -39,12 +39,12 @@ public class RecurringChargeCalculationResult
 /// </summary>
 public class RecurringChargeLineItem
 {
-    public Guid ChargeId { get; set; }
-    public string ChargeDescription { get; set; } = string.Empty;
-    public DateOnly PeriodStart { get; set; }
-    public DateOnly PeriodEnd { get; set; }
-    public decimal FullAmount { get; set; }
-    public decimal Amount { get; set; }
-    public bool IsProrated { get; set; }
-    public BillingFrequency Frequency { get; set; }
+    public Guid ChargeId { get; init; }
+    public string ChargeDescription { get; init; } = string.Empty;
+    public DateOnly PeriodStart { get; init; }
+    public DateOnly PeriodEnd { get; init; }
+    public decimal FullAmount { get; init; }
+    public decimal Amount { get; init; }
+    public bool IsProrated { get; init; }
+    public BillingFrequency Frequency { get; init; }
 }

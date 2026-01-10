@@ -30,8 +30,8 @@ public interface IRentCalculationService
 /// </summary>
 public class RentCalculationResult
 {
-    public decimal TotalAmount { get; set; }
-    public List<RentLineItem> LineItems { get; set; } = new();
+    public decimal TotalAmount { get; init; }
+    public List<RentLineItem> LineItems { get; init; } = new();
 }
 
 /// <summary>
@@ -39,10 +39,10 @@ public class RentCalculationResult
 /// </summary>
 public class RentLineItem
 {
-    public DateOnly PeriodStart { get; set; }
-    public DateOnly PeriodEnd { get; set; }
-    public decimal FullMonthlyRent { get; set; }
-    public decimal Amount { get; set; }
-    public bool IsProrated { get; set; }
-    public string Description { get; set; } = string.Empty;
+    public DateOnly PeriodStart { get; init; }
+    public DateOnly PeriodEnd { get; init; }
+    public decimal FullMonthlyRent { get; init; }
+    public decimal Amount { get; init; }
+    public bool IsProrated { get; init; }
+    public string Description { get; init; } = string.Empty;
 }
