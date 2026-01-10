@@ -61,7 +61,7 @@ public class UtilityStatementConfiguration : IEntityTypeConfiguration<UtilitySta
             .OnDelete(DeleteBehavior.Restrict);
 
         b.HasOne(x => x.InvoiceLine)
-            .WithMany()
+            .WithMany(x => x.UtilityStatements)
             .HasForeignKey(x => x.InvoiceLineId)
             .OnDelete(DeleteBehavior.Restrict);
 

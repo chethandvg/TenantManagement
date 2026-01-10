@@ -448,7 +448,6 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     InvoiceLineId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    InvoiceLineId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ModifiedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -467,11 +466,6 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         principalTable: "InvoiceLines",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_UtilityStatements_InvoiceLines_InvoiceLineId1",
-                        column: x => x.InvoiceLineId1,
-                        principalTable: "InvoiceLines",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_UtilityStatements_Leases_LeaseId",
                         column: x => x.LeaseId,
@@ -698,11 +692,6 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                 name: "IX_UtilityStatements_InvoiceLineId",
                 table: "UtilityStatements",
                 column: "InvoiceLineId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UtilityStatements_InvoiceLineId1",
-                table: "UtilityStatements",
-                column: "InvoiceLineId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UtilityStatements_LeaseId",

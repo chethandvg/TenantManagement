@@ -3149,9 +3149,6 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("InvoiceLineId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("InvoiceLineId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -3200,8 +3197,6 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("InvoiceLineId");
-
-                    b.HasIndex("InvoiceLineId1");
 
                     b.HasIndex("LeaseId");
 
@@ -3830,13 +3825,9 @@ namespace TentMan.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("TentMan.Domain.Entities.UtilityStatement", b =>
                 {
                     b.HasOne("TentMan.Domain.Entities.InvoiceLine", "InvoiceLine")
-                        .WithMany()
+                        .WithMany("UtilityStatements")
                         .HasForeignKey("InvoiceLineId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("TentMan.Domain.Entities.InvoiceLine", null)
-                        .WithMany("UtilityStatements")
-                        .HasForeignKey("InvoiceLineId1");
 
                     b.HasOne("TentMan.Domain.Entities.Lease", "Lease")
                         .WithMany()
