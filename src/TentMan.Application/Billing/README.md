@@ -1,10 +1,64 @@
 # Billing Calculation Services
 
-This directory contains the core calculation services for the billing engine, implementing proration logic, rent calculations, recurring charge calculations, utility billing, and number generation.
+This directory contains the core calculation services for the billing engine, implementing proration logic, rent calculations, recurring charge calculations, utility billing, invoice generation, batch invoice runs, and number generation.
 
 ---
 
 ## 📁 Services Overview
+
+### Invoice Generation and Orchestration
+
+#### InvoiceGenerationService
+Generates invoices for leases with support for rent, recurring charges, and future utility billing.
+
+**Features**:
+- Generates invoices for a specific lease and billing period
+- Implements idempotency by updating existing draft invoices
+- Calculates due dates based on billing settings
+- Automatically generates rent and recurring charge lines
+- Calculates totals and tax amounts
+
+**Example**:
+```csharp
+var service = new InvoiceGenerationService(/* dependencies */);
+var result = await service.GenerateInvoiceAsync(
+    leaseId: leaseGuid,
+    billingPeriodStart: new DateOnly(2024, 1, 1),
+    billingPeriodEnd: new DateOnly(2024, 1, 31),
+    prorationMethod: ProrationMethod.ActualDaysInMonth
+);
+
+if (result.IsSuccess)
+{
+    var invoice = result.Invoice;
+    Console.WriteLine($"Invoice {invoice.InvoiceNumber} generated");
+    Console.WriteLine($"Total: {invoice.TotalAmount:C}");
+}
+```
+
+#### InvoiceRunService
+Orchestrates batch invoice generation for multiple leases.
+
+**Features**:
+- Executes monthly rent billing runs across all active leases
+- Handles partial failures with per-lease error tracking
+- Logs run results with InvoiceRunItem records
+- Supports both monthly rent and utility billing runs
+
+**Example**:
+```csharp
+var service = new InvoiceRunService(/* dependencies */);
+var result = await service.ExecuteMonthlyRentRunAsync(
+    orgId: organizationGuid,
+    billingPeriodStart: new DateOnly(2024, 1, 1),
+    billingPeriodEnd: new DateOnly(2024, 1, 31),
+    prorationMethod: ProrationMethod.ActualDaysInMonth
+);
+
+Console.WriteLine($"Run completed: {result.SuccessCount} succeeded, {result.FailureCount} failed");
+```
+
+---
 
 ### Proration Calculators
 
