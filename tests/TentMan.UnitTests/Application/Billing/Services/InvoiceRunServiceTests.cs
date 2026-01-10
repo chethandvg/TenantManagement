@@ -1,3 +1,4 @@
+using TentMan.Application.Abstractions;
 using TentMan.Application.Billing.Services;
 using TentMan.Application.Abstractions.Billing;
 using TentMan.Application.Abstractions.Repositories;
@@ -16,6 +17,7 @@ public class InvoiceRunServiceTests
     private readonly Mock<IInvoiceRunRepository> _mockInvoiceRunRepository;
     private readonly Mock<ILeaseRepository> _mockLeaseRepository;
     private readonly Mock<IInvoiceGenerationService> _mockInvoiceGenerationService;
+    private readonly Mock<IApplicationDbContext> _mockDbContext;
     private readonly InvoiceRunService _service;
 
     public InvoiceRunServiceTests()
@@ -23,11 +25,13 @@ public class InvoiceRunServiceTests
         _mockInvoiceRunRepository = new Mock<IInvoiceRunRepository>();
         _mockLeaseRepository = new Mock<ILeaseRepository>();
         _mockInvoiceGenerationService = new Mock<IInvoiceGenerationService>();
+        _mockDbContext = new Mock<IApplicationDbContext>();
 
         _service = new InvoiceRunService(
             _mockInvoiceRunRepository.Object,
             _mockLeaseRepository.Object,
-            _mockInvoiceGenerationService.Object);
+            _mockInvoiceGenerationService.Object,
+            _mockDbContext.Object);
     }
 
     #region Happy Path Tests

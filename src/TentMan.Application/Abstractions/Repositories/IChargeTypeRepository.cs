@@ -9,6 +9,7 @@ namespace TentMan.Application.Abstractions.Repositories;
 public interface IChargeTypeRepository
 {
     Task<ChargeType?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ChargeType>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
     Task<ChargeType?> GetByCodeAsync(ChargeTypeCode code, Guid? orgId = null, CancellationToken cancellationToken = default);
     Task<IEnumerable<ChargeType>> GetByOrgIdAsync(Guid? orgId = null, bool? isActive = true, CancellationToken cancellationToken = default);
     Task<ChargeType> AddAsync(ChargeType chargeType, CancellationToken cancellationToken = default);

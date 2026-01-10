@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace TentMan.Infrastructure.Persistence;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     private readonly ICurrentUser _currentUser;
     private readonly ITimeProvider _time;

@@ -1,3 +1,4 @@
+using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Billing;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Enums;
@@ -14,15 +15,18 @@ public class InvoiceRunService : IInvoiceRunService
     private readonly IInvoiceRunRepository _invoiceRunRepository;
     private readonly ILeaseRepository _leaseRepository;
     private readonly IInvoiceGenerationService _invoiceGenerationService;
+    private readonly IApplicationDbContext _dbContext;
 
     public InvoiceRunService(
         IInvoiceRunRepository invoiceRunRepository,
         ILeaseRepository leaseRepository,
-        IInvoiceGenerationService invoiceGenerationService)
+        IInvoiceGenerationService invoiceGenerationService,
+        IApplicationDbContext dbContext)
     {
         _invoiceRunRepository = invoiceRunRepository;
         _leaseRepository = leaseRepository;
         _invoiceGenerationService = invoiceGenerationService;
+        _dbContext = dbContext;
     }
 
     /// <inheritdoc/>
@@ -149,8 +153,9 @@ public class InvoiceRunService : IInvoiceRunService
                 invoiceRun.ErrorMessage = "All invoices failed to generate";
             }
 
-            // Save invoice run
+            // Save invoice run with all items (EF Core will cascade save the Items collection)
             await _invoiceRunRepository.AddAsync(invoiceRun, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return new InvoiceRunResult
             {

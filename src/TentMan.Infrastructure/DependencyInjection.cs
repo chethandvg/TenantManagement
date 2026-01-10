@@ -93,6 +93,9 @@ public static class DependencyInjection
                 .AddInterceptors(auditInterceptor);
         });
 
+        // Register IApplicationDbContext for services that need to persist changes
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
         return services;
     }
 

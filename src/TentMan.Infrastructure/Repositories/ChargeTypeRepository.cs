@@ -18,6 +18,19 @@ public class ChargeTypeRepository : BaseRepository<ChargeType>, IChargeTypeRepos
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
+    public async Task<IEnumerable<ChargeType>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+        if (!idList.Any())
+        {
+            return Enumerable.Empty<ChargeType>();
+        }
+
+        return await DbSet
+            .Where(c => idList.Contains(c.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<ChargeType?> GetByCodeAsync(ChargeTypeCode code, Guid? orgId = null, CancellationToken cancellationToken = default)
     {
         // First try to get organization-specific charge type if orgId is provided

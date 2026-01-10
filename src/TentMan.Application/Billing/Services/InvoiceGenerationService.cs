@@ -1,3 +1,4 @@
+using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Billing;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Enums;
@@ -18,6 +19,7 @@ public class InvoiceGenerationService : IInvoiceGenerationService
     private readonly IRentCalculationService _rentCalculationService;
     private readonly IRecurringChargeCalculationService _recurringChargeCalculationService;
     private readonly IInvoiceNumberGenerator _invoiceNumberGenerator;
+    private readonly IApplicationDbContext _dbContext;
 
     public InvoiceGenerationService(
         IInvoiceRepository invoiceRepository,
@@ -26,7 +28,8 @@ public class InvoiceGenerationService : IInvoiceGenerationService
         IChargeTypeRepository chargeTypeRepository,
         IRentCalculationService rentCalculationService,
         IRecurringChargeCalculationService recurringChargeCalculationService,
-        IInvoiceNumberGenerator invoiceNumberGenerator)
+        IInvoiceNumberGenerator invoiceNumberGenerator,
+        IApplicationDbContext dbContext)
     {
         _invoiceRepository = invoiceRepository;
         _leaseRepository = leaseRepository;
@@ -35,6 +38,7 @@ public class InvoiceGenerationService : IInvoiceGenerationService
         _rentCalculationService = rentCalculationService;
         _recurringChargeCalculationService = recurringChargeCalculationService;
         _invoiceNumberGenerator = invoiceNumberGenerator;
+        _dbContext = dbContext;
     }
 
     /// <inheritdoc/>
@@ -135,7 +139,7 @@ public class InvoiceGenerationService : IInvoiceGenerationService
             // 3. Calculate totals
             CalculateInvoiceTotals(invoice);
 
-            // Save invoice
+            // Save invoice (with all lines - EF Core will cascade save the Lines collection)
             try
             {
                 if (isUpdate)
@@ -146,6 +150,8 @@ public class InvoiceGenerationService : IInvoiceGenerationService
                 {
                     await _invoiceRepository.AddAsync(invoice, cancellationToken);
                 }
+                
+                await _dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
             {
@@ -243,16 +249,9 @@ public class InvoiceGenerationService : IInvoiceGenerationService
             .Distinct()
             .ToList();
 
-        // Fetch all needed charge types in one go
-        var chargeTypes = new Dictionary<Guid, ChargeType>();
-        foreach (var chargeTypeId in uniqueChargeTypeIds)
-        {
-            var chargeType = await _chargeTypeRepository.GetByIdAsync(chargeTypeId, cancellationToken);
-            if (chargeType != null)
-            {
-                chargeTypes[chargeTypeId] = chargeType;
-            }
-        }
+        // Batch fetch all needed charge types in a single query to avoid N+1 problem
+        var chargeTypesList = await _chargeTypeRepository.GetByIdsAsync(uniqueChargeTypeIds, cancellationToken);
+        var chargeTypes = chargeTypesList.ToDictionary(ct => ct.Id);
 
         foreach (var chargeLineItem in chargeCalculation.LineItems)
         {
