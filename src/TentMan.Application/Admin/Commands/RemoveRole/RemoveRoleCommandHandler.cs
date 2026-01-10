@@ -1,6 +1,6 @@
 using TentMan.Application.Abstractions;
 using TentMan.Application.Common;
-using TentMan.Domain.Constants;
+using TentMan.Shared.Constants.Authorization;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

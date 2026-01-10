@@ -1,3 +1,5 @@
+using TentMan.Shared.Constants.Authorization;
+
 namespace TentMan.Domain.Constants;
 
 /// <summary>
@@ -10,37 +12,37 @@ public static class RolePermissionClaims
     {
         [RoleNames.Guest] = new[]
         {
-            PermissionNames.Products.Read
+            PermissionValues.Products.Read
         },
 
         [RoleNames.User] = new[]
         {
-            PermissionNames.Products.Read,
-            PermissionNames.Products.Create,
-            PermissionNames.Products.Update
+            PermissionValues.Products.Read,
+            PermissionValues.Products.Create,
+            PermissionValues.Products.Update
         },
 
         [RoleNames.Manager] = new[]
         {
-            PermissionNames.Products.Read,
-            PermissionNames.Products.Create,
-            PermissionNames.Products.Update,
-            PermissionNames.Products.Delete,
-            PermissionNames.Users.Read
+            PermissionValues.Products.Read,
+            PermissionValues.Products.Create,
+            PermissionValues.Products.Update,
+            PermissionValues.Products.Delete,
+            PermissionValues.Users.Read
         },
 
         [RoleNames.Administrator] = new[]
         {
-            PermissionNames.Products.Manage,
-            PermissionNames.Users.Manage,
-            PermissionNames.Roles.Read
+            PermissionValues.Products.Manage,
+            PermissionValues.Users.Manage,
+            PermissionValues.Roles.Read
         },
 
         [RoleNames.SuperAdmin] = new[]
         {
-            PermissionNames.Products.Manage,
-            PermissionNames.Users.Manage,
-            PermissionNames.Roles.Manage
+            PermissionValues.Products.Manage,
+            PermissionValues.Users.Manage,
+            PermissionValues.Roles.Manage
         }
     };
 

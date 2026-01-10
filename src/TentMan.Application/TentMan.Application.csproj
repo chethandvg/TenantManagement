@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TentMan.Domain\TentMan.Domain.csproj" />
     <ProjectReference Include="..\TentMan.Contracts\TentMan.Contracts.csproj" />
+    <ProjectReference Include="..\TentMan.Shared.Constants\TentMan.Shared.Constants.csproj" />
   </ItemGroup>
 
   <ItemGroup>

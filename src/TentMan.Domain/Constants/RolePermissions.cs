@@ -1,4 +1,5 @@
 using TentMan.Domain.Enums;
+using TentMan.Shared.Constants.Authorization;
 
 namespace TentMan.Domain.Constants;
 
@@ -59,11 +60,11 @@ public static class RolePermissions
     {
         return roleName switch
         {
-            RoleNames.Guest => GuestPermissions,
-            RoleNames.User => UserPermissions,
-            RoleNames.Manager => ManagerPermissions,
-            RoleNames.Administrator => AdministratorPermissions,
-            RoleNames.SuperAdmin => SuperAdminPermissions,
+            var name when name == RoleNames.Guest => GuestPermissions,
+            var name when name == RoleNames.User => UserPermissions,
+            var name when name == RoleNames.Manager => ManagerPermissions,
+            var name when name == RoleNames.Administrator => AdministratorPermissions,
+            var name when name == RoleNames.SuperAdmin => SuperAdminPermissions,
             _ => Permission.None
         };
     }

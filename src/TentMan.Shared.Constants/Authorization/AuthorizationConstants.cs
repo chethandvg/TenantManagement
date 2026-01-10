@@ -250,4 +250,66 @@ public static class PermissionValues
         /// </summary>
         public const string Manage = "products:manage";
     }
+
+    /// <summary>
+    /// User resource permissions.
+    /// </summary>
+    public static class Users
+    {
+        /// <summary>
+        /// Permission to read/view users.
+        /// </summary>
+        public const string Read = "users:read";
+
+        /// <summary>
+        /// Permission to create new users.
+        /// </summary>
+        public const string Create = "users:create";
+
+        /// <summary>
+        /// Permission to update existing users.
+        /// </summary>
+        public const string Update = "users:update";
+
+        /// <summary>
+        /// Permission to delete users.
+        /// </summary>
+        public const string Delete = "users:delete";
+
+        /// <summary>
+        /// Permission to manage all user operations (CRUD).
+        /// </summary>
+        public const string Manage = "users:manage";
+    }
+
+    /// <summary>
+    /// Role resource permissions.
+    /// </summary>
+    public static class Roles
+    {
+        /// <summary>
+        /// Permission to read/view roles.
+        /// </summary>
+        public const string Read = "roles:read";
+
+        /// <summary>
+        /// Permission to create new roles.
+        /// </summary>
+        public const string Create = "roles:create";
+
+        /// <summary>
+        /// Permission to update existing roles.
+        /// </summary>
+        public const string Update = "roles:update";
+
+        /// <summary>
+        /// Permission to delete roles.
+        /// </summary>
+        public const string Delete = "roles:delete";
+
+        /// <summary>
+        /// Permission to manage all role operations (CRUD).
+        /// </summary>
+        public const string Manage = "roles:manage";
+    }
 }

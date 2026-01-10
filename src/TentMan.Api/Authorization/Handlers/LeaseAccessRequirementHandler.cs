@@ -1,6 +1,6 @@
+using SharedAuthConstants = TentMan.Shared.Constants.Authorization;
 using TentMan.Api.Authorization.Requirements;
 using TentMan.Application.Abstractions;
-using TentMan.Domain.Constants;
 using TentMan.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -43,9 +43,9 @@ public class LeaseAccessRequirementHandler : AuthorizationHandler<LeaseAccessReq
         }
 
         // Admins, SuperAdmins, and Managers have full access
-        if (context.User.IsInRole(RoleNames.Administrator) || 
-            context.User.IsInRole(RoleNames.SuperAdmin) ||
-            context.User.IsInRole(RoleNames.Manager))
+        if (context.User.IsInRole(SharedAuthConstants.RoleNames.Administrator) || 
+            context.User.IsInRole(SharedAuthConstants.RoleNames.SuperAdmin) ||
+            context.User.IsInRole(SharedAuthConstants.RoleNames.Manager))
         {
             _logger.LogDebug("User {UserId} has admin/manager role, granting lease access", userId);
             context.Succeed(requirement);
@@ -53,7 +53,7 @@ public class LeaseAccessRequirementHandler : AuthorizationHandler<LeaseAccessReq
         }
 
         // For Tenant role, check if they are a party to the lease
-        if (context.User.IsInRole(RoleNames.Tenant) && requirement.LeaseId.HasValue)
+        if (context.User.IsInRole(SharedAuthConstants.RoleNames.Tenant) && requirement.LeaseId.HasValue)
         {
             using var scope = _serviceProvider.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
