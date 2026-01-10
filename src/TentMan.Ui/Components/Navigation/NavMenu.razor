@@ -2,7 +2,7 @@
     <MudNavMenu>
         <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
 
-        <AuthorizeView Roles="Tenant">
+        <AuthorizeView Policy="CanViewTenantPortal">
             <Authorized>
                 <MudNavGroup Title="Tenant Portal" Icon="@Icons.Material.Filled.Person" Expanded="true">
                     <MudNavLink Href="/tenant/dashboard" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
@@ -13,15 +13,27 @@
             </Authorized>
         </AuthorizeView>
 
-        <AuthorizeView Roles="Admin,Manager,User">
+        <AuthorizeView Policy="CanViewPropertyManagement">
             <Authorized>
                 <MudNavGroup Title="Property Management" Icon="@Icons.Material.Filled.Business" Expanded="true">
-                    <MudNavLink Href="/buildings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Apartment">Buildings</MudNavLink>
+                    <AuthorizeView Policy="CanViewBuildings" Context="buildingsAuth">
+                        <Authorized>
+                            <MudNavLink Href="/buildings" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Apartment">Buildings</MudNavLink>
+                        </Authorized>
+                    </AuthorizeView>
                     <MudNavLink Href="/owners" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">Owners</MudNavLink>
                 </MudNavGroup>
                 <MudNavGroup Title="Tenant Management" Icon="@Icons.Material.Filled.Group" Expanded="true">
-                    <MudNavLink Href="/tenants" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">Tenants</MudNavLink>
-                    <MudNavLink Href="/leases/create" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Description">Create Lease</MudNavLink>
+                    <AuthorizeView Policy="CanViewTenants" Context="tenantsAuth">
+                        <Authorized>
+                            <MudNavLink Href="/tenants" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">Tenants</MudNavLink>
+                        </Authorized>
+                    </AuthorizeView>
+                    <AuthorizeView Policy="CanViewLeases" Context="leasesAuth">
+                        <Authorized>
+                            <MudNavLink Href="/leases/create" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Description">Create Lease</MudNavLink>
+                        </Authorized>
+                    </AuthorizeView>
                 </MudNavGroup>
                 <MudNavLink Href="/products" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ShoppingCart">Products</MudNavLink>
                 <MudNavLink Href="/counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>

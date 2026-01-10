@@ -100,6 +100,121 @@ public static class PermissionNames
     }
 
     /// <summary>
+    /// Tenant Portal permissions.
+    /// </summary>
+    public static class TenantPortal
+    {
+        /// <summary>
+        /// Permission to view the tenant portal.
+        /// </summary>
+        public const string View = "tenantportal:view";
+    }
+
+    /// <summary>
+    /// Property Management permissions.
+    /// </summary>
+    public static class PropertyManagement
+    {
+        /// <summary>
+        /// Permission to view property management features.
+        /// </summary>
+        public const string View = "propertymanagement:view";
+    }
+
+    /// <summary>
+    /// Building resource permissions.
+    /// </summary>
+    public static class Buildings
+    {
+        /// <summary>
+        /// Permission to read/view buildings.
+        /// </summary>
+        public const string Read = "buildings:read";
+
+        /// <summary>
+        /// Permission to create new buildings.
+        /// </summary>
+        public const string Create = "buildings:create";
+
+        /// <summary>
+        /// Permission to update existing buildings.
+        /// </summary>
+        public const string Update = "buildings:update";
+
+        /// <summary>
+        /// Permission to delete buildings.
+        /// </summary>
+        public const string Delete = "buildings:delete";
+
+        /// <summary>
+        /// Permission to manage all building operations (CRUD).
+        /// </summary>
+        public const string Manage = "buildings:manage";
+    }
+
+    /// <summary>
+    /// Tenant resource permissions.
+    /// </summary>
+    public static class Tenants
+    {
+        /// <summary>
+        /// Permission to read/view tenants.
+        /// </summary>
+        public const string Read = "tenants:read";
+
+        /// <summary>
+        /// Permission to create new tenants.
+        /// </summary>
+        public const string Create = "tenants:create";
+
+        /// <summary>
+        /// Permission to update existing tenants.
+        /// </summary>
+        public const string Update = "tenants:update";
+
+        /// <summary>
+        /// Permission to delete tenants.
+        /// </summary>
+        public const string Delete = "tenants:delete";
+
+        /// <summary>
+        /// Permission to manage all tenant operations (CRUD).
+        /// </summary>
+        public const string Manage = "tenants:manage";
+    }
+
+    /// <summary>
+    /// Lease resource permissions.
+    /// </summary>
+    public static class Leases
+    {
+        /// <summary>
+        /// Permission to read/view leases.
+        /// </summary>
+        public const string Read = "leases:read";
+
+        /// <summary>
+        /// Permission to create new leases.
+        /// </summary>
+        public const string Create = "leases:create";
+
+        /// <summary>
+        /// Permission to update existing leases.
+        /// </summary>
+        public const string Update = "leases:update";
+
+        /// <summary>
+        /// Permission to delete leases.
+        /// </summary>
+        public const string Delete = "leases:delete";
+
+        /// <summary>
+        /// Permission to manage all lease operations (CRUD).
+        /// </summary>
+        public const string Manage = "leases:manage";
+    }
+
+    /// <summary>
     /// Gets all product permissions as an array.
     /// </summary>
     public static string[] GetAllProductPermissions() => new[]
@@ -136,6 +251,42 @@ public static class PermissionNames
     };
 
     /// <summary>
+    /// Gets all building permissions as an array.
+    /// </summary>
+    public static string[] GetAllBuildingPermissions() => new[]
+    {
+        Buildings.Read,
+        Buildings.Create,
+        Buildings.Update,
+        Buildings.Delete,
+        Buildings.Manage
+    };
+
+    /// <summary>
+    /// Gets all tenant permissions as an array.
+    /// </summary>
+    public static string[] GetAllTenantPermissions() => new[]
+    {
+        Tenants.Read,
+        Tenants.Create,
+        Tenants.Update,
+        Tenants.Delete,
+        Tenants.Manage
+    };
+
+    /// <summary>
+    /// Gets all lease permissions as an array.
+    /// </summary>
+    public static string[] GetAllLeasePermissions() => new[]
+    {
+        Leases.Read,
+        Leases.Create,
+        Leases.Update,
+        Leases.Delete,
+        Leases.Manage
+    };
+
+    /// <summary>
     /// Gets all permissions in the system.
     /// </summary>
     public static string[] GetAllPermissions()
@@ -143,6 +294,10 @@ public static class PermissionNames
         return GetAllProductPermissions()
             .Concat(GetAllUserPermissions())
             .Concat(GetAllRolePermissions())
+            .Concat(GetAllBuildingPermissions())
+            .Concat(GetAllTenantPermissions())
+            .Concat(GetAllLeasePermissions())
+            .Concat(new[] { TenantPortal.View, PropertyManagement.View })
             .ToArray();
     }
 }

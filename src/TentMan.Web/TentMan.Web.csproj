@@ -17,6 +17,7 @@
         <ItemGroup>
           <ProjectReference Include="..\TentMan.ApiClient\TentMan.ApiClient.csproj" />
           <ProjectReference Include="..\TentMan.Ui\TentMan.Ui.csproj" />
+          <ProjectReference Include="..\TentMan.Domain\TentMan.Domain.csproj" />
         </ItemGroup>
 
 </Project>

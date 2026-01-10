@@ -75,6 +75,82 @@ public static class AuthorizationPolicyExtensions
 
         // Permission-based policies for Products
         ConfigureProductPolicies(options);
+
+        // Permission-based policies for Navigation/UI
+        ConfigureNavigationPolicies(options);
+
+        // Permission-based policies for Buildings, Tenants, Leases
+        ConfigurePropertyManagementPolicies(options);
+    }
+
+    /// <summary>
+    /// Configures permission-based authorization policies for navigation and UI elements.
+    /// </summary>
+    private static void ConfigureNavigationPolicies(AuthorizationOptions options)
+    {
+        // Tenant Portal policy - allow Tenant role or explicit permission
+        options.AddPolicy(AuthorizationPolicies.CanViewTenantPortal, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireAssertion(context =>
+                context.User.IsInRole(RoleNames.Tenant) ||
+                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
+                                           c.Value == PermissionNames.TenantPortal.View));
+        });
+
+        // Property Management policy
+        options.AddPolicy(AuthorizationPolicies.CanViewPropertyManagement, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireAssertion(context =>
+                context.User.IsInRole(RoleNames.Administrator) ||
+                context.User.IsInRole(RoleNames.Manager) ||
+                context.User.IsInRole(RoleNames.User) ||
+                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
+                                           c.Value == PermissionNames.PropertyManagement.View));
+        });
+    }
+
+    /// <summary>
+    /// Configures permission-based authorization policies for property management operations.
+    /// </summary>
+    private static void ConfigurePropertyManagementPolicies(AuthorizationOptions options)
+    {
+        // Buildings policies
+        options.AddPolicy(AuthorizationPolicies.CanViewBuildings, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireAssertion(context =>
+                context.User.IsInRole(RoleNames.Administrator) ||
+                context.User.IsInRole(RoleNames.Manager) ||
+                context.User.IsInRole(RoleNames.User) ||
+                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
+                                           c.Value == PermissionNames.Buildings.Read));
+        });
+
+        // Tenants policies
+        options.AddPolicy(AuthorizationPolicies.CanViewTenants, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireAssertion(context =>
+                context.User.IsInRole(RoleNames.Administrator) ||
+                context.User.IsInRole(RoleNames.Manager) ||
+                context.User.IsInRole(RoleNames.User) ||
+                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
+                                           c.Value == PermissionNames.Tenants.Read));
+        });
+
+        // Leases policies
+        options.AddPolicy(AuthorizationPolicies.CanViewLeases, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireAssertion(context =>
+                context.User.IsInRole(RoleNames.Administrator) ||
+                context.User.IsInRole(RoleNames.Manager) ||
+                context.User.IsInRole(RoleNames.User) ||
+                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
+                                           c.Value == PermissionNames.Leases.Read));
+        });
     }
 
     /// <summary>
