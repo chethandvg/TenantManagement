@@ -50,7 +50,7 @@ public static class AuthorizationPolicyExtensions
         options.AddPolicy(PolicyNames.RequireTenantRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.RequireRole(TentMan.Application.Common.ApplicationRoles.Tenant);
+            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Tenant));
         });
 
         options.AddPolicy(PolicyNames.RequireSuperAdminRole, policy =>

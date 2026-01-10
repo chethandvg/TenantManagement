@@ -32,6 +32,11 @@ public static class RoleNames
     public const string SuperAdmin = "SuperAdmin";
 
     /// <summary>
+    /// Tenant role for tenant portal users.
+    /// </summary>
+    public const string Tenant = "Tenant";
+
+    /// <summary>
     /// Gets all standard role names.
     /// </summary>
     public static readonly string[] All = 
@@ -40,7 +45,8 @@ public static class RoleNames
         User,
         Manager,
         Administrator,
-        SuperAdmin
+        SuperAdmin,
+        Tenant
     ];
 
     /// <summary>
