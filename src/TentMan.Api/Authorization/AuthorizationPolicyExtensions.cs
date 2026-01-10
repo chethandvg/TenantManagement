@@ -161,32 +161,32 @@ public static class AuthorizationPolicyExtensions
 
     /// <summary>
     /// Configures permission-based authorization policies for product operations.
-    /// Uses strongly-typed permission constants from Domain layer.
+    /// Uses strongly-typed permission constants from Shared layer.
     /// </summary>
     private static void ConfigureProductPolicies(AuthorizationOptions options)
     {
         options.AddPolicy(PolicyNames.Products.View, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Read));
+            policy.Requirements.Add(new PermissionRequirement(SharedPermissionValues.Products.Read));
         });
 
         options.AddPolicy(PolicyNames.Products.Create, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Create));
+            policy.Requirements.Add(new PermissionRequirement(SharedPermissionValues.Products.Create));
         });
 
         options.AddPolicy(PolicyNames.Products.Update, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Update));
+            policy.Requirements.Add(new PermissionRequirement(SharedPermissionValues.Products.Update));
         });
 
         options.AddPolicy(PolicyNames.Products.Delete, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new PermissionRequirement(PermissionNames.Products.Delete));
+            policy.Requirements.Add(new PermissionRequirement(SharedPermissionValues.Products.Delete));
         });
     }
 }
