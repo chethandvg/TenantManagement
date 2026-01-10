@@ -178,6 +178,21 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 📚 **[Read the Tenant & Lease Management Guide →](docs/TENANT_LEASE_MANAGEMENT.md)**  
 📚 **[Read the Tenant Invite System Guide →](docs/TENANT_INVITE_SYSTEM.md)**
 
+### Billing Engine 💰 NEW!
+- **Flexible Charge Types**: System-defined (RENT, MAINT, ELEC, WATER, GAS, LATE_FEE, ADJUSTMENT) and custom charge types
+- **Recurring Charges**: Monthly, quarterly, yearly, and one-time charges per lease
+- **Utility Billing**: 
+  - **Meter-based**: Calculate charges using rate plans with tiered slabs
+  - **Amount-based**: Direct billing from provider invoices
+  - Support for Electricity, Water, and Gas utilities
+- **Invoice Management**: Automated and manual invoice generation with line items
+- **Credit Notes**: Issue credits for refunds, adjustments, and corrections
+- **Batch Billing**: Invoice runs for generating invoices across multiple leases
+- **Payment Tracking**: Track paid, partially paid, and overdue invoices
+- **Database Schema**: 12 new tables with foreign keys and indexes for optimal performance
+
+📚 **[Read the Billing Engine Guide →](docs/BILLING_ENGINE.md)**
+
 ### Lease Management 📝 NEW!
 - **7-Step Lease Creation Wizard**: Guided workflow for creating leases
   - Step 1: Select Unit (dropdown with unit summary)

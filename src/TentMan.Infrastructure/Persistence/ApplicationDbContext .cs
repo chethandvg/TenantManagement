@@ -53,6 +53,20 @@ public class ApplicationDbContext : DbContext
     public DbSet<MeterReading> MeterReadings => Set<MeterReading>();
     public DbSet<UnitOccupancy> UnitOccupancies => Set<UnitOccupancy>();
 
+    // Billing Engine DbSets
+    public DbSet<ChargeType> ChargeTypes => Set<ChargeType>();
+    public DbSet<LeaseBillingSetting> LeaseBillingSettings => Set<LeaseBillingSetting>();
+    public DbSet<LeaseRecurringCharge> LeaseRecurringCharges => Set<LeaseRecurringCharge>();
+    public DbSet<UtilityRatePlan> UtilityRatePlans => Set<UtilityRatePlan>();
+    public DbSet<UtilityRateSlab> UtilityRateSlabs => Set<UtilityRateSlab>();
+    public DbSet<UtilityStatement> UtilityStatements => Set<UtilityStatement>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
+    public DbSet<CreditNote> CreditNotes => Set<CreditNote>();
+    public DbSet<CreditNoteLine> CreditNoteLines => Set<CreditNoteLine>();
+    public DbSet<InvoiceRun> InvoiceRuns => Set<InvoiceRun>();
+    public DbSet<InvoiceRunItem> InvoiceRunItems => Set<InvoiceRunItem>();
+
     // Identity DbSets
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();

@@ -34,7 +34,19 @@ TentMan.Domain/
 │   ├── UnitHandover.cs
 │   ├── HandoverChecklistItem.cs
 │   ├── MeterReading.cs
-│   └── UnitOccupancy.cs
+│   ├── UnitOccupancy.cs
+│   ├── ChargeType.cs              # Billing engine
+│   ├── LeaseBillingSetting.cs     # Billing settings per lease
+│   ├── LeaseRecurringCharge.cs    # Recurring charges
+│   ├── UtilityRatePlan.cs         # Utility rate plans
+│   ├── UtilityRateSlab.cs         # Rate plan slabs
+│   ├── UtilityStatement.cs        # Utility bills
+│   ├── Invoice.cs                 # Invoices
+│   ├── InvoiceLine.cs             # Invoice line items
+│   ├── CreditNote.cs              # Credit notes
+│   ├── CreditNoteLine.cs          # Credit note lines
+│   ├── InvoiceRun.cs              # Batch billing runs
+│   └── InvoiceRunItem.cs          # Invoice run items
 ├── Enums/                  # Domain enumerations
 ├── Extensions/             # Domain extension methods
 └── ValueObjects/           # Value object types

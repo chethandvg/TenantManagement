@@ -22,6 +22,18 @@ TentMan.Infrastructure/
 │   │   ├── LeasePartyConfiguration.cs
 │   │   ├── LeaseTermConfiguration.cs
 │   │   ├── DepositTransactionConfiguration.cs
+│   │   ├── ChargeTypeConfiguration.cs              # Billing engine
+│   │   ├── LeaseBillingSettingConfiguration.cs
+│   │   ├── LeaseRecurringChargeConfiguration.cs
+│   │   ├── UtilityRatePlanConfiguration.cs
+│   │   ├── UtilityRateSlabConfiguration.cs
+│   │   ├── UtilityStatementConfiguration.cs
+│   │   ├── InvoiceConfiguration.cs
+│   │   ├── InvoiceLineConfiguration.cs
+│   │   ├── CreditNoteConfiguration.cs
+│   │   ├── CreditNoteLineConfiguration.cs
+│   │   ├── InvoiceRunConfiguration.cs
+│   │   ├── InvoiceRunItemConfiguration.cs
 │   │   └── ...
 │   ├── Migrations/           # EF Core migrations
 │   └── Interceptors/         # EF Core interceptors
@@ -237,5 +249,5 @@ dotnet ef database update \
 
 ---
 
-**Last Updated**: 2026-01-09  
+**Last Updated**: 2026-01-10  
 **Maintainer**: TentMan Development Team

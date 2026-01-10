@@ -31,6 +31,11 @@ TentMan.Contracts/
 │   ├── DepositTransactionType.cs
 │   ├── AddressType.cs
 │   ├── Gender.cs
+│   ├── ChargeTypeCode.cs      # Billing engine enums
+│   ├── BillingFrequency.cs
+│   ├── InvoiceStatus.cs
+│   ├── CreditNoteReason.cs
+│   ├── InvoiceRunStatus.cs
 │   └── ...
 ├── Leases/                    # Lease contracts
 │   ├── LeaseDetailDto.cs
