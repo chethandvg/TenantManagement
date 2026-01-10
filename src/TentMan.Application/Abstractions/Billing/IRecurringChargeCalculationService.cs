@@ -40,6 +40,7 @@ public class RecurringChargeCalculationResult
 public class RecurringChargeLineItem
 {
     public Guid ChargeId { get; init; }
+    public Guid ChargeTypeId { get; init; }
     public string ChargeDescription { get; init; } = string.Empty;
     public DateOnly PeriodStart { get; init; }
     public DateOnly PeriodEnd { get; init; }

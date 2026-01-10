@@ -513,6 +513,98 @@ Example: ABC-INV-202601-0001
 - Mark run status as `CompletedWithErrors` if some fail
 - Retry failed items individually
 
+## Implemented Services
+
+### Invoice Generation Service
+The `InvoiceGenerationService` handles creating individual invoices for leases with the following features:
+
+**Key Features**:
+- Generates invoices for a specific lease and billing period
+- Implements idempotency by updating existing draft invoices
+- Automatically generates rent line items using `RentCalculationService`
+- Automatically generates recurring charge line items using `RecurringChargeCalculationService`
+- Calculates due dates based on `LeaseBillingSetting.PaymentTermDays`
+- Auto-generates unique invoice numbers with format: `{Prefix}-{YYYYMM}-{NNNNNN}`
+- Calculates subtotals, tax, and total amounts
+- Sets initial status to `Draft`
+
+**Usage Example**:
+```csharp
+var result = await invoiceGenerationService.GenerateInvoiceAsync(
+    leaseId: leaseGuid,
+    billingPeriodStart: new DateOnly(2024, 1, 1),
+    billingPeriodEnd: new DateOnly(2024, 1, 31),
+    prorationMethod: ProrationMethod.ActualDaysInMonth
+);
+
+if (result.IsSuccess)
+{
+    Console.WriteLine($"Invoice {result.Invoice.InvoiceNumber} created");
+    Console.WriteLine($"Amount: ${result.Invoice.TotalAmount}");
+}
+```
+
+**Idempotency**:
+The service checks for existing draft invoices with the same lease and billing period. If found, it updates the existing invoice rather than creating a duplicate.
+
+### Invoice Run Service
+The `InvoiceRunService` orchestrates batch invoice generation across multiple leases:
+
+**Key Features**:
+- Executes monthly rent invoice runs for all active leases in an organization
+- Creates `InvoiceRun` record to track batch execution
+- Generates `InvoiceRunItem` for each lease processed
+- Handles partial failures gracefully (continues processing remaining leases)
+- Tracks success/failure counts and error messages
+- Sets run status based on results:
+  - `Completed`: All invoices generated successfully
+  - `CompletedWithErrors`: Some invoices failed
+  - `Failed`: All invoices failed
+
+**Usage Example**:
+```csharp
+var result = await invoiceRunService.ExecuteMonthlyRentRunAsync(
+    orgId: organizationGuid,
+    billingPeriodStart: new DateOnly(2024, 1, 1),
+    billingPeriodEnd: new DateOnly(2024, 1, 31),
+    prorationMethod: ProrationMethod.ActualDaysInMonth
+);
+
+Console.WriteLine($"Processed {result.TotalLeases} leases");
+Console.WriteLine($"Success: {result.SuccessCount}, Failed: {result.FailureCount}");
+```
+
+### Supporting Repositories
+The following repositories have been implemented to support invoice services:
+
+- **InvoiceRepository**: CRUD operations for invoices, including draft lookup
+- **InvoiceRunRepository**: CRUD operations for invoice runs
+- **ChargeTypeRepository**: Manages charge types (RENT, MAINT, ELEC, etc.)
+- **LeaseBillingSettingRepository**: Retrieves billing settings per lease
+- **LeaseRecurringChargeRepository**: Retrieves active recurring charges
+- **UtilityRatePlanRepository**: Retrieves utility rate plans and slabs
+- **NumberSequenceRepository**: Generates unique sequence numbers (simplified implementation)
+
+### Testing
+Unit tests have been implemented for both services:
+
+**InvoiceGenerationService Tests** (4 tests):
+- Generate new invoice for active lease
+- Update existing draft invoice (idempotency)
+- Reject inactive lease
+- Handle lease not found
+
+**InvoiceRunService Tests** (4 tests):
+- Generate invoices for multiple active leases
+- Handle no active leases gracefully
+- Handle partial failures
+- Handle all failures
+
+Run tests:
+```bash
+dotnet test --filter "Feature=Billing"
+```
+
 ## Future Enhancements
 
 - [ ] Payment transaction tracking

@@ -93,6 +93,9 @@ public static class DependencyInjection
                 .AddInterceptors(auditInterceptor);
         });
 
+        // Register IApplicationDbContext for services that need to persist changes
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
         return services;
     }
 
@@ -255,6 +258,15 @@ public static class DependencyInjection
         services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        
+        // Billing repositories
+        services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<IInvoiceRunRepository, InvoiceRunRepository>();
+        services.AddScoped<IChargeTypeRepository, ChargeTypeRepository>();
+        services.AddScoped<ILeaseBillingSettingRepository, LeaseBillingSettingRepository>();
+        services.AddScoped<ILeaseRecurringChargeRepository, LeaseRecurringChargeRepository>();
+        services.AddScoped<IUtilityRatePlanRepository, UtilityRatePlanRepository>();
+        services.AddScoped<INumberSequenceRepository, NumberSequenceRepository>();
 
         return services;
     }
@@ -270,6 +282,15 @@ public static class DependencyInjection
         services.AddScoped<ITimeProvider, SystemTimeProvider>();
         services.AddScoped<TentMan.Application.PropertyManagement.Services.IOwnershipService, TentMan.Application.PropertyManagement.Services.OwnershipService>();
         services.AddScoped<TentMan.Application.Abstractions.Security.IDataMaskingService, TentMan.Infrastructure.Security.DataMaskingService>();
+        
+        // Billing services
+        services.AddScoped<TentMan.Application.Abstractions.Billing.IRentCalculationService, TentMan.Application.Billing.Services.RentCalculationService>();
+        services.AddScoped<TentMan.Application.Abstractions.Billing.IRecurringChargeCalculationService, TentMan.Application.Billing.Services.RecurringChargeCalculationService>();
+        services.AddScoped<TentMan.Application.Abstractions.Billing.IUtilityCalculationService, TentMan.Application.Billing.Services.UtilityCalculationService>();
+        services.AddScoped<TentMan.Application.Abstractions.Billing.IInvoiceNumberGenerator, TentMan.Application.Billing.Services.InvoiceNumberGenerator>();
+        services.AddScoped<TentMan.Application.Abstractions.Billing.ICreditNoteNumberGenerator, TentMan.Application.Billing.Services.CreditNoteNumberGenerator>();
+        services.AddScoped<TentMan.Application.Abstractions.Billing.IInvoiceGenerationService, TentMan.Application.Billing.Services.InvoiceGenerationService>();
+        services.AddScoped<TentMan.Application.Abstractions.Billing.IInvoiceRunService, TentMan.Application.Billing.Services.InvoiceRunService>();
 
         return services;
     }
