@@ -35,14 +35,12 @@ public class AuthorizationController : ControllerBase
     /// Checks if the current user has the specified permission.
     /// </summary>
     /// <param name="request">The permission check request.</param>
-    /// <param name="cancellationToken">The cancellation token (currently unused as operation is synchronous).</param>
     /// <returns>The authorization check result.</returns>
     [HttpPost("check-permission")]
     [ProducesResponseType(typeof(ApiResponse<AuthorizationCheckResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public ActionResult<ApiResponse<AuthorizationCheckResponse>> CheckPermission(
-        [FromBody] CheckPermissionRequest request,
-        CancellationToken cancellationToken = default)
+        [FromBody] CheckPermissionRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Permission))
         {
