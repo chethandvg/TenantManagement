@@ -53,6 +53,7 @@ public class InitializationController : ControllerBase
     /// - 5 system roles: Guest, User, Manager, Administrator, SuperAdmin
     /// - 1 super admin user with the provided credentials
     /// - Assigns the SuperAdmin role to the created user
+    /// - Optionally creates an organization and owner if provided in the request
     /// 
     /// **IMPORTANT**: 
     /// - This endpoint can only be called when no users exist in the system
@@ -60,12 +61,33 @@ public class InitializationController : ControllerBase
     /// - Store the super admin credentials securely
     /// - After initialization, use the super admin account to create other users and assign roles
     /// 
-    /// **Example Request:**
+    /// **Example Request (Basic):**
     /// ```json
     /// {
     ///   "userName": "superadmin",
     ///   "email": "admin@example.com",
     ///   "password": "YourSecurePassword123!"
+    /// }
+    /// ```
+    /// 
+    /// **Example Request (With Organization and Owner):**
+    /// ```json
+    /// {
+    ///   "userName": "superadmin",
+    ///   "email": "admin@company.com",
+    ///   "password": "SuperSecret!@#",
+    ///   "organization": {
+    ///     "name": "Acme Ltd",
+    ///     "timeZone": "Asia/Kolkata"
+    ///   },
+    ///   "owner": {
+    ///     "ownerType": 1,
+    ///     "displayName": "Chethan DVG",
+    ///     "phone": "+919999999999",
+    ///     "email": "admin@company.com",
+    ///     "pan": "ABCDE1234F",
+    ///     "gstin": "29ABCDE1234F1Z5"
+    ///   }
     /// }
     /// ```
     /// </remarks>
@@ -81,10 +103,34 @@ public class InitializationController : ControllerBase
 
         try
         {
+            OrganizationData? orgData = null;
+            if (request.Organization != null)
+            {
+                orgData = new OrganizationData(
+                    request.Organization.Name,
+                    request.Organization.TimeZone
+                );
+            }
+
+            OwnerData? ownerData = null;
+            if (request.Owner != null)
+            {
+                ownerData = new OwnerData(
+                    request.Owner.OwnerType,
+                    request.Owner.DisplayName,
+                    request.Owner.Phone,
+                    request.Owner.Email,
+                    request.Owner.Pan,
+                    request.Owner.Gstin
+                );
+            }
+
             var command = new InitializeSystemCommand(
                 request.UserName,
                 request.Email,
-                request.Password);
+                request.Password,
+                orgData,
+                ownerData);
 
             var result = await _mediator.Send(command, cancellationToken);
 

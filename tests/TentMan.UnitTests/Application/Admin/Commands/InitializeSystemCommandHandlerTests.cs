@@ -150,7 +150,7 @@ public class InitializeSystemCommandHandlerTests
             .ReturnsAsync(1);
 
         var handler = fixture.CreateHandler();
-        var command = new InitializeSystemCommand(userName, email, password);
+        var command = new InitializeSystemCommand(userName, email, password, null, null);
 
         // Act
         var result = await handler.Handle(command, cancellationTokenSource.Token);
@@ -237,7 +237,7 @@ public class InitializeSystemCommandHandlerTests
             .ReturnsAsync(1);
 
         var handler = fixture.CreateHandler();
-        var command = new InitializeSystemCommand(userName, email, password);
+        var command = new InitializeSystemCommand(userName, email, password, null, null);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -316,7 +316,7 @@ public class InitializeSystemCommandHandlerTests
             .ThrowsAsync(exception);
 
         var handler = fixture.CreateHandler();
-        var command = new InitializeSystemCommand(userName, email, password);
+        var command = new InitializeSystemCommand(userName, email, password, null, null);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
