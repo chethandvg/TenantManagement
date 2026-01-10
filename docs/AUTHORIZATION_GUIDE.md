@@ -39,12 +39,13 @@ TentMan uses **role-based authorization** with:
 
 ### System Roles
 
-TentMan defines 5 built-in roles:
+TentMan defines several built-in roles:
 
 | Role | Level | Description | Default Permissions |
 |------|-------|-------------|---------------------|
 | **Guest** | 0 | Unverified user | Read-only, limited access |
 | **User** | 1 | Standard user | Full read, limited write |
+| **Tenant** | 1 | Tenant portal user | Tenant-specific access to lease, documents |
 | **Manager** | 2 | Team manager | Create/update resources |
 | **Administrator** | 3 | System admin | User management, most operations |
 | **SuperAdmin** | 4 | Super admin | Full system access, no restrictions |
@@ -134,6 +135,14 @@ policy.RequireRole("SuperAdmin");
 **Purpose**: Critical system operations  
 **Usage**: Role assignment, system initialization
 
+#### 5. **RequireTenantRole** ✨ NEW!
+```csharp
+policy.RequireRole("Tenant");
+```
+
+**Purpose**: Tenant portal access  
+**Usage**: Tenant-specific operations (lease summary, documents, move-in handover)
+
 ### Policy Configuration
 
 **Registration** (`Program.cs`):
@@ -151,6 +160,9 @@ builder.Services.AddAuthorization(options =>
     
     options.AddPolicy("RequireSuperAdmin", policy => 
         policy.RequireRole("SuperAdmin"));
+    
+    options.AddPolicy("RequireTenantRole", policy => 
+        policy.RequireRole("Tenant"));
 });
 ```
 

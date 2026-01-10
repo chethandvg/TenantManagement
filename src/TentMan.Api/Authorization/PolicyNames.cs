@@ -15,6 +15,7 @@ public static class PolicyNames
     public const string RequireManagerRole = "RequireManagerRole";
     public const string RequireAdminRole = "RequireAdminRole";
     public const string RequireSuperAdminRole = "RequireSuperAdminRole";
+    public const string RequireTenantRole = "RequireTenantRole";
 
     // Resource ownership policy
     public const string ResourceOwner = "ResourceOwner";

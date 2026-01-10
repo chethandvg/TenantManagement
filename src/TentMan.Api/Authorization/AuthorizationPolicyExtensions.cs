@@ -47,6 +47,12 @@ public static class AuthorizationPolicyExtensions
             policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Administrator));
         });
 
+        options.AddPolicy(PolicyNames.RequireTenantRole, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Tenant));
+        });
+
         options.AddPolicy(PolicyNames.RequireSuperAdminRole, policy =>
         {
             policy.RequireAuthenticatedUser();

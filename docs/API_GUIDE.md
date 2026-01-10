@@ -9,6 +9,7 @@ Complete reference for TentMan's two complementary APIs: **Main API** (TentMan.A
 - [Overview](#overview)
 - [Main API (TentMan.Api)](#main-api-tentmanapi)
 - [Admin API (TentMan.AdminApi)](#admin-api-tentmanadminapi)
+- [Tenant Portal API](#tenant-portal-api)
 - [Authentication](#authentication)
 - [Common Workflows](#common-workflows)
 - [HTTP Examples](#http-examples)
@@ -577,6 +578,156 @@ Response 200 OK
 | Assign Manager role | ❌ | ✅ | ✅ |
 | Assign Administrator role | ❌ | ❌ | ✅ |
 | Assign SuperAdmin role | ❌ | ❌ | ✅ |
+
+---
+
+## 🏠 Tenant Portal API
+
+**Base URL**: Same as Main API (`https://localhost:7123`)  
+**API Prefix**: `/api/v1/tenant-portal`
+
+### Purpose
+
+Dedicated API for tenants to:
+- Access their active lease information
+- Upload and view documents
+- Complete move-in handover checklist
+- View their tenant dashboard
+
+### Key Features
+
+- ✅ **Role-based access** - Only accessible to users with "Tenant" role
+- ✅ **User context** - Automatically identifies tenant from JWT claims
+- ✅ **Secure document storage** - Azure Blob Storage integration
+- ✅ **Digital signatures** - Move-in handover with signature capture
+
+### Endpoint Categories
+
+#### 1. Lease Summary (`/api/v1/tenant-portal/lease-summary`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/lease-summary` | GET | ✅ Yes (Tenant) | Get current tenant's active lease details |
+
+**Example**:
+```json
+GET /api/v1/tenant-portal/lease-summary
+Authorization: Bearer <tenant_token>
+
+Response 200 OK:
+{
+  "success": true,
+  "data": {
+    "leaseId": "guid",
+    "leaseNumber": "LSE-2024-001",
+    "startDate": "2024-01-01",
+    "endDate": "2024-12-31",
+    "monthlyRent": 15000.00,
+    "securityDeposit": 30000.00,
+    "unitNumber": "A-101",
+    "buildingName": "Sunrise Apartments"
+  }
+}
+```
+
+#### 2. Document Management (`/api/v1/tenant-portal/documents`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/documents` | GET | ✅ Yes (Tenant) | List all documents uploaded by tenant |
+| `/documents` | POST | ✅ Yes (Tenant) | Upload a new document |
+
+**Example - Upload Document**:
+```http
+POST /api/v1/tenant-portal/documents
+Authorization: Bearer <tenant_token>
+Content-Type: multipart/form-data
+
+file=@"id_proof.pdf"
+documentType=IdentityProof
+maskedNumber=XXXX1234
+issueDate=2020-01-15
+expiryDate=2030-01-15
+notes=Passport copy
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "documentType": "IdentityProof",
+    "fileName": "id_proof.pdf",
+    "storageKey": "tenants/guid/documents/...",
+    "uploadedAtUtc": "2024-01-10T10:00:00Z",
+    "status": "Uploaded"
+  },
+  "message": "Document uploaded successfully"
+}
+```
+
+#### 3. Move-in Handover (`/api/v1/tenant-portal/move-in-handover`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/move-in-handover` | GET | ✅ Yes (Tenant) | Get move-in handover checklist |
+| `/move-in-handover/submit` | POST | ✅ Yes (Tenant) | Submit completed handover with signature |
+
+**Example - Submit Handover**:
+```http
+POST /api/v1/tenant-portal/move-in-handover/submit
+Authorization: Bearer <tenant_token>
+Content-Type: multipart/form-data
+
+signatureImage=@"signature.png"
+signedAtUtc=2024-01-10T10:00:00Z
+```
+
+### Authorization
+
+All Tenant Portal endpoints require:
+- ✅ Valid JWT access token
+- ✅ User must have "Tenant" role
+- ✅ User must be linked to a tenant record via `LinkedUserId`
+
+**Example Authorization**:
+```http
+GET /api/v1/tenant-portal/lease-summary
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Error Responses
+
+#### 401 Unauthorized
+```json
+{
+  "success": false,
+  "message": "Invalid user authentication"
+}
+```
+
+**Cause**: Missing or invalid JWT token
+
+#### 403 Forbidden
+```json
+{
+  "success": false,
+  "message": "You do not have permission to perform this action"
+}
+```
+
+**Cause**: User does not have "Tenant" role
+
+#### 404 Not Found
+```json
+{
+  "success": false,
+  "message": "No tenant found for the current user"
+}
+```
+
+**Cause**: User account not linked to a tenant record
 
 ---
 
