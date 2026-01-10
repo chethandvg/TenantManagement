@@ -6,7 +6,9 @@ namespace TentMan.Infrastructure.Repositories;
 
 /// <summary>
 /// Repository for managing number sequences using a simple table-based approach.
-/// Uses database locking for thread safety.
+/// NOTE: This is a simplified implementation for development/testing.
+/// In production, this should use a dedicated sequences table with proper row-level locking
+/// or database-native sequence features to ensure thread-safety and true sequential numbers.
 /// </summary>
 public class NumberSequenceRepository : INumberSequenceRepository
 {
@@ -23,12 +25,15 @@ public class NumberSequenceRepository : INumberSequenceRepository
         string sequenceType,
         CancellationToken cancellationToken = default)
     {
-        // For now, use a simple in-memory counter stored in the database
-        // In a production system, this would use a dedicated sequences table
-        // with proper locking mechanisms
+        // IMPORTANT: This is a simplified implementation for development/testing purposes only.
+        // It is NOT thread-safe and may produce duplicate sequence numbers under concurrent load.
+        // 
+        // For production use, implement one of the following:
+        // 1. Use a dedicated NumberSequences table with row-level locking (e.g., SQL Server UPDLOCK, ROWLOCK)
+        // 2. Use database-native sequences (e.g., SQL Server SEQUENCE objects)
+        // 3. Use a distributed lock mechanism (e.g., Redis)
         
         // Generate a simple timestamp-based sequence number
-        // This is a simplified implementation - in production, you'd want a proper sequence table
         var timestamp = DateTime.UtcNow.Ticks;
         var sequence = timestamp % 1000000; // Get last 6 digits
         

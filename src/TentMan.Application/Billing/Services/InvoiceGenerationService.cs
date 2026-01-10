@@ -136,13 +136,25 @@ public class InvoiceGenerationService : IInvoiceGenerationService
             CalculateInvoiceTotals(invoice);
 
             // Save invoice
-            if (isUpdate)
+            try
             {
-                await _invoiceRepository.UpdateAsync(invoice, invoice.RowVersion, cancellationToken);
+                if (isUpdate)
+                {
+                    await _invoiceRepository.UpdateAsync(invoice, invoice.RowVersion, cancellationToken);
+                }
+                else
+                {
+                    await _invoiceRepository.AddAsync(invoice, cancellationToken);
+                }
             }
-            else
+            catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
             {
-                await _invoiceRepository.AddAsync(invoice, cancellationToken);
+                // Handle concurrency conflict - invoice was modified by another process
+                return new InvoiceGenerationResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Invoice was modified by another process. Please retry."
+                };
             }
 
             return new InvoiceGenerationResult
