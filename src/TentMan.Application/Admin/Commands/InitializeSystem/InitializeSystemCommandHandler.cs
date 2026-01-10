@@ -2,6 +2,7 @@ using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Authentication;
 using TentMan.Application.Common;
 using TentMan.Domain.Constants;
+using TentMan.Domain.Entities;
 using TentMan.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -47,9 +48,17 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
                     "System is already initialized. Users already exist in the database.");
             }
 
+            // Validate that if Owner is provided, Organization must also be provided
+            if (request.Owner != null && request.Organization == null)
+            {
+                _logger.LogWarning("Owner details provided without organization details");
+                return Result<InitializationResult>.Failure(
+                    "Organization details must be provided when creating an owner.");
+            }
+
             // ✅ FIX: Use ExecuteWithRetryAsync to handle retries with transactions
             // This resolves the conflict between SqlServerRetryingExecutionStrategy and user-initiated transactions
-            var (rolesCreated, rolesCount, userId) = await _unitOfWork.ExecuteWithRetryAsync(async () =>
+            var (rolesCreated, rolesCount, userId, orgId, ownerId) = await _unitOfWork.ExecuteWithRetryAsync(async () =>
             {
                 await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
@@ -64,9 +73,23 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
                     // Step 3: Assign SuperAdmin role to the user
                     await AssignSuperAdminRoleAsync(userId, cancellationToken);
 
+                    // Step 4: Create organization if provided
+                    Guid? orgId = null;
+                    if (request.Organization != null)
+                    {
+                        orgId = await CreateOrganizationAsync(request.Organization, cancellationToken);
+                    }
+
+                    // Step 5: Create owner if provided
+                    Guid? ownerId = null;
+                    if (request.Owner != null && orgId.HasValue)
+                    {
+                        ownerId = await CreateOwnerAsync(request.Owner, orgId.Value, userId, cancellationToken);
+                    }
+
                     await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-                    return (created, count, userId);
+                    return (created, count, userId, orgId, ownerId);
                 }
                 catch
                 {
@@ -75,17 +98,36 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
                 }
             }, cancellationToken);
 
+            var messageBuilder = new System.Text.StringBuilder();
+            messageBuilder.Append($"System initialized successfully. Created {rolesCount} roles and super admin user.");
+            
+            if (orgId.HasValue)
+            {
+                messageBuilder.Append($" Organization created with ID {orgId}.");
+            }
+            
+            if (ownerId.HasValue)
+            {
+                messageBuilder.Append($" Owner created and linked to superadmin.");
+            }
+
             _logger.LogInformation(
-                "System initialized successfully. Created {RolesCount} roles and super admin user {Email}",
+                "System initialized successfully. Created {RolesCount} roles, super admin user {Email}, Organization: {OrgCreated}, Owner: {OwnerCreated}",
                 rolesCount,
-                request.Email);
+                request.Email,
+                orgId.HasValue,
+                ownerId.HasValue);
 
             var result = new InitializationResult(
                 RolesCreated: rolesCreated,
                 RolesCount: rolesCount,
                 UserCreated: true,
                 UserId: userId,
-                Message: $"System initialized successfully. Created {rolesCount} roles and super admin user."
+                OrganizationCreated: orgId.HasValue,
+                OrganizationId: orgId,
+                OwnerCreated: ownerId.HasValue,
+                OwnerId: ownerId,
+                Message: messageBuilder.ToString()
             );
 
             return Result<InitializationResult>.Success(result);
@@ -217,5 +259,58 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("SuperAdmin role assigned successfully");
+    }
+
+    private async Task<Guid> CreateOrganizationAsync(
+        OrganizationData organizationData,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Creating organization: {OrgName}", organizationData.Name);
+
+        var organization = new Organization
+        {
+            Name = organizationData.Name,
+            TimeZone = organizationData.TimeZone ?? "Asia/Kolkata", // Use provided or default
+            IsActive = true,
+            CreatedAtUtc = _timeProvider.UtcNow,
+            CreatedBy = "System"
+        };
+
+        var createdOrg = await _unitOfWork.Organizations.AddAsync(organization, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Organization created with ID: {OrgId}", createdOrg.Id);
+
+        return createdOrg.Id;
+    }
+
+    private async Task<Guid> CreateOwnerAsync(
+        OwnerData ownerData,
+        Guid organizationId,
+        Guid linkedUserId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Creating owner: {DisplayName} for organization {OrgId}", ownerData.DisplayName, organizationId);
+
+        var owner = new Owner
+        {
+            OrgId = organizationId,
+            OwnerType = ownerData.OwnerType,
+            DisplayName = ownerData.DisplayName,
+            Phone = ownerData.Phone,
+            Email = ownerData.Email,
+            Pan = ownerData.Pan,
+            Gstin = ownerData.Gstin,
+            LinkedUserId = linkedUserId, // Link to the superadmin user
+            CreatedAtUtc = _timeProvider.UtcNow,
+            CreatedBy = "System"
+        };
+
+        var createdOwner = await _unitOfWork.Owners.AddAsync(owner, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Owner created with ID: {OwnerId}, linked to user {UserId}", createdOwner.Id, linkedUserId);
+
+        return createdOwner.Id;
     }
 }

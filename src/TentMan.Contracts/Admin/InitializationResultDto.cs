@@ -26,6 +26,26 @@ public sealed class InitializationResultDto
     public Guid? UserId { get; init; }
 
     /// <summary>
+    /// Indicates whether an organization was created during initialization.
+    /// </summary>
+    public bool OrganizationCreated { get; init; }
+
+    /// <summary>
+    /// The ID of the created organization, if any.
+    /// </summary>
+    public Guid? OrganizationId { get; init; }
+
+    /// <summary>
+    /// Indicates whether an owner was created during initialization.
+    /// </summary>
+    public bool OwnerCreated { get; init; }
+
+    /// <summary>
+    /// The ID of the created owner, if any.
+    /// </summary>
+    public Guid? OwnerId { get; init; }
+
+    /// <summary>
     /// A message describing the result of the initialization.
     /// </summary>
     public string Message { get; init; } = string.Empty;

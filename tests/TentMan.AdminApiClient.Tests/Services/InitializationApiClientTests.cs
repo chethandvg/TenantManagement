@@ -56,6 +56,10 @@ public class InitializationApiClientTests : IDisposable
             RolesCount: 5,
             UserCreated: true,
             UserId: Guid.NewGuid(),
+            OrganizationCreated: false,
+            OrganizationId: null,
+            OwnerCreated: false,
+            OwnerId: null,
             Message: "System initialized successfully"
         );
 

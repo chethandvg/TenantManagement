@@ -8,7 +8,9 @@ using TentMan.Application.Abstractions.Authentication;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Application.Admin.Commands.InitializeSystem;
 using TentMan.Application.Common;
+using TentMan.Contracts.Enums;
 using TentMan.Domain.Constants;
+using TentMan.Domain.Entities;
 using TentMan.Domain.Entities.Identity;
 using TentMan.UnitTests.TestHelpers.Fixtures;
 using FluentAssertions;
@@ -60,8 +62,8 @@ public class InitializeSystemCommandHandlerTests
 
         CancellationToken capturedRetryToken = default;
         fixture.MockUnitOfWork
-            .Setup(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid)>>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<Task<(bool, int, Guid)>>, CancellationToken>(async (operation, token) =>
+            .Setup(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid, Guid?, Guid?)>>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<Task<(bool, int, Guid, Guid?, Guid?)>>, CancellationToken>(async (operation, token) =>
             {
                 capturedRetryToken = token;
                 return await operation();
@@ -150,7 +152,7 @@ public class InitializeSystemCommandHandlerTests
             .ReturnsAsync(1);
 
         var handler = fixture.CreateHandler();
-        var command = new InitializeSystemCommand(userName, email, password);
+        var command = new InitializeSystemCommand(userName, email, password, null, null);
 
         // Act
         var result = await handler.Handle(command, cancellationTokenSource.Token);
@@ -198,7 +200,7 @@ public class InitializeSystemCommandHandlerTests
         capturedUserHasRoleToken.Should().Be(cancellationTokenSource.Token);
         saveTokens.Should().OnlyContain(token => token == cancellationTokenSource.Token);
 
-        fixture.MockUnitOfWork.Verify(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid)>>>(), cancellationTokenSource.Token), Times.Once());
+        fixture.MockUnitOfWork.Verify(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid, Guid?, Guid?)>>>(), cancellationTokenSource.Token), Times.Once());
         fixture.MockUnitOfWork.Verify(unit => unit.BeginTransactionAsync(cancellationTokenSource.Token), Times.Once());
         fixture.MockUnitOfWork.Verify(unit => unit.CommitTransactionAsync(cancellationTokenSource.Token), Times.Once());
         fixture.MockUnitOfWork.Verify(unit => unit.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -237,7 +239,7 @@ public class InitializeSystemCommandHandlerTests
             .ReturnsAsync(1);
 
         var handler = fixture.CreateHandler();
-        var command = new InitializeSystemCommand(userName, email, password);
+        var command = new InitializeSystemCommand(userName, email, password, null, null);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -247,7 +249,7 @@ public class InitializeSystemCommandHandlerTests
         result.Error.Should().Be("System is already initialized. Users already exist in the database.");
 
         fixture.VerifyWarningLogged("System initialization attempted but users already exist");
-        fixture.MockUnitOfWork.Verify(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid)>>>(), It.IsAny<CancellationToken>()), Times.Never);
+        fixture.MockUnitOfWork.Verify(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid, Guid?, Guid?)>>>(), It.IsAny<CancellationToken>()), Times.Never);
         fixture.MockUnitOfWork.Verify(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -278,8 +280,8 @@ public class InitializeSystemCommandHandlerTests
             .ReturnsAsync(0);
 
         fixture.MockUnitOfWork
-            .Setup(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid)>>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<Task<(bool, int, Guid)>>, CancellationToken>(async (operation, token) => await operation());
+            .Setup(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid, Guid?, Guid?)>>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<Task<(bool, int, Guid, Guid?, Guid?)>>, CancellationToken>(async (operation, token) => await operation());
 
         fixture.MockUnitOfWork
             .Setup(unit => unit.BeginTransactionAsync(It.IsAny<CancellationToken>()))
@@ -316,7 +318,7 @@ public class InitializeSystemCommandHandlerTests
             .ThrowsAsync(exception);
 
         var handler = fixture.CreateHandler();
-        var command = new InitializeSystemCommand(userName, email, password);
+        var command = new InitializeSystemCommand(userName, email, password, null, null);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -330,6 +332,204 @@ public class InitializeSystemCommandHandlerTests
         fixture.MockUnitOfWork.Verify(unit => unit.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once());
         fixture.MockUnitOfWork.Verify(unit => unit.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         capturedRollbackToken.Should().Be(CancellationToken.None);
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenOrganizationAndOwnerProvided_ShouldCreateAllEntities(
+        string userName,
+        string email,
+        string password,
+        string orgName,
+        string ownerDisplayName,
+        string ownerPhone,
+        string ownerEmail,
+        Guid userId,
+        Guid orgId,
+        Guid ownerId,
+        DateTime utcNow)
+    {
+        // Arrange
+        var passwordHasherMock = new Mock<IPasswordHasher>();
+        var timeProviderMock = new Mock<ITimeProvider>();
+        var userRepositoryMock = new Mock<IUserRepository>();
+        var roleRepositoryMock = new Mock<IRoleRepository>();
+        var userRoleRepositoryMock = new Mock<IUserRoleRepository>();
+        var organizationRepositoryMock = new Mock<IOrganizationRepository>();
+        var ownerRepositoryMock = new Mock<IOwnerRepository>();
+        var hashedPassword = $"hashed-{password}";
+        var superAdminRoleId = Guid.NewGuid();
+
+        passwordHasherMock.Setup(hasher => hasher.HashPassword(password)).Returns(hashedPassword);
+        timeProviderMock.SetupGet(provider => provider.UtcNow).Returns(utcNow);
+
+        var fixture = CreateFixture(passwordHasherMock, timeProviderMock);
+
+        fixture.MockUnitOfWork.Setup(unit => unit.Users).Returns(userRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.Roles).Returns(roleRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.UserRoles).Returns(userRoleRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.Organizations).Returns(organizationRepositoryMock.Object);
+        fixture.MockUnitOfWork.Setup(unit => unit.Owners).Returns(ownerRepositoryMock.Object);
+
+        using var cancellationTokenSource = new CancellationTokenSource();
+
+        userRepositoryMock
+            .Setup(repo => repo.GetCountAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        fixture.MockUnitOfWork
+            .Setup(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid, Guid?, Guid?)>>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<Task<(bool, int, Guid, Guid?, Guid?)>>, CancellationToken>(async (operation, token) => await operation());
+
+        fixture.MockUnitOfWork
+            .Setup(unit => unit.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        fixture.MockUnitOfWork
+            .Setup(unit => unit.CommitTransactionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        roleRepositoryMock
+            .Setup(repo => repo.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ApplicationRole>());
+
+        roleRepositoryMock
+            .Setup(repo => repo.AddAsync(It.IsAny<ApplicationRole>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ApplicationRole role, CancellationToken _) => role);
+
+        roleRepositoryMock
+            .Setup(repo => repo.GetByNameAsync(RoleNames.SuperAdmin, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApplicationRole { Id = superAdminRoleId, Name = RoleNames.SuperAdmin });
+
+        userRepositoryMock
+            .Setup(repo => repo.UserNameExistsAsync(userName, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        userRepositoryMock
+            .Setup(repo => repo.EmailExistsAsync(email, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        ApplicationUser? createdUser = null;
+        userRepositoryMock
+            .Setup(repo => repo.AddAsync(It.IsAny<ApplicationUser>(), It.IsAny<CancellationToken>()))
+            .Callback<ApplicationUser, CancellationToken>((user, token) =>
+            {
+                user.Id = userId;
+                createdUser = user;
+            })
+            .ReturnsAsync((ApplicationUser user, CancellationToken _) => user);
+
+        userRoleRepositoryMock
+            .Setup(repo => repo.UserHasRoleAsync(userId, superAdminRoleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        userRoleRepositoryMock
+            .Setup(repo => repo.AddAsync(It.IsAny<UserRole>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        Organization? createdOrg = null;
+        organizationRepositoryMock
+            .Setup(repo => repo.AddAsync(It.IsAny<Organization>(), It.IsAny<CancellationToken>()))
+            .Callback<Organization, CancellationToken>((org, token) =>
+            {
+                org.Id = orgId;
+                createdOrg = org;
+            })
+            .ReturnsAsync((Organization org, CancellationToken _) => org);
+
+        Owner? createdOwner = null;
+        ownerRepositoryMock
+            .Setup(repo => repo.AddAsync(It.IsAny<Owner>(), It.IsAny<CancellationToken>()))
+            .Callback<Owner, CancellationToken>((owner, token) =>
+            {
+                owner.Id = ownerId;
+                createdOwner = owner;
+            })
+            .ReturnsAsync((Owner owner, CancellationToken _) => owner);
+
+        fixture.MockUnitOfWork
+            .Setup(unit => unit.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var handler = fixture.CreateHandler();
+        var orgData = new OrganizationData(orgName, "Asia/Kolkata");
+        var ownerData = new OwnerData(
+            OwnerType.Individual,
+            ownerDisplayName,
+            ownerPhone,
+            ownerEmail,
+            null,
+            null);
+        var command = new InitializeSystemCommand(userName, email, password, orgData, ownerData);
+
+        // Act
+        var result = await handler.Handle(command, cancellationTokenSource.Token);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.RolesCreated.Should().BeTrue();
+        result.Value.RolesCount.Should().Be(5);
+        result.Value.UserCreated.Should().BeTrue();
+        result.Value.UserId.Should().Be(userId);
+        result.Value.OrganizationCreated.Should().BeTrue();
+        result.Value.OrganizationId.Should().Be(orgId);
+        result.Value.OwnerCreated.Should().BeTrue();
+        result.Value.OwnerId.Should().Be(ownerId);
+
+        createdOrg.Should().NotBeNull();
+        createdOrg!.Name.Should().Be(orgName);
+        createdOrg.TimeZone.Should().Be("Asia/Kolkata");
+        createdOrg.CreatedBy.Should().Be("System");
+
+        createdOwner.Should().NotBeNull();
+        createdOwner!.OrgId.Should().Be(orgId);
+        createdOwner.DisplayName.Should().Be(ownerDisplayName);
+        createdOwner.Phone.Should().Be(ownerPhone);
+        createdOwner.Email.Should().Be(ownerEmail);
+        createdOwner.LinkedUserId.Should().Be(userId);
+        createdOwner.CreatedBy.Should().Be("System");
+    }
+
+    [Theory, AutoMoqData]
+    public async Task Handle_WhenOwnerProvidedWithoutOrganization_ShouldReturnFailure(
+        string userName,
+        string email,
+        string password,
+        string ownerDisplayName,
+        string ownerPhone,
+        string ownerEmail)
+    {
+        // Arrange
+        var passwordHasherMock = new Mock<IPasswordHasher>();
+        var timeProviderMock = new Mock<ITimeProvider>();
+        var userRepositoryMock = new Mock<IUserRepository>();
+
+        var fixture = CreateFixture(passwordHasherMock, timeProviderMock);
+        fixture.MockUnitOfWork.Setup(unit => unit.Users).Returns(userRepositoryMock.Object);
+
+        userRepositoryMock
+            .Setup(repo => repo.GetCountAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        var handler = fixture.CreateHandler();
+        var ownerData = new OwnerData(
+            OwnerType.Individual,
+            ownerDisplayName,
+            ownerPhone,
+            ownerEmail,
+            null,
+            null);
+        var command = new InitializeSystemCommand(userName, email, password, null, ownerData);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("Organization details must be provided when creating an owner.");
+
+        fixture.VerifyWarningLogged("Owner details provided without organization details");
+        fixture.MockUnitOfWork.Verify(unit => unit.ExecuteWithRetryAsync(It.IsAny<Func<Task<(bool, int, Guid, Guid?, Guid?)>>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
