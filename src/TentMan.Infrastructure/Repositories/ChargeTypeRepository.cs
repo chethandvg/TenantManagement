@@ -40,14 +40,9 @@ public class ChargeTypeRepository : BaseRepository<ChargeType>, IChargeTypeRepos
         var query = DbSet.AsQueryable();
 
         // Get both system-defined and org-specific charge types
-        if (orgId.HasValue)
-        {
-            query = query.Where(c => c.OrgId == null || c.OrgId == orgId);
-        }
-        else
-        {
-            query = query.Where(c => c.OrgId == null);
-        }
+        query = orgId.HasValue
+            ? query.Where(c => c.OrgId == null || c.OrgId == orgId)
+            : query.Where(c => c.OrgId == null);
 
         if (isActive.HasValue)
         {

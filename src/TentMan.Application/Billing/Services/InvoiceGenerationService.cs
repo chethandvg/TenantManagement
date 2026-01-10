@@ -6,7 +6,7 @@ using TentMan.Domain.Entities;
 namespace TentMan.Application.Billing.Services;
 
 /// <summary>
-/// Service for generating invoices for leases with support for rent, recurring charges, and utilities.
+/// Service for generating invoices for leases with support for rent and recurring charges.
 /// Implements idempotency by updating existing draft invoices.
 /// </summary>
 public class InvoiceGenerationService : IInvoiceGenerationService
@@ -102,7 +102,7 @@ public class InvoiceGenerationService : IInvoiceGenerationService
             var billingSettings = await _billingSettingRepository.GetByLeaseIdAsync(leaseId, cancellationToken);
 
             // Calculate invoice date and due date
-            var invoiceDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            var invoiceDate = billingPeriodEnd;
             var dueDate = CalculateDueDate(invoiceDate, billingSettings);
 
             invoice.InvoiceDate = invoiceDate;
@@ -130,7 +130,7 @@ public class InvoiceGenerationService : IInvoiceGenerationService
             lineNumber = await GenerateRentLinesAsync(invoice, lease.OrgId, leaseId, billingPeriodStart, billingPeriodEnd, prorationMethod, lineNumber, cancellationToken);
 
             // 2. Generate recurring charge lines
-            lineNumber = await GenerateRecurringChargeLinesAsync(invoice, lease.OrgId, leaseId, billingPeriodStart, billingPeriodEnd, prorationMethod, lineNumber, cancellationToken);
+            await GenerateRecurringChargeLinesAsync(invoice, lease.OrgId, leaseId, billingPeriodStart, billingPeriodEnd, prorationMethod, lineNumber, cancellationToken);
 
             // 3. Calculate totals
             CalculateInvoiceTotals(invoice);
@@ -183,24 +183,24 @@ public class InvoiceGenerationService : IInvoiceGenerationService
                 throw new InvalidOperationException("RENT charge type not found");
             }
 
-            foreach (var rentLineItem in rentCalculation.LineItems)
+            var rentLines = rentCalculation.LineItems.Select(rentLineItem => new InvoiceLine
             {
-                var invoiceLine = new InvoiceLine
-                {
-                    Id = Guid.NewGuid(),
-                    InvoiceId = invoice.Id,
-                    ChargeTypeId = rentChargeType.Id,
-                    LineNumber = lineNumber++,
-                    Description = rentLineItem.Description,
-                    Quantity = 1,
-                    UnitPrice = rentLineItem.Amount,
-                    Amount = rentLineItem.Amount,
-                    TaxRate = 0, // No tax on rent by default
-                    TaxAmount = 0,
-                    TotalAmount = rentLineItem.Amount
-                };
+                Id = Guid.NewGuid(),
+                InvoiceId = invoice.Id,
+                ChargeTypeId = rentChargeType.Id,
+                LineNumber = lineNumber++,
+                Description = rentLineItem.Description,
+                Quantity = 1,
+                UnitPrice = rentLineItem.Amount,
+                Amount = rentLineItem.Amount,
+                TaxRate = 0, // No tax on rent by default
+                TaxAmount = 0,
+                TotalAmount = rentLineItem.Amount
+            });
 
-                invoice.Lines.Add(invoiceLine);
+            foreach (var line in rentLines)
+            {
+                invoice.Lines.Add(line);
             }
         }
 
@@ -220,13 +220,38 @@ public class InvoiceGenerationService : IInvoiceGenerationService
         var chargeCalculation = await _recurringChargeCalculationService.CalculateChargesAsync(
             leaseId, billingPeriodStart, billingPeriodEnd, prorationMethod, cancellationToken);
 
+        if (!chargeCalculation.LineItems.Any())
+        {
+            return lineNumber;
+        }
+
+        // Get unique charge type IDs to avoid N+1 queries
+        var uniqueChargeTypeIds = chargeCalculation.LineItems
+            .Select(item => item.ChargeTypeId)
+            .Distinct()
+            .ToList();
+
+        // Fetch all needed charge types in one go
+        var chargeTypes = new Dictionary<Guid, ChargeType>();
+        foreach (var chargeTypeId in uniqueChargeTypeIds)
+        {
+            var chargeType = await _chargeTypeRepository.GetByIdAsync(chargeTypeId, cancellationToken);
+            if (chargeType != null)
+            {
+                chargeTypes[chargeTypeId] = chargeType;
+            }
+        }
+
         foreach (var chargeLineItem in chargeCalculation.LineItems)
         {
-            // Get charge type for each recurring charge
-            var chargeType = await _chargeTypeRepository.GetByCodeAsync(ChargeTypeCode.MAINT, orgId, cancellationToken);
-            if (chargeType == null)
+            // Get charge type from dictionary
+            if (!chargeTypes.TryGetValue(chargeLineItem.ChargeTypeId, out var chargeType))
             {
-                // Skip if charge type not found
+                // Log warning and skip if charge type not found
+                // In production, this should use proper logging infrastructure
+                Console.WriteLine(
+                    $"[Warning] Charge type '{chargeLineItem.ChargeTypeId}' not found for org '{orgId}' and lease '{leaseId}' " +
+                    $"while generating recurring charges. Charge '{chargeLineItem.ChargeDescription}' with amount '{chargeLineItem.Amount}' was skipped.");
                 continue;
             }
 

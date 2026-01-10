@@ -71,6 +71,7 @@ public class RecurringChargeCalculationService : IRecurringChargeCalculationServ
             var lineItem = new RecurringChargeLineItem
             {
                 ChargeId = charge.Id,
+                ChargeTypeId = charge.ChargeTypeId,
                 ChargeDescription = charge.Description,
                 PeriodStart = effectiveStart,
                 PeriodEnd = effectiveEnd,

@@ -23,10 +23,6 @@ public class NumberSequenceRepository : INumberSequenceRepository
         string sequenceType,
         CancellationToken cancellationToken = default)
     {
-        // Use raw SQL with row locking to ensure thread safety
-        // This creates a simple key-value store in the database
-        var key = $"{orgId}_{sequenceType}";
-        
         // For now, use a simple in-memory counter stored in the database
         // In a production system, this would use a dedicated sequences table
         // with proper locking mechanisms

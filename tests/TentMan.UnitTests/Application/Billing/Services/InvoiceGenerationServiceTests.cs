@@ -252,9 +252,10 @@ public class InvoiceGenerationServiceTests
             .Setup(r => r.GetByCodeAsync(ChargeTypeCode.RENT, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(rentChargeType);
 
+        var maintChargeType = CreateChargeType(ChargeTypeCode.MAINT);
         _mockChargeTypeRepository
             .Setup(r => r.GetByCodeAsync(ChargeTypeCode.MAINT, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(rentChargeType);
+            .ReturnsAsync(maintChargeType);
 
         _mockRentCalculationService
             .Setup(s => s.CalculateRentAsync(

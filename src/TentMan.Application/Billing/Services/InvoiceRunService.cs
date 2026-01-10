@@ -49,11 +49,11 @@ public class InvoiceRunService : IInvoiceRunService
 
             // Get all active leases for the organization
             var activeLeases = await _leaseRepository.GetByOrgIdAsync(orgId, LeaseStatus.Active, cancellationToken);
-            var leasesList = activeLeases.ToList();
+            var leases = activeLeases.ToList();
 
-            invoiceRun.TotalLeases = leasesList.Count;
+            invoiceRun.TotalLeases = leases.Count;
 
-            if (!leasesList.Any())
+            if (!leases.Any())
             {
                 invoiceRun.Status = InvoiceRunStatus.Completed;
                 invoiceRun.CompletedAtUtc = DateTime.UtcNow;
@@ -75,7 +75,7 @@ public class InvoiceRunService : IInvoiceRunService
             int successCount = 0;
             int failureCount = 0;
 
-            foreach (var lease in leasesList)
+            foreach (var lease in leases)
             {
                 var runItem = new InvoiceRunItem
                 {
@@ -132,7 +132,16 @@ public class InvoiceRunService : IInvoiceRunService
             else if (successCount > 0)
             {
                 invoiceRun.Status = InvoiceRunStatus.CompletedWithErrors;
-                invoiceRun.ErrorMessage = string.Join("; ", errorMessages.Take(10)); // Limit to first 10 errors
+                var displayedErrors = errorMessages.Take(10).ToList();
+                if (errorMessages.Count > 10)
+                {
+                    var remainingCount = errorMessages.Count - 10;
+                    invoiceRun.ErrorMessage = string.Join("; ", displayedErrors) + $"; and {remainingCount} more errors...";
+                }
+                else
+                {
+                    invoiceRun.ErrorMessage = string.Join("; ", displayedErrors);
+                }
             }
             else
             {
@@ -182,6 +191,6 @@ public class InvoiceRunService : IInvoiceRunService
 
     private string GenerateRunNumber(DateOnly billingPeriodStart)
     {
-        return $"RUN-{billingPeriodStart:yyyyMM}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
+        return $"RUN-{billingPeriodStart:yyyyMM}-{Guid.NewGuid():N}".ToUpperInvariant();
     }
 }
