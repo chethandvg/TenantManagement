@@ -1,7 +1,7 @@
 using TentMan.ApiClient.Extensions;
 using TentMan.Ui;
 using TentMan.Web;
-using TentMan.Domain.Constants;
+using TentMan.Contracts.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -35,56 +35,56 @@ builder.Services.AddApiClientForWasm(options =>
 builder.Services.AddAuthorizationCore(options =>
 {
     // Tenant Portal policy - allow Tenant role or explicit permission
-    options.AddPolicy("CanViewTenantPortal", policy =>
+    options.AddPolicy(PolicyNames.CanViewTenantPortal, policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context =>
             context.User.IsInRole(RoleNames.Tenant) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == PermissionNames.TenantPortal.View));
+            context.User.HasClaim(c => c.Type == "permission" && c.Value == "tenantportal:view"));
     });
 
     // Property Management policy - allow Admin, Manager, User roles or explicit permission
-    options.AddPolicy("CanViewPropertyManagement", policy =>
+    options.AddPolicy(PolicyNames.CanViewPropertyManagement, policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context =>
             context.User.IsInRole(RoleNames.Administrator) ||
             context.User.IsInRole(RoleNames.Manager) ||
             context.User.IsInRole(RoleNames.User) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == PermissionNames.PropertyManagement.View));
+            context.User.HasClaim(c => c.Type == "permission" && c.Value == "propertymanagement:view"));
     });
 
     // Buildings policy
-    options.AddPolicy("CanViewBuildings", policy =>
+    options.AddPolicy(PolicyNames.CanViewBuildings, policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context =>
             context.User.IsInRole(RoleNames.Administrator) ||
             context.User.IsInRole(RoleNames.Manager) ||
             context.User.IsInRole(RoleNames.User) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == PermissionNames.Buildings.Read));
+            context.User.HasClaim(c => c.Type == "permission" && c.Value == "buildings:read"));
     });
 
     // Tenants policy
-    options.AddPolicy("CanViewTenants", policy =>
+    options.AddPolicy(PolicyNames.CanViewTenants, policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context =>
             context.User.IsInRole(RoleNames.Administrator) ||
             context.User.IsInRole(RoleNames.Manager) ||
             context.User.IsInRole(RoleNames.User) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == PermissionNames.Tenants.Read));
+            context.User.HasClaim(c => c.Type == "permission" && c.Value == "tenants:read"));
     });
 
     // Leases policy
-    options.AddPolicy("CanViewLeases", policy =>
+    options.AddPolicy(PolicyNames.CanViewLeases, policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context =>
             context.User.IsInRole(RoleNames.Administrator) ||
             context.User.IsInRole(RoleNames.Manager) ||
             context.User.IsInRole(RoleNames.User) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == PermissionNames.Leases.Read));
+            context.User.HasClaim(c => c.Type == "permission" && c.Value == "leases:read"));
     });
 });
 

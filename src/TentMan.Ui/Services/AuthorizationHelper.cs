@@ -1,33 +1,33 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
+using TentMan.ApiClient.Services;
 using System.Security.Claims;
 
 namespace TentMan.Ui.Services;
 
 /// <summary>
 /// Helper service for authorization checks in the UI layer.
-/// Provides methods to check permissions and policies for the current user.
+/// Provides methods to check permissions and policies via server-side API calls.
 /// </summary>
 public class AuthorizationHelper
 {
     private readonly AuthenticationStateProvider _authenticationStateProvider;
-    private readonly IAuthorizationService _authorizationService;
+    private readonly IAuthorizationApiClient _authorizationApiClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthorizationHelper"/> class.
     /// </summary>
     /// <param name="authenticationStateProvider">The authentication state provider.</param>
-    /// <param name="authorizationService">The authorization service.</param>
+    /// <param name="authorizationApiClient">The authorization API client.</param>
     public AuthorizationHelper(
         AuthenticationStateProvider authenticationStateProvider,
-        IAuthorizationService authorizationService)
+        IAuthorizationApiClient authorizationApiClient)
     {
         _authenticationStateProvider = authenticationStateProvider ?? throw new ArgumentNullException(nameof(authenticationStateProvider));
-        _authorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
+        _authorizationApiClient = authorizationApiClient ?? throw new ArgumentNullException(nameof(authorizationApiClient));
     }
 
     /// <summary>
-    /// Checks if the current user has the specified permission claim.
+    /// Checks if the current user has the specified permission claim via the API.
     /// </summary>
     /// <param name="permission">The permission to check (e.g., "products:read").</param>
     /// <returns>True if the user has the permission; otherwise, false.</returns>
@@ -46,12 +46,20 @@ public class AuthorizationHelper
             return false;
         }
 
-        // Check if user has the permission claim
-        return user.HasClaim(c => c.Type == "permission" && c.Value.Equals(permission, StringComparison.Ordinal));
+        try
+        {
+            var response = await _authorizationApiClient.CheckPermissionAsync(permission);
+            return response.Success && response.Data?.IsAuthorized == true;
+        }
+        catch
+        {
+            // If API call fails, return false for safety
+            return false;
+        }
     }
 
     /// <summary>
-    /// Checks if the current user satisfies the specified authorization policy.
+    /// Checks if the current user satisfies the specified authorization policy via the API.
     /// </summary>
     /// <param name="policyName">The name of the policy to check.</param>
     /// <returns>True if the user satisfies the policy; otherwise, false.</returns>
@@ -70,9 +78,16 @@ public class AuthorizationHelper
             return false;
         }
 
-        // Use the authorization service to evaluate the policy
-        var result = await _authorizationService.AuthorizeAsync(user, policyName);
-        return result.Succeeded;
+        try
+        {
+            var response = await _authorizationApiClient.CheckPolicyAsync(policyName);
+            return response.Success && response.Data?.IsAuthorized == true;
+        }
+        catch
+        {
+            // If API call fails, return false for safety
+            return false;
+        }
     }
 
     /// <summary>
