@@ -9,6 +9,7 @@ The Application layer contains use cases, business rules, and application logic 
 ```
 TentMan.Application/
 ├── Abstractions/              # Application interfaces
+│   ├── Billing/              # Billing service interfaces
 │   ├── IRepository.cs        # Base repository interface
 │   ├── IUnitOfWork.cs        # Unit of work pattern
 │   └── Messaging/            # CQRS base types
@@ -16,6 +17,8 @@ TentMan.Application/
 │   ├── Commands/             # Create, Update, Delete
 │   └── Queries/              # Read operations
 ├── Auth/                      # Authentication features
+├── Billing/                   # Billing and calculation services
+│   └── Services/             # Proration, rent, utility calculators
 ├── Common/                    # Shared application services
 ├── Products/                  # Product feature module
 │   ├── Commands/
