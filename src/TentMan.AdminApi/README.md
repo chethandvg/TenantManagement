@@ -48,6 +48,10 @@ If it starts without errors, JWT is configured correctly!
 
 **IMPORTANT**: This step must be performed **ONCE** before any other operations.
 
+#### Basic Initialization (Users and Roles Only)
+
+Use this option if you only want to create the super admin user and system roles:
+
 #### Option A: Using Scalar UI (Recommended for Development)
 
 1. Start the AdminApi:
@@ -62,6 +66,7 @@ If it starts without errors, JWT is configured correctly!
 
 4. Execute the `POST /api/v1/admin/initialization/initialize` endpoint with your super admin credentials:
 
+**Basic Request (Users and Roles Only):**
 ```json
 {
   "userName": "superadmin",
@@ -70,8 +75,36 @@ If it starts without errors, JWT is configured correctly!
 }
 ```
 
+**Advanced Request (With Organization and Owner):**
+```json
+{
+  "userName": "superadmin",
+  "email": "admin@yourcompany.com",
+  "password": "YourSecurePassword123!",
+  "organization": {
+    "name": "Acme Ltd",
+    "timeZone": "Asia/Kolkata"
+  },
+  "owner": {
+    "ownerType": 1,
+    "displayName": "John Doe",
+    "phone": "+919999999999",
+    "email": "admin@yourcompany.com",
+    "pan": "ABCDE1234F",
+    "gstin": "29ABCDE1234F1Z5"
+  }
+}
+```
+
+**Owner Type Values:**
+- `1` = Individual
+- `2` = Company
+
+**Note**: If you provide `owner` details, you must also provide `organization` details. The owner will be automatically linked to the created superadmin user via `LinkedUserId`.
+
 #### Option B: Using curl
 
+**Basic Initialization:**
 ```bash
 curl -X POST https://localhost:7002/api/v1/admin/initialization/initialize \
   -H "Content-Type: application/json" \
@@ -82,8 +115,30 @@ curl -X POST https://localhost:7002/api/v1/admin/initialization/initialize \
   }' -k
 ```
 
+**With Organization and Owner:**
+```bash
+curl -X POST https://localhost:7002/api/v1/admin/initialization/initialize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userName": "superadmin",
+    "email": "admin@company.com",
+    "password": "SuperSecret!@#",
+    "organization": {
+      "name": "Acme Ltd",
+      "timeZone": "Asia/Kolkata"
+    },
+    "owner": {
+      "ownerType": 1,
+      "displayName": "Chethan DVG",
+      "phone": "+919999999999",
+      "email": "admin@company.com"
+    }
+  }' -k
+```
+
 #### Option C: Using PowerShell
 
+**Basic Initialization:**
 ```powershell
 $body = @{
     userName = "superadmin"
@@ -98,9 +153,34 @@ Invoke-RestMethod -Uri "https://localhost:7002/api/v1/admin/initialization/initi
     -SkipCertificateCheck
 ```
 
+**With Organization and Owner:**
+```powershell
+$body = @{
+    userName = "superadmin"
+    email = "admin@company.com"
+    password = "SuperSecret!@#"
+    organization = @{
+        name = "Acme Ltd"
+        timeZone = "Asia/Kolkata"
+    }
+    owner = @{
+        ownerType = 1
+        displayName = "Chethan DVG"
+        phone = "+919999999999"
+        email = "admin@company.com"
+    }
+} | ConvertTo-Json -Depth 3
+
+Invoke-RestMethod -Uri "https://localhost:7002/api/v1/admin/initialization/initialize" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $body `
+    -SkipCertificateCheck
+```
+
 #### Initialization Response
 
-On success, you'll receive:
+**Basic Initialization Response:**
 
 ```json
 {
@@ -110,7 +190,32 @@ On success, you'll receive:
     "rolesCount": 5,
     "userCreated": true,
     "userId": "guid-of-created-user",
-    "message": "System initialized successfully. Created 5 roles and super admin user 'superadmin'."
+    "organizationCreated": false,
+    "organizationId": null,
+    "ownerCreated": false,
+    "ownerId": null,
+    "message": "System initialized successfully. Created 5 roles and super admin user."
+  },
+  "message": "System initialized successfully. You can now login with the super admin credentials.",
+  "timestamp": "2025-01-22T10:00:00Z"
+}
+```
+
+**With Organization and Owner Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "rolesCreated": true,
+    "rolesCount": 5,
+    "userCreated": true,
+    "userId": "guid-of-created-user",
+    "organizationCreated": true,
+    "organizationId": "guid-of-created-organization",
+    "ownerCreated": true,
+    "ownerId": "guid-of-created-owner",
+    "message": "System initialized successfully. Created 5 roles and super admin user. Organization created with ID {orgId}. Owner created and linked to superadmin."
   },
   "message": "System initialized successfully. You can now login with the super admin credentials.",
   "timestamp": "2025-01-22T10:00:00Z"
@@ -129,6 +234,10 @@ On success, you'll receive:
 ✅ **1 Super Admin User** with the credentials you provided
 
 ✅ **Role Assignment** - SuperAdmin role assigned to the created user
+
+✅ **Organization** (Optional) - Created if organization details are provided
+
+✅ **Owner** (Optional) - Created if owner details are provided and automatically linked to the super admin user
 
 ### Step 4: Login and Get Access Token
 
