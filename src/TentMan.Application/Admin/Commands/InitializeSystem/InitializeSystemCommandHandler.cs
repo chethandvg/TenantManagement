@@ -77,7 +77,7 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
                     Guid? orgId = null;
                     if (request.Organization != null)
                     {
-                        orgId = await CreateOrganizationAsync(request.Organization, userId, cancellationToken);
+                        orgId = await CreateOrganizationAsync(request.Organization, cancellationToken);
                     }
 
                     // Step 5: Create owner if provided
@@ -263,7 +263,6 @@ public class InitializeSystemCommandHandler : IRequestHandler<InitializeSystemCo
 
     private async Task<Guid> CreateOrganizationAsync(
         OrganizationData organizationData,
-        Guid createdByUserId,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Creating organization: {OrgName}", organizationData.Name);
