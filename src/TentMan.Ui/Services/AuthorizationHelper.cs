@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Logging;
 using TentMan.ApiClient.Services;
 using System.Security.Claims;
 
@@ -12,18 +13,22 @@ public class AuthorizationHelper
 {
     private readonly AuthenticationStateProvider _authenticationStateProvider;
     private readonly IAuthorizationApiClient _authorizationApiClient;
+    private readonly ILogger<AuthorizationHelper> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthorizationHelper"/> class.
     /// </summary>
     /// <param name="authenticationStateProvider">The authentication state provider.</param>
     /// <param name="authorizationApiClient">The authorization API client.</param>
+    /// <param name="logger">The logger instance.</param>
     public AuthorizationHelper(
         AuthenticationStateProvider authenticationStateProvider,
-        IAuthorizationApiClient authorizationApiClient)
+        IAuthorizationApiClient authorizationApiClient,
+        ILogger<AuthorizationHelper> logger)
     {
         _authenticationStateProvider = authenticationStateProvider ?? throw new ArgumentNullException(nameof(authenticationStateProvider));
         _authorizationApiClient = authorizationApiClient ?? throw new ArgumentNullException(nameof(authorizationApiClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -51,9 +56,10 @@ public class AuthorizationHelper
             var response = await _authorizationApiClient.CheckPermissionAsync(permission);
             return response.Success && response.Data?.IsAuthorized == true;
         }
-        catch
+        catch (Exception ex)
         {
-            // If API call fails, return false for safety
+            // Log the exception for debugging, but return false for safety to prevent unauthorized access
+            _logger.LogWarning(ex, "Failed to check permission '{Permission}' via API. Defaulting to unauthorized.", permission);
             return false;
         }
     }
@@ -83,9 +89,10 @@ public class AuthorizationHelper
             var response = await _authorizationApiClient.CheckPolicyAsync(policyName);
             return response.Success && response.Data?.IsAuthorized == true;
         }
-        catch
+        catch (Exception ex)
         {
-            // If API call fails, return false for safety
+            // Log the exception for debugging, but return false for safety to prevent unauthorized access
+            _logger.LogWarning(ex, "Failed to check policy '{PolicyName}' via API. Defaulting to unauthorized.", policyName);
             return false;
         }
     }

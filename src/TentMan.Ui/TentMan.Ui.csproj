@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TentMan.ApiClient\TentMan.ApiClient.csproj" />
     <ProjectReference Include="..\TentMan.Contracts\TentMan.Contracts.csproj" />
+    <ProjectReference Include="..\TentMan.Shared.Constants\TentMan.Shared.Constants.csproj" />
   </ItemGroup>
 
   <ItemGroup>

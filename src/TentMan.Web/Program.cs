@@ -1,7 +1,7 @@
 using TentMan.ApiClient.Extensions;
 using TentMan.Ui;
 using TentMan.Web;
-using TentMan.Contracts.Authorization;
+using TentMan.Shared.Constants.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -40,7 +40,7 @@ builder.Services.AddAuthorizationCore(options =>
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context =>
             context.User.IsInRole(RoleNames.Tenant) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == "tenantportal:view"));
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.TenantPortal.View));
     });
 
     // Property Management policy - allow Admin, Manager, User roles or explicit permission
@@ -51,7 +51,7 @@ builder.Services.AddAuthorizationCore(options =>
             context.User.IsInRole(RoleNames.Administrator) ||
             context.User.IsInRole(RoleNames.Manager) ||
             context.User.IsInRole(RoleNames.User) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == "propertymanagement:view"));
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.PropertyManagement.View));
     });
 
     // Buildings policy
@@ -62,7 +62,7 @@ builder.Services.AddAuthorizationCore(options =>
             context.User.IsInRole(RoleNames.Administrator) ||
             context.User.IsInRole(RoleNames.Manager) ||
             context.User.IsInRole(RoleNames.User) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == "buildings:read"));
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.Buildings.Read));
     });
 
     // Tenants policy
@@ -73,7 +73,7 @@ builder.Services.AddAuthorizationCore(options =>
             context.User.IsInRole(RoleNames.Administrator) ||
             context.User.IsInRole(RoleNames.Manager) ||
             context.User.IsInRole(RoleNames.User) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == "tenants:read"));
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.Tenants.Read));
     });
 
     // Leases policy
@@ -84,7 +84,7 @@ builder.Services.AddAuthorizationCore(options =>
             context.User.IsInRole(RoleNames.Administrator) ||
             context.User.IsInRole(RoleNames.Manager) ||
             context.User.IsInRole(RoleNames.User) ||
-            context.User.HasClaim(c => c.Type == "permission" && c.Value == "leases:read"));
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.Leases.Read));
     });
 });
 

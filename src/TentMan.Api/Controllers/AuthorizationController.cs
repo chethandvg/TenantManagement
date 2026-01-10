@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TentMan.Contracts.Authorization;
 using TentMan.Contracts.Common;
+using TentMan.Shared.Constants.Authorization;
 
 namespace TentMan.Api.Controllers;
 
@@ -34,7 +35,7 @@ public class AuthorizationController : ControllerBase
     /// Checks if the current user has the specified permission.
     /// </summary>
     /// <param name="request">The permission check request.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="cancellationToken">The cancellation token (currently unused as operation is synchronous).</param>
     /// <returns>The authorization check result.</returns>
     [HttpPost("check-permission")]
     [ProducesResponseType(typeof(ApiResponse<AuthorizationCheckResponse>), StatusCodes.Status200OK)]
@@ -49,7 +50,7 @@ public class AuthorizationController : ControllerBase
         }
 
         var hasPermission = User.HasClaim(c =>
-            c.Type == "permission" &&
+            c.Type == ClaimTypes.Permission &&
             c.Value.Equals(request.Permission, StringComparison.Ordinal));
 
         var response = new AuthorizationCheckResponse

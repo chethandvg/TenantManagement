@@ -28,6 +28,7 @@
     <ProjectReference Include="..\TentMan.Application\TentMan.Application.csproj" />
     <ProjectReference Include="..\TentMan.Infrastructure\TentMan.Infrastructure.csproj" />
     <ProjectReference Include="..\TentMan.ServiceDefaults\TentMan.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\TentMan.Shared.Constants\TentMan.Shared.Constants.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,12 @@
 using TentMan.Api.Authorization.Requirements;
 using TentMan.Domain.Constants;
+using TentMan.Shared.Constants.Authorization;
 using Microsoft.AspNetCore.Authorization;
+
+using SharedPolicyNames = TentMan.Shared.Constants.Authorization.PolicyNames;
+using SharedClaimTypes = TentMan.Shared.Constants.Authorization.ClaimTypes;
+using SharedPermissionValues = TentMan.Shared.Constants.Authorization.PermissionValues;
+using DomainRoleNames = TentMan.Domain.Constants.RoleNames;
 
 namespace TentMan.Api.Authorization;
 
@@ -32,31 +38,31 @@ public static class AuthorizationPolicyExtensions
         options.AddPolicy(PolicyNames.RequireUserRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.User));
+            policy.Requirements.Add(new MinimumRoleRequirement(DomainRoleNames.User));
         });
 
         options.AddPolicy(PolicyNames.RequireManagerRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Manager));
+            policy.Requirements.Add(new MinimumRoleRequirement(DomainRoleNames.Manager));
         });
 
         options.AddPolicy(PolicyNames.RequireAdminRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Administrator));
+            policy.Requirements.Add(new MinimumRoleRequirement(DomainRoleNames.Administrator));
         });
 
         options.AddPolicy(PolicyNames.RequireTenantRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Tenant));
+            policy.Requirements.Add(new MinimumRoleRequirement(DomainRoleNames.Tenant));
         });
 
         options.AddPolicy(PolicyNames.RequireSuperAdminRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.SuperAdmin));
+            policy.Requirements.Add(new MinimumRoleRequirement(DomainRoleNames.SuperAdmin));
         });
 
         // Resource ownership policy
@@ -89,25 +95,25 @@ public static class AuthorizationPolicyExtensions
     private static void ConfigureNavigationPolicies(AuthorizationOptions options)
     {
         // Tenant Portal policy - allow Tenant role or explicit permission
-        options.AddPolicy(AuthorizationPolicies.CanViewTenantPortal, policy =>
+        options.AddPolicy(SharedPolicyNames.CanViewTenantPortal, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
-                context.User.IsInRole(RoleNames.Tenant) ||
-                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
-                                           c.Value == PermissionNames.TenantPortal.View));
+                context.User.IsInRole(DomainRoleNames.Tenant) ||
+                context.User.HasClaim(c => c.Type == SharedClaimTypes.Permission &&
+                                           c.Value == SharedPermissionValues.TenantPortal.View));
         });
 
         // Property Management policy
-        options.AddPolicy(AuthorizationPolicies.CanViewPropertyManagement, policy =>
+        options.AddPolicy(SharedPolicyNames.CanViewPropertyManagement, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
-                context.User.IsInRole(RoleNames.Administrator) ||
-                context.User.IsInRole(RoleNames.Manager) ||
-                context.User.IsInRole(RoleNames.User) ||
-                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
-                                           c.Value == PermissionNames.PropertyManagement.View));
+                context.User.IsInRole(DomainRoleNames.Administrator) ||
+                context.User.IsInRole(DomainRoleNames.Manager) ||
+                context.User.IsInRole(DomainRoleNames.User) ||
+                context.User.HasClaim(c => c.Type == SharedClaimTypes.Permission &&
+                                           c.Value == SharedPermissionValues.PropertyManagement.View));
         });
     }
 
@@ -117,39 +123,39 @@ public static class AuthorizationPolicyExtensions
     private static void ConfigurePropertyManagementPolicies(AuthorizationOptions options)
     {
         // Buildings policies
-        options.AddPolicy(AuthorizationPolicies.CanViewBuildings, policy =>
+        options.AddPolicy(SharedPolicyNames.CanViewBuildings, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
-                context.User.IsInRole(RoleNames.Administrator) ||
-                context.User.IsInRole(RoleNames.Manager) ||
-                context.User.IsInRole(RoleNames.User) ||
-                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
-                                           c.Value == PermissionNames.Buildings.Read));
+                context.User.IsInRole(DomainRoleNames.Administrator) ||
+                context.User.IsInRole(DomainRoleNames.Manager) ||
+                context.User.IsInRole(DomainRoleNames.User) ||
+                context.User.HasClaim(c => c.Type == SharedClaimTypes.Permission &&
+                                           c.Value == SharedPermissionValues.Buildings.Read));
         });
 
         // Tenants policies
-        options.AddPolicy(AuthorizationPolicies.CanViewTenants, policy =>
+        options.AddPolicy(SharedPolicyNames.CanViewTenants, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
-                context.User.IsInRole(RoleNames.Administrator) ||
-                context.User.IsInRole(RoleNames.Manager) ||
-                context.User.IsInRole(RoleNames.User) ||
-                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
-                                           c.Value == PermissionNames.Tenants.Read));
+                context.User.IsInRole(DomainRoleNames.Administrator) ||
+                context.User.IsInRole(DomainRoleNames.Manager) ||
+                context.User.IsInRole(DomainRoleNames.User) ||
+                context.User.HasClaim(c => c.Type == SharedClaimTypes.Permission &&
+                                           c.Value == SharedPermissionValues.Tenants.Read));
         });
 
         // Leases policies
-        options.AddPolicy(AuthorizationPolicies.CanViewLeases, policy =>
+        options.AddPolicy(SharedPolicyNames.CanViewLeases, policy =>
         {
             policy.RequireAuthenticatedUser();
             policy.RequireAssertion(context =>
-                context.User.IsInRole(RoleNames.Administrator) ||
-                context.User.IsInRole(RoleNames.Manager) ||
-                context.User.IsInRole(RoleNames.User) ||
-                context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
-                                           c.Value == PermissionNames.Leases.Read));
+                context.User.IsInRole(DomainRoleNames.Administrator) ||
+                context.User.IsInRole(DomainRoleNames.Manager) ||
+                context.User.IsInRole(DomainRoleNames.User) ||
+                context.User.HasClaim(c => c.Type == SharedClaimTypes.Permission &&
+                                           c.Value == SharedPermissionValues.Leases.Read));
         });
     }
 
