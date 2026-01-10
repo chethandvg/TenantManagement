@@ -11,6 +11,7 @@ using TentMan.Infrastructure.Repositories;
 using TentMan.Infrastructure.Storage;
 using TentMan.Infrastructure.Time;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,7 +68,17 @@ public static class DependencyInjection
             ?? configuration.GetConnectionString("tentmandb")
             ?? throw new InvalidOperationException("Database connection string not configured");
 
-        services.AddDbContext<ApplicationDbContext>(options =>
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            // Register audit interceptor
+            var currentUser = sp.GetRequiredService<ICurrentUser>();
+            var timeProvider = sp.GetRequiredService<ITimeProvider>();
+            var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
+            var auditInterceptor = new TentMan.Infrastructure.Interceptors.AuditLoggingInterceptor(
+                currentUser, 
+                timeProvider, 
+                httpContextAccessor);
+
             options.UseSqlServer(
                 connectionString,
                 sqlOptions =>
@@ -78,7 +89,9 @@ public static class DependencyInjection
                         errorNumbersToAdd: null);
                     sqlOptions.CommandTimeout(30);
                     sqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
-                }));
+                })
+                .AddInterceptors(auditInterceptor);
+        });
 
         return services;
     }
@@ -240,6 +253,7 @@ public static class DependencyInjection
         services.AddScoped<ILeaseRepository, LeaseRepository>();
         services.AddScoped<IFileMetadataRepository, FileMetadataRepository>();
         services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
@@ -254,6 +268,7 @@ public static class DependencyInjection
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ITimeProvider, SystemTimeProvider>();
         services.AddScoped<TentMan.Application.PropertyManagement.Services.IOwnershipService, TentMan.Application.PropertyManagement.Services.OwnershipService>();
+        services.AddScoped<TentMan.Application.Abstractions.Security.IDataMaskingService, TentMan.Infrastructure.Security.DataMaskingService>();
 
         return services;
     }

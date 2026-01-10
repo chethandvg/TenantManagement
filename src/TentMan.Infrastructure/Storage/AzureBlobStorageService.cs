@@ -141,6 +141,49 @@ public class AzureBlobStorageService : IFileStorageService
         }
     }
 
+    public async Task<string> GenerateSignedUrlAsync(
+        string storageKey,
+        int expiresInMinutes = 60,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Generating signed URL for {StorageKey} valid for {Minutes} minutes", storageKey, expiresInMinutes);
+
+        try
+        {
+            var (containerName, blobName) = ParseStorageKey(storageKey);
+            var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            // Check if blob exists
+            if (!await blobClient.ExistsAsync(cancellationToken))
+            {
+                throw new FileNotFoundException($"Blob not found: {storageKey}");
+            }
+
+            // Generate SAS token with read permission
+            var sasBuilder = new Azure.Storage.Sas.BlobSasBuilder
+            {
+                BlobContainerName = containerName,
+                BlobName = blobName,
+                Resource = "b", // b = blob
+                StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5), // Allow 5 minutes clock skew
+                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes)
+            };
+
+            sasBuilder.SetPermissions(Azure.Storage.Sas.BlobSasPermissions.Read);
+
+            var sasToken = blobClient.GenerateSasUri(sasBuilder);
+            
+            _logger.LogInformation("Signed URL generated successfully for {StorageKey}", storageKey);
+            return sasToken.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating signed URL for {StorageKey}", storageKey);
+            throw;
+        }
+    }
+
     private static (string containerName, string blobName) ParseStorageKey(string storageKey)
     {
         var parts = storageKey.Split('/', 2);

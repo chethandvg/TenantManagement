@@ -62,6 +62,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<EmailConfirmationToken> EmailConfirmationTokens => Set<EmailConfirmationToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
+    // Audit DbSets
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
