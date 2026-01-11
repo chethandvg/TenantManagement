@@ -605,6 +605,254 @@ Run tests:
 dotnet test --filter "Feature=Billing"
 ```
 
+## Frontend UI Components
+
+The billing engine includes a comprehensive Blazor-based frontend interface for managing all billing operations. All UI components are located in `TentMan.Ui/Pages/Billing/` and require Owner, Administrator, or Manager roles.
+
+### UI Architecture
+
+**Technology Stack**:
+- **Framework**: Blazor WebAssembly
+- **UI Library**: MudBlazor (Material Design components)
+- **Pattern**: Code-behind pattern with `.razor` and `.razor.cs` files
+- **Authorization**: Policy-based using `PolicyNames.RequireManagerRole`
+
+**Navigation**: All billing screens are accessible via `/billing/*` routes
+
+### Component Overview
+
+#### BillingDashboard (`/billing/dashboard`)
+**Purpose**: Central hub providing an overview of billing operations
+
+**Key Features**:
+- **Statistics Cards**: 
+  - Invoices due this month (count + total amount)
+  - Overdue invoices (count + overdue amount)
+  - Draft invoices count
+  - Total invoices count
+- **Quick Actions**: Run invoice generation, view all invoices
+- **Filtering**: Filter invoices by status, date range
+- **Real-time Updates**: Auto-refresh statistics
+
+**API Endpoints Used**: `GET /api/invoices/stats`, `GET /api/invoices`
+
+---
+
+#### LeaseBillingSettings (`/billing/lease-settings/{leaseId}`)
+**Purpose**: Configure billing behavior and settings for individual leases
+
+**Key Settings**:
+- **Billing Day**: Day of month to generate invoices (1-28)
+- **Payment Terms**: Number of days after invoice date for payment due
+- **Auto-generation**: Enable/disable automatic monthly invoice generation
+- **Invoice Prefix**: Custom prefix for invoice numbers
+- **Payment Instructions**: Custom instructions shown on invoices
+- **Proration Rules**: Configure partial month billing
+
+**Features**:
+- Settings preview before saving
+- Validation of business rules
+- Concurrency control for updates
+
+**API Endpoints Used**: 
+- `GET /api/leases/{leaseId}/billing-settings`
+- `PUT /api/leases/{leaseId}/billing-settings`
+
+---
+
+#### RecurringCharges (`/billing/recurring-charges/{leaseId}`)
+**Purpose**: Manage all recurring charges associated with a lease
+
+**Supported Charge Types**:
+- RENT (monthly rent)
+- MAINT (maintenance charges)
+- ELEC, WATER, GAS (utility charges)
+- Custom charges
+
+**Operations**:
+- **Create**: Add new recurring charge with frequency (Monthly, Quarterly, Yearly, OneTime)
+- **Update**: Modify amount, frequency, dates
+- **Delete**: Remove recurring charge
+- **Activate/Deactivate**: Enable/disable charges without deletion
+
+**Features**:
+- Charge type selection from system-defined and custom types
+- Start/End date configuration
+- Active status tracking
+- Amount validation
+
+**API Endpoints Used**: 
+- `GET /api/leases/{leaseId}/recurring-charges`
+- `POST /api/leases/{leaseId}/recurring-charges`
+- `PUT /api/recurring-charges/{chargeId}`
+- `DELETE /api/recurring-charges/{chargeId}`
+
+---
+
+#### UtilityStatements (`/billing/utility-statements/{leaseId}`)
+**Purpose**: Record and manage utility consumption and billing
+
+**Input Modes**:
+1. **Meter-Based**: 
+   - Enter previous and current meter readings
+   - System calculates consumption using utility rate plans
+   - Supports tiered pricing (slabs)
+   - Utility types: Electricity, Water, Gas
+
+2. **Amount-Based**: 
+   - Direct entry of utility bill amount
+   - Used when provider invoice is available
+   - No rate plan calculation
+
+**Features**:
+- Billing period selection (start/end dates)
+- File upload support for utility bills (future)
+- Calculated vs. actual amount display
+- Link to invoice line items
+
+**API Endpoints Used**: 
+- `GET /api/leases/{leaseId}/utility-statements`
+- `POST /api/leases/{leaseId}/utility-statements`
+- `GET /api/utility-rate-plans` (for meter-based calculations)
+
+---
+
+#### InvoiceList (`/billing/invoices`)
+**Purpose**: Browse, search, and filter all invoices in the organization
+
+**Features**:
+- **Status Filtering**: Draft, Issued, PartiallyPaid, Paid, Overdue, Cancelled, WrittenOff
+- **Date Range**: Filter by invoice date or due date
+- **Search**: Search by invoice number or lease
+- **Sorting**: Sort by date, amount, status
+- **Pagination**: Handle large datasets efficiently
+- **Status Badges**: Color-coded status indicators
+- **Quick Actions**: Navigate to invoice details, void invoice
+
+**Display Columns**:
+- Invoice number, Date, Due date
+- Lease/Unit information
+- Total amount, Paid amount, Balance
+- Status (with color-coded chip)
+- Actions (view, void, create credit note)
+
+**API Endpoints Used**: `GET /api/invoices?status={status}&from={date}&to={date}`
+
+---
+
+#### InvoiceDetail (`/billing/invoices/{invoiceId}`)
+**Purpose**: View complete invoice details and perform invoice actions
+
+**Sections**:
+1. **Header**: Invoice number, date, status, amounts
+2. **Lease Information**: Tenant details, unit, lease dates
+3. **Line Items**: Detailed breakdown of charges
+   - Charge type, Description
+   - Quantity, Unit price
+   - Amount, Tax, Total
+4. **Totals**: Subtotal, Tax amount, Total, Paid, Balance
+5. **Actions**: Issue, Void, Create Credit Note
+
+**Available Actions**:
+- **Issue Invoice**: Change from Draft to Issued status
+- **Void Invoice**: Cancel issued invoice
+- **Create Credit Note**: Issue partial or full credit
+- **Record Payment**: Mark invoice as paid (future)
+- **Download PDF**: Generate invoice PDF (future)
+
+**API Endpoints Used**: 
+- `GET /api/invoices/{invoiceId}`
+- `POST /api/invoices/{invoiceId}/issue`
+- `POST /api/invoices/{invoiceId}/void`
+- `POST /api/invoices/{invoiceId}/credit-notes`
+
+---
+
+#### InvoiceRuns (`/billing/invoice-runs`)
+**Purpose**: Execute batch invoice generation across multiple leases
+
+**Features**:
+- **Run History**: View past invoice runs with status
+- **Execution Stats**: Total leases, success count, failure count
+- **Status Tracking**: Pending, InProgress, Completed, CompletedWithErrors, Failed, Cancelled
+- **Initiate New Run**: Start batch billing for a billing period
+- **View Details**: Navigate to run detail for per-lease results
+
+**Run Information**:
+- Run number, Billing period (start/end)
+- Execution timestamps (started, completed)
+- Result summary (success/failure counts)
+- Error messages (if any)
+
+**API Endpoints Used**: 
+- `GET /api/invoice-runs`
+- `POST /api/invoice-runs` (initiate new run)
+- `GET /api/invoice-runs/{runId}`
+
+---
+
+#### InvoiceRunDetail (`/billing/invoice-runs/{runId}`)
+**Purpose**: View detailed results of a specific invoice run execution
+
+**Features**:
+- **Run Summary**: Status, billing period, execution time, totals
+- **Per-Lease Results**: 
+  - Lease number and tenant name
+  - Success/Failure status
+  - Generated invoice number (if successful)
+  - Error message (if failed)
+- **Retry Failed**: Re-run failed invoice generations (future)
+
+**API Endpoints Used**: `GET /api/invoice-runs/{runId}/items`
+
+---
+
+### Authorization & Security
+
+**Required Roles**: All billing screens require one of:
+- `Manager` role
+- `Administrator` role  
+- `SuperAdmin` role
+
+**Policy**: Components use `[Authorize(Policy = PolicyNames.RequireManagerRole)]`
+
+**Navigation Guard**: Billing menu items only appear for users with appropriate roles
+
+**API Authorization**: All billing API endpoints enforce the same role requirements
+
+### Navigation Structure
+
+```
+/billing
+├── /dashboard              (Billing Dashboard)
+├── /lease-settings/{id}   (Lease Billing Settings)
+├── /recurring-charges/{id} (Recurring Charges)
+├── /utility-statements/{id} (Utility Statements)
+├── /invoices              (Invoice List)
+├── /invoices/{id}         (Invoice Detail)
+├── /invoice-runs          (Invoice Runs)
+└── /invoice-runs/{id}     (Invoice Run Detail)
+```
+
+### Integration with Backend
+
+**API Base Path**: `/api/v1/`
+
+**Controller Mapping**:
+- `BillingSettingsController` → Lease billing settings
+- `RecurringChargesController` → Recurring charge management
+- `UtilityStatementsController` → Utility billing
+- `InvoicesController` → Invoice operations
+- `InvoiceRunsController` → Batch billing runs
+- `CreditNotesController` → Credit note operations
+- `ChargeTypesController` → Charge type lookup
+
+**Error Handling**: All components use MudBlazor's `BusyBoundary` for graceful error handling and retry logic
+
+**State Management**: Components use local state with reload on navigation
+
+---
+
 ## Future Enhancements
 
 - [ ] Payment transaction tracking
@@ -620,6 +868,7 @@ dotnet test --filter "Feature=Billing"
 
 ## Related Documentation
 
+- [Billing UI Guide](BILLING_UI_GUIDE.md) - Complete frontend component documentation
 - [Tenant & Lease Management](TENANT_LEASE_MANAGEMENT.md)
 - [Database Guide](DATABASE_GUIDE.md)
 - [Architecture Guide](ARCHITECTURE.md)
@@ -634,5 +883,5 @@ For questions or issues related to the billing engine:
 
 ---
 
-**Last Updated**: 2026-01-10  
-**Part of**: TentMan Billing Engine Feature (#45)
+**Last Updated**: 2026-01-11  
+**Part of**: TentMan Billing Engine Feature (#45, #51)

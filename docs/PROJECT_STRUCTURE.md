@@ -248,6 +248,21 @@ Reusable Blazor component library with MudBlazor.
 - CSS isolation
 - Easy integration
 
+**Key Component Directories**:
+- `Pages/Buildings/` - Building and property management screens
+- `Pages/Tenants/` - Tenant management and invite system
+- `Pages/Leases/` - Lease creation wizard and management
+- `Pages/Billing/` - Billing and invoicing management (NEW)
+  - `BillingDashboard.razor` - Central billing hub with statistics and quick actions
+  - `LeaseBillingSettings.razor` - Configure billing settings per lease (due date, auto-generation, proration)
+  - `RecurringCharges.razor` - Manage recurring charges (rent, maintenance, utilities)
+  - `UtilityStatements.razor` - Record utility consumption (meter-based and amount-based)
+  - `InvoiceList.razor` - Browse and filter invoices with status tracking
+  - `InvoiceDetail.razor` - View invoice details, line items, totals, and perform actions
+  - `InvoiceRuns.razor` - View invoice run history and initiate batch billing
+  - `InvoiceRunDetail.razor` - View detailed results of an invoice run execution
+  - `BillingStatusHelper.cs` - Helper utilities for invoice status display
+
 **Usage**:
 ```csharp
 // Register services
@@ -257,7 +272,7 @@ builder.Services.AddTentManUi();
 <ProductCard Product="@product" OnEdit="HandleEdit" />
 ```
 
-**Documentation**: See `src/TentMan.Ui/README.md`, `CHANGELOG.md`, `INTEGRATION.md`
+**Documentation**: See `src/TentMan.Ui/README.md`, `CHANGELOG.md`, `INTEGRATION.md`, `docs/BILLING_UI_GUIDE.md`
 
 ---
 

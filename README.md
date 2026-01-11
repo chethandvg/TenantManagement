@@ -191,8 +191,17 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 - **Batch Billing**: Invoice runs for generating invoices across multiple leases
 - **Payment Tracking**: Track paid, partially paid, and overdue invoices
 - **Database Schema**: 12 new tables with foreign keys and indexes for optimal performance
+- **Billing & Invoicing UI** ✨: Complete admin billing dashboard and invoice management screens
+  - Admin billing dashboard with invoice statistics and quick actions
+  - Lease billing settings configuration with preview
+  - Recurring charges management for leases
+  - Utility statements recording (meter-based and amount-based)
+  - Invoice list with filters and status tracking
+  - Detailed invoice view with line items and actions
+  - Invoice runs for batch billing with execution history
+  - Available for Owner, Administrator, and Manager roles
 
-📚 **[Read the Billing Engine Guide →](docs/BILLING_ENGINE.md)**
+📚 **[Read the Billing Engine Guide →](docs/BILLING_ENGINE.md)** | **[Billing UI Guide →](docs/BILLING_UI_GUIDE.md)**
 
 ### Lease Management 📝 NEW!
 - **7-Step Lease Creation Wizard**: Guided workflow for creating leases
