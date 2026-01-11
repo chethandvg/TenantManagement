@@ -221,6 +221,18 @@ Provides:
 - Password management
 - Token refresh
 
+### Background Jobs (Hangfire)
+
+Provides automated background processing for:
+- **Monthly Rent Generation**: Automated invoice generation (26th @ 2 AM UTC)
+- **Utility Billing**: Weekly utility invoice generation (Monday @ 3 AM UTC)
+- **Dashboard**: Web-based monitoring at `/hangfire`
+- **Storage**: SQL Server persistence in `Hangfire` schema
+- **Reliability**: Automatic retries with exponential backoff
+- **Idempotency**: Safe to retry without creating duplicates
+
+See [Background Jobs Documentation](../../docs/BACKGROUND_JOBS.md) for details.
+
 ---
 
 ## 🗄️ Database Commands
