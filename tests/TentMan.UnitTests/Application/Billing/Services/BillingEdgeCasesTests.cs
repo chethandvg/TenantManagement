@@ -647,6 +647,7 @@ public class BillingEdgeCasesTests
     public async Task TenantSwappedMidMonth_ShouldProrateForBothLeases()
     {
         // Arrange
+        const decimal MONTHLY_RENT = 10000m;
         var unitId = Guid.NewGuid();
         var orgId = Guid.NewGuid();
         
@@ -663,7 +664,6 @@ public class BillingEdgeCasesTests
         
         var billingPeriodStart = new DateOnly(2024, 1, 1);
         var billingPeriodEnd = new DateOnly(2024, 1, 31);
-        var monthlyRent = 10000m;
 
         var oldLease = new Lease
         {
@@ -679,7 +679,7 @@ public class BillingEdgeCasesTests
                 {
                     Id = oldTermId,
                     LeaseId = oldLeaseId,
-                    MonthlyRent = monthlyRent,
+                    MonthlyRent = MONTHLY_RENT,
                     EffectiveFrom = new DateOnly(2024, 1, 1),
                     EffectiveTo = oldLeaseEndDate
                 }
@@ -699,7 +699,7 @@ public class BillingEdgeCasesTests
                 {
                     Id = newTermId,
                     LeaseId = newLeaseId,
-                    MonthlyRent = monthlyRent,
+                    MonthlyRent = MONTHLY_RENT,
                     EffectiveFrom = newLeaseStartDate,
                     EffectiveTo = null
                 }
@@ -727,7 +727,7 @@ public class BillingEdgeCasesTests
         
         var oldLeaseLineItem = oldLeaseResult.LineItems.First();
         oldLeaseLineItem.IsProrated.Should().BeTrue();
-        // 15 days / 31 days * 10000 = 4838.71
+        // Old lease: 15 days (Jan 1-15) / 31 days in January * 10000 = 4838.71
         oldLeaseLineItem.Amount.Should().BeApproximately(4838.71m, 0.01m);
 
         newLeaseResult.Should().NotBeNull();
@@ -735,12 +735,12 @@ public class BillingEdgeCasesTests
         
         var newLeaseLineItem = newLeaseResult.LineItems.First();
         newLeaseLineItem.IsProrated.Should().BeTrue();
-        // 16 days (Jan 16-31) / 31 days * 10000 = 5161.29
+        // New lease: 16 days (Jan 16-31) / 31 days in January * 10000 = 5161.29
         newLeaseLineItem.Amount.Should().BeApproximately(5161.29m, 0.01m);
 
-        // Verify combined total equals full month rent
+        // Verify combined total equals full month rent (accounting for rounding)
         var totalRent = oldLeaseLineItem.Amount + newLeaseLineItem.Amount;
-        totalRent.Should().Be(10000m);
+        totalRent.Should().Be(MONTHLY_RENT);
     }
 
     #endregion

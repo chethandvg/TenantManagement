@@ -297,7 +297,10 @@ public class InvoicesControllerTests
         var orgId = Guid.NewGuid();
         var chargeTypeId = Guid.NewGuid();
         var invoice = CreateTestInvoice(Guid.NewGuid(), orgId, chargeTypeId);
-        invoice.Status = InvoiceStatus.Voided;
+        invoice.Status = InvoiceStatus.Issued; // Invoice must be issued to be voided
+        invoice.VoidedAtUtc = DateTime.UtcNow;
+        invoice.VoidReason = "Test void";
+        invoice.Status = InvoiceStatus.Voided; // After voiding
         
         var request = new VoidInvoiceRequest { VoidReason = "Test void" };
 
