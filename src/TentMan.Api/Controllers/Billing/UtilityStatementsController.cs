@@ -7,6 +7,7 @@ using TentMan.Shared.Constants.Authorization;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace TentMan.Api.Controllers.Billing;
 
@@ -18,6 +19,9 @@ namespace TentMan.Api.Controllers.Billing;
 [Authorize]
 public class UtilityStatementsController : ControllerBase
 {
+    // Placeholder rate until proper rate plan service is integrated
+    private const decimal PlaceholderRatePerUnit = 10m;
+    
     private readonly IUtilityStatementRepository _utilityStatementRepository;
     private readonly ILeaseRepository _leaseRepository;
     private readonly IUnitRepository _unitRepository;
@@ -220,25 +224,16 @@ public class UtilityStatementsController : ControllerBase
 
         statement.ModifiedAtUtc = DateTime.UtcNow;
 
-        // Recalculate amounts
-        if (statement.IsMeterBased && statement.CurrentReading.HasValue && statement.PreviousReading.HasValue)
-        {
-            statement.UnitsConsumed = statement.CurrentReading.Value - statement.PreviousReading.Value;
-            statement.CalculatedAmount = statement.UnitsConsumed.Value * 10; // Placeholder
-            statement.TotalAmount = statement.CalculatedAmount.Value;
-        }
-        else
-        {
-            statement.TotalAmount = statement.DirectBillAmount ?? 0;
-        }
+        // Recalculate amounts using helper method
+        CalculateUtilityAmounts(statement);
 
         try
         {
-            await _utilityStatementRepository.UpdateAsync(statement, statement.RowVersion, cancellationToken);
+            await _utilityStatementRepository.UpdateAsync(statement, request.RowVersion, cancellationToken);
         }
-        catch (InvalidOperationException ex)
+        catch (DbUpdateConcurrencyException)
         {
-            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            return BadRequest(ApiResponse<object>.Fail("The utility statement was modified by another process. Please retry."));
         }
 
         var dto = MapToDto(statement);
@@ -289,9 +284,9 @@ public class UtilityStatementsController : ControllerBase
         {
             await _utilityStatementRepository.UpdateAsync(statement, request.RowVersion, cancellationToken);
         }
-        catch (InvalidOperationException ex)
+        catch (DbUpdateConcurrencyException)
         {
-            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            return BadRequest(ApiResponse<object>.Fail("The utility statement was modified by another process. Please retry."));
         }
 
         var dto = MapToDto(statement);
@@ -310,8 +305,7 @@ public class UtilityStatementsController : ControllerBase
             statement.UnitsConsumed = statement.CurrentReading.Value - statement.PreviousReading.Value;
             // TODO: Replace with actual rate plan calculation service
             // This is a placeholder - should use utility rate plan to calculate tiered pricing
-            const decimal placeholderRatePerUnit = 10m;
-            statement.CalculatedAmount = statement.UnitsConsumed.Value * placeholderRatePerUnit;
+            statement.CalculatedAmount = statement.UnitsConsumed.Value * PlaceholderRatePerUnit;
             statement.TotalAmount = statement.CalculatedAmount.Value;
         }
         else

@@ -6,6 +6,7 @@ using TentMan.Shared.Constants.Authorization;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace TentMan.Api.Controllers.Billing;
 
@@ -131,16 +132,28 @@ public class RecurringChargesController : ControllerBase
 
         var charges = await _recurringChargeRepository.GetByLeaseIdAsync(leaseId, cancellationToken);
 
+        // Get all unique charge type IDs to avoid N+1 queries
+        var chargeTypeIds = charges.Select(c => c.ChargeTypeId).Distinct().ToList();
+        var chargeTypesDict = new Dictionary<Guid, string>();
+        
+        foreach (var chargeTypeId in chargeTypeIds)
+        {
+            var chargeType = await _chargeTypeRepository.GetByIdAsync(chargeTypeId, cancellationToken);
+            if (chargeType != null)
+            {
+                chargeTypesDict[chargeTypeId] = chargeType.Name;
+            }
+        }
+
         var dtos = new List<LeaseRecurringChargeDto>();
         foreach (var charge in charges)
         {
-            var chargeType = await _chargeTypeRepository.GetByIdAsync(charge.ChargeTypeId, cancellationToken);
             dtos.Add(new LeaseRecurringChargeDto
             {
                 Id = charge.Id,
                 LeaseId = charge.LeaseId,
                 ChargeTypeId = charge.ChargeTypeId,
-                ChargeTypeName = chargeType?.Name ?? "Unknown",
+                ChargeTypeName = chargeTypesDict.GetValueOrDefault(charge.ChargeTypeId, "Unknown"),
                 Description = charge.Description,
                 Amount = charge.Amount,
                 Frequency = charge.Frequency,
@@ -198,9 +211,9 @@ public class RecurringChargesController : ControllerBase
         {
             await _recurringChargeRepository.UpdateAsync(charge, request.RowVersion, cancellationToken);
         }
-        catch (InvalidOperationException ex)
+        catch (DbUpdateConcurrencyException)
         {
-            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            return BadRequest(ApiResponse<object>.Fail("The recurring charge was modified by another process. Please retry."));
         }
 
         var chargeType = await _chargeTypeRepository.GetByIdAsync(charge.ChargeTypeId, cancellationToken);
@@ -255,9 +268,9 @@ public class RecurringChargesController : ControllerBase
         {
             await _recurringChargeRepository.UpdateAsync(charge, charge.RowVersion, cancellationToken);
         }
-        catch (InvalidOperationException ex)
+        catch (DbUpdateConcurrencyException)
         {
-            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            return BadRequest(ApiResponse<object>.Fail("The recurring charge was modified by another process. Please retry."));
         }
 
         return Ok(ApiResponse<string>.Ok("Deleted", "Recurring charge deleted successfully"));

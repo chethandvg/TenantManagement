@@ -161,7 +161,6 @@ public class CreditNotesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<CreditNoteDto>>> IssueCreditNote(
         Guid id,
-        IssueCreditNoteRequest request,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Issuing credit note {CreditNoteId}", id);

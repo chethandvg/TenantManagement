@@ -28,13 +28,9 @@ public class UtilityStatementRepository : BaseRepository<UtilityStatement>, IUti
 
     public async Task<IEnumerable<UtilityStatement>> GetByUnitIdAsync(Guid unitId, UtilityType? utilityType = null, CancellationToken cancellationToken = default)
     {
-        // First get all leases for the unit
-        var leaseIds = await Context.Leases
-            .Where(l => l.UnitId == unitId && !l.IsDeleted)
-            .Select(l => l.Id)
-            .ToListAsync(cancellationToken);
-
-        var query = DbSet.Where(u => leaseIds.Contains(u.LeaseId));
+        // Use a single query with a join to avoid N+1
+        var query = DbSet
+            .Where(u => u.Lease.UnitId == unitId && !u.IsDeleted);
 
         if (utilityType.HasValue)
         {
@@ -56,9 +52,17 @@ public class UtilityStatementRepository : BaseRepository<UtilityStatement>, IUti
     public async Task UpdateAsync(UtilityStatement statement, byte[] originalRowVersion, CancellationToken cancellationToken = default)
     {
         // EF Core will handle optimistic concurrency check through RowVersion
-        Context.Entry(statement).Property(nameof(statement.RowVersion)).OriginalValue = originalRowVersion;
-        Context.Entry(statement).State = EntityState.Modified;
+        var entry = Context.Entry(statement);
+        entry.Property(nameof(statement.RowVersion)).OriginalValue = originalRowVersion;
+        entry.State = EntityState.Modified;
         await Context.SaveChangesAsync(cancellationToken);
+
+        // Ensure the in-memory entity has the updated RowVersion value
+        var currentRowVersion = entry.Property(nameof(statement.RowVersion)).CurrentValue;
+        if (currentRowVersion is byte[] newRowVersion)
+        {
+            statement.RowVersion = newRowVersion;
+        }
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)

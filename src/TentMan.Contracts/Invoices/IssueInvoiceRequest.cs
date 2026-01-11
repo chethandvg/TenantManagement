@@ -4,9 +4,9 @@ namespace TentMan.Contracts.Invoices;
 
 /// <summary>
 /// Request to issue an invoice.
+/// Note: Concurrency control is handled internally by the service.
 /// </summary>
 public sealed class IssueInvoiceRequest
 {
-    [Required]
-    public byte[] RowVersion { get; init; } = Array.Empty<byte>();
+    // No parameters needed - the service handles concurrency internally
 }

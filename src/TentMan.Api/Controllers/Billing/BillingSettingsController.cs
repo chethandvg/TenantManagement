@@ -6,6 +6,7 @@ using TentMan.Shared.Constants.Authorization;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace TentMan.Api.Controllers.Billing;
 
@@ -132,9 +133,9 @@ public class BillingSettingsController : ControllerBase
             {
                 await _billingSettingRepository.UpdateAsync(settings, request.RowVersion, cancellationToken);
             }
-            catch (InvalidOperationException ex)
+            catch (DbUpdateConcurrencyException)
             {
-                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+                return BadRequest(ApiResponse<object>.Fail("The billing settings were modified by another process. Please retry."));
             }
         }
 

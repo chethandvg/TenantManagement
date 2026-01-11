@@ -159,7 +159,6 @@ public class InvoicesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<InvoiceDto>>> IssueInvoice(
         Guid id,
-        IssueInvoiceRequest request,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Issuing invoice {InvoiceId}", id);
@@ -209,16 +208,28 @@ public class InvoicesController : ControllerBase
 
     private async Task<InvoiceDto> MapToDto(Domain.Entities.Invoice invoice, CancellationToken cancellationToken)
     {
+        // Get all unique charge type IDs to avoid N+1 queries
+        var chargeTypeIds = invoice.Lines.Select(l => l.ChargeTypeId).Distinct().ToList();
+        var chargeTypesDict = new Dictionary<Guid, string>();
+        
+        foreach (var chargeTypeId in chargeTypeIds)
+        {
+            var chargeType = await _chargeTypeRepository.GetByIdAsync(chargeTypeId, cancellationToken);
+            if (chargeType != null)
+            {
+                chargeTypesDict[chargeTypeId] = chargeType.Name;
+            }
+        }
+        
         var lineDtos = new List<InvoiceLineDto>();
         foreach (var line in invoice.Lines)
         {
-            var chargeType = await _chargeTypeRepository.GetByIdAsync(line.ChargeTypeId, cancellationToken);
             lineDtos.Add(new InvoiceLineDto
             {
                 Id = line.Id,
                 InvoiceId = line.InvoiceId,
                 ChargeTypeId = line.ChargeTypeId,
-                ChargeTypeName = chargeType?.Name ?? "Unknown",
+                ChargeTypeName = chargeTypesDict.GetValueOrDefault(line.ChargeTypeId, "Unknown"),
                 LineNumber = line.LineNumber,
                 Description = line.Description,
                 Quantity = line.Quantity,
