@@ -1,0 +1,27 @@
+@page "/billing/lease-settings"
+@attribute [Authorize]
+
+<PageTitle>Lease Billing Settings</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h4">Lease Billing Settings</MudText>
+
+    <MudAlert Severity="Severity.Info">
+        Lease Billing Settings management is coming soon. This feature allows you to configure billing settings for each lease.
+    </MudAlert>
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6">Features (Coming Soon)</MudText>
+        <MudSimpleTable>
+            <tbody>
+                <tr><td>• Configure rent billing timing (Advance/Arrears)</td></tr>
+                <tr><td>• Set utility billing timing</td></tr>
+                <tr><td>• Specify due day (1-28)</td></tr>
+                <tr><td>• Choose proration method</td></tr>
+                <tr><td>• Enable/disable auto-generate invoices</td></tr>
+                <tr><td>• Set rounding preference (Rupee/Paisa)</td></tr>
+                <tr><td>• Preview next invoice (dry-run)</td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+</MudStack>

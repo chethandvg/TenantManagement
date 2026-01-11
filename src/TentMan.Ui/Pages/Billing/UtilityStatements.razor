@@ -1,0 +1,32 @@
+@page "/billing/utility-statements"
+@attribute [Authorize]
+
+<PageTitle>Utility Statements</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Utility Statements</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="true">
+            Create Statement
+        </MudButton>
+    </MudStack>
+
+    <MudAlert Severity="Severity.Info">
+        Utility Statements management is coming soon. This feature allows you to create and manage utility bills for units.
+    </MudAlert>
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6">Features (Coming Soon)</MudText>
+        <MudSimpleTable>
+            <tbody>
+                <tr><td>• Create utility statements with amount or meter readings</td></tr>
+                <tr><td>• Upload bill documents (PDF/images)</td></tr>
+                <tr><td>• Calculate amounts based on meter readings and rate plans</td></tr>
+                <tr><td>• Finalize statements (lock for invoicing)</td></tr>
+                <tr><td>• Filter by unit, type, period, and status</td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+</MudStack>

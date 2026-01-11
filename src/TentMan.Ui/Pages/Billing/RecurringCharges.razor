@@ -1,0 +1,32 @@
+@page "/billing/recurring-charges"
+@attribute [Authorize]
+
+<PageTitle>Recurring Charges</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Recurring Charges</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="true">
+            Add Recurring Charge
+        </MudButton>
+    </MudStack>
+
+    <MudAlert Severity="Severity.Info">
+        Recurring Charges management is coming soon. This feature allows you to manage recurring charges for leases.
+    </MudAlert>
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6">Features (Coming Soon)</MudText>
+        <MudSimpleTable>
+            <tbody>
+                <tr><td>• View recurring charges by lease</td></tr>
+                <tr><td>• Add new recurring charges</td></tr>
+                <tr><td>• Edit existing charges</td></tr>
+                <tr><td>• Set effective dates</td></tr>
+                <tr><td>• Delete charges with confirmation</td></tr>
+            </tbody>
+        </MudSimpleTable>
+    </MudPaper>
+</MudStack>
