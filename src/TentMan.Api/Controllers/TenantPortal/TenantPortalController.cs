@@ -4,11 +4,12 @@ using TentMan.Application.TenantManagement.TenantPortal.Queries;
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Tenants;
 using TentMan.Contracts.TenantPortal;
+using TentMan.Shared.Constants.Authorization;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using SystemClaimTypes = System.Security.Claims.ClaimTypes;
 using TentMan.Application.Abstractions;
 
 namespace TentMan.Api.Controllers.TenantPortal;
@@ -18,7 +19,7 @@ namespace TentMan.Api.Controllers.TenantPortal;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Authorize(Roles = "Tenant")]
+[Authorize(Policy = PolicyNames.RequireTenantRole)]
 public class TenantPortalController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -42,7 +43,7 @@ public class TenantPortalController : ControllerBase
     public async Task<ActionResult<ApiResponse<TenantLeaseSummaryResponse>>> GetLeaseSummary(
         CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst(SystemClaimTypes.NameIdentifier)?.Value;
         
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
@@ -75,7 +76,7 @@ public class TenantPortalController : ControllerBase
         IFormFile file,
         CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst(SystemClaimTypes.NameIdentifier)?.Value;
         
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
@@ -130,7 +131,7 @@ public class TenantPortalController : ControllerBase
     public async Task<ActionResult<ApiResponse<IEnumerable<TenantDocumentDto>>>> GetDocuments(
         CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst(SystemClaimTypes.NameIdentifier)?.Value;
         
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
@@ -170,7 +171,7 @@ public class TenantPortalController : ControllerBase
     public async Task<ActionResult<ApiResponse<MoveInHandoverResponse>>> GetMoveInHandover(
         CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst(SystemClaimTypes.NameIdentifier)?.Value;
         
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
@@ -203,7 +204,7 @@ public class TenantPortalController : ControllerBase
         IFormFile signatureImage,
         CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst(SystemClaimTypes.NameIdentifier)?.Value;
         
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {

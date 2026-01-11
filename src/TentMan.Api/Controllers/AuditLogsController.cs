@@ -1,6 +1,7 @@
 using TentMan.Application.Abstractions;
 using TentMan.Contracts.Common;
 using TentMan.Domain.Entities;
+using TentMan.Shared.Constants.Authorization;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,7 @@ namespace TentMan.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Authorize(Roles = "Administrator,SuperAdmin,Manager")]
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
 [Route("api/v{version:apiVersion}/audit-logs")]
 public class AuditLogsController : ControllerBase
 {
