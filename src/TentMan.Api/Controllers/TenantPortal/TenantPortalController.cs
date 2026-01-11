@@ -296,15 +296,27 @@ public class TenantPortalController : ControllerBase
         // Get invoices for the lease
         var allInvoices = await _invoiceRepository.GetByLeaseIdAsync(leaseSummary.LeaseId, cancellationToken);
         
-        // Filter to only issued invoices (not drafts) by default
-        var filteredInvoices = status.HasValue 
-            ? allInvoices.Where(i => i.Status == status.Value).ToList()
-            : allInvoices.Where(i => i.Status != InvoiceStatus.Draft).ToList();
+        // Always exclude draft invoices; optionally filter by requested status (except Draft)
+        var invoiceQuery = allInvoices.Where(i => i.Status != InvoiceStatus.Draft);
+        if (status.HasValue && status.Value != InvoiceStatus.Draft)
+        {
+            invoiceQuery = invoiceQuery.Where(i => i.Status == status.Value);
+        }
+        var filteredInvoices = invoiceQuery.ToList();
+
+        // Pre-load all unique charge types needed across all filtered invoices
+        var allChargeTypeIds = filteredInvoices
+            .SelectMany(inv => inv.Lines.Select(l => l.ChargeTypeId))
+            .Distinct()
+            .ToList();
+        
+        var chargeTypes = await _chargeTypeRepository.GetByIdsAsync(allChargeTypeIds, cancellationToken);
+        var chargeTypesDict = chargeTypes.ToDictionary(ct => ct.Id, ct => ct.Name);
 
         var dtos = new List<InvoiceDto>();
         foreach (var invoice in filteredInvoices)
         {
-            dtos.Add(await MapToDto(invoice, cancellationToken));
+            dtos.Add(MapToDto(invoice, chargeTypesDict));
         }
 
         return Ok(ApiResponse<IEnumerable<InvoiceDto>>.Ok(dtos, "Invoices retrieved successfully"));
@@ -356,29 +368,24 @@ public class TenantPortalController : ControllerBase
                 ApiResponse<object>.Fail("You do not have access to this invoice"));
         }
 
-        var dto = await MapToDto(invoice, cancellationToken);
+        // Do not expose draft invoices to tenants
+        if (invoice.Status == InvoiceStatus.Draft)
+        {
+            return NotFound(ApiResponse<object>.Fail("Invoice not found"));
+        }
+
+        // Pre-load charge types for this invoice
+        var chargeTypeIds = invoice.Lines.Select(l => l.ChargeTypeId).Distinct().ToList();
+        var chargeTypes = await _chargeTypeRepository.GetByIdsAsync(chargeTypeIds, cancellationToken);
+        var chargeTypesDict = chargeTypes.ToDictionary(ct => ct.Id, ct => ct.Name);
+
+        var dto = MapToDto(invoice, chargeTypesDict);
 
         return Ok(ApiResponse<InvoiceDto>.Ok(dto, "Invoice retrieved successfully"));
     }
 
-    private async Task<InvoiceDto> MapToDto(Domain.Entities.Invoice invoice, CancellationToken cancellationToken)
+    private InvoiceDto MapToDto(Domain.Entities.Invoice invoice, Dictionary<Guid, string> chargeTypesDict)
     {
-        // Get all unique charge type IDs
-        // Note: This implementation queries charge types individually. 
-        // For tenant portal use (single invoice or small invoice count), this is acceptable.
-        // If performance becomes an issue, consider adding IChargeTypeRepository.GetByIdsAsync()
-        var chargeTypeIds = invoice.Lines.Select(l => l.ChargeTypeId).Distinct().ToList();
-        var chargeTypesDict = new Dictionary<Guid, string>();
-        
-        foreach (var chargeTypeId in chargeTypeIds)
-        {
-            var chargeType = await _chargeTypeRepository.GetByIdAsync(chargeTypeId, cancellationToken);
-            if (chargeType != null)
-            {
-                chargeTypesDict[chargeTypeId] = chargeType.Name;
-            }
-        }
-        
         var lineDtos = new List<InvoiceLineDto>();
         foreach (var line in invoice.Lines)
         {

@@ -17,7 +17,7 @@ public partial class TenantInvoices : ComponentBase
     private IEnumerable<InvoiceDto> _paginatedInvoices = Enumerable.Empty<InvoiceDto>();
     private InvoiceStatus? _statusFilter;
     private int _currentPage = 1;
-    private int _pageSize = 10;
+    private readonly int _pageSize = 10;
     private int _totalPages = 0;
 
     [Inject]
