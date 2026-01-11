@@ -49,6 +49,14 @@ public class UtilityStatementConfiguration : IEntityTypeConfiguration<UtilitySta
         b.Property(x => x.Notes)
             .HasMaxLength(1000);
 
+        b.Property(x => x.Version)
+            .IsRequired()
+            .HasDefaultValue(1);
+
+        b.Property(x => x.IsFinal)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         // Relationships
         b.HasOne(x => x.Lease)
             .WithMany()
@@ -69,6 +77,11 @@ public class UtilityStatementConfiguration : IEntityTypeConfiguration<UtilitySta
         b.HasIndex(x => x.LeaseId);
         b.HasIndex(x => x.UtilityType);
         b.HasIndex(x => new { x.LeaseId, x.BillingPeriodStart, x.BillingPeriodEnd });
+        
+        // Ensure only one final utility statement per lease/period/utility type
+        b.HasIndex(x => new { x.LeaseId, x.UtilityType, x.BillingPeriodStart, x.BillingPeriodEnd, x.IsFinal })
+            .HasFilter("IsFinal = 1")
+            .IsUnique();
 
         // Concurrency token
         b.Property(x => x.RowVersion).IsRowVersion();

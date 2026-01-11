@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using TentMan.Contracts.Enums;
 
 namespace TentMan.Contracts.Billing;
 
@@ -14,6 +15,9 @@ public sealed class UpdateLeaseBillingSettingRequest
     public short PaymentTermDays { get; init; }
     
     public bool GenerateInvoiceAutomatically { get; init; }
+    
+    [Required]
+    public ProrationMethod ProrationMethod { get; init; }
     
     [MaxLength(50)]
     public string? InvoicePrefix { get; init; }

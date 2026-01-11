@@ -4,7 +4,7 @@ namespace TentMan.Domain.Entities;
 
 /// <summary>
 /// Represents a line item on an invoice.
-/// Each line represents a charge (rent, maintenance, utilities, etc.).
+/// Each line represents a charge (rent, maintenance, utilities, etc.) with full traceability.
 /// </summary>
 public class InvoiceLine : BaseEntity
 {
@@ -25,6 +25,10 @@ public class InvoiceLine : BaseEntity
     public decimal TaxAmount { get; set; }
     public decimal TotalAmount { get; set; } // Amount + TaxAmount
     public string? Notes { get; set; }
+    
+    // Source tracking for traceability
+    public string? Source { get; set; } // e.g., "Rent", "RecurringCharge", "Utility"
+    public Guid? SourceRefId { get; set; } // Reference to source entity (LeaseTermId, RecurringChargeId, UtilityStatementId)
 
     // Navigation properties
     public Invoice Invoice { get; set; } = null!;

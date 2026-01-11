@@ -916,6 +916,80 @@ For detailed information, see [Background Jobs Documentation](BACKGROUND_JOBS.md
 
 ---
 
+## Edge Case Handling
+
+The billing engine includes comprehensive edge case handling for production-ready billing operations.
+
+### Implemented Edge Cases
+
+#### Lease Lifecycle
+- ✅ **Lease starts mid-month**: Automatic proration based on actual days used
+- ✅ **Lease ends mid-month**: Final prorated invoice generation
+- ✅ **Rent changes mid-month**: Split invoice lines for each term period
+- ✅ **Multiple lease terms**: Proper handling of overlapping rental periods
+
+#### Billing Day Validation
+- ✅ **Invalid billing days**: Restricted to 1-28 to ensure February compatibility
+- ✅ **February handling**: Correctly handles 28-day and 29-day (leap year) months
+- ✅ **Varying month lengths**: Proration accounts for different month lengths (28-31 days)
+
+#### Invoice Immutability
+- ✅ **Draft invoices**: Can be regenerated and updated
+- ✅ **Issued invoices**: Immutable, cannot be regenerated
+- ✅ **Paid/Partially Paid invoices**: Immutable, require credit notes for adjustments
+- ✅ **Voided invoices**: Terminal state with reason tracking (VoidedAtUtc, VoidReason)
+- ✅ **State transitions**: All transitions tracked with UTC timestamps
+
+#### Utility Statement Versioning
+- ✅ **Version tracking**: Each statement has Version field (1, 2, 3, etc.)
+- ✅ **Multiple corrections**: Allows creating draft versions before finalization
+- ✅ **Final statements**: Database-enforced uniqueness (one final per lease/utility/period)
+- ✅ **Late billing**: Can add statements for past periods
+- ✅ **Multiple utility types**: Supports multiple utilities for same billing period
+
+#### Idempotency & Concurrency
+- ✅ **Duplicate prevention**: Regenerating invoice updates existing draft (not creates new)
+- ✅ **Concurrent safety**: Optimistic concurrency control with RowVersion
+- ✅ **Unique constraints**: Database-level unique indexes prevent data corruption
+
+#### Source Traceability
+- ✅ **Invoice line tracking**: Each line has Source and SourceRefId fields
+- ✅ **Rent lines**: Source = "Rent", SourceRefId = LeaseTermId
+- ✅ **Recurring charge lines**: Source = "RecurringCharge", SourceRefId = ChargeId
+- ✅ **Utility lines**: Links to UtilityStatementId when applicable
+- ✅ **Audit trail**: Full traceability from charge to invoice line
+
+### Database Schema Updates
+
+#### InvoiceLines
+New fields for traceability:
+- `Source` (string, 50) - Source type (Rent, RecurringCharge, Utility)
+- `SourceRefId` (guid, nullable) - Reference to source entity
+
+#### LeaseBillingSettings
+New field for proration method:
+- `ProrationMethod` (int) - ActualDaysInMonth (1) or ThirtyDayMonth (2)
+
+#### UtilityStatements
+New fields for versioning:
+- `Version` (int) - Version number (1, 2, 3, etc.)
+- `IsFinal` (bool) - Whether this is the final statement
+- Unique index on (LeaseId, UtilityType, BillingPeriodStart, BillingPeriodEnd, IsFinal) where IsFinal = 1
+
+### Testing Coverage
+
+Comprehensive test suites validate all edge cases:
+- **BillingEdgeCasesTests**: 11 tests covering lease lifecycle, proration, and edge cases
+- **UtilityStatementVersioningTests**: 6 tests for versioning and corrections
+- **InvoiceImmutabilityTests**: 14 tests for state transitions and immutability
+
+Run edge case tests:
+```bash
+dotnet test --filter "TestType=EdgeCases|TestType=Versioning|TestType=Immutability"
+```
+
+---
+
 ## Future Enhancements
 
 - [ ] Payment transaction tracking
@@ -948,4 +1022,5 @@ For questions or issues related to the billing engine:
 ---
 
 **Last Updated**: 2026-01-11  
-**Part of**: TentMan Billing Engine Feature (#45, #51)
+**Part of**: TentMan Billing Engine Feature (#45, #51)  
+**Edge Cases Implemented**: 2026-01-11

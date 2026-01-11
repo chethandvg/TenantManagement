@@ -26,6 +26,10 @@ public class LeaseBillingSettingConfiguration : IEntityTypeConfiguration<LeaseBi
             .IsRequired()
             .HasDefaultValue(true);
 
+        b.Property(x => x.ProrationMethod)
+            .IsRequired()
+            .HasDefaultValue(TentMan.Contracts.Enums.ProrationMethod.ActualDaysInMonth);
+
         b.Property(x => x.InvoicePrefix)
             .HasMaxLength(20);
 
