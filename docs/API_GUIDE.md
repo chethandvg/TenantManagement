@@ -322,6 +322,246 @@ Response 201 Created:
 
 **See**: [Tenant and Lease Management Guide](TENANT_LEASE_MANAGEMENT.md) for complete API documentation.
 
+#### 7. Billing (`/api/v1/billing/*`)
+
+Comprehensive billing and invoicing APIs for managing charges, invoices, and payments.
+
+##### Invoice Management (`/api/invoices`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/invoices` | GET | ✅ Manager+ | List all invoices with filters |
+| `/api/invoices/{invoiceId}` | GET | ✅ Manager+ | Get invoice details with line items |
+| `/api/leases/{leaseId}/invoices/generate` | POST | ✅ Manager+ | Generate draft invoice for lease |
+| `/api/invoices/{invoiceId}/issue` | POST | ✅ Manager+ | Issue (finalize) a draft invoice |
+| `/api/invoices/{invoiceId}/void` | POST | ✅ Manager+ | Void an issued invoice |
+
+**Example - List Invoices**:
+```json
+GET /api/invoices?status=Issued&from=2026-01-01&to=2026-01-31
+Authorization: Bearer <token>
+
+Response 200 OK:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "guid",
+      "invoiceNumber": "INV-202601-000001",
+      "invoiceDate": "2026-01-01",
+      "dueDate": "2026-01-05",
+      "status": "Issued",
+      "totalAmount": 15000.00,
+      "paidAmount": 0.00,
+      "balanceAmount": 15000.00,
+      "leaseNumber": "LSE-2026-001"
+    }
+  ]
+}
+```
+
+**Example - Generate Invoice**:
+```json
+POST /api/leases/{leaseId}/invoices/generate
+Authorization: Bearer <token>
+
+{
+  "billingPeriodStart": "2026-01-01",
+  "billingPeriodEnd": "2026-01-31",
+  "prorationMethod": "ActualDaysInMonth"
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "invoiceNumber": "INV-202601-000001",
+    "status": "Draft",
+    "totalAmount": 15000.00,
+    "lineItems": [
+      {
+        "chargeType": "RENT",
+        "description": "Monthly Rent",
+        "amount": 15000.00
+      }
+    ]
+  }
+}
+```
+
+##### Billing Settings (`/api/leases/{leaseId}/billing-settings`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/{leaseId}/billing-settings` | GET | ✅ Manager+ | Get lease billing configuration |
+| `/{leaseId}/billing-settings` | PUT | ✅ Manager+ | Update billing settings |
+
+**Example - Update Billing Settings**:
+```json
+PUT /api/leases/{leaseId}/billing-settings
+Authorization: Bearer <token>
+
+{
+  "billingDay": 1,
+  "paymentTermDays": 5,
+  "generateInvoiceAutomatically": true,
+  "invoicePrefix": "INV",
+  "paymentInstructions": "Please pay via bank transfer"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "message": "Billing settings updated successfully"
+}
+```
+
+##### Recurring Charges (`/api/leases/{leaseId}/recurring-charges`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/{leaseId}/recurring-charges` | GET | ✅ Manager+ | List all recurring charges for lease |
+| `/{leaseId}/recurring-charges` | POST | ✅ Manager+ | Add new recurring charge |
+| `/recurring-charges/{chargeId}` | PUT | ✅ Manager+ | Update recurring charge |
+| `/recurring-charges/{chargeId}` | DELETE | ✅ Manager+ | Delete recurring charge |
+
+**Example - Create Recurring Charge**:
+```json
+POST /api/leases/{leaseId}/recurring-charges
+Authorization: Bearer <token>
+
+{
+  "chargeTypeId": "guid-for-MAINT",
+  "description": "Monthly Maintenance",
+  "amount": 2000.00,
+  "frequency": "Monthly",
+  "startDate": "2026-01-01",
+  "isActive": true
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "chargeTypeName": "Maintenance",
+    "amount": 2000.00,
+    "frequency": "Monthly"
+  }
+}
+```
+
+##### Utility Statements (`/api/leases/{leaseId}/utility-statements`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/{leaseId}/utility-statements` | GET | ✅ Manager+ | List utility statements |
+| `/{leaseId}/utility-statements` | POST | ✅ Manager+ | Record new utility statement |
+
+**Example - Record Meter-Based Utility**:
+```json
+POST /api/leases/{leaseId}/utility-statements
+Authorization: Bearer <token>
+
+{
+  "utilityType": "Electricity",
+  "billingPeriodStart": "2026-01-01",
+  "billingPeriodEnd": "2026-01-31",
+  "isMeterBased": true,
+  "utilityRatePlanId": "guid",
+  "previousReading": 1000.0,
+  "currentReading": 1250.0,
+  "notes": "January electricity consumption"
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "unitsConsumed": 250.0,
+    "calculatedAmount": 3500.00,
+    "totalAmount": 3500.00
+  }
+}
+```
+
+##### Invoice Runs (`/api/invoice-runs`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/invoice-runs` | GET | ✅ Manager+ | List all invoice runs |
+| `/api/invoice-runs` | POST | ✅ Manager+ | Execute batch invoice generation |
+| `/api/invoice-runs/{runId}` | GET | ✅ Manager+ | Get invoice run details |
+| `/api/invoice-runs/{runId}/items` | GET | ✅ Manager+ | Get per-lease results |
+
+**Example - Execute Invoice Run**:
+```json
+POST /api/invoice-runs
+Authorization: Bearer <token>
+
+{
+  "orgId": "org-guid",
+  "billingPeriodStart": "2026-01-01",
+  "billingPeriodEnd": "2026-01-31",
+  "notes": "January 2026 monthly billing run"
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "runNumber": "RUN-202601-001",
+    "status": "InProgress",
+    "totalLeases": 25,
+    "successCount": 0,
+    "failureCount": 0
+  }
+}
+```
+
+##### Credit Notes (`/api/invoices/{invoiceId}/credit-notes`)
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/invoices/{invoiceId}/credit-notes` | POST | ✅ Manager+ | Create credit note for invoice |
+| `/credit-notes/{creditNoteId}` | GET | ✅ Manager+ | Get credit note details |
+| `/credit-notes/{creditNoteId}/void` | POST | ✅ Manager+ | Void a credit note |
+
+**Example - Create Credit Note**:
+```json
+POST /api/invoices/{invoiceId}/credit-notes
+Authorization: Bearer <token>
+
+{
+  "reason": "InvoiceError",
+  "amount": 500.00,
+  "notes": "Incorrect maintenance charge",
+  "lineItems": [
+    {
+      "invoiceLineId": "guid",
+      "description": "Maintenance charge correction",
+      "amount": 500.00
+    }
+  ]
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": "guid",
+    "creditNoteNumber": "CN-202601-000001",
+    "totalAmount": 500.00,
+    "reason": "InvoiceError"
+  }
+}
+```
+
+**See**: [Billing Engine Guide](BILLING_ENGINE.md) and [Billing UI Guide](BILLING_UI_GUIDE.md) for complete documentation.
+
 ### Role Requirements (Main API)
 
 | Operation | Public | User | Manager | Administrator |
@@ -334,6 +574,7 @@ Response 201 Created:
 | Delete Products | ❌ | ❌ | ❌ | ✅ |
 | Manage Tenants | ❌ | ❌ | ✅ | ✅ |
 | Manage Leases | ❌ | ❌ | ✅ | ✅ |
+| Manage Billing | ❌ | ❌ | ✅ | ✅ |
 
 ---
 
