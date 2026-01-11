@@ -1,0 +1,94 @@
+@page "/billing/invoice-runs"
+@attribute [Authorize]
+
+<PageTitle>Invoice Runs</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Invoice Runs</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                   OnClick="ShowRunMonthlyDialogAsync">
+            Run Monthly Generation
+        </MudButton>
+    </MudStack>
+
+    <!-- Filters -->
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="InvoiceRunStatus?" Label="Status" @bind-Value="_statusFilter" Clearable="true">
+                    <MudSelectItem T="InvoiceRunStatus?" Value="@((InvoiceRunStatus?)null)">All</MudSelectItem>
+                    <MudSelectItem T="InvoiceRunStatus?" Value="@InvoiceRunStatus.Pending">Pending</MudSelectItem>
+                    <MudSelectItem T="InvoiceRunStatus?" Value="@InvoiceRunStatus.InProgress">In Progress</MudSelectItem>
+                    <MudSelectItem T="InvoiceRunStatus?" Value="@InvoiceRunStatus.Completed">Completed</MudSelectItem>
+                    <MudSelectItem T="InvoiceRunStatus?" Value="@InvoiceRunStatus.CompletedWithErrors">Completed With Errors</MudSelectItem>
+                    <MudSelectItem T="InvoiceRunStatus?" Value="@InvoiceRunStatus.Failed">Failed</MudSelectItem>
+                    <MudSelectItem T="InvoiceRunStatus?" Value="@InvoiceRunStatus.Cancelled">Cancelled</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                           OnClick="ApplyFiltersAsync" FullWidth="true">
+                    Apply Filters
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <BusyBoundary Retry="LoadInvoiceRunsAsync">
+        @if (_invoiceRuns == null || !_invoiceRuns.Any())
+        {
+            <MudAlert Severity="Severity.Info">No invoice runs found.</MudAlert>
+        }
+        else
+        {
+            <MudDataGrid Items="@_invoiceRuns" Hover="true" Dense="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.RunNumber" Title="Run #" />
+                    <PropertyColumn Property="x => x.BillingPeriodStart" Title="Period Start" Format="yyyy-MM-dd" />
+                    <PropertyColumn Property="x => x.BillingPeriodEnd" Title="Period End" Format="yyyy-MM-dd" />
+                    <PropertyColumn Property="x => x.StartedAtUtc" Title="Started" Format="yyyy-MM-dd HH:mm" />
+                    <PropertyColumn Property="x => x.CompletedAtUtc" Title="Completed" Format="yyyy-MM-dd HH:mm" />
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            @GetStatusChip(context.Item.Status)
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.TotalLeases" Title="Total Leases" />
+                    <PropertyColumn Property="x => x.SuccessCount" Title="Success" />
+                    <PropertyColumn Property="x => x.FailureCount" Title="Failed" />
+                    <TemplateColumn Title="Actions" Sortable="false">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" 
+                                           Href="@($"/billing/invoice-runs/{context.Item.Id}")" Color="Color.Primary" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="InvoiceRunDto" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    </BusyBoundary>
+</MudStack>
+
+@* Run Monthly Dialog *@
+<MudDialog @bind-IsVisible="_showRunMonthlyDialog" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Run Monthly Invoice Generation</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText>Generate invoices for all active leases for the selected billing period.</MudText>
+            <MudDatePicker Label="Billing Period Start" @bind-Date="_runPeriodStart" DateFormat="yyyy-MM-dd" />
+            <MudAlert Severity="Severity.Info">
+                Period end will be calculated as the last day of the selected month.
+            </MudAlert>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseRunMonthlyDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="RunMonthlyGenerationAsync">Run Generation</MudButton>
+    </DialogActions>
+</MudDialog>
