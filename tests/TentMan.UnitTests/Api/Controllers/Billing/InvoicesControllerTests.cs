@@ -63,7 +63,13 @@ public class InvoicesControllerTests
                 It.IsAny<DateOnly>(),
                 ProrationMethod.ActualDaysInMonth,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, invoice, false, null));
+            .ReturnsAsync(new InvoiceGenerationResult
+            {
+                IsSuccess = true,
+                Invoice = invoice,
+                WasUpdated = false,
+                ErrorMessage = null
+            });
 
         _mockChargeTypeRepository.Setup(r => r.GetByIdAsync(chargeTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ChargeType { Id = chargeTypeId, Name = "Rent" });
@@ -107,7 +113,13 @@ public class InvoicesControllerTests
                 It.IsAny<DateOnly>(),
                 It.IsAny<ProrationMethod>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((false, null, false, "Generation failed"));
+            .ReturnsAsync(new InvoiceGenerationResult
+            {
+                IsSuccess = false,
+                Invoice = null,
+                WasUpdated = false,
+                ErrorMessage = "Generation failed"
+            });
 
         // Act
         var result = await _controller.GenerateInvoice(leaseId, null, null, CancellationToken.None);
@@ -234,7 +246,12 @@ public class InvoicesControllerTests
         invoice.Status = InvoiceStatus.Issued;
 
         _mockInvoiceManagementService.Setup(s => s.IssueInvoiceAsync(invoiceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, invoice, null));
+            .ReturnsAsync(new InvoiceIssueResult
+            {
+                IsSuccess = true,
+                Invoice = invoice,
+                ErrorMessage = null
+            });
 
         _mockChargeTypeRepository.Setup(r => r.GetByIdAsync(chargeTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ChargeType { Id = chargeTypeId, Name = "Rent" });
@@ -254,7 +271,12 @@ public class InvoicesControllerTests
         var invoiceId = Guid.NewGuid();
 
         _mockInvoiceManagementService.Setup(s => s.IssueInvoiceAsync(invoiceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((false, null, "Cannot issue invoice that is not in Draft status"));
+            .ReturnsAsync(new InvoiceIssueResult
+            {
+                IsSuccess = false,
+                Invoice = null,
+                ErrorMessage = "Cannot issue invoice that is not in Draft status"
+            });
 
         // Act
         var result = await _controller.IssueInvoice(invoiceId, CancellationToken.None);
@@ -283,7 +305,12 @@ public class InvoicesControllerTests
                 invoiceId,
                 request.VoidReason,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((true, invoice, null));
+            .ReturnsAsync(new InvoiceVoidResult
+            {
+                IsSuccess = true,
+                Invoice = invoice,
+                ErrorMessage = null
+            });
 
         _mockChargeTypeRepository.Setup(r => r.GetByIdAsync(chargeTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ChargeType { Id = chargeTypeId, Name = "Rent" });
@@ -307,7 +334,12 @@ public class InvoicesControllerTests
                 invoiceId,
                 request.VoidReason,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((false, null, "Cannot void paid invoice"));
+            .ReturnsAsync(new InvoiceVoidResult
+            {
+                IsSuccess = false,
+                Invoice = null,
+                ErrorMessage = "Cannot void paid invoice"
+            });
 
         // Act
         var result = await _controller.VoidInvoice(invoiceId, request, CancellationToken.None);

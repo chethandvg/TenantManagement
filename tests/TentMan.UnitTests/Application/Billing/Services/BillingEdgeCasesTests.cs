@@ -670,7 +670,7 @@ public class BillingEdgeCasesTests
             Id = oldLeaseId,
             OrgId = orgId,
             UnitId = unitId,
-            Status = LeaseStatus.Terminated,
+            Status = LeaseStatus.Ended,
             StartDate = new DateOnly(2024, 1, 1),
             EndDate = oldLeaseEndDate,
             Terms = new List<LeaseTerm>
