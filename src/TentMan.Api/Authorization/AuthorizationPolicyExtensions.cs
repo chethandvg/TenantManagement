@@ -35,19 +35,28 @@ public static class AuthorizationPolicyExtensions
         options.AddPolicy(PolicyNames.RequireUserRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.User));
+            policy.Requirements.Add(new MinimumRoleRequirement(
+                RoleNames.User, 
+                RoleNames.Manager, 
+                RoleNames.Administrator, 
+                RoleNames.SuperAdmin));
         });
 
         options.AddPolicy(PolicyNames.RequireManagerRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Manager));
+            policy.Requirements.Add(new MinimumRoleRequirement(
+                RoleNames.Manager, 
+                RoleNames.Administrator, 
+                RoleNames.SuperAdmin));
         });
 
         options.AddPolicy(PolicyNames.RequireAdminRole, policy =>
         {
             policy.RequireAuthenticatedUser();
-            policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.Administrator));
+            policy.Requirements.Add(new MinimumRoleRequirement(
+                RoleNames.Administrator, 
+                RoleNames.SuperAdmin));
         });
 
         options.AddPolicy(PolicyNames.RequireTenantRole, policy =>
