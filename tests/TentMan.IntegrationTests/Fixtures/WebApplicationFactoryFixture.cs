@@ -112,7 +112,7 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
     /// <param name="role">The role to assign to the user</param>
     /// <param name="userId">The user ID claim</param>
     /// <param name="username">The username claim</param>
-    /// <param name="expiresInMinutes">Token expiration time in minutes (default: 60, use negative for expired)</param>
+    /// <param name="expiresInMinutes">Token expiration time in minutes (default: 60)</param>
     public Task<string> GetJwtTokenAsync(string role = "User", string userId = "test-user-id", string username = "testuser", int expiresInMinutes = 60)
     {
         var tokenHandler = new JwtSecurityTokenHandler();

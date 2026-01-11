@@ -1,5 +1,6 @@
 @page "/tenant/move-in"
-@attribute [Authorize]
+@using TentMan.Shared.Constants.Authorization
+@attribute [Authorize(Policy = PolicyNames.RequireTenantRole)]
 @using Microsoft.JSInterop
 
 <PageTitle>Move-In Handover - TentMan</PageTitle>

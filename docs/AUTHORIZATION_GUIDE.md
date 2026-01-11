@@ -92,7 +92,11 @@ public static void ConfigureTentManPolicies(this AuthorizationOptions options)
     options.AddPolicy(PolicyNames.RequireUserRole, policy =>
     {
         policy.RequireAuthenticatedUser();
-        policy.Requirements.Add(new MinimumRoleRequirement(RoleNames.User));
+        policy.Requirements.Add(new MinimumRoleRequirement(
+            RoleNames.User,
+            RoleNames.Manager,
+            RoleNames.Administrator,
+            RoleNames.SuperAdmin));
     });
 }
 ```

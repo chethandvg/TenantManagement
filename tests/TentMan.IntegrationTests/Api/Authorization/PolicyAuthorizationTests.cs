@@ -27,7 +27,12 @@ public class PolicyAuthorizationTests : IAsyncLifetime
         await _factory.ResetDatabaseAsync();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public Task DisposeAsync()
+    {
+        // Clear Authorization header to prevent test pollution
+        _client.DefaultRequestHeaders.Authorization = null;
+        return Task.CompletedTask;
+    }
 
     #region Products Controller Tests
 
