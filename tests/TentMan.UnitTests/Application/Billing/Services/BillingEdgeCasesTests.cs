@@ -640,4 +640,108 @@ public class BillingEdgeCasesTests
     }
 
     #endregion
+
+    #region Edge Case: Tenant swapped mid-month (multiple leases)
+
+    [Fact]
+    public async Task TenantSwappedMidMonth_ShouldProrateForBothLeases()
+    {
+        // Arrange
+        const decimal MONTHLY_RENT = 10000m;
+        var unitId = Guid.NewGuid();
+        var orgId = Guid.NewGuid();
+        
+        var oldLeaseId = Guid.NewGuid();
+        var newLeaseId = Guid.NewGuid();
+        
+        var oldTermId = Guid.NewGuid();
+        var newTermId = Guid.NewGuid();
+        
+        // Old lease ends Jan 15
+        var oldLeaseEndDate = new DateOnly(2024, 1, 15);
+        // New lease starts Jan 16
+        var newLeaseStartDate = new DateOnly(2024, 1, 16);
+        
+        var billingPeriodStart = new DateOnly(2024, 1, 1);
+        var billingPeriodEnd = new DateOnly(2024, 1, 31);
+
+        var oldLease = new Lease
+        {
+            Id = oldLeaseId,
+            OrgId = orgId,
+            UnitId = unitId,
+            Status = LeaseStatus.Ended,
+            StartDate = new DateOnly(2024, 1, 1),
+            EndDate = oldLeaseEndDate,
+            Terms = new List<LeaseTerm>
+            {
+                new LeaseTerm
+                {
+                    Id = oldTermId,
+                    LeaseId = oldLeaseId,
+                    MonthlyRent = MONTHLY_RENT,
+                    EffectiveFrom = new DateOnly(2024, 1, 1),
+                    EffectiveTo = oldLeaseEndDate
+                }
+            }
+        };
+
+        var newLease = new Lease
+        {
+            Id = newLeaseId,
+            OrgId = orgId,
+            UnitId = unitId,
+            Status = LeaseStatus.Active,
+            StartDate = newLeaseStartDate,
+            Terms = new List<LeaseTerm>
+            {
+                new LeaseTerm
+                {
+                    Id = newTermId,
+                    LeaseId = newLeaseId,
+                    MonthlyRent = MONTHLY_RENT,
+                    EffectiveFrom = newLeaseStartDate,
+                    EffectiveTo = null
+                }
+            }
+        };
+
+        _mockLeaseRepository
+            .Setup(r => r.GetByIdWithDetailsAsync(oldLeaseId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(oldLease);
+
+        _mockLeaseRepository
+            .Setup(r => r.GetByIdWithDetailsAsync(newLeaseId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(newLease);
+
+        // Act - Generate invoices for both leases
+        var oldLeaseResult = await _rentCalculationService.CalculateRentAsync(
+            oldLeaseId, billingPeriodStart, billingPeriodEnd, ProrationMethod.ActualDaysInMonth);
+
+        var newLeaseResult = await _rentCalculationService.CalculateRentAsync(
+            newLeaseId, billingPeriodStart, billingPeriodEnd, ProrationMethod.ActualDaysInMonth);
+
+        // Assert
+        oldLeaseResult.Should().NotBeNull();
+        oldLeaseResult.LineItems.Should().HaveCount(1);
+        
+        var oldLeaseLineItem = oldLeaseResult.LineItems.First();
+        oldLeaseLineItem.IsProrated.Should().BeTrue();
+        // Old lease: 15 days (Jan 1-15 inclusive) / 31 days in January * 10000 = 4838.71
+        oldLeaseLineItem.Amount.Should().BeApproximately(4838.71m, 0.01m);
+
+        newLeaseResult.Should().NotBeNull();
+        newLeaseResult.LineItems.Should().HaveCount(1);
+        
+        var newLeaseLineItem = newLeaseResult.LineItems.First();
+        newLeaseLineItem.IsProrated.Should().BeTrue();
+        // New lease: 16 days (Jan 16-31 inclusive) / 31 days in January * 10000 = 5161.29
+        newLeaseLineItem.Amount.Should().BeApproximately(5161.29m, 0.01m);
+
+        // Verify combined total equals full month rent (accounting for rounding)
+        var totalRent = oldLeaseLineItem.Amount + newLeaseLineItem.Amount;
+        totalRent.Should().Be(MONTHLY_RENT);
+    }
+
+    #endregion
 }
