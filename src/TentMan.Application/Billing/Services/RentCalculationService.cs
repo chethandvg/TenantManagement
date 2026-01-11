@@ -72,6 +72,7 @@ public class RentCalculationService : IRentCalculationService
 
             var lineItem = new RentLineItem
             {
+                LeaseTermId = term.Id,
                 PeriodStart = termStart,
                 PeriodEnd = termEnd,
                 FullMonthlyRent = term.MonthlyRent,

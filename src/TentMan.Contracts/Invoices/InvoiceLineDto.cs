@@ -20,4 +20,6 @@ public sealed class InvoiceLineDto
     public decimal TaxAmount { get; init; }
     public decimal TotalAmount { get; init; }
     public string? Notes { get; init; }
+    public string? Source { get; init; }
+    public Guid? SourceRefId { get; init; }
 }

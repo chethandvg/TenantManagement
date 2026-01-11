@@ -223,7 +223,9 @@ public class InvoiceGenerationService : IInvoiceGenerationService
                 Amount = rentLineItem.Amount,
                 TaxRate = 0, // No tax on rent by default
                 TaxAmount = 0,
-                TotalAmount = rentLineItem.Amount
+                TotalAmount = rentLineItem.Amount,
+                Source = "Rent",
+                SourceRefId = rentLineItem.LeaseTermId
             });
 
             foreach (var line in rentLines)
@@ -288,7 +290,9 @@ public class InvoiceGenerationService : IInvoiceGenerationService
                 Amount = chargeLineItem.Amount,
                 TaxRate = 0, // No tax by default
                 TaxAmount = 0,
-                TotalAmount = chargeLineItem.Amount
+                TotalAmount = chargeLineItem.Amount,
+                Source = "RecurringCharge",
+                SourceRefId = chargeLineItem.ChargeId
             };
 
             invoice.Lines.Add(invoiceLine);

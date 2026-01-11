@@ -25,6 +25,10 @@ public class InvoiceLine : BaseEntity
     public decimal TaxAmount { get; set; }
     public decimal TotalAmount { get; set; } // Amount + TaxAmount
     public string? Notes { get; set; }
+    
+    // Source tracking for traceability
+    public string? Source { get; set; } // e.g., "Rent", "RecurringCharge", "Utility"
+    public Guid? SourceRefId { get; set; } // Reference to source entity (LeaseTermId, RecurringChargeId, UtilityStatementId)
 
     // Navigation properties
     public Invoice Invoice { get; set; } = null!;

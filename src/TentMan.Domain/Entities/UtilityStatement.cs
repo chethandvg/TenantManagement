@@ -14,6 +14,8 @@ public class UtilityStatement : BaseEntity
         CreatedAtUtc = DateTime.UtcNow;
         CreatedBy = "System";
         IsMeterBased = false;
+        Version = 1;
+        IsFinal = false;
     }
 
     public Guid LeaseId { get; set; }
@@ -36,6 +38,10 @@ public class UtilityStatement : BaseEntity
     public decimal TotalAmount { get; set; }
     public string? Notes { get; set; }
     public Guid? InvoiceLineId { get; set; } // Link to invoice line when billed
+    
+    // Versioning for multiple corrections/updates
+    public int Version { get; set; } // 1, 2, 3, etc. for corrections
+    public bool IsFinal { get; set; } // Only one final version allowed per period/utility type
 
     // Navigation properties
     public Lease Lease { get; set; } = null!;

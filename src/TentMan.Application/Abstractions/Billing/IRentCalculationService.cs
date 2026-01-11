@@ -39,6 +39,7 @@ public class RentCalculationResult
 /// </summary>
 public class RentLineItem
 {
+    public Guid LeaseTermId { get; init; }
     public DateOnly PeriodStart { get; init; }
     public DateOnly PeriodEnd { get; init; }
     public decimal FullMonthlyRent { get; init; }

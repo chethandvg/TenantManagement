@@ -28,5 +28,7 @@ public sealed class UtilityStatementDto
     public decimal TotalAmount { get; init; }
     public string? Notes { get; init; }
     public Guid? InvoiceLineId { get; init; }
+    public int Version { get; init; }
+    public bool IsFinal { get; init; }
     public byte[] RowVersion { get; init; } = Array.Empty<byte>();
 }

@@ -53,6 +53,11 @@ public class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceLine>
         b.Property(x => x.Notes)
             .HasMaxLength(500);
 
+        b.Property(x => x.Source)
+            .HasMaxLength(50);
+
+        b.Property(x => x.SourceRefId);
+
         // Relationships
         b.HasOne(x => x.Invoice)
             .WithMany(x => x.Lines)
