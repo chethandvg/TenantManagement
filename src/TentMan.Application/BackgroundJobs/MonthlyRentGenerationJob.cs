@@ -1,23 +1,27 @@
 using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions.Billing;
+using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Enums;
 
 namespace TentMan.Application.BackgroundJobs;
 
 /// <summary>
 /// Background job for automated monthly rent generation.
-/// Runs on a recurring schedule to generate invoices for all active leases.
+/// Runs on a recurring schedule to generate invoices for all active leases across all organizations.
 /// </summary>
 public class MonthlyRentGenerationJob
 {
     private readonly IInvoiceRunService _invoiceRunService;
+    private readonly IOrganizationRepository _organizationRepository;
     private readonly ILogger<MonthlyRentGenerationJob> _logger;
 
     public MonthlyRentGenerationJob(
         IInvoiceRunService invoiceRunService,
+        IOrganizationRepository organizationRepository,
         ILogger<MonthlyRentGenerationJob> logger)
     {
         _invoiceRunService = invoiceRunService;
+        _organizationRepository = organizationRepository;
         _logger = logger;
     }
 
@@ -80,21 +84,81 @@ public class MonthlyRentGenerationJob
 
     /// <summary>
     /// Executes the monthly rent generation job for the upcoming billing period.
-    /// Calculates the next month's billing period automatically.
+    /// Processes all organizations and generates invoices for the next month.
     /// </summary>
-    /// <param name="orgId">Organization ID</param>
-    /// <param name="daysBeforePeriodStart">Number of days before period start to generate invoices (default: 5)</param>
-    public async Task ExecuteForNextMonthAsync(Guid orgId, int daysBeforePeriodStart = 5)
+    /// <param name="daysBeforePeriodStart">Number of days before period start to generate invoices (for validation)</param>
+    public async Task ExecuteForNextMonthAsync(int daysBeforePeriodStart = 5)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var nextMonth = today.AddMonths(1);
         var billingPeriodStart = new DateOnly(nextMonth.Year, nextMonth.Month, 1);
         var billingPeriodEnd = billingPeriodStart.AddMonths(1).AddDays(-1);
 
-        _logger.LogInformation(
-            "Executing monthly rent generation for next month. Period: {PeriodStart} to {PeriodEnd}, Days before start: {DaysBeforePeriodStart}",
-            billingPeriodStart, billingPeriodEnd, daysBeforePeriodStart);
+        // Validate that we're running at the appropriate time
+        var daysUntilPeriodStart = billingPeriodStart.DayNumber - today.DayNumber;
+        if (daysUntilPeriodStart > daysBeforePeriodStart + 1 || daysUntilPeriodStart < daysBeforePeriodStart - 1)
+        {
+            _logger.LogWarning(
+                "Job is running outside the expected window. Days until period start: {DaysUntil}, Expected: {Expected}",
+                daysUntilPeriodStart, daysBeforePeriodStart);
+        }
 
-        await ExecuteAsync(orgId, billingPeriodStart, billingPeriodEnd);
+        _logger.LogInformation(
+            "Starting monthly rent generation for all organizations. Period: {PeriodStart} to {PeriodEnd}, Days until start: {DaysUntil}",
+            billingPeriodStart, billingPeriodEnd, daysUntilPeriodStart);
+
+        try
+        {
+            var organizations = await _organizationRepository.GetAllAsync(CancellationToken.None);
+            var orgList = organizations.ToList();
+
+            if (!orgList.Any())
+            {
+                _logger.LogWarning("No organizations found to process");
+                return;
+            }
+
+            _logger.LogInformation("Processing {Count} organizations", orgList.Count);
+
+            var totalSuccess = 0;
+            var totalFailures = 0;
+            var orgErrors = new List<string>();
+
+            foreach (var org in orgList)
+            {
+                try
+                {
+                    _logger.LogInformation(
+                        "Processing organization {OrgId} - {OrgName}",
+                        org.Id, org.Name);
+
+                    await ExecuteAsync(org.Id, billingPeriodStart, billingPeriodEnd);
+                    totalSuccess++;
+                }
+                catch (Exception ex)
+                {
+                    totalFailures++;
+                    var errorMsg = $"Organization {org.Name} ({org.Id}): {ex.Message}";
+                    orgErrors.Add(errorMsg);
+                    _logger.LogError(ex, "Failed to process organization {OrgId} - {OrgName}", org.Id, org.Name);
+                }
+            }
+
+            _logger.LogInformation(
+                "Monthly rent generation completed. Organizations processed: {Total}, Success: {Success}, Failures: {Failures}",
+                orgList.Count, totalSuccess, totalFailures);
+
+            if (totalFailures > 0)
+            {
+                _logger.LogWarning(
+                    "Some organizations failed. Errors: {Errors}",
+                    string.Join("; ", orgErrors));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fatal error during monthly rent generation job");
+            throw;
+        }
     }
 }

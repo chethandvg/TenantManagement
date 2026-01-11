@@ -335,11 +335,20 @@ public static class DependencyInjection
                 SchemaName = "Hangfire"
             }));
 
+        // Resolve Hangfire server options from configuration with sensible defaults
+        var hangfireSection = configuration.GetSection("Hangfire");
+        var workerCount = hangfireSection.GetValue<int?>("WorkerCount") ?? 5;
+        var serverName = hangfireSection.GetValue<string>("ServerName");
+        if (string.IsNullOrWhiteSpace(serverName))
+        {
+            serverName = $"{Environment.MachineName}:{Guid.NewGuid()}";
+        }
+
         // Add the processing server as IHostedService
         services.AddHangfireServer(options =>
         {
-            options.WorkerCount = 5; // Number of concurrent job processors
-            options.ServerName = $"{Environment.MachineName}:{Guid.NewGuid()}";
+            options.WorkerCount = workerCount; // Number of concurrent job processors
+            options.ServerName = serverName;
         });
 
         return services;

@@ -352,17 +352,17 @@ app.UseHttpsRedirection();
 // ✅ Enable CORS - Must be before Authentication/Authorization
 app.UseCors("AllowBlazorWasm");
 
-// Hangfire Dashboard - Must be before Authentication/Authorization for dashboard access
+// Authentication & Authorization Middleware (ORDER MATTERS!)
+app.UseAuthentication(); // First: Identify who you are
+app.UseAuthorization();  // Second: Check what you can do
+
+// Hangfire Dashboard - Must be after Authentication/Authorization to access user context
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
     Authorization = new[] { new HangfireDashboardAuthorizationFilter() },
     DashboardTitle = "TentMan Background Jobs",
     StatsPollingInterval = 2000 // Poll for stats every 2 seconds
 });
-
-// Authentication & Authorization Middleware (ORDER MATTERS!)
-app.UseAuthentication(); // First: Identify who you are
-app.UseAuthorization();  // Second: Check what you can do
 
 app.MapControllers();
 
@@ -413,9 +413,10 @@ static void ConfigureRecurringJobs()
     // Monthly Rent Generation Job
     // Runs on the 26th of each month at 2:00 AM (5 days before month start)
     // This gives time to review before the billing period begins
+    // Processes all organizations automatically
     RecurringJob.AddOrUpdate<TentMan.Application.BackgroundJobs.MonthlyRentGenerationJob>(
         "monthly-rent-generation",
-        job => job.ExecuteForNextMonthAsync(Guid.Empty, 5),
+        job => job.ExecuteForNextMonthAsync(5),
         "0 2 26 * *", // Cron: At 02:00 on day 26 of every month
         new RecurringJobOptions
         {
@@ -424,9 +425,10 @@ static void ConfigureRecurringJobs()
 
     // Utility Billing Job
     // Runs every week on Monday at 3:00 AM
+    // Processes all organizations automatically
     RecurringJob.AddOrUpdate<TentMan.Application.BackgroundJobs.UtilityBillingJob>(
         "utility-billing",
-        job => job.ExecuteForCurrentPeriodAsync(Guid.Empty),
+        job => job.ExecuteForCurrentPeriodAsync(),
         "0 3 * * 1", // Cron: At 03:00 on Monday
         new RecurringJobOptions
         {
