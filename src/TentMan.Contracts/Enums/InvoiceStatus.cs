@@ -38,5 +38,10 @@ public enum InvoiceStatus
     /// <summary>
     /// Invoice is written off
     /// </summary>
-    WrittenOff = 7
+    WrittenOff = 7,
+
+    /// <summary>
+    /// Invoice is voided and cannot be modified
+    /// </summary>
+    Voided = 8
 }
