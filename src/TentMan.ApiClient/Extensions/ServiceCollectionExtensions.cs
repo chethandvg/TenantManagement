@@ -216,9 +216,6 @@ public static class ServiceCollectionExtensions
 
         // Configure Authorization API Client (requires authentication)
         ConfigureHttpClient<IAuthorizationApiClient, AuthorizationApiClient>(services, options, authOptions, useAuthHandler: true);
-
-        // Configure Billing API Client (requires authentication)
-        ConfigureHttpClient<IBillingApiClient, BillingApiClient>(services, options, authOptions, useAuthHandler: true);
     }
 
     /// <summary>
