@@ -69,7 +69,7 @@ TentMan uses **Hangfire** as the background job processing framework to ensure r
 
 ### 1. Monthly Rent Generation Job
 
-**Purpose**: Automatically generates monthly rent invoices for all active leases.
+**Purpose**: Automatically generates monthly rent invoices for all active leases across all organizations.
 
 **Schedule**: 
 - **Cron**: `0 2 26 * *` (At 02:00 on day 26 of every month)
@@ -79,17 +79,20 @@ TentMan uses **Hangfire** as the background job processing framework to ensure r
 ```csharp
 RecurringJob.AddOrUpdate<MonthlyRentGenerationJob>(
     "monthly-rent-generation",
-    job => job.ExecuteForNextMonthAsync(Guid.Empty, 5),
+    job => job.ExecuteForNextMonthAsync(5),
     "0 2 26 * *",
     new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 ```
 
 **Features**:
 - Generates invoices for the **next month** (e.g., runs Jan 26 for February billing)
+- **Multi-tenant**: Automatically iterates over all organizations in the database
+- Validates job is running within expected time window (±1 day tolerance)
 - Uses `ActualDaysInMonth` proration method by default
-- Logs all successes and failures with detailed error messages
-- Supports partial failures (continues processing if some leases fail)
-- Throws exception on complete failure for Hangfire retry mechanism
+- Logs all successes and failures with detailed error messages per organization
+- Supports partial failures (continues processing remaining organizations if one fails)
+- Comprehensive error tracking with organization-specific error messages
+- Throws exception on fatal failures for Hangfire retry mechanism
 
 **Idempotency**: The underlying `InvoiceRunService` ensures idempotency by updating existing draft invoices rather than creating duplicates.
 
@@ -109,7 +112,7 @@ BackgroundJob.Enqueue<MonthlyRentGenerationJob>(
 
 ### 2. Utility Billing Job
 
-**Purpose**: Generates utility invoices for leases with pending utility statements.
+**Purpose**: Generates utility invoices for leases with pending utility statements across all organizations.
 
 **Schedule**: 
 - **Cron**: `0 3 * * 1` (At 03:00 every Monday)
@@ -119,15 +122,17 @@ BackgroundJob.Enqueue<MonthlyRentGenerationJob>(
 ```csharp
 RecurringJob.AddOrUpdate<UtilityBillingJob>(
     "utility-billing",
-    job => job.ExecuteForCurrentPeriodAsync(Guid.Empty),
+    job => job.ExecuteForCurrentPeriodAsync(),
     "0 3 * * 1",
     new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 ```
 
 **Features**:
 - Processes utility statements for the **current month**
+- **Multi-tenant**: Automatically iterates over all organizations in the database
 - Only bills utility statements that are finalized but not yet invoiced
-- Logs execution results and errors
+- Logs execution results and errors per organization
+- Supports partial failures (continues processing remaining organizations)
 - **Note**: Currently a placeholder - full implementation pending UtilityStatementRepository
 
 **Idempotency**: Will be ensured by checking for existing utility invoice lines before generation.

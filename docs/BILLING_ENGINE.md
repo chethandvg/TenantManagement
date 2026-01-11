@@ -862,21 +862,25 @@ TentMan uses **Hangfire** for automated background processing of billing tasks. 
 #### Monthly Rent Generation
 - **Schedule**: Runs on the 26th of each month at 2:00 AM UTC
 - **Purpose**: Automatically generates rent invoices for all active leases for the upcoming month
+- **Multi-Tenant**: Processes all organizations automatically
 - **Lead Time**: 5 days before the billing period starts (allows time for review)
 - **Process**: 
+  - Fetches all organizations from the database
   - Calculates next month's billing period
-  - Generates invoices for all active leases
+  - Generates invoices for all active leases per organization
   - Uses `ActualDaysInMonth` proration method
-  - Logs successes and failures
-  - Supports partial failures (continues if some leases fail)
+  - Logs successes and failures per organization
+  - Supports partial failures (continues if some organizations/leases fail)
 
 #### Utility Billing
 - **Schedule**: Runs every Monday at 3:00 AM UTC
 - **Purpose**: Generates utility invoices for leases with finalized utility statements
+- **Multi-Tenant**: Processes all organizations automatically
 - **Process**:
-  - Fetches finalized utility statements not yet billed
+  - Fetches all organizations from the database
+  - Fetches finalized utility statements not yet billed per organization
   - Generates utility invoice lines
-  - Logs execution results
+  - Logs execution results per organization
   - **Note**: Full implementation pending UtilityStatementRepository
 
 ### Monitoring & Management

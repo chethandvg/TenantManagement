@@ -5,17 +5,19 @@ This folder contains background job definitions that are executed by Hangfire on
 ## Jobs
 
 ### MonthlyRentGenerationJob
-Automatically generates monthly rent invoices for all active leases.
+Automatically generates monthly rent invoices for all active leases across all organizations.
 
 **Schedule**: 26th of each month at 2:00 AM UTC  
 **Purpose**: Generate invoices 5 days before the billing period starts  
+**Multi-tenant**: Iterates over all organizations automatically  
 **Idempotency**: Safe to retry; updates existing draft invoices  
 
 ### UtilityBillingJob
-Generates utility invoices for leases with finalized utility statements.
+Generates utility invoices for leases with finalized utility statements across all organizations.
 
 **Schedule**: Every Monday at 3:00 AM UTC  
 **Purpose**: Process newly finalized utility statements  
+**Multi-tenant**: Iterates over all organizations automatically  
 **Status**: Placeholder implementation (full implementation pending)
 
 ## Architecture
