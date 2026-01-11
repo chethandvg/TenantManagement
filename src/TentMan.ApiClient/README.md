@@ -518,8 +518,12 @@ TentMan.ApiClient/
 │   ├── TenantsApiClient.cs              # Tenants API client implementation
 │   ├── ITenantInvitesApiClient.cs       # Tenant Invites API client interface
 │   ├── TenantInvitesApiClient.cs        # Tenant Invites API client implementation
+│   ├── ITenantPortalApiClient.cs        # Tenant Portal API client interface
+│   ├── TenantPortalApiClient.cs         # Tenant Portal API client implementation (lease summary, documents, invoices)
 │   ├── ILeasesApiClient.cs              # Leases API client interface
-│   └── LeasesApiClient.cs               # Leases API client implementation
+│   ├── LeasesApiClient.cs               # Leases API client implementation
+│   ├── IBillingApiClient.cs             # Billing API client interface
+│   └── BillingApiClient.cs              # Billing API client implementation
 └── README.md
 ```
 

@@ -1,6 +1,8 @@
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Tenants;
 using TentMan.Contracts.TenantPortal;
+using TentMan.Contracts.Invoices;
+using TentMan.Contracts.Enums;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -180,5 +182,24 @@ public sealed class TenantPortalApiClient : ApiClientServiceBase, ITenantPortalA
             _logger.LogError(ex, "Error submitting handover to {Uri}", uri);
             return ApiResponse<MoveInHandoverResponse>.Fail($"Submission error: {ex.Message}");
         }
+    }
+
+    /// <inheritdoc/>
+    public Task<ApiResponse<IEnumerable<InvoiceDto>>> GetInvoicesAsync(
+        InvoiceStatus? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var path = status.HasValue 
+            ? $"invoices?status={status.Value}" 
+            : "invoices";
+        return GetAsync<IEnumerable<InvoiceDto>>(path, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<ApiResponse<InvoiceDto>> GetInvoiceAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return GetAsync<InvoiceDto>($"invoices/{id}", cancellationToken);
     }
 }

@@ -1,6 +1,6 @@
 # Billing UI Guide - TentMan
 
-Complete guide to the Billing & Invoicing user interface for administrators and managers.
+Complete guide to the Billing & Invoicing user interface for administrators, managers, and tenants.
 
 ---
 
@@ -16,6 +16,9 @@ Complete guide to the Billing & Invoicing user interface for administrators and 
   - [Invoice Management](#invoice-management)
   - [Invoice Runs](#invoice-runs)
   - [Credit Notes](#credit-notes)
+- [Tenant Portal - My Bills](#tenant-portal---my-bills)
+  - [My Bills List](#my-bills-list)
+  - [Bill Details](#bill-details)
 - [Navigation](#navigation)
 - [Authorization](#authorization)
 - [Common Workflows](#common-workflows)
@@ -899,12 +902,155 @@ private async Task CreateCreditNoteAsync()
 
 ---
 
+## Tenant Portal - My Bills
+
+The Tenant Portal provides tenants with read-only access to view their invoices (bills) for their active lease.
+
+### My Bills List
+
+**Route**: `/tenant/my-bills`  
+**Component**: `TenantInvoices.razor`
+
+#### Purpose
+
+Allows tenants to view all their invoices in a mobile-friendly, paginated list with filtering capabilities.
+
+#### Key Features
+
+**Invoice List Display**:
+- Shows only issued invoices (not drafts) by default
+- Displays invoice number, dates, billing period, status, and amounts
+- Color-coded status indicators (Issued, Paid, Overdue, etc.)
+- Shows both total amount and outstanding balance
+
+**Filtering**:
+- Filter by invoice status (Issued, Partially Paid, Paid, Overdue)
+- Apply filters button to refresh results
+
+**Pagination**:
+- 10 invoices per page by default
+- Page navigation controls
+- Shows current page and total pages
+
+**Responsive Layout**:
+- **Mobile View**: Card-based layout with all key information
+- **Desktop View**: Table layout with sortable columns
+- Automatically adapts based on screen size
+
+**Authorization**:
+- Protected by `PolicyNames.RequireTenantRole`
+- Only shows invoices for the current tenant's lease
+
+#### Usage Example
+
+```razor
+@page "/tenant/my-bills"
+@attribute [Authorize(Policy = PolicyNames.RequireTenantRole)]
+
+<!-- Component automatically:
+  1. Fetches tenant's lease information
+  2. Loads all invoices for that lease
+  3. Filters to show only issued invoices
+  4. Displays in paginated, responsive format
+-->
+```
+
+#### Code Structure
+
+```
+TenantInvoices.razor        # UI markup with responsive layouts
+TenantInvoices.razor.cs     # Code-behind with filtering and pagination logic
+```
+
+---
+
+### Bill Details
+
+**Route**: `/tenant/my-bills/{invoiceId}`  
+**Component**: `TenantInvoiceDetail.razor`
+
+#### Purpose
+
+Provides detailed view of a specific invoice with complete line item breakdown and payment status.
+
+#### Key Features
+
+**Invoice Header**:
+- Invoice number and dates (invoice date, due date)
+- Billing period
+- Status indicator with color coding
+- Issue date (when the invoice was finalized)
+
+**Line Items Breakdown**:
+- Complete list of all charges
+- For each line item:
+  - Charge type (e.g., Rent, Utilities, Maintenance)
+  - Description
+  - Quantity and unit price
+  - Amount before tax
+  - Tax amount
+  - Total amount
+
+**Financial Summary**:
+- Subtotal (before tax)
+- Total tax amount
+- Grand total
+- Amount paid (if any)
+- Outstanding balance
+
+**Payment Status**:
+- Visual indicator for paid/unpaid status
+- Shows partial payment amounts
+- Placeholder message for payment tracking (Payments & Collection feature)
+
+**Additional Information**:
+- Invoice notes (if any)
+- Payment instructions (if provided)
+
+**Actions**:
+- Download PDF button (placeholder, disabled - coming soon)
+- Back to My Bills navigation
+
+**Responsive Layout**:
+- **Mobile View**: Card-based layout for line items
+- **Desktop View**: Table layout for line items
+- Automatically adapts based on screen size
+
+**Authorization & Security**:
+- Protected by `PolicyNames.RequireTenantRole`
+- Verifies invoice belongs to tenant's lease
+- Returns 403 Forbidden if tenant tries to access another tenant's invoice
+
+#### Usage Example
+
+```razor
+@page "/tenant/my-bills/{Id:guid}"
+@attribute [Authorize(Policy = PolicyNames.RequireTenantRole)]
+
+<!-- Component automatically:
+  1. Validates tenant has access to this invoice
+  2. Loads complete invoice details with line items
+  3. Displays in mobile-friendly format
+  4. Shows payment status and financial breakdown
+-->
+```
+
+#### Code Structure
+
+```
+TenantInvoiceDetail.razor       # UI markup with responsive layouts
+TenantInvoiceDetail.razor.cs    # Code-behind with invoice loading logic
+```
+
+---
+
 ## Navigation
 
 ### Menu Structure
 
 Billing features are accessible via the main navigation menu:
 
+**For Managers/Administrators:**
 ```
 📊 Billing
 ├── 📈 Dashboard               (/billing/dashboard)
@@ -915,7 +1061,19 @@ Billing features are accessible via the main navigation menu:
 └── 🚀 Invoice Runs            (/billing/invoice-runs)
 ```
 
+**For Tenants:**
+```
+👤 Tenant Portal
+├── 🏠 Dashboard               (/tenant/dashboard)
+├── 📋 Lease Details           (/tenant/lease-summary)
+├── 🧾 My Bills                (/tenant/my-bills)
+├── 📁 My Documents            (/tenant/documents)
+└── ✅ Move-in Handover        (/tenant/move-in)
+```
+
 ### Routes Reference
+
+**Manager/Administrator Routes:**
 
 | Route | Component | Description |
 |-------|-----------|-------------|
@@ -928,9 +1086,17 @@ Billing features are accessible via the main navigation menu:
 | `/billing/invoice-runs` | InvoiceRuns | View run history |
 | `/billing/invoice-runs/{runId}` | InvoiceRunDetail | View run details |
 
+**Tenant Portal Routes:**
+
+| Route | Component | Description | Authorization |
+|-------|-----------|-------------|---------------|
+| `/tenant/my-bills` | TenantInvoices | View all bills for tenant's lease | RequireTenantRole |
+| `/tenant/my-bills/{invoiceId}` | TenantInvoiceDetail | View detailed bill information | RequireTenantRole |
+
 ### Navigation Guards
 
-All routes are protected with `[Authorize(Policy = PolicyNames.RequireManagerRole)]`
+- **Manager/Admin routes**: Protected with `[Authorize(Policy = PolicyNames.RequireManagerRole)]`
+- **Tenant routes**: Protected with `[Authorize(Policy = PolicyNames.RequireTenantRole)]`
 
 Unauthorized users are redirected to login or shown "Access Denied" message.
 
