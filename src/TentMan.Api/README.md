@@ -270,6 +270,68 @@ GET /api/v1/tenant-portal/lease-summary
 Authorization: Bearer {tenant-jwt-token}
 ```
 
+### GET /api/v1/tenant-portal/invoices
+
+Gets all invoices for the current tenant's lease(s). Only returns issued invoices (not drafts) by default.
+
+**Authorization**: Requires Tenant role (via policy `PolicyNames.RequireTenantRole`)
+
+**Query Parameters**:
+- `status` (optional): Filter by invoice status (Issued, PartiallyPaid, Paid, Overdue)
+
+**Response**: `ApiResponse<IEnumerable<InvoiceDto>>`
+
+**Returns**:
+- List of invoices for the tenant's lease
+- Filters to exclude draft invoices by default
+- Each invoice includes: number, dates, amounts, status, billing period
+
+**Status Codes**:
+- `200 OK`: Invoices retrieved successfully
+- `404 Not Found`: No active lease found for the tenant
+- `401 Unauthorized`: Invalid authentication or missing Tenant role
+
+**Example**:
+```bash
+# Get all issued invoices
+GET /api/v1/tenant-portal/invoices
+Authorization: Bearer {tenant-jwt-token}
+
+# Filter by status
+GET /api/v1/tenant-portal/invoices?status=Paid
+Authorization: Bearer {tenant-jwt-token}
+```
+
+### GET /api/v1/tenant-portal/invoices/{invoiceId}
+
+Gets a specific invoice by ID for the current tenant. Verifies the invoice belongs to the tenant's lease.
+
+**Authorization**: Requires Tenant role (via policy `PolicyNames.RequireTenantRole`)
+
+**Path Parameters**:
+- `invoiceId`: The unique identifier of the invoice
+
+**Response**: `ApiResponse<InvoiceDto>`
+
+**Returns**:
+- Complete invoice details including:
+  - Invoice header (number, dates, status, billing period)
+  - All line items with charge types, descriptions, quantities, prices
+  - Financial breakdown (subtotal, tax, total, paid amount, balance)
+  - Notes and payment instructions (if any)
+
+**Status Codes**:
+- `200 OK`: Invoice retrieved successfully
+- `404 Not Found`: Invoice not found or no active lease for tenant
+- `403 Forbidden`: Invoice does not belong to the tenant's lease
+- `401 Unauthorized`: Invalid authentication or missing Tenant role
+
+**Example**:
+```bash
+GET /api/v1/tenant-portal/invoices/{invoice-id}
+Authorization: Bearer {tenant-jwt-token}
+```
+
 ---
 
 ## 📧 Tenant Invite Endpoints
