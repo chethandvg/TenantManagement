@@ -5,7 +5,7 @@ namespace TentMan.Domain.Entities;
 
 /// <summary>
 /// Represents billing settings for a lease.
-/// Controls billing behavior like billing day, payment terms, etc.
+/// Controls billing behavior like billing day (1-28), payment terms, and proration method.
 /// </summary>
 public class LeaseBillingSetting : BaseEntity
 {

@@ -4,7 +4,7 @@ namespace TentMan.Domain.Entities;
 
 /// <summary>
 /// Represents a line item on an invoice.
-/// Each line represents a charge (rent, maintenance, utilities, etc.).
+/// Each line represents a charge (rent, maintenance, utilities, etc.) with full traceability.
 /// </summary>
 public class InvoiceLine : BaseEntity
 {

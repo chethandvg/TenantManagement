@@ -4,8 +4,9 @@ using TentMan.Contracts.Enums;
 namespace TentMan.Domain.Entities;
 
 /// <summary>
-/// Represents a utility statement/bill for a lease.
+/// Represents a utility statement/bill for a lease with versioning support.
 /// Supports both amount-based (direct billing) and meter-based (calculated from consumption).
+/// Allows multiple draft versions before finalization, with only one final statement per period/utility type.
 /// </summary>
 public class UtilityStatement : BaseEntity
 {

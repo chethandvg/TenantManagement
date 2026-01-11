@@ -312,11 +312,62 @@ All services have comprehensive unit test coverage:
 - `InvoiceRunServiceTests` - 7 tests
 - `InvoiceManagementServiceTests` - 12 tests (6 issue + 6 void)
 - `CreditNoteServiceTests` - 13 tests
+- **`BillingEdgeCasesTests`** - 11 edge case tests
+- **`UtilityStatementVersioningTests`** - 6 versioning tests
+- **`InvoiceImmutabilityTests`** - 14 immutability tests
 
 Run billing tests:
 ```bash
 dotnet test --filter "Feature=Billing"
 ```
+
+Run edge case tests:
+```bash
+dotnet test --filter "TestType=EdgeCases|TestType=Versioning|TestType=Immutability"
+```
+
+---
+
+## 🛡️ Edge Case Handling
+
+The billing engine handles various edge cases to ensure correct and reliable billing:
+
+### Lease Lifecycle Edge Cases
+- **Lease starts mid-month**: Prorates rent based on actual days used
+- **Lease ends mid-month**: Generates final prorated invoice
+- **Rent changes mid-month**: Splits invoice into separate line items for each term period
+- **Multiple lease terms**: Automatically calculates prorated charges for overlapping terms
+
+### Billing Day Validation
+- **Invalid billing days**: Billing day must be 1-28 to ensure compatibility with all months
+- **February handling**: Correctly handles both 28-day and 29-day (leap year) February months
+- Proration calculations account for varying month lengths
+
+### Invoice Immutability
+- **Draft invoices**: Can be regenerated/updated
+- **Issued invoices**: Immutable, cannot be regenerated
+- **Paid/Partially Paid invoices**: Immutable, use credit notes for adjustments
+- **Voided invoices**: Terminal state, cannot be regenerated or modified
+- All state transitions tracked with timestamps (IssuedAtUtc, PaidAtUtc, VoidedAtUtc)
+
+### Utility Statement Versioning
+- **Version tracking**: Each utility statement has a version number (1, 2, 3, etc.)
+- **Multiple corrections**: Allows creating corrected versions before finalization
+- **Final statements**: Only one final statement allowed per lease/utility type/billing period
+- **Late billing**: Can add utility statements for past periods
+- **Multiple utility types**: Supports multiple utility types (electricity, water, gas) for same period
+
+### Idempotency
+- **Duplicate prevention**: Regenerating invoice for same period updates existing draft
+- **Concurrent safety**: Uses optimistic concurrency control with RowVersion
+- **Unique constraints**: Database-level unique indexes prevent duplicate final utility statements
+
+### Source Traceability
+- **Invoice line tracking**: Each line has Source and SourceRefId fields
+- **Rent lines**: Source = "Rent", SourceRefId = LeaseTermId
+- **Recurring charge lines**: Source = "RecurringCharge", SourceRefId = ChargeId
+- **Utility lines**: Can link to UtilityStatementId
+- Enables audit trail and charge reconciliation
 
 ---
 
@@ -367,4 +418,5 @@ Issued/Paid → CreditNote (for refunds/adjustments)
 ---
 
 **Last Updated**: 2026-01-11  
-**Maintainer**: TentMan Development Team
+**Maintainer**: TentMan Development Team  
+**Edge Cases Implemented**: 2026-01-11
