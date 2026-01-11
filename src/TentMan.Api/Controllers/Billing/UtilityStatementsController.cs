@@ -259,6 +259,7 @@ public class UtilityStatementsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<UtilityStatementDto>>> FinalizeUtilityStatement(
         Guid id,
+        FinalizeUtilityStatementRequest request,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation("Finalizing utility statement {StatementId}", id);
@@ -286,7 +287,7 @@ public class UtilityStatementsController : ControllerBase
 
         try
         {
-            await _utilityStatementRepository.UpdateAsync(statement, statement.RowVersion, cancellationToken);
+            await _utilityStatementRepository.UpdateAsync(statement, request.RowVersion, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
