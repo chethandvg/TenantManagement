@@ -7,6 +7,8 @@ using TentMan.Domain.Entities.Identity;
 using TentMan.Infrastructure.Persistence;
 using TentMan.IntegrationTests.Fixtures;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace TentMan.IntegrationTests.Api.Billing;
@@ -21,13 +23,13 @@ public class InvoiceGenerationIntegrationTests : IAsyncLifetime
 {
     private readonly WebApplicationFactoryFixture _factory;
     private readonly HttpClient _client;
-    private Guid _testOrgId;
-    private Guid _testUserId;
-    private Guid _testPropertyId;
-    private Guid _testUnitId;
-    private Guid _testLeaseId;
-    private Guid _testTenantId;
-    private Guid _chargeTypeId;
+    private readonly Guid _testOrgId;
+    private readonly Guid _testUserId;
+    private readonly Guid _testPropertyId;
+    private readonly Guid _testUnitId;
+    private readonly Guid _testLeaseId;
+    private readonly Guid _testTenantId;
+    private readonly Guid _chargeTypeId;
 
     public InvoiceGenerationIntegrationTests(WebApplicationFactoryFixture factory)
     {
@@ -252,28 +254,29 @@ public class InvoiceGenerationIntegrationTests : IAsyncLifetime
         var org = new Organization
         {
             Id = _testOrgId,
-            Name = "Test Org",
-            Description = "Test Organization"
+            Name = "Test Org"
         };
         dbContext.Organizations.Add(org);
 
-        // Create property
-        var property = new Property
+        // Create building
+        var building = new Building
         {
             Id = _testPropertyId,
             OrgId = _testOrgId,
-            Name = "Test Property",
-            Address = "123 Test St"
+            Name = "Test Building",
+            BuildingCode = "TB001",
+            PropertyType = PropertyType.Apartment
         };
-        dbContext.Properties.Add(property);
+        dbContext.Buildings.Add(building);
 
         // Create unit
         var unit = new Unit
         {
             Id = _testUnitId,
-            PropertyId = _testPropertyId,
+            BuildingId = _testPropertyId,
             UnitNumber = "101",
-            FloorArea = 1000
+            UnitType = UnitType.TwoBHK,
+            AreaSqFt = 1000
         };
         dbContext.Units.Add(unit);
 
@@ -282,10 +285,9 @@ public class InvoiceGenerationIntegrationTests : IAsyncLifetime
         {
             Id = _testTenantId,
             OrgId = _testOrgId,
-            FirstName = "John",
-            LastName = "Doe",
+            FullName = "John Doe",
             Email = "john.doe@test.com",
-            Phone = "1234567890"
+            Phone = "+1234567890"
         };
         dbContext.Tenants.Add(tenant);
 
@@ -296,8 +298,8 @@ public class InvoiceGenerationIntegrationTests : IAsyncLifetime
             OrgId = _testOrgId,
             UnitId = _testUnitId,
             Status = LeaseStatus.Active,
-            LeaseStartDate = new DateOnly(2024, 1, 1),
-            LeaseEndDate = new DateOnly(2024, 12, 31)
+            StartDate = new DateOnly(2024, 1, 1),
+            EndDate = new DateOnly(2024, 12, 31)
         };
         dbContext.Leases.Add(lease);
 
@@ -307,7 +309,8 @@ public class InvoiceGenerationIntegrationTests : IAsyncLifetime
             Id = Guid.NewGuid(),
             LeaseId = _testLeaseId,
             TenantId = _testTenantId,
-            IsPrimaryTenant = true
+            Role = LeasePartyRole.PrimaryTenant,
+            IsResponsibleForPayment = true
         };
         dbContext.LeaseParties.Add(leaseParty);
 
@@ -316,10 +319,9 @@ public class InvoiceGenerationIntegrationTests : IAsyncLifetime
         {
             Id = Guid.NewGuid(),
             LeaseId = _testLeaseId,
-            RentAmount = 10000m,
+            MonthlyRent = 10000m,
             EffectiveFrom = new DateOnly(2024, 1, 1),
-            EffectiveTo = new DateOnly(2024, 12, 31),
-            IsActive = true
+            EffectiveTo = new DateOnly(2024, 12, 31)
         };
         dbContext.LeaseTerms.Add(leaseTerm);
 
@@ -341,8 +343,7 @@ public class InvoiceGenerationIntegrationTests : IAsyncLifetime
             Id = _chargeTypeId,
             OrgId = _testOrgId,
             Name = "Rent",
-            Code = "RENT",
-            Category = ChargeCategory.Rent,
+            Code = ChargeTypeCode.RENT,
             IsActive = true
         };
         dbContext.ChargeTypes.Add(chargeType);

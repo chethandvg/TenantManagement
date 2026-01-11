@@ -727,7 +727,7 @@ public class BillingEdgeCasesTests
         
         var oldLeaseLineItem = oldLeaseResult.LineItems.First();
         oldLeaseLineItem.IsProrated.Should().BeTrue();
-        // Old lease: 15 days (Jan 1-15) / 31 days in January * 10000 = 4838.71
+        // Old lease: 15 days (Jan 1-15 inclusive) / 31 days in January * 10000 = 4838.71
         oldLeaseLineItem.Amount.Should().BeApproximately(4838.71m, 0.01m);
 
         newLeaseResult.Should().NotBeNull();
@@ -735,7 +735,7 @@ public class BillingEdgeCasesTests
         
         var newLeaseLineItem = newLeaseResult.LineItems.First();
         newLeaseLineItem.IsProrated.Should().BeTrue();
-        // New lease: 16 days (Jan 16-31) / 31 days in January * 10000 = 5161.29
+        // New lease: 16 days (Jan 16-31 inclusive) / 31 days in January * 10000 = 5161.29
         newLeaseLineItem.Amount.Should().BeApproximately(5161.29m, 0.01m);
 
         // Verify combined total equals full month rent (accounting for rounding)

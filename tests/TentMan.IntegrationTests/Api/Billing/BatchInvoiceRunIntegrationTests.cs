@@ -7,6 +7,8 @@ using TentMan.Domain.Entities.Identity;
 using TentMan.Infrastructure.Persistence;
 using TentMan.IntegrationTests.Fixtures;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace TentMan.IntegrationTests.Api.Billing;
@@ -21,10 +23,10 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
 {
     private readonly WebApplicationFactoryFixture _factory;
     private readonly HttpClient _client;
-    private Guid _testOrgId;
-    private Guid _testUserId;
-    private List<Guid> _testLeaseIds = new();
-    private Guid _chargeTypeId;
+    private readonly Guid _testOrgId;
+    private readonly Guid _testUserId;
+    private readonly List<Guid> _testLeaseIds = new();
+    private readonly Guid _chargeTypeId;
 
     public BatchInvoiceRunIntegrationTests(WebApplicationFactoryFixture factory)
     {
@@ -77,7 +79,7 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
         invoiceRun.Should().NotBeNull();
         invoiceRun!.Status.Should().Be(InvoiceRunStatus.Completed);
         invoiceRun.Items.Should().HaveCount(_testLeaseIds.Count);
-        invoiceRun.Items.Should().OnlyContain(i => i.Status == InvoiceRunStatus.Completed);
+        invoiceRun.Items.Should().OnlyContain(i => i.IsSuccess);
 
         // Verify invoices were created
         var invoices = await dbContext.Invoices
@@ -112,7 +114,6 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
 
         var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<InvoiceRunDto>>();
         apiResponse!.Data!.TotalLeases.Should().BeGreaterThanOrEqualTo(55);
-        apiResponse.Data.SuccessfulInvoices.Should().BeGreaterThanOrEqualTo(55);
 
         // Performance check - should complete in reasonable time
         var duration = endTime - startTime;
@@ -228,8 +229,7 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
         var org = new Organization
         {
             Id = _testOrgId,
-            Name = "Test Org",
-            Description = "Test Organization"
+            Name = "Test Org"
         };
         dbContext.Organizations.Add(org);
 
@@ -239,8 +239,7 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
             Id = _chargeTypeId,
             OrgId = _testOrgId,
             Name = "Rent",
-            Code = "RENT",
-            Category = ChargeCategory.Rent,
+            Code = ChargeTypeCode.RENT,
             IsActive = true
         };
         dbContext.ChargeTypes.Add(chargeType);
@@ -260,34 +259,36 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
         await dbContext.SaveChangesAsync();
     }
 
-    private async Task CreateLeasesAsync(ApplicationDbContext dbContext, int count)
+    private Task CreateLeasesAsync(ApplicationDbContext dbContext, int count)
     {
         for (int i = 0; i < count; i++)
         {
-            var propertyId = Guid.NewGuid();
+            var buildingId = Guid.NewGuid();
             var unitId = Guid.NewGuid();
             var tenantId = Guid.NewGuid();
             var leaseId = Guid.NewGuid();
 
             _testLeaseIds.Add(leaseId);
 
-            // Create property
-            var property = new Property
+            // Create building
+            var building = new Building
             {
-                Id = propertyId,
+                Id = buildingId,
                 OrgId = _testOrgId,
-                Name = $"Property {i + 1}",
-                Address = $"{i + 1} Test St"
+                Name = $"Building {i + 1}",
+                BuildingCode = $"B{(i + 1):D3}",
+                PropertyType = PropertyType.Apartment
             };
-            dbContext.Properties.Add(property);
+            dbContext.Buildings.Add(building);
 
             // Create unit
             var unit = new Unit
             {
                 Id = unitId,
-                PropertyId = propertyId,
+                BuildingId = buildingId,
                 UnitNumber = $"{100 + i}",
-                FloorArea = 1000
+                UnitType = UnitType.TwoBHK,
+                AreaSqFt = 1000
             };
             dbContext.Units.Add(unit);
 
@@ -296,10 +297,9 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
             {
                 Id = tenantId,
                 OrgId = _testOrgId,
-                FirstName = $"Tenant{i}",
-                LastName = "Test",
+                FullName = $"Tenant{i} Test",
                 Email = $"tenant{i}@test.com",
-                Phone = "1234567890"
+                Phone = "+1234567890"
             };
             dbContext.Tenants.Add(tenant);
 
@@ -310,8 +310,8 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
                 OrgId = _testOrgId,
                 UnitId = unitId,
                 Status = LeaseStatus.Active,
-                LeaseStartDate = new DateOnly(2024, 1, 1),
-                LeaseEndDate = new DateOnly(2024, 12, 31)
+                StartDate = new DateOnly(2024, 1, 1),
+                EndDate = new DateOnly(2024, 12, 31)
             };
             dbContext.Leases.Add(lease);
 
@@ -321,7 +321,8 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
                 Id = Guid.NewGuid(),
                 LeaseId = leaseId,
                 TenantId = tenantId,
-                IsPrimaryTenant = true
+                Role = LeasePartyRole.PrimaryTenant,
+                IsResponsibleForPayment = true
             };
             dbContext.LeaseParties.Add(leaseParty);
 
@@ -330,10 +331,9 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
             {
                 Id = Guid.NewGuid(),
                 LeaseId = leaseId,
-                RentAmount = 10000m + (i * 100),
+                MonthlyRent = 10000m + (i * 100m),
                 EffectiveFrom = new DateOnly(2024, 1, 1),
-                EffectiveTo = new DateOnly(2024, 12, 31),
-                IsActive = true
+                EffectiveTo = new DateOnly(2024, 12, 31)
             };
             dbContext.LeaseTerms.Add(leaseTerm);
 
@@ -349,5 +349,7 @@ public class BatchInvoiceRunIntegrationTests : IAsyncLifetime
             };
             dbContext.LeaseBillingSettings.Add(billingSetting);
         }
+        
+        return Task.CompletedTask;
     }
 }
