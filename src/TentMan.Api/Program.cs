@@ -5,6 +5,7 @@ using TentMan.Application.Common.Behaviors;
 using TentMan.Infrastructure;
 using Asp.Versioning;
 using FluentValidation;
+using Hangfire;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
@@ -351,6 +352,14 @@ app.UseHttpsRedirection();
 // ✅ Enable CORS - Must be before Authentication/Authorization
 app.UseCors("AllowBlazorWasm");
 
+// Hangfire Dashboard - Must be before Authentication/Authorization for dashboard access
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireDashboardAuthorizationFilter() },
+    DashboardTitle = "TentMan Background Jobs",
+    StatsPollingInterval = 2000 // Poll for stats every 2 seconds
+});
+
 // Authentication & Authorization Middleware (ORDER MATTERS!)
 app.UseAuthentication(); // First: Identify who you are
 app.UseAuthorization();  // Second: Check what you can do
@@ -394,7 +403,36 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 
 app.MapDefaultEndpoints();
 
+// Configure recurring background jobs on startup
+ConfigureRecurringJobs();
+
 app.Run();
+
+static void ConfigureRecurringJobs()
+{
+    // Monthly Rent Generation Job
+    // Runs on the 26th of each month at 2:00 AM (5 days before month start)
+    // This gives time to review before the billing period begins
+    RecurringJob.AddOrUpdate<TentMan.Application.BackgroundJobs.MonthlyRentGenerationJob>(
+        "monthly-rent-generation",
+        job => job.ExecuteForNextMonthAsync(Guid.Empty, 5),
+        "0 2 26 * *", // Cron: At 02:00 on day 26 of every month
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Utc
+        });
+
+    // Utility Billing Job
+    // Runs every week on Monday at 3:00 AM
+    RecurringJob.AddOrUpdate<TentMan.Application.BackgroundJobs.UtilityBillingJob>(
+        "utility-billing",
+        job => job.ExecuteForCurrentPeriodAsync(Guid.Empty),
+        "0 3 * * 1", // Cron: At 03:00 on Monday
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Utc
+        });
+}
 
 // Make Program class accessible for integration tests
 public partial class Program { }

@@ -4,12 +4,15 @@ using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Authentication;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Application.Abstractions.Storage;
+using TentMan.Application.BackgroundJobs;
 using TentMan.Domain.ValueObjects;
 using TentMan.Infrastructure.Authentication;
 using TentMan.Infrastructure.Persistence;
 using TentMan.Infrastructure.Repositories;
 using TentMan.Infrastructure.Storage;
 using TentMan.Infrastructure.Time;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +56,9 @@ public static class DependencyInjection
 
         // Add other infrastructure services
         services.AddInfrastructureServices();
+
+        // Add Hangfire for background jobs
+        services.AddHangfireServices(configuration);
 
         return services;
     }
@@ -295,6 +301,46 @@ public static class DependencyInjection
         services.AddScoped<TentMan.Application.Abstractions.Billing.IInvoiceRunService, TentMan.Application.Billing.Services.InvoiceRunService>();
         services.AddScoped<TentMan.Application.Abstractions.Billing.IInvoiceManagementService, TentMan.Application.Billing.Services.InvoiceManagementService>();
         services.AddScoped<TentMan.Application.Abstractions.Billing.ICreditNoteService, TentMan.Application.Billing.Services.CreditNoteService>();
+
+        // Background jobs
+        services.AddScoped<MonthlyRentGenerationJob>();
+        services.AddScoped<UtilityBillingJob>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configures Hangfire for background job processing.
+    /// </summary>
+    private static IServiceCollection AddHangfireServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("Sql")
+            ?? configuration.GetConnectionString("tentmandb")
+            ?? throw new InvalidOperationException("Database connection string not configured for Hangfire");
+
+        // Add Hangfire services
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+            {
+                CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                QueuePollInterval = TimeSpan.Zero,
+                UseRecommendedIsolationLevel = true,
+                DisableGlobalLocks = true,
+                SchemaName = "Hangfire"
+            }));
+
+        // Add the processing server as IHostedService
+        services.AddHangfireServer(options =>
+        {
+            options.WorkerCount = 5; // Number of concurrent job processors
+            options.ServerName = $"{Environment.MachineName}:{Guid.NewGuid()}";
+        });
 
         return services;
     }
