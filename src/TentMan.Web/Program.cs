@@ -1,6 +1,7 @@
 using TentMan.ApiClient.Extensions;
 using TentMan.Ui;
 using TentMan.Web;
+using TentMan.Shared.Constants.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -31,7 +32,61 @@ builder.Services.AddApiClientForWasm(options =>
 });
 
 // Add authorization for Blazor
-builder.Services.AddAuthorizationCore();
+builder.Services.AddAuthorizationCore(options =>
+{
+    // Tenant Portal policy - allow Tenant role or explicit permission
+    options.AddPolicy(PolicyNames.CanViewTenantPortal, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+            context.User.IsInRole(RoleNames.Tenant) ||
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.TenantPortal.View));
+    });
+
+    // Property Management policy - allow Admin, Manager, User roles or explicit permission
+    options.AddPolicy(PolicyNames.CanViewPropertyManagement, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+            context.User.IsInRole(RoleNames.Administrator) ||
+            context.User.IsInRole(RoleNames.Manager) ||
+            context.User.IsInRole(RoleNames.User) ||
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.PropertyManagement.View));
+    });
+
+    // Buildings policy
+    options.AddPolicy(PolicyNames.CanViewBuildings, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+            context.User.IsInRole(RoleNames.Administrator) ||
+            context.User.IsInRole(RoleNames.Manager) ||
+            context.User.IsInRole(RoleNames.User) ||
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.Buildings.Read));
+    });
+
+    // Tenants policy
+    options.AddPolicy(PolicyNames.CanViewTenants, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+            context.User.IsInRole(RoleNames.Administrator) ||
+            context.User.IsInRole(RoleNames.Manager) ||
+            context.User.IsInRole(RoleNames.User) ||
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.Tenants.Read));
+    });
+
+    // Leases policy
+    options.AddPolicy(PolicyNames.CanViewLeases, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+            context.User.IsInRole(RoleNames.Administrator) ||
+            context.User.IsInRole(RoleNames.Manager) ||
+            context.User.IsInRole(RoleNames.User) ||
+            context.User.HasClaim(c => c.Type == ClaimTypes.Permission && c.Value == PermissionValues.Leases.Read));
+    });
+});
 
 // Add shared UI component services from TentMan.Ui
 builder.Services.AddTentManUi();

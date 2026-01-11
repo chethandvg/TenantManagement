@@ -1,5 +1,5 @@
 using TentMan.Application.Abstractions.Security;
-using TentMan.Domain.Constants;
+using TentMan.Shared.Constants.Authorization;
 
 namespace TentMan.Infrastructure.Security;
 

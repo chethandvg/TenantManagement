@@ -1,5 +1,6 @@
 using System;
 using TentMan.Ui.State;
+using TentMan.Ui.Services;
 using TentMan.Ui.Theming;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -38,6 +39,9 @@ public static class UiServiceCollectionExtensions
         // Register shared UI state containers that power busy and error workflows
         services.AddScoped<BusyState>();
         services.AddScoped<UiState>();
+
+        // Register authorization helper for permission and policy checks
+        services.AddScoped<AuthorizationHelper>();
 
         return services;
     }

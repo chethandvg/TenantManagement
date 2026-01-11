@@ -1,7 +1,7 @@
+using SharedAuthConstants = TentMan.Shared.Constants.Authorization;
 using TentMan.Api.Authorization.Requirements;
 using TentMan.Application.Abstractions;
 using TentMan.Domain.Abstractions.Identity;
-using TentMan.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
@@ -41,7 +41,7 @@ public sealed class ResourceOwnerRequirementHandler : AuthorizationHandler<Resou
         }
 
         // ✅ Admins bypass ownership checks
-        if (context.User.IsInRole(RoleNames.Administrator) || context.User.IsInRole(RoleNames.SuperAdmin))
+        if (context.User.IsInRole(SharedAuthConstants.RoleNames.Administrator) || context.User.IsInRole(SharedAuthConstants.RoleNames.SuperAdmin))
         {
             _logger.LogDebug("User {UserId} is admin, bypassing ownership check", userId);
             context.Succeed(requirement);

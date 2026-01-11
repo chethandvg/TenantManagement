@@ -1,5 +1,5 @@
 using TentMan.AdminApi.Authorization.Requirements;
-using TentMan.Domain.Constants;
+using TentMan.Shared.Constants.Authorization;
 using Microsoft.AspNetCore.Authorization;
 
 namespace TentMan.AdminApi.Authorization;

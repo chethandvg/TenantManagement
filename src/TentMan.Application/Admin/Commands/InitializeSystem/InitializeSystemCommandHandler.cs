@@ -1,7 +1,7 @@
 using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Authentication;
 using TentMan.Application.Common;
-using TentMan.Domain.Constants;
+using TentMan.Shared.Constants.Authorization;
 using TentMan.Domain.Entities;
 using TentMan.Domain.Entities.Identity;
 using MediatR;

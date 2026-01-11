@@ -61,6 +61,36 @@ public static class AuthorizationPolicies
     // ============================================
 
     /// <summary>
+    /// Policy for viewing the tenant portal.
+    /// Requires the user to have Tenant role or tenantportal:view permission.
+    /// </summary>
+    public const string CanViewTenantPortal = "CanViewTenantPortal";
+
+    /// <summary>
+    /// Policy for viewing property management features.
+    /// Requires 'propertymanagement:view' permission.
+    /// </summary>
+    public const string CanViewPropertyManagement = "CanViewPropertyManagement";
+
+    /// <summary>
+    /// Policy for viewing buildings.
+    /// Requires 'buildings:read' permission.
+    /// </summary>
+    public const string CanViewBuildings = "CanViewBuildings";
+
+    /// <summary>
+    /// Policy for viewing tenants.
+    /// Requires 'tenants:read' permission.
+    /// </summary>
+    public const string CanViewTenants = "CanViewTenants";
+
+    /// <summary>
+    /// Policy for viewing leases.
+    /// Requires 'leases:read' permission.
+    /// </summary>
+    public const string CanViewLeases = "CanViewLeases";
+
+    /// <summary>
     /// Policy for creating products.
     /// Requires 'products:create' permission.
     /// </summary>

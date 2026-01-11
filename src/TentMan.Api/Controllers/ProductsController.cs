@@ -1,4 +1,4 @@
-using TentMan.Api.Authorization;
+using TentMan.Shared.Constants.Authorization;
 using TentMan.Application.Products.Commands.CreateProduct;
 using TentMan.Application.Products.Commands.DeleteProduct;
 using TentMan.Application.Products.Commands.UpdateProduct;

@@ -213,6 +213,9 @@ public static class ServiceCollectionExtensions
         // Configure Authentication API Client
         // The implementation will handle token attachment internally based on endpoint
         ConfigureHttpClient<IAuthenticationApiClient, AuthenticationApiClient>(services, options, authOptions, useAuthHandler: true);
+
+        // Configure Authorization API Client (requires authentication)
+        ConfigureHttpClient<IAuthorizationApiClient, AuthorizationApiClient>(services, options, authOptions, useAuthHandler: true);
     }
 
     /// <summary>

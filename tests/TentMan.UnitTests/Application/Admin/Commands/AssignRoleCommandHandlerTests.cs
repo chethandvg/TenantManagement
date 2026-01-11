@@ -6,7 +6,7 @@ using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Application.Admin.Commands.AssignRole;
 using TentMan.Application.Common;
-using TentMan.Domain.Constants;
+using TentMan.Shared.Constants.Authorization;
 using TentMan.Domain.Entities.Identity;
 using TentMan.UnitTests.TestHelpers.Fixtures;
 using FluentAssertions;
