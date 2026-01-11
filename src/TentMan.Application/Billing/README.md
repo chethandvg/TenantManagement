@@ -1,6 +1,6 @@
 # Billing Calculation Services
 
-This directory contains the core calculation services for the billing engine, implementing proration logic, rent calculations, recurring charge calculations, utility billing, invoice generation, batch invoice runs, and number generation.
+This directory contains the core calculation services for the billing engine, implementing proration logic, rent calculations, recurring charge calculations, utility billing, invoice generation, batch invoice runs, invoice management, credit notes, and number generation.
 
 ---
 
@@ -14,6 +14,7 @@ Generates invoices for leases with support for rent, recurring charges, and futu
 **Features**:
 - Generates invoices for a specific lease and billing period
 - Implements idempotency by updating existing draft invoices
+- Prevents regeneration of issued or voided invoices
 - Calculates due dates based on billing settings
 - Automatically generates rent and recurring charge lines
 - Calculates totals and tax amounts
@@ -56,6 +57,75 @@ var result = await service.ExecuteMonthlyRentRunAsync(
 );
 
 Console.WriteLine($"Run completed: {result.SuccessCount} succeeded, {result.FailureCount} failed");
+```
+
+#### InvoiceManagementService
+Manages invoice lifecycle operations including issuing and voiding invoices.
+
+**Features**:
+- Issues invoices (Draft → Issued) and sets IssuedAtUtc timestamp
+- Validates invoices before issuing (must have lines, positive total)
+- Prevents edits to issued invoices
+- Voids invoices with reason tracking
+- Prevents voiding of paid invoices
+
+**Example**:
+```csharp
+var service = new InvoiceManagementService(/* dependencies */);
+
+// Issue an invoice
+var issueResult = await service.IssueInvoiceAsync(invoiceId);
+if (issueResult.IsSuccess)
+{
+    Console.WriteLine($"Invoice issued at {issueResult.Invoice.IssuedAtUtc}");
+}
+
+// Void an invoice
+var voidResult = await service.VoidInvoiceAsync(invoiceId, "Customer requested cancellation");
+if (voidResult.IsSuccess)
+{
+    Console.WriteLine($"Invoice voided: {voidResult.Invoice.VoidReason}");
+}
+```
+
+#### CreditNoteService
+Manages credit note creation and issuance workflows.
+
+**Features**:
+- Creates credit notes with negative line items
+- Validates credit amounts against invoice lines
+- Issues credit notes (marks as applied)
+- Supports multiple credit note reasons (discount, refund, adjustment, etc.)
+- Prevents credit notes for draft or voided invoices
+
+**Example**:
+```csharp
+var service = new CreditNoteService(/* dependencies */);
+
+// Create credit note
+var lineItems = new List<CreditNoteLineRequest>
+{
+    new CreditNoteLineRequest 
+    { 
+        InvoiceLineId = invoiceLineGuid, 
+        Amount = 500m,
+        Notes = "Partial refund" 
+    }
+};
+
+var createResult = await service.CreateCreditNoteAsync(
+    invoiceId: invoiceGuid,
+    reason: CreditNoteReason.Refund,
+    lineItems: lineItems,
+    notes: "Customer requested partial refund"
+);
+
+if (createResult.IsSuccess)
+{
+    // Issue the credit note
+    var issueResult = await service.IssueCreditNoteAsync(createResult.CreditNote.Id);
+    Console.WriteLine($"Credit note {createResult.CreditNote.CreditNoteNumber} issued");
+}
 ```
 
 ---
@@ -238,6 +308,10 @@ All services have comprehensive unit test coverage:
 - `UtilityCalculationServiceTests` - 16 tests
 - `InvoiceNumberGeneratorTests` - 10 tests
 - `CreditNoteNumberGeneratorTests` - 11 tests
+- `InvoiceGenerationServiceTests` - 4 tests
+- `InvoiceRunServiceTests` - 7 tests
+- `InvoiceManagementServiceTests` - 12 tests (6 issue + 6 void)
+- `CreditNoteServiceTests` - 13 tests
 
 Run billing tests:
 ```bash
@@ -268,11 +342,29 @@ Result objects are designed as records or with init-only properties to ensure ca
 
 These services are building blocks for the billing engine and should be used by:
 1. **Invoice Generation** - Combine rent, recurring charges, and utilities
-2. **Credit Notes** - Calculate refunds with proration
-3. **Billing Previews** - Show tenants upcoming charges
-4. **Reporting** - Generate financial reports
+2. **Invoice Lifecycle** - Issue invoices to finalize them, void for cancellations
+3. **Credit Notes** - Calculate refunds and adjustments with proration
+4. **Billing Previews** - Show tenants upcoming charges
+5. **Reporting** - Generate financial reports
+
+### Invoice Lifecycle Workflow
+
+```
+Draft → Issue → (Paid | Overdue | PartiallyPaid)
+  ↓
+  └→ Void (with reason)
+  
+Issued/Paid → CreditNote (for refunds/adjustments)
+```
+
+### State Transition Rules
+
+- **Draft**: Can be edited, regenerated, or deleted
+- **Issued**: Immutable, can be voided (if unpaid) or credited
+- **Voided**: Terminal state, cannot be changed
+- **Paid/PartiallyPaid**: Can only be credited, not voided
 
 ---
 
-**Last Updated**: 2026-01-10  
+**Last Updated**: 2026-01-11  
 **Maintainer**: TentMan Development Team

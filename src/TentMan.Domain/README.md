@@ -41,7 +41,7 @@ TentMan.Domain/
 │   ├── UtilityRatePlan.cs         # Utility rate plans
 │   ├── UtilityRateSlab.cs         # Rate plan slabs
 │   ├── UtilityStatement.cs        # Utility bills
-│   ├── Invoice.cs                 # Invoices
+│   ├── Invoice.cs                 # Invoices (Draft, Issued, Voided, etc.)
 │   ├── InvoiceLine.cs             # Invoice line items
 │   ├── CreditNote.cs              # Credit notes
 │   ├── CreditNoteLine.cs          # Credit note lines
@@ -61,6 +61,41 @@ The Domain layer:
 - Contains business rules and validation
 - Is framework-agnostic (no EF Core, no ASP.NET dependencies)
 - Represents the core business model
+
+---
+
+## 💳 Billing Domain Entities
+
+### Invoice
+Represents an invoice with lifecycle management support.
+
+**Key Properties**:
+- `Status`: Draft, Issued, PartiallyPaid, Paid, Overdue, Cancelled, WrittenOff, Voided
+- `IssuedAtUtc`: Timestamp when invoice was issued (Draft → Issued)
+- `VoidedAtUtc`: Timestamp when invoice was voided
+- `VoidReason`: Reason for voiding the invoice
+- `Lines`: Collection of invoice line items
+- `CreditNotes`: Collection of associated credit notes
+
+**State Transitions**:
+- **Draft**: Editable, can be regenerated or deleted
+- **Issued**: Immutable, can be voided (if unpaid) or credited
+- **Voided**: Terminal state, cannot be changed or un-voided
+
+### CreditNote
+Represents a credit note issued against an invoice for refunds or adjustments.
+
+**Key Properties**:
+- `Reason`: InvoiceError, Discount, Refund, Goodwill, Adjustment, Other
+- `AppliedAtUtc`: Timestamp when credit note was issued/applied
+- `Lines`: Collection of credit note lines (negative amounts)
+- `TotalAmount`: Sum of all line amounts (negative value)
+
+**Business Rules**:
+- Can only be created for issued or paid invoices
+- Cannot be created for draft or voided invoices
+- Line amounts are stored as negative values
+- Tax is calculated proportionally from original invoice lines
 
 ---
 

@@ -43,6 +43,8 @@ TentMan.Infrastructure/
 │   ├── TenantRepository.cs    # Tenant operations
 │   ├── TenantInviteRepository.cs  # Tenant invite operations
 │   ├── LeaseRepository.cs     # Lease operations
+│   ├── InvoiceRepository.cs   # Invoice operations
+│   ├── CreditNoteRepository.cs # Credit note operations
 │   ├── FileMetadataRepository.cs
 │   └── ...
 ├── Time/                      # Time abstractions
