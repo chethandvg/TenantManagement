@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using SharedClaimTypes = TentMan.Shared.Constants.Authorization.ClaimTypes;
 
 namespace TentMan.Api.Authorization.Requirements;
 
@@ -39,7 +40,7 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
         // ✅ FIX #6: Use case-sensitive comparison (Ordinal) for security
         // Permissions must match exactly to prevent authorization bypass
         var hasPermission = context.User.HasClaim(c =>
-            c.Type == CustomClaimTypes.Permission &&
+            c.Type == SharedClaimTypes.Permission &&
             c.Value.Equals(requirement.Permission, StringComparison.Ordinal));
 
         if (hasPermission)
@@ -88,7 +89,7 @@ public class EmailVerifiedRequirementHandler : AuthorizationHandler<EmailVerifie
         EmailVerifiedRequirement requirement)
     {
         var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var emailVerifiedClaim = context.User.FindFirst(CustomClaimTypes.EmailVerified)?.Value;
+        var emailVerifiedClaim = context.User.FindFirst(SharedClaimTypes.EmailVerified)?.Value;
 
         if (bool.TryParse(emailVerifiedClaim, out var isVerified) && isVerified)
         {
@@ -128,7 +129,7 @@ public class TwoFactorEnabledRequirementHandler : AuthorizationHandler<TwoFactor
         TwoFactorEnabledRequirement requirement)
     {
         var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var twoFactorClaim = context.User.FindFirst(CustomClaimTypes.TwoFactorEnabled)?.Value;
+        var twoFactorClaim = context.User.FindFirst(SharedClaimTypes.TwoFactorEnabled)?.Value;
 
         if (bool.TryParse(twoFactorClaim, out var isEnabled) && isEnabled)
         {
