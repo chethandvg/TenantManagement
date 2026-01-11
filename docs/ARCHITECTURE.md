@@ -488,13 +488,25 @@ dotnet ef migrations add YourMigrationName --project src/TentMan.Infrastructure
 ## 🔒 Security Considerations
 
 ### **Current State**
-- `ICurrentUser` abstraction exists
-- `HttpContextCurrentUser` implementation (placeholder)
+- ✅ **Authentication**: JWT Bearer tokens with ASP.NET Core Identity
+- ✅ **Authorization**: Policy-based authorization with `[Authorize]` attributes
+- ✅ **Authorization Constants**: Centralized in `TentMan.Shared.Constants.Authorization`
+  - `PolicyNames` - Authorization policy identifiers
+  - `RoleNames` - System role identifiers  
+  - `PermissionValues` - Permission claim values
+  - `ClaimTypes` - Custom claim type identifiers
+- ✅ **Policy Configuration**: Located in `TentMan.Api.Authorization`
+  - `AuthorizationPolicyExtensions` - Configures all authorization policies
+  - `Requirements/` - Custom authorization requirements
+  - `Handlers/` - Authorization requirement handlers
+- ✅ `ICurrentUser` abstraction and implementation
+- ✅ Role-based access control (Administrator, Manager, User, Tenant, Guest, SuperAdmin)
+- ✅ Permission-based authorization (e.g., `products:create`, `buildings:read`)
 
 ### **Future Enhancements**
-- **Authentication**: Add ASP.NET Core Identity or JWT Bearer tokens
-- **Authorization**: Policy-based authorization with `[Authorize]` attributes
 - **API Keys**: For machine-to-machine communication
+- **OAuth2/OIDC**: External authentication providers (Google, Microsoft, etc.)
+- **Audit Logging**: Enhanced security event logging
 
 ---
 

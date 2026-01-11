@@ -43,10 +43,10 @@ The catalog below reflects the components that currently ship in the library.
 | `TenantsList` | `/tenants` | `Pages/Tenants/TenantsList.razor`<br/>`Pages/Tenants/TenantsList.razor.cs` | Displays all tenants with search by phone/name and add/edit capabilities. |
 | `TenantDetails` | `/tenants/{id}` | `Pages/Tenants/TenantDetails.razor`<br/>`Pages/Tenants/TenantDetails.razor.cs` | Tabbed view for tenant profile, addresses, documents, lease history, and **invite management**. Includes Generate Invite dialog with configurable expiry, invite status tracking (Pending/Used/Expired), copy-to-clipboard for invite URLs, and cancel invite functionality. |
 | `AcceptInvite` | `/accept-invite` | `Pages/Tenant/AcceptInvite.razor`<br/>`Pages/Tenant/AcceptInvite.razor.cs` | Public page for tenants to accept invite links and create accounts. Validates token, displays registration form, and redirects to tenant dashboard on success. |
-| `TenantDashboard` | `/tenant/dashboard` | `Pages/Tenant/Dashboard.razor`<br/>`Pages/Tenant/Dashboard.razor.cs` | Authenticated dashboard for tenants showing their active lease summary and quick actions. |
-| `TenantLeaseSummary` | `/tenant/lease-summary` | `Pages/Tenant/LeaseSummary.razor`<br/>`Pages/Tenant/LeaseSummary.razor.cs` | Detailed view of tenant's active lease including financial details, deposit history, rent timeline, lease parties, and terms. Protected by Tenant role authorization. |
-| `TenantDocuments` | `/tenant/documents` | `Pages/Tenant/Documents.razor`<br/>`Pages/Tenant/Documents.razor.cs` | View and manage tenant's documents related to their lease. |
-| `TenantMoveIn` | `/tenant/move-in` | `Pages/Tenant/MoveInHandover.razor`<br/>`Pages/Tenant/MoveInHandover.razor.cs` | Move-in handover form for tenants to complete unit inspection. |
+| `TenantDashboard` | `/tenant/dashboard` | `Pages/Tenant/Dashboard.razor`<br/>`Pages/Tenant/Dashboard.razor.cs` | Authenticated dashboard for tenants showing their active lease summary and quick actions. Protected by `PolicyNames.RequireTenantRole` authorization. |
+| `TenantLeaseSummary` | `/tenant/lease-summary` | `Pages/Tenant/LeaseSummary.razor`<br/>`Pages/Tenant/LeaseSummary.razor.cs` | Detailed view of tenant's active lease including financial details, deposit history, rent timeline, lease parties, and terms. Protected by `PolicyNames.RequireTenantRole` authorization. |
+| `TenantDocuments` | `/tenant/documents` | `Pages/Tenant/Documents.razor`<br/>`Pages/Tenant/Documents.razor.cs` | View and manage tenant's documents related to their lease. Protected by `PolicyNames.RequireTenantRole` authorization. |
+| `TenantMoveIn` | `/tenant/move-in` | `Pages/Tenant/MoveInHandover.razor`<br/>`Pages/Tenant/MoveInHandover.razor.cs` | Move-in handover form for tenants to complete unit inspection. Protected by `PolicyNames.RequireTenantRole` authorization. |
 | `CreateLease` | `/leases/create`<br/>`/leases/create/{unitId}` | `Pages/Leases/CreateLease.razor`<br/>`Pages/Leases/CreateLease.razor.cs` | 7-step wizard for creating new leases with parties, financial terms, and move-in handover. |
 
 ### State Containers
@@ -127,6 +127,66 @@ public sealed class ThemeController
     }
 }
 ```
+
+## Authorization and Access Control
+
+TentMan.Ui uses **policy-based authorization** for consistent access control across all pages and components.
+
+### Page-Level Authorization
+
+Pages use the `@attribute [Authorize]` directive with policy names from `TentMan.Shared.Constants.Authorization`:
+
+```razor
+@page "/tenant/dashboard"
+@using TentMan.Shared.Constants.Authorization
+@attribute [Authorize(Policy = PolicyNames.RequireTenantRole)]
+
+<h1>Tenant Dashboard</h1>
+```
+
+### Component-Level Authorization
+
+Navigation and UI elements use `AuthorizeView` with policy names:
+
+```razor
+@using TentMan.Shared.Constants.Authorization
+
+<AuthorizeView Policy="@PolicyNames.CanViewTenantPortal">
+    <Authorized>
+        <MudNavLink Href="/tenant/dashboard">Dashboard</MudNavLink>
+    </Authorized>
+    <NotAuthorized>
+        <p>Access denied</p>
+    </NotAuthorized>
+</AuthorizeView>
+```
+
+### Authorization Constants
+
+All authorization constants are centralized in `TentMan.Shared.Constants.Authorization`:
+- **Policy Names**: `PolicyNames` class (e.g., `PolicyNames.RequireTenantRole`)
+- **Role Names**: `RoleNames` class (e.g., `RoleNames.Tenant`)
+- **Permission Values**: `PermissionValues` class
+- **Claim Types**: `ClaimTypes` class
+
+### Helper Services
+
+The `AuthorizationHelper` service provides programmatic authorization checks:
+
+```csharp
+@inject AuthorizationHelper AuthHelper
+
+@code {
+    private async Task CheckAccessAsync()
+    {
+        var hasTenantAccess = await AuthHelper.HasPolicyAsync(PolicyNames.RequireTenantRole);
+        var isAuthenticated = await AuthHelper.IsAuthenticatedAsync();
+    }
+}
+```
+
+See [AUTHORIZATION_GUIDE.md](../../docs/AUTHORIZATION_GUIDE.md) for complete details.
+
 
 ## API Documentation Automation
 

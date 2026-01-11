@@ -43,6 +43,7 @@ The Aspire Dashboard will open automatically, showing all running services.
 | Topic | Document |
 |-------|----------|
 | 🏗️ Architecture & Design | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| 🔒 Authorization & Access Control | [docs/AUTHORIZATION_GUIDE.md](docs/AUTHORIZATION_GUIDE.md) |
 | 🔒 Security & Privacy | [docs/SECURITY.md](docs/SECURITY.md) |
 | 🔒 Concurrency & Data | [docs/CONCURRENCY_GUIDE.md](docs/CONCURRENCY_GUIDE.md) |
 | ➕ Adding Features | [src/README_NEW_ENTITY.md](src/README_NEW_ENTITY.md) |
@@ -214,9 +215,15 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 - **Cross-Tenant Administration**: Centralized management of all tenants
 
 ### Security & Access Control ✨ ENHANCED!
+- **Policy-Based Authorization**: Consistent authorization using centralized policy constants
+  - All authorization constants in `TentMan.Shared.Constants.Authorization`
+  - Role hierarchy support (SuperAdmin > Administrator > Manager > User)
+  - Permission-based policies for fine-grained access control
 - **Role-Based Access Control (RBAC)**: Granular permissions per tenant
-  - **Owner/Admin**: Full CRUD operations on tenants, leases, and all resources
+  - **SuperAdmin/Administrator**: Full system access and user management
+  - **Owner/Manager**: Full CRUD operations on tenants, leases, and resources
   - **Tenant**: Read-only access to their own leases, can upload documents
+  - **User**: Standard authenticated access
 - **JWT Authentication**: Secure token-based authentication with refresh tokens
 - **Authorization Policies**: Resource-based authorization for leases and files
 - **Data Masking**: Automatic masking of sensitive document numbers (****1234)
@@ -225,7 +232,7 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 - **Data Isolation**: Complete separation of tenant data
 - **Admin APIs**: Secure administrative endpoints for system management
 
-📚 **[Read the Security & Privacy Guide →](docs/SECURITY.md)**
+📚 **[Read the Authorization Guide →](docs/AUTHORIZATION_GUIDE.md)** | **[Security & Privacy Guide →](docs/SECURITY.md)**
 
 ### Audit Logging & Compliance ✨ NEW!
 - **Automatic Audit Logging**: All changes to Lease, LeaseTerm, and DepositTransaction are logged

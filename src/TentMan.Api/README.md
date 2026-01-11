@@ -45,6 +45,8 @@ The API layer:
 ### Controller Structure
 
 ```csharp
+using TentMan.Shared.Constants.Authorization;
+
 namespace TentMan.Api.Controllers;
 
 /// <summary>
@@ -70,7 +72,7 @@ public class ProductsController : ControllerBase
     /// Gets all products.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "User,Manager,Administrator")]
+    [Authorize(Policy = PolicyNames.Products.View)]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProductDto>>), 200)]
     public async Task<IActionResult> GetProducts(
         [FromQuery] int pageNumber = 1,
@@ -144,16 +146,57 @@ return BadRequest(ApiResponse<ProductDto>.Fail(errors));
 
 ### Authorization Patterns
 
+TentMan uses **policy-based authorization** for consistent access control across all endpoints.
+
+#### Policy-Based Authorization (Recommended)
+
 ```csharp
-// Role-based
-[Authorize(Roles = "Administrator,SuperAdmin")]
+using TentMan.Shared.Constants.Authorization;
 
-// Policy-based
-[Authorize(Policy = "RequireAdminRole")]
+// Role-based policies
+[Authorize(Policy = PolicyNames.RequireAdminRole)]
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
+[Authorize(Policy = PolicyNames.RequireUserRole)]
+[Authorize(Policy = PolicyNames.RequireTenantRole)]
 
-// Anonymous
+// Permission-based policies
+[Authorize(Policy = PolicyNames.Products.Create)]
+[Authorize(Policy = PolicyNames.Products.View)]
+[Authorize(Policy = PolicyNames.CanViewTenantPortal)]
+
+// Anonymous access
 [AllowAnonymous]
 ```
+
+#### Authorization Constants Location
+
+All authorization constants are centralized in `TentMan.Shared.Constants.Authorization`:
+- **Policy Names**: `PolicyNames` class
+- **Role Names**: `RoleNames` class  
+- **Permission Values**: `PermissionValues` class
+- **Claim Types**: `ClaimTypes` class
+
+**Example Usage**:
+```csharp
+using TentMan.Shared.Constants.Authorization;
+
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
+public class AuditLogsController : ControllerBase
+{
+    // Manager, Administrator, and SuperAdmin can access
+}
+```
+
+#### Role Hierarchy
+
+The system implements role hierarchy where higher roles inherit permissions from lower roles:
+- **RequireUserRole**: Allows User, Manager, Administrator, SuperAdmin
+- **RequireManagerRole**: Allows Manager, Administrator, SuperAdmin
+- **RequireAdminRole**: Allows Administrator, SuperAdmin
+- **RequireSuperAdminRole**: Allows SuperAdmin only
+- **RequireTenantRole**: Allows Tenant only
+
+See [AUTHORIZATION_GUIDE.md](../../docs/AUTHORIZATION_GUIDE.md) for complete details.
 
 ---
 
@@ -202,7 +245,7 @@ The Tenant Portal provides read-only access for tenants to view their lease info
 
 Gets the current tenant's active lease summary with complete details.
 
-**Authorization**: Requires `Tenant` role
+**Authorization**: Requires Tenant role (via policy `PolicyNames.RequireTenantRole`)
 
 **Response**: `ApiResponse<TenantLeaseSummaryResponse>`
 

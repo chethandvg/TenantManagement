@@ -7,6 +7,7 @@ Complete guide to role-based authorization, security restrictions, and access co
 ## 📚 Table of Contents
 
 - [Overview](#overview)
+- [Architecture and Constants](#architecture-and-constants)
 - [Role System](#role-system)
 - [Authorization Policies](#authorization-policies)
 - [Security Restrictions](#security-restrictions)
@@ -32,6 +33,88 @@ TentMan uses **role-based authorization** with:
 - ✅ Attribute-based access control (`[Authorize]`)
 - ✅ Custom security restrictions
 - ✅ Hierarchical role system
+
+---
+
+## 🏗️ Architecture and Constants
+
+### Clean Architecture Principles
+
+TentMan follows **Clean Architecture** principles for authorization:
+
+#### Authorization Constants Location
+
+**✅ Centralized in Shared Layer**: `TentMan.Shared.Constants.Authorization`
+
+All authorization-related constants are centralized in the shared layer to ensure consistency and avoid duplication:
+
+| Constant Type | Class | Purpose | Example |
+|--------------|-------|---------|---------|
+| **Policy Names** | `PolicyNames` | Authorization policy identifiers | `RequireUserRole`, `CanViewTenantPortal` |
+| **Role Names** | `RoleNames` | System role identifiers | `Administrator`, `Manager`, `User`, `Tenant` |
+| **Permission Values** | `PermissionValues` | Permission claim values | `products:create`, `buildings:read` |
+| **Claim Types** | `ClaimTypes` | Custom claim type identifiers | `permission`, `email_verified` |
+
+**Example Usage**:
+```csharp
+using TentMan.Shared.Constants.Authorization;
+
+// In controllers
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
+public class ProductsController : ControllerBase { }
+
+// In policy configuration
+policy.RequireRole(RoleNames.Administrator, RoleNames.Manager);
+
+// In handlers
+if (context.User.HasClaim(c => c.Type == ClaimTypes.Permission))
+```
+
+#### Authorization Policy Configuration Location
+
+**✅ API Layer**: `TentMan.Api.Authorization`
+
+Authorization policy **configuration** (not constants) stays in the API layer:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Policy Configuration | `AuthorizationPolicyExtensions.cs` | Configures policies using shared constants |
+| Requirements | `Requirements/` folder | Custom authorization requirements |
+| Handlers | `Handlers/` folder | Authorization requirement handlers |
+
+**Example**:
+```csharp
+// TentMan.Api.Authorization.AuthorizationPolicyExtensions.cs
+using TentMan.Shared.Constants.Authorization;
+
+public static void ConfigureTentManPolicies(this AuthorizationOptions options)
+{
+    options.AddPolicy(PolicyNames.RequireUserRole, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new MinimumRoleRequirement(
+            RoleNames.User,
+            RoleNames.Manager,
+            RoleNames.Administrator,
+            RoleNames.SuperAdmin));
+    });
+}
+```
+
+### Why This Architecture?
+
+**✅ Benefits**:
+- **No Duplication**: Constants defined once in shared layer
+- **Consistency**: Same constants used across all layers (Application, Infrastructure, API, UI)
+- **Clean Architecture**: Business logic (Application layer) can reference shared constants without depending on API layer
+- **Type Safety**: Compile-time checking for policy/role names
+- **Easy Maintenance**: Change policy names in one place
+
+**❌ Previous Problem** (Fixed):
+- Authorization constants were duplicated in `TentMan.Api.Authorization.AuthorizationPolicies`
+- Created ambiguity about which constants to use
+- Violated DRY (Don't Repeat Yourself) principle
+- Made maintenance difficult
 
 ---
 
@@ -509,6 +592,39 @@ public class CurrentUser : ICurrentUser
 ---
 
 ## ✅ Best Practices
+
+### Authorization Constants
+
+✅ **DO**:
+- **Always** use constants from `TentMan.Shared.Constants.Authorization`
+- Reference `PolicyNames` for authorization policies
+- Reference `RoleNames` for role checks
+- Reference `PermissionValues` for permission claims
+- Reference `ClaimTypes` for custom claim types
+- Keep authorization configuration in the API layer
+- Keep authorization constants in the shared layer
+
+❌ **DON'T**:
+- Hard-code policy names, role names, or permissions as string literals
+- Duplicate constants across layers
+- Define authorization constants in the API layer (use shared layer instead)
+- Create separate constants in each project
+
+**Example**:
+```csharp
+// ✅ CORRECT - Use shared constants
+using TentMan.Shared.Constants.Authorization;
+
+[Authorize(Policy = PolicyNames.RequireManagerRole)]
+public class ProductsController : ControllerBase { }
+
+if (user.IsInRole(RoleNames.Administrator)) { }
+
+// ❌ INCORRECT - Hard-coded strings
+[Authorize(Policy = "RequireManagerRole")]  // Don't do this!
+
+if (user.IsInRole("Administrator")) { }  // Don't do this!
+```
 
 ### Authorization
 

@@ -1,6 +1,7 @@
 @page "/tenant/lease-summary"
 @using TentMan.Contracts.Enums
-@attribute [Authorize(Roles = "Tenant")]
+@using TentMan.Shared.Constants.Authorization
+@attribute [Authorize(Policy = PolicyNames.RequireTenantRole)]
 
 <PageTitle>My Lease - TentMan</PageTitle>
 

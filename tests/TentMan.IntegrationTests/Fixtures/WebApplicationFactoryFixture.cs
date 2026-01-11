@@ -109,7 +109,11 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
     /// <summary>
     /// Generates a test JWT token for the specified role with appropriate permission claims.
     /// </summary>
-    public Task<string> GetJwtTokenAsync(string role = "User", string userId = "test-user-id", string username = "testuser")
+    /// <param name="role">The role to assign to the user</param>
+    /// <param name="userId">The user ID claim</param>
+    /// <param name="username">The username claim</param>
+    /// <param name="expiresInMinutes">Token expiration time in minutes (default: 60)</param>
+    public Task<string> GetJwtTokenAsync(string role = "User", string userId = "test-user-id", string username = "testuser", int expiresInMinutes = 60)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(TestJwtSecret);
@@ -129,7 +133,7 @@ public class WebApplicationFactoryFixture : WebApplicationFactory<Program>, IAsy
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(1),
+            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
             Issuer = "TestIssuer",
             Audience = "TestAudience",
             SigningCredentials = new SigningCredentials(

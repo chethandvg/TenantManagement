@@ -1,5 +1,6 @@
 @page "/tenant/documents"
-@attribute [Authorize]
+@using TentMan.Shared.Constants.Authorization
+@attribute [Authorize(Policy = PolicyNames.RequireTenantRole)]
 
 <PageTitle>My Documents - TentMan</PageTitle>
 

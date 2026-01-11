@@ -5,6 +5,7 @@ using TentMan.Application.TenantManagement.Leases.Commands.ActivateLease;
 using TentMan.Application.TenantManagement.Leases.Queries;
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Leases;
+using TentMan.Shared.Constants.Authorization;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +35,7 @@ public class LeasesController : ControllerBase
     /// Only Admins/Managers can create leases.
     /// </summary>
     [HttpPost("api/v{version:apiVersion}/organizations/{orgId}/leases")]
-    [Authorize(Roles = "Administrator,SuperAdmin,Manager")]
+    [Authorize(Policy = PolicyNames.RequireManagerRole)]
     [ProducesResponseType(typeof(ApiResponse<LeaseListDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
