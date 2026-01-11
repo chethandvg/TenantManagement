@@ -1,6 +1,8 @@
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Tenants;
 using TentMan.Contracts.TenantPortal;
+using TentMan.Contracts.Invoices;
+using TentMan.Contracts.Enums;
 
 namespace TentMan.ApiClient.Services;
 
@@ -63,5 +65,27 @@ public interface ITenantPortalApiClient
         Stream signatureImage,
         string signatureFileName,
         string signatureContentType,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all invoices for the current tenant's lease(s).
+    /// Only returns issued invoices (not drafts) by default.
+    /// </summary>
+    /// <param name="status">Optional status filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The list of invoices.</returns>
+    Task<ApiResponse<IEnumerable<InvoiceDto>>> GetInvoicesAsync(
+        InvoiceStatus? status = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a specific invoice by ID for the current tenant.
+    /// Only returns invoices that belong to the tenant's lease.
+    /// </summary>
+    /// <param name="id">The invoice ID.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The invoice details.</returns>
+    Task<ApiResponse<InvoiceDto>> GetInvoiceAsync(
+        Guid id,
         CancellationToken cancellationToken = default);
 }

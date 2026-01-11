@@ -1,0 +1,207 @@
+@page "/tenant/my-bills/{Id:guid}"
+@using TentMan.Shared.Constants.Authorization
+@attribute [Authorize(Policy = PolicyNames.RequireTenantRole)]
+
+<PageTitle>Bill Details - TentMan</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">Bill Details</MudText>
+        <MudButton Variant="Variant.Text" Color="Color.Secondary" Href="/tenant/my-bills" StartIcon="@Icons.Material.Filled.ArrowBack">
+            Back to My Bills
+        </MudButton>
+    </MudStack>
+
+    <BusyBoundary Retry="LoadInvoiceAsync">
+        @if (_invoice != null)
+        {
+            <!-- Invoice Header -->
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.h6">Invoice #@_invoice.InvoiceNumber</MudText>
+                            <MudStack Row="true" Spacing="2">
+                                <MudText><strong>Date:</strong> @_invoice.InvoiceDate.ToString("MMM dd, yyyy")</MudText>
+                                <MudText><strong>Due Date:</strong> @_invoice.DueDate.ToString("MMM dd, yyyy")</MudText>
+                            </MudStack>
+                            <MudText><strong>Billing Period:</strong> @_invoice.BillingPeriodStart.ToString("MMM dd") - @_invoice.BillingPeriodEnd.ToString("MMM dd, yyyy")</MudText>
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                <MudText><strong>Status:</strong></MudText>
+                                @GetStatusChip(_invoice.Status)
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudStack Spacing="2" AlignItems="AlignItems.End">
+                            @if (_invoice.IssuedAtUtc.HasValue)
+                            {
+                                <MudText><strong>Issued:</strong> @_invoice.IssuedAtUtc.Value.ToString("MMM dd, yyyy")</MudText>
+                            }
+                            @if (_invoice.PaidAtUtc.HasValue)
+                            {
+                                <MudText Color="Color.Success"><strong>Paid:</strong> @_invoice.PaidAtUtc.Value.ToString("MMM dd, yyyy")</MudText>
+                            }
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+
+            <!-- Line Items -->
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6">Charges</MudText>
+                    
+                    <!-- Mobile-friendly card view for small screens -->
+                    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                        <MudStack Spacing="2">
+                            @foreach (var line in _invoice.Lines)
+                            {
+                                <MudCard Outlined="true">
+                                    <MudCardContent>
+                                        <MudStack Spacing="1">
+                                            <MudText Typo="Typo.subtitle2">@line.ChargeTypeName</MudText>
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary">@line.Description</MudText>
+                                            <MudDivider />
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                                <MudText Typo="Typo.caption">Quantity:</MudText>
+                                                <MudText Typo="Typo.body2">@line.Quantity</MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                                <MudText Typo="Typo.caption">Unit Price:</MudText>
+                                                <MudText Typo="Typo.body2">@line.UnitPrice.ToString("C")</MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                                <MudText Typo="Typo.caption">Amount:</MudText>
+                                                <MudText Typo="Typo.body2">@line.Amount.ToString("C")</MudText>
+                                            </MudStack>
+                                            @if (line.TaxAmount > 0)
+                                            {
+                                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                                    <MudText Typo="Typo.caption">Tax:</MudText>
+                                                    <MudText Typo="Typo.body2">@line.TaxAmount.ToString("C")</MudText>
+                                                </MudStack>
+                                            }
+                                            <MudDivider />
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                                <MudText Typo="Typo.subtitle2"><strong>Total:</strong></MudText>
+                                                <MudText Typo="Typo.subtitle2"><strong>@line.TotalAmount.ToString("C")</strong></MudText>
+                                            </MudStack>
+                                        </MudStack>
+                                    </MudCardContent>
+                                </MudCard>
+                            }
+                        </MudStack>
+                    </MudHidden>
+
+                    <!-- Table view for medium screens and up -->
+                    <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                        <MudTable Items="@_invoice.Lines" Hover="true" Dense="true" Striped="true">
+                            <HeaderContent>
+                                <MudTh>Line #</MudTh>
+                                <MudTh>Charge Type</MudTh>
+                                <MudTh>Description</MudTh>
+                                <MudTh Style="text-align: right">Quantity</MudTh>
+                                <MudTh Style="text-align: right">Unit Price</MudTh>
+                                <MudTh Style="text-align: right">Amount</MudTh>
+                                <MudTh Style="text-align: right">Tax</MudTh>
+                                <MudTh Style="text-align: right">Total</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Line #">@context.LineNumber</MudTd>
+                                <MudTd DataLabel="Charge Type">@context.ChargeTypeName</MudTd>
+                                <MudTd DataLabel="Description">@context.Description</MudTd>
+                                <MudTd DataLabel="Quantity" Style="text-align: right">@context.Quantity</MudTd>
+                                <MudTd DataLabel="Unit Price" Style="text-align: right">@context.UnitPrice.ToString("C")</MudTd>
+                                <MudTd DataLabel="Amount" Style="text-align: right">@context.Amount.ToString("C")</MudTd>
+                                <MudTd DataLabel="Tax" Style="text-align: right">@context.TaxAmount.ToString("C")</MudTd>
+                                <MudTd DataLabel="Total" Style="text-align: right"><strong>@context.TotalAmount.ToString("C")</strong></MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudHidden>
+                    
+                    <!-- Totals -->
+                    <MudDivider />
+                    <MudStack Spacing="1" Style="max-width: 400px; margin-left: auto;">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText>Subtotal:</MudText>
+                            <MudText>@_invoice.SubTotal.ToString("C")</MudText>
+                        </MudStack>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText>Tax:</MudText>
+                            <MudText>@_invoice.TaxAmount.ToString("C")</MudText>
+                        </MudStack>
+                        <MudDivider />
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.h6">Total:</MudText>
+                            <MudText Typo="Typo.h6">@_invoice.TotalAmount.ToString("C")</MudText>
+                        </MudStack>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText>Paid:</MudText>
+                            <MudText Color="Color.Success">@_invoice.PaidAmount.ToString("C")</MudText>
+                        </MudStack>
+                        <MudDivider />
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.h6">Balance:</MudText>
+                            <MudText Typo="Typo.h6" Color="@(_invoice.BalanceAmount > 0 ? Color.Error : Color.Success)">
+                                @_invoice.BalanceAmount.ToString("C")
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Payment Status Placeholder -->
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6">Payment Status</MudText>
+                    <MudDivider />
+                    @if (_invoice.PaidAmount > 0)
+                    {
+                        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle">
+                            @if (_invoice.BalanceAmount == 0)
+                            {
+                                <MudText>This bill has been fully paid.</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Partial payment of @_invoice.PaidAmount.ToString("C") received. Balance: @_invoice.BalanceAmount.ToString("C")</MudText>
+                            }
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Info">
+                            <MudText>No payments have been recorded for this bill yet.</MudText>
+                            <MudText Typo="Typo.caption" Class="mt-2">Payment tracking will be available in the Payments & Collection feature.</MudText>
+                        </MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
+
+            @if (!string.IsNullOrEmpty(_invoice.Notes))
+            {
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudText Typo="Typo.h6">Notes</MudText>
+                    <MudText>@_invoice.Notes</MudText>
+                </MudPaper>
+            }
+
+            @if (!string.IsNullOrEmpty(_invoice.PaymentInstructions))
+            {
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudText Typo="Typo.h6">Payment Instructions</MudText>
+                    <MudText>@_invoice.PaymentInstructions</MudText>
+                </MudPaper>
+            }
+
+            <!-- Actions -->
+            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" 
+                           StartIcon="@Icons.Material.Filled.Download" Disabled="true">
+                    Download PDF (Coming Soon)
+                </MudButton>
+            </MudStack>
+        }
+    </BusyBoundary>
+</MudStack>

@@ -1,0 +1,145 @@
+@page "/tenant/my-bills"
+@using TentMan.Shared.Constants.Authorization
+@attribute [Authorize(Policy = PolicyNames.RequireTenantRole)]
+
+<PageTitle>My Bills - TentMan</PageTitle>
+
+<MudStack Spacing="4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">My Bills</MudText>
+    </MudStack>
+
+    <!-- Filters -->
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="4">
+                <MudSelect T="InvoiceStatus?" Label="Status" @bind-Value="_statusFilter" Clearable="true">
+                    <MudSelectItem T="InvoiceStatus?" Value="@((InvoiceStatus?)null)">All</MudSelectItem>
+                    <MudSelectItem T="InvoiceStatus?" Value="@InvoiceStatus.Issued">Issued</MudSelectItem>
+                    <MudSelectItem T="InvoiceStatus?" Value="@InvoiceStatus.PartiallyPaid">Partially Paid</MudSelectItem>
+                    <MudSelectItem T="InvoiceStatus?" Value="@InvoiceStatus.Paid">Paid</MudSelectItem>
+                    <MudSelectItem T="InvoiceStatus?" Value="@InvoiceStatus.Overdue">Overdue</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                           OnClick="ApplyFiltersAsync" FullWidth="true" StartIcon="@Icons.Material.Filled.FilterList">
+                    Apply Filters
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <BusyBoundary Retry="LoadInvoicesAsync">
+        @if (_invoices == null || !_invoices.Any())
+        {
+            <MudPaper Elevation="2" Class="pa-6">
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6">No Bills Found</MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center">
+                        You don't have any bills at the moment.
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            <!-- Mobile-friendly card view for small screens -->
+            <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                <MudStack Spacing="2">
+                    @foreach (var invoice in _paginatedInvoices)
+                    {
+                        <MudCard Elevation="2">
+                            <MudCardContent>
+                                <MudStack Spacing="2">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                                        <MudText Typo="Typo.h6">@invoice.InvoiceNumber</MudText>
+                                        @GetStatusChip(invoice.Status)
+                                    </MudStack>
+                                    <MudDivider />
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Invoice Date</MudText>
+                                        <MudText Typo="Typo.body2">@invoice.InvoiceDate.ToString("MMM dd, yyyy")</MudText>
+                                    </MudStack>
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Due Date</MudText>
+                                        <MudText Typo="Typo.body2">@invoice.DueDate.ToString("MMM dd, yyyy")</MudText>
+                                    </MudStack>
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Period</MudText>
+                                        <MudText Typo="Typo.body2">@invoice.BillingPeriodStart.ToString("MMM dd") - @invoice.BillingPeriodEnd.ToString("MMM dd, yyyy")</MudText>
+                                    </MudStack>
+                                    <MudDivider />
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.subtitle1"><strong>Total:</strong></MudText>
+                                        <MudText Typo="Typo.h6" Color="Color.Primary">@invoice.TotalAmount.ToString("C")</MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.body2">Balance:</MudText>
+                                        <MudText Typo="Typo.body1" Color="@(invoice.BalanceAmount > 0 ? Color.Error : Color.Success)">
+                                            @invoice.BalanceAmount.ToString("C")
+                                        </MudText>
+                                    </MudStack>
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                                           Href="@($"/tenant/my-bills/{invoice.Id}")" FullWidth="true" StartIcon="@Icons.Material.Filled.Visibility">
+                                    View Details
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    }
+                </MudStack>
+            </MudHidden>
+
+            <!-- Table view for medium screens and up -->
+            <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                <MudDataGrid Items="@_paginatedInvoices" Hover="true" Dense="true" Striped="true">
+                    <Columns>
+                        <PropertyColumn Property="x => x.InvoiceNumber" Title="Invoice #" />
+                        <PropertyColumn Property="x => x.InvoiceDate" Title="Date" Format="MMM dd, yyyy" />
+                        <PropertyColumn Property="x => x.DueDate" Title="Due Date" Format="MMM dd, yyyy" />
+                        <TemplateColumn Title="Period">
+                            <CellTemplate>
+                                @context.Item.BillingPeriodStart.ToString("MMM dd") - @context.Item.BillingPeriodEnd.ToString("MMM dd, yyyy")
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                @GetStatusChip(context.Item.Status)
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.TotalAmount" Title="Total" Format="C" />
+                        <TemplateColumn Title="Balance">
+                            <CellTemplate>
+                                <MudText Color="@(context.Item.BalanceAmount > 0 ? Color.Error : Color.Success)">
+                                    @context.Item.BalanceAmount.ToString("C")
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions" Sortable="false">
+                            <CellTemplate>
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" 
+                                               Href="@($"/tenant/my-bills/{context.Item.Id}")" Color="Color.Primary" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            </MudHidden>
+
+            <!-- Pagination -->
+            @if (_invoices.Count() > _pageSize)
+            {
+                <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                    <MudPagination Count="@_totalPages" Selected="@_currentPage" SelectedChanged="OnPageChanged" 
+                                   Color="Color.Primary" Size="Size.Medium" />
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Page @_currentPage of @_totalPages
+                    </MudText>
+                </MudStack>
+            }
+        }
+    </BusyBoundary>
+</MudStack>

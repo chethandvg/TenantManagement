@@ -4,6 +4,8 @@ using TentMan.Application.TenantManagement.TenantPortal.Queries;
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Tenants;
 using TentMan.Contracts.TenantPortal;
+using TentMan.Contracts.Invoices;
+using TentMan.Contracts.Enums;
 using TentMan.Shared.Constants.Authorization;
 using Asp.Versioning;
 using MediatR;
@@ -11,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SystemClaimTypes = System.Security.Claims.ClaimTypes;
 using TentMan.Application.Abstractions;
+using TentMan.Application.Abstractions.Repositories;
 
 namespace TentMan.Api.Controllers.TenantPortal;
 
@@ -25,12 +28,21 @@ public class TenantPortalController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ILogger<TenantPortalController> _logger;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IInvoiceRepository _invoiceRepository;
+    private readonly IChargeTypeRepository _chargeTypeRepository;
 
-    public TenantPortalController(IMediator mediator, ILogger<TenantPortalController> logger, IUnitOfWork unitOfWork)
+    public TenantPortalController(
+        IMediator mediator, 
+        ILogger<TenantPortalController> logger, 
+        IUnitOfWork unitOfWork,
+        IInvoiceRepository invoiceRepository,
+        IChargeTypeRepository chargeTypeRepository)
     {
         _mediator = mediator;
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _invoiceRepository = invoiceRepository;
+        _chargeTypeRepository = chargeTypeRepository;
     }
 
     /// <summary>
@@ -248,5 +260,167 @@ public class TenantPortalController : ControllerBase
         {
             return Unauthorized(ApiResponse<object>.Fail(ex.Message));
         }
+    }
+
+    /// <summary>
+    /// Gets all invoices for the current tenant's lease(s).
+    /// Only returns issued invoices (not drafts).
+    /// </summary>
+    [HttpGet("api/v{version:apiVersion}/tenant-portal/invoices")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<InvoiceDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<InvoiceDto>>>> GetInvoices(
+        [FromQuery] InvoiceStatus? status,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(SystemClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogWarning("Invalid user ID claim for get tenant invoices");
+            return Unauthorized(ApiResponse<object>.Fail("Invalid user authentication"));
+        }
+
+        _logger.LogInformation("Getting invoices for user {UserId}", userId);
+
+        // Get tenant's lease
+        var query = new GetTenantLeaseByUserIdQuery(userId);
+        var leaseSummary = await _mediator.Send(query, cancellationToken);
+
+        if (leaseSummary == null)
+        {
+            return NotFound(ApiResponse<object>.Fail("No active lease found for the current tenant"));
+        }
+
+        // Get invoices for the lease
+        var allInvoices = await _invoiceRepository.GetByLeaseIdAsync(leaseSummary.LeaseId, cancellationToken);
+        
+        // Filter to only issued invoices (not drafts) by default
+        var filteredInvoices = status.HasValue 
+            ? allInvoices.Where(i => i.Status == status.Value).ToList()
+            : allInvoices.Where(i => i.Status != InvoiceStatus.Draft).ToList();
+
+        var dtos = new List<InvoiceDto>();
+        foreach (var invoice in filteredInvoices)
+        {
+            dtos.Add(await MapToDto(invoice, cancellationToken));
+        }
+
+        return Ok(ApiResponse<IEnumerable<InvoiceDto>>.Ok(dtos, "Invoices retrieved successfully"));
+    }
+
+    /// <summary>
+    /// Gets a specific invoice by ID for the current tenant.
+    /// Only returns invoices that belong to the tenant's lease.
+    /// </summary>
+    [HttpGet("api/v{version:apiVersion}/tenant-portal/invoices/{id:guid}")]
+    [ProducesResponseType(typeof(ApiResponse<InvoiceDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ApiResponse<InvoiceDto>>> GetInvoice(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(SystemClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            _logger.LogWarning("Invalid user ID claim for get tenant invoice");
+            return Unauthorized(ApiResponse<object>.Fail("Invalid user authentication"));
+        }
+
+        _logger.LogInformation("Getting invoice {InvoiceId} for user {UserId}", id, userId);
+
+        // Get tenant's lease to verify ownership
+        var query = new GetTenantLeaseByUserIdQuery(userId);
+        var leaseSummary = await _mediator.Send(query, cancellationToken);
+
+        if (leaseSummary == null)
+        {
+            return NotFound(ApiResponse<object>.Fail("No active lease found for the current tenant"));
+        }
+
+        // Get the invoice
+        var invoice = await _invoiceRepository.GetByIdWithLinesAsync(id, cancellationToken);
+        if (invoice == null)
+        {
+            return NotFound(ApiResponse<object>.Fail($"Invoice {id} not found"));
+        }
+
+        // Verify the invoice belongs to the tenant's lease
+        if (invoice.LeaseId != leaseSummary.LeaseId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, 
+                ApiResponse<object>.Fail("You do not have access to this invoice"));
+        }
+
+        var dto = await MapToDto(invoice, cancellationToken);
+
+        return Ok(ApiResponse<InvoiceDto>.Ok(dto, "Invoice retrieved successfully"));
+    }
+
+    private async Task<InvoiceDto> MapToDto(Domain.Entities.Invoice invoice, CancellationToken cancellationToken)
+    {
+        // Get all unique charge type IDs to avoid N+1 queries
+        var chargeTypeIds = invoice.Lines.Select(l => l.ChargeTypeId).Distinct().ToList();
+        var chargeTypesDict = new Dictionary<Guid, string>();
+        
+        foreach (var chargeTypeId in chargeTypeIds)
+        {
+            var chargeType = await _chargeTypeRepository.GetByIdAsync(chargeTypeId, cancellationToken);
+            if (chargeType != null)
+            {
+                chargeTypesDict[chargeTypeId] = chargeType.Name;
+            }
+        }
+        
+        var lineDtos = new List<InvoiceLineDto>();
+        foreach (var line in invoice.Lines)
+        {
+            lineDtos.Add(new InvoiceLineDto
+            {
+                Id = line.Id,
+                InvoiceId = line.InvoiceId,
+                ChargeTypeId = line.ChargeTypeId,
+                ChargeTypeName = chargeTypesDict.GetValueOrDefault(line.ChargeTypeId, "Unknown"),
+                LineNumber = line.LineNumber,
+                Description = line.Description,
+                Quantity = line.Quantity,
+                UnitPrice = line.UnitPrice,
+                Amount = line.Amount,
+                TaxRate = line.TaxRate,
+                TaxAmount = line.TaxAmount,
+                TotalAmount = line.TotalAmount,
+                Notes = line.Notes
+            });
+        }
+
+        return new InvoiceDto
+        {
+            Id = invoice.Id,
+            OrgId = invoice.OrgId,
+            LeaseId = invoice.LeaseId,
+            InvoiceNumber = invoice.InvoiceNumber,
+            InvoiceDate = invoice.InvoiceDate,
+            DueDate = invoice.DueDate,
+            Status = invoice.Status,
+            BillingPeriodStart = invoice.BillingPeriodStart,
+            BillingPeriodEnd = invoice.BillingPeriodEnd,
+            SubTotal = invoice.SubTotal,
+            TaxAmount = invoice.TaxAmount,
+            TotalAmount = invoice.TotalAmount,
+            PaidAmount = invoice.PaidAmount,
+            BalanceAmount = invoice.BalanceAmount,
+            IssuedAtUtc = invoice.IssuedAtUtc,
+            PaidAtUtc = invoice.PaidAtUtc,
+            VoidedAtUtc = invoice.VoidedAtUtc,
+            Notes = invoice.Notes,
+            PaymentInstructions = invoice.PaymentInstructions,
+            VoidReason = invoice.VoidReason,
+            Lines = lineDtos,
+            RowVersion = invoice.RowVersion
+        };
     }
 }
