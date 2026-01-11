@@ -47,7 +47,8 @@ public partial class TenantInvoices : ComponentBase
 
             if (response.Success && response.Data != null)
             {
-                _invoices = response.Data.OrderByDescending(i => i.InvoiceDate);
+                // Materialize the collection once to avoid multiple enumerations
+                _invoices = response.Data.OrderByDescending(i => i.InvoiceDate).ToList();
                 UpdatePagination();
                 UiState.Busy.ClearError();
             }

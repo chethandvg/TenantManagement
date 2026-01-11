@@ -130,7 +130,7 @@
             </MudHidden>
 
             <!-- Pagination -->
-            @if (_invoices.Count() > _pageSize)
+            @if (_invoices != null && _invoices.Count() > _pageSize)
             {
                 <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
                     <MudPagination Count="@_totalPages" Selected="@_currentPage" SelectedChanged="OnPageChanged" 

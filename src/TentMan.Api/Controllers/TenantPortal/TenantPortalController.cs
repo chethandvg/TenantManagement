@@ -363,7 +363,10 @@ public class TenantPortalController : ControllerBase
 
     private async Task<InvoiceDto> MapToDto(Domain.Entities.Invoice invoice, CancellationToken cancellationToken)
     {
-        // Get all unique charge type IDs to avoid N+1 queries
+        // Get all unique charge type IDs
+        // Note: This implementation queries charge types individually. 
+        // For tenant portal use (single invoice or small invoice count), this is acceptable.
+        // If performance becomes an issue, consider adding IChargeTypeRepository.GetByIdsAsync()
         var chargeTypeIds = invoice.Lines.Select(l => l.ChargeTypeId).Distinct().ToList();
         var chargeTypesDict = new Dictionary<Guid, string>();
         
