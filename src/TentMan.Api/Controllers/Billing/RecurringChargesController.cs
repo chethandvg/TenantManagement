@@ -260,6 +260,6 @@ public class RecurringChargesController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail(ex.Message));
         }
 
-        return Ok(ApiResponse<string>.Ok("Recurring charge deleted successfully", "Recurring charge deleted successfully"));
+        return Ok(ApiResponse<string>.Ok("Deleted", "Recurring charge deleted successfully"));
     }
 }

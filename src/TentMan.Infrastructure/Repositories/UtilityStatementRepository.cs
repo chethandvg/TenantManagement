@@ -57,7 +57,7 @@ public class UtilityStatementRepository : BaseRepository<UtilityStatement>, IUti
     {
         // EF Core will handle optimistic concurrency check through RowVersion
         Context.Entry(statement).Property(nameof(statement.RowVersion)).OriginalValue = originalRowVersion;
-        DbSet.Update(statement);
+        Context.Entry(statement).State = EntityState.Modified;
         await Context.SaveChangesAsync(cancellationToken);
     }
 

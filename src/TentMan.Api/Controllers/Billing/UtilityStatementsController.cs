@@ -106,18 +106,8 @@ public class UtilityStatementsController : ControllerBase
             Notes = request.Notes
         };
 
-        // Calculate amounts
-        if (statement.IsMeterBased && statement.CurrentReading.HasValue && statement.PreviousReading.HasValue)
-        {
-            statement.UnitsConsumed = statement.CurrentReading.Value - statement.PreviousReading.Value;
-            // TODO: Calculate amount based on rate plan - for now just use a simple calculation
-            statement.CalculatedAmount = statement.UnitsConsumed.Value * 10; // Placeholder
-            statement.TotalAmount = statement.CalculatedAmount.Value;
-        }
-        else
-        {
-            statement.TotalAmount = statement.DirectBillAmount ?? 0;
-        }
+        // Calculate amounts using helper method
+        CalculateUtilityAmounts(statement);
 
         await _utilityStatementRepository.AddAsync(statement, cancellationToken);
 
@@ -306,6 +296,27 @@ public class UtilityStatementsController : ControllerBase
         var dto = MapToDto(statement);
 
         return Ok(ApiResponse<UtilityStatementDto>.Ok(dto, "Utility statement finalized successfully"));
+    }
+
+    /// <summary>
+    /// Helper method to calculate utility amounts based on statement type.
+    /// TODO: Integrate with proper rate plan calculation service when available.
+    /// </summary>
+    private static void CalculateUtilityAmounts(UtilityStatement statement)
+    {
+        if (statement.IsMeterBased && statement.CurrentReading.HasValue && statement.PreviousReading.HasValue)
+        {
+            statement.UnitsConsumed = statement.CurrentReading.Value - statement.PreviousReading.Value;
+            // TODO: Replace with actual rate plan calculation service
+            // This is a placeholder - should use utility rate plan to calculate tiered pricing
+            const decimal placeholderRatePerUnit = 10m;
+            statement.CalculatedAmount = statement.UnitsConsumed.Value * placeholderRatePerUnit;
+            statement.TotalAmount = statement.CalculatedAmount.Value;
+        }
+        else
+        {
+            statement.TotalAmount = statement.DirectBillAmount ?? 0;
+        }
     }
 
     private static UtilityStatementDto MapToDto(UtilityStatement statement)
