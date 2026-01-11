@@ -67,6 +67,7 @@ public interface IBillingApiClient
         CancellationToken cancellationToken = default);
 
     Task<ApiResponse<LeaseRecurringChargeDto>> CreateRecurringChargeAsync(
+        Guid leaseId,
         CreateRecurringChargeRequest request,
         CancellationToken cancellationToken = default);
 

@@ -57,7 +57,7 @@ public sealed class BillingApiClient : ApiClientServiceBase, IBillingApiClient
         var query = $"?orgId={orgId}";
         if (status.HasValue)
         {
-            query += $"&status={status.Value}";
+            query += $"&status={Uri.EscapeDataString(status.Value.ToString())}";
         }
 
         return GetAsync<IEnumerable<InvoiceDto>>(
@@ -132,7 +132,7 @@ public sealed class BillingApiClient : ApiClientServiceBase, IBillingApiClient
         var query = $"?orgId={orgId}";
         if (status.HasValue)
         {
-            query += $"&status={status.Value}";
+            query += $"&status={Uri.EscapeDataString(status.Value.ToString())}";
         }
 
         return GetAsync<IEnumerable<InvoiceRunDto>>(
@@ -169,12 +169,13 @@ public sealed class BillingApiClient : ApiClientServiceBase, IBillingApiClient
 
     /// <inheritdoc/>
     public Task<ApiResponse<LeaseRecurringChargeDto>> CreateRecurringChargeAsync(
+        Guid leaseId,
         CreateRecurringChargeRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         return PostAsync<CreateRecurringChargeRequest, LeaseRecurringChargeDto>(
-            "recurring-charges",
+            $"leases/{leaseId}/recurring-charges",
             request,
             cancellationToken);
     }

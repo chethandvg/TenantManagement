@@ -49,7 +49,8 @@ public partial class RecurringCharges : ComponentBase
 
     protected override async Task OnParametersSetAsync()
     {
-        if (LeaseId.HasValue)
+        // Only reload if LeaseId has actually changed to avoid double loading on initialization
+        if (LeaseId.HasValue && _charges == null)
         {
             await LoadChargeTypesAsync();
             await LoadRecurringChargesAsync();
@@ -144,10 +145,35 @@ public partial class RecurringCharges : ComponentBase
     {
         if (!LeaseId.HasValue) return;
 
-        if (!_chargeForm.ChargeTypeId.HasValue || string.IsNullOrWhiteSpace(_chargeForm.Description) || 
-            _chargeForm.Amount <= 0 || !_chargeFormStartDate.HasValue)
+        // Validate required fields
+        if (!_chargeForm.ChargeTypeId.HasValue)
         {
-            Snackbar.Add("Please fill in all required fields.", Severity.Warning);
+            Snackbar.Add("Please select a charge type.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_chargeForm.Description))
+        {
+            Snackbar.Add("Please enter a description.", Severity.Warning);
+            return;
+        }
+
+        if (_chargeForm.Amount <= 0)
+        {
+            Snackbar.Add("Amount must be greater than zero.", Severity.Warning);
+            return;
+        }
+
+        if (!_chargeFormStartDate.HasValue)
+        {
+            Snackbar.Add("Please select a start date.", Severity.Warning);
+            return;
+        }
+
+        // Validate end date is after start date
+        if (_chargeFormEndDate.HasValue && _chargeFormEndDate.Value < _chargeFormStartDate.Value)
+        {
+            Snackbar.Add("End date must be after or equal to start date.", Severity.Warning);
             return;
         }
 
@@ -170,7 +196,7 @@ public partial class RecurringCharges : ComponentBase
                     Notes = _chargeForm.Notes
                 };
 
-                var response = await BillingClient.CreateRecurringChargeAsync(createRequest);
+                var response = await BillingClient.CreateRecurringChargeAsync(LeaseId.Value, createRequest);
 
                 if (response.Success)
                 {
@@ -259,7 +285,7 @@ public partial class RecurringCharges : ComponentBase
 
     private static string GetFrequencyText(BillingFrequency frequency) => frequency switch
     {
-        BillingFrequency.OneTime => "One Time",
+        BillingFrequency.OneTime => "One-Time",
         BillingFrequency.Monthly => "Monthly",
         BillingFrequency.Quarterly => "Quarterly",
         BillingFrequency.Yearly => "Yearly",

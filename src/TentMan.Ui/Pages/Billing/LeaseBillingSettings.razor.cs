@@ -66,6 +66,20 @@ public partial class LeaseBillingSettings : ComponentBase
     {
         if (!LeaseId.HasValue || _settings == null) return;
 
+        // Validate billing day
+        if (_settings.BillingDay < 1 || _settings.BillingDay > 28)
+        {
+            Snackbar.Add("Billing day must be between 1 and 28.", Severity.Warning);
+            return;
+        }
+
+        // Validate payment term days
+        if (_settings.PaymentTermDays < 0 || _settings.PaymentTermDays > 365)
+        {
+            Snackbar.Add("Payment term days must be between 0 and 365.", Severity.Warning);
+            return;
+        }
+
         using var busyScope = UiState.Busy.Begin("Saving settings...");
         try
         {

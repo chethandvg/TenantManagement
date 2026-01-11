@@ -82,6 +82,38 @@ public partial class UtilityStatements : ComponentBase
             return;
         }
 
+        // Validate period dates
+        if (_formPeriodEnd.Value < _formPeriodStart.Value)
+        {
+            Snackbar.Add("Period end date must be after or equal to period start date.", Severity.Warning);
+            return;
+        }
+
+        // Validate meter-based fields
+        if (_form.IsMeterBased)
+        {
+            if (!_form.PreviousReading.HasValue || !_form.CurrentReading.HasValue)
+            {
+                Snackbar.Add("Please provide both previous and current readings for meter-based statements.", Severity.Warning);
+                return;
+            }
+
+            if (_form.CurrentReading.Value < _form.PreviousReading.Value)
+            {
+                Snackbar.Add("Current reading must be greater than or equal to previous reading.", Severity.Warning);
+                return;
+            }
+        }
+        else
+        {
+            // Validate amount-based fields
+            if (!_form.DirectBillAmount.HasValue || _form.DirectBillAmount.Value <= 0)
+            {
+                Snackbar.Add("Please provide a valid amount for amount-based statements.", Severity.Warning);
+                return;
+            }
+        }
+
         using var busyScope = UiState.Busy.Begin("Creating statement...");
         try
         {

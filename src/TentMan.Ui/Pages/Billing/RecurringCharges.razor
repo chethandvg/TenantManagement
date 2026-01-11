@@ -86,15 +86,17 @@
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3">
-            <MudSelect T="Guid?" Label="Charge Type" @bind-Value="_chargeForm.ChargeTypeId" Required="true" Disabled="@(_editingCharge != null)">
-                @if (_chargeTypes != null)
-                {
-                    @foreach (var chargeType in _chargeTypes)
+            <MudTooltip Text="Charge type cannot be changed after a recurring charge is created">
+                <MudSelect T="Guid?" Label="Charge Type" @bind-Value="_chargeForm.ChargeTypeId" Required="true" Disabled="@(_editingCharge != null)">
+                    @if (_chargeTypes != null)
                     {
-                        <MudSelectItem Value="@((Guid?)chargeType.Id)">@chargeType.Name</MudSelectItem>
+                        @foreach (var chargeType in _chargeTypes)
+                        {
+                            <MudSelectItem Value="@((Guid?)chargeType.Id)">@chargeType.Name</MudSelectItem>
+                        }
                     }
-                }
-            </MudSelect>
+                </MudSelect>
+            </MudTooltip>
             
             <MudTextField @bind-Value="_chargeForm.Description" Label="Description" 
                           Required="true" MaxLength="500" Lines="2" />

@@ -63,27 +63,6 @@ public partial class InvoiceRunDetail : ComponentBase
 
     private RenderFragment GetStatusChip(InvoiceRunStatus status)
     {
-        var (color, text) = status switch
-        {
-            InvoiceRunStatus.Pending => (Color.Default, "Pending"),
-            InvoiceRunStatus.InProgress => (Color.Info, "In Progress"),
-            InvoiceRunStatus.Completed => (Color.Success, "Completed"),
-            InvoiceRunStatus.CompletedWithErrors => (Color.Warning, "Completed With Errors"),
-            InvoiceRunStatus.Failed => (Color.Error, "Failed"),
-            InvoiceRunStatus.Cancelled => (Color.Secondary, "Cancelled"),
-            _ => (Color.Default, status.ToString())
-        };
-
-        return builder =>
-        {
-            builder.OpenComponent<MudChip<string>>(0);
-            builder.AddAttribute(1, "Color", color);
-            builder.AddAttribute(2, "Size", Size.Small);
-            builder.AddAttribute(3, "ChildContent", (RenderFragment)((builder2) =>
-            {
-                builder2.AddContent(0, text);
-            }));
-            builder.CloseComponent();
-        };
+        return BillingStatusHelper.GetInvoiceRunStatusChip(status);
     }
 }

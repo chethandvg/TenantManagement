@@ -140,27 +140,6 @@ public partial class InvoiceDetail : ComponentBase
 
     private RenderFragment GetStatusChip(InvoiceStatus status)
     {
-        var (color, text) = status switch
-        {
-            InvoiceStatus.Draft => (Color.Default, "Draft"),
-            InvoiceStatus.Issued => (Color.Primary, "Issued"),
-            InvoiceStatus.PartiallyPaid => (Color.Info, "Partially Paid"),
-            InvoiceStatus.Paid => (Color.Success, "Paid"),
-            InvoiceStatus.Overdue => (Color.Error, "Overdue"),
-            InvoiceStatus.Voided => (Color.Warning, "Voided"),
-            _ => (Color.Default, status.ToString())
-        };
-
-        return builder =>
-        {
-            builder.OpenComponent<MudChip<string>>(0);
-            builder.AddAttribute(1, "Color", color);
-            builder.AddAttribute(2, "Size", Size.Small);
-            builder.AddAttribute(3, "ChildContent", (RenderFragment)((builder2) =>
-            {
-                builder2.AddContent(0, text);
-            }));
-            builder.CloseComponent();
-        };
+        return BillingStatusHelper.GetInvoiceStatusChip(status);
     }
 }
