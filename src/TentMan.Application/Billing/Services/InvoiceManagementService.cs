@@ -14,13 +14,16 @@ public class InvoiceManagementService : IInvoiceManagementService
 {
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IApplicationDbContext _dbContext;
+    private readonly ICurrentUser _currentUser;
 
     public InvoiceManagementService(
         IInvoiceRepository invoiceRepository,
-        IApplicationDbContext dbContext)
+        IApplicationDbContext dbContext,
+        ICurrentUser currentUser)
     {
         _invoiceRepository = invoiceRepository;
         _dbContext = dbContext;
+        _currentUser = currentUser;
     }
 
     /// <inheritdoc/>
@@ -73,7 +76,7 @@ public class InvoiceManagementService : IInvoiceManagementService
             invoice.Status = InvoiceStatus.Issued;
             invoice.IssuedAtUtc = DateTime.UtcNow;
             invoice.ModifiedAtUtc = DateTime.UtcNow;
-            invoice.ModifiedBy = "System"; // In production, this should come from current user context
+            invoice.ModifiedBy = _currentUser.UserId ?? "System";
 
             await _invoiceRepository.UpdateAsync(invoice, invoice.RowVersion, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -163,7 +166,7 @@ public class InvoiceManagementService : IInvoiceManagementService
             invoice.VoidedAtUtc = DateTime.UtcNow;
             invoice.VoidReason = reason;
             invoice.ModifiedAtUtc = DateTime.UtcNow;
-            invoice.ModifiedBy = "System"; // In production, this should come from current user context
+            invoice.ModifiedBy = _currentUser.UserId ?? "System";
 
             await _invoiceRepository.UpdateAsync(invoice, invoice.RowVersion, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);

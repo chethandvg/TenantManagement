@@ -15,13 +15,21 @@ public class InvoiceManagementServiceTests
 {
     private readonly Mock<IInvoiceRepository> _mockInvoiceRepository;
     private readonly Mock<IApplicationDbContext> _mockDbContext;
+    private readonly Mock<ICurrentUser> _mockCurrentUser;
     private readonly InvoiceManagementService _service;
 
     public InvoiceManagementServiceTests()
     {
         _mockInvoiceRepository = new Mock<IInvoiceRepository>();
         _mockDbContext = new Mock<IApplicationDbContext>();
-        _service = new InvoiceManagementService(_mockInvoiceRepository.Object, _mockDbContext.Object);
+        _mockCurrentUser = new Mock<ICurrentUser>();
+        
+        _mockCurrentUser.Setup(u => u.UserId).Returns("test-user-id");
+        
+        _service = new InvoiceManagementService(
+            _mockInvoiceRepository.Object, 
+            _mockDbContext.Object,
+            _mockCurrentUser.Object);
     }
 
     #region IssueInvoiceAsync Tests

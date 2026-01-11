@@ -16,17 +16,20 @@ public class CreditNoteService : ICreditNoteService
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly ICreditNoteNumberGenerator _creditNoteNumberGenerator;
     private readonly IApplicationDbContext _dbContext;
+    private readonly ICurrentUser _currentUser;
 
     public CreditNoteService(
         ICreditNoteRepository creditNoteRepository,
         IInvoiceRepository invoiceRepository,
         ICreditNoteNumberGenerator creditNoteNumberGenerator,
-        IApplicationDbContext dbContext)
+        IApplicationDbContext dbContext,
+        ICurrentUser currentUser)
     {
         _creditNoteRepository = creditNoteRepository;
         _invoiceRepository = invoiceRepository;
         _creditNoteNumberGenerator = creditNoteNumberGenerator;
         _dbContext = dbContext;
+        _currentUser = currentUser;
     }
 
     /// <inheritdoc/>
@@ -70,17 +73,7 @@ public class CreditNoteService : ICreditNoteService
                 return new CreditNoteCreationResult
                 {
                     IsSuccess = false,
-                    ErrorMessage = $"Credit notes can only be created for issued or paid invoices. Current status: {invoice.Status}"
-                };
-            }
-
-            // Validate invoice is not voided
-            if (invoice.Status == InvoiceStatus.Voided)
-            {
-                return new CreditNoteCreationResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Cannot create credit note for voided invoice"
+                    ErrorMessage = $"Credit notes can only be created for issued, paid, partially paid, or overdue invoices. Current status: {invoice.Status}"
                 };
             }
 
@@ -124,7 +117,7 @@ public class CreditNoteService : ICreditNoteService
                 Reason = reason,
                 Notes = notes,
                 CreatedAtUtc = DateTime.UtcNow,
-                CreatedBy = "System" // In production, this should come from current user context
+                CreatedBy = _currentUser.UserId ?? "System"
             };
 
             // Create credit note lines with negative amounts
@@ -143,10 +136,12 @@ public class CreditNoteService : ICreditNoteService
                     };
                 }
 
-                // Calculate tax amount proportionally
-                var taxRate = invoiceLine.Amount > 0 ? invoiceLine.TaxAmount / invoiceLine.Amount : 0;
-                var creditAmount = lineItemRequest.Amount / (1 + taxRate); // Base amount
-                var creditTaxAmount = lineItemRequest.Amount - creditAmount; // Tax portion
+                // Calculate tax amount proportionally based on the invoice line's tax/total relationship
+                // This handles both tax-inclusive and tax-exclusive scenarios
+                var creditTaxAmount = invoiceLine.TotalAmount > 0
+                    ? lineItemRequest.Amount * (invoiceLine.TaxAmount / invoiceLine.TotalAmount)
+                    : 0;
+                var creditAmount = lineItemRequest.Amount - creditTaxAmount; // Base (pre-tax) portion
 
                 var creditNoteLine = new CreditNoteLine
                 {
@@ -162,7 +157,7 @@ public class CreditNoteService : ICreditNoteService
                     TotalAmount = -lineItemRequest.Amount, // Negative for credit
                     Notes = lineItemRequest.Notes,
                     CreatedAtUtc = DateTime.UtcNow,
-                    CreatedBy = "System"
+                    CreatedBy = _currentUser.UserId ?? "System"
                 };
 
                 creditNote.Lines.Add(creditNoteLine);
@@ -230,7 +225,7 @@ public class CreditNoteService : ICreditNoteService
             // Issue the credit note
             creditNote.AppliedAtUtc = DateTime.UtcNow;
             creditNote.ModifiedAtUtc = DateTime.UtcNow;
-            creditNote.ModifiedBy = "System"; // In production, this should come from current user context
+            creditNote.ModifiedBy = _currentUser.UserId ?? "System";
 
             await _creditNoteRepository.UpdateAsync(creditNote, creditNote.RowVersion, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);

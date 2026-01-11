@@ -91,7 +91,7 @@ public class InvoiceGenerationService : IInvoiceGenerationService
                 return new InvoiceGenerationResult
                 {
                     IsSuccess = false,
-                    ErrorMessage = $"Cannot regenerate invoice. Invoice exists with status: {existingInvoice.Status}. Only Draft invoices can be regenerated."
+                    ErrorMessage = $"Cannot generate invoice. An invoice already exists for this period with status: {existingInvoice.Status}. Only Draft invoices can be regenerated."
                 };
             }
 

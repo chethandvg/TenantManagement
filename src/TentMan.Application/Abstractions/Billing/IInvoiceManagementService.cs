@@ -9,7 +9,7 @@ public interface IInvoiceManagementService
 {
     /// <summary>
     /// Issues an invoice, transitioning it from Draft to Issued status.
-    /// Sets the IssueDate and marks the invoice as immutable.
+    /// Sets the IssuedAtUtc timestamp and marks the invoice as immutable.
     /// </summary>
     /// <param name="invoiceId">The ID of the invoice to issue.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

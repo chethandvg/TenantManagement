@@ -18,6 +18,7 @@ public class CreditNoteServiceTests
     private readonly Mock<IInvoiceRepository> _mockInvoiceRepository;
     private readonly Mock<ICreditNoteNumberGenerator> _mockNumberGenerator;
     private readonly Mock<IApplicationDbContext> _mockDbContext;
+    private readonly Mock<ICurrentUser> _mockCurrentUser;
     private readonly CreditNoteService _service;
 
     public CreditNoteServiceTests()
@@ -26,12 +27,16 @@ public class CreditNoteServiceTests
         _mockInvoiceRepository = new Mock<IInvoiceRepository>();
         _mockNumberGenerator = new Mock<ICreditNoteNumberGenerator>();
         _mockDbContext = new Mock<IApplicationDbContext>();
+        _mockCurrentUser = new Mock<ICurrentUser>();
+        
+        _mockCurrentUser.Setup(u => u.UserId).Returns("test-user-id");
 
         _service = new CreditNoteService(
             _mockCreditNoteRepository.Object,
             _mockInvoiceRepository.Object,
             _mockNumberGenerator.Object,
-            _mockDbContext.Object);
+            _mockDbContext.Object,
+            _mockCurrentUser.Object);
     }
 
     #region CreateCreditNoteAsync Tests
@@ -156,7 +161,7 @@ public class CreditNoteServiceTests
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("Credit notes can only be created for issued or paid invoices");
+        result.ErrorMessage.Should().Contain("issued, paid, partially paid, or overdue invoices");
 
         _mockCreditNoteRepository.Verify(r => r.AddAsync(It.IsAny<CreditNote>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -184,7 +189,7 @@ public class CreditNoteServiceTests
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("issued or paid invoices");
+        result.ErrorMessage.Should().Contain("issued, paid, partially paid, or overdue invoices");
 
         _mockCreditNoteRepository.Verify(r => r.AddAsync(It.IsAny<CreditNote>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -313,6 +318,81 @@ public class CreditNoteServiceTests
         result.CreditNote.Should().NotBeNull();
         result.CreditNote!.Lines.Should().HaveCount(2);
         result.CreditNote.TotalAmount.Should().Be(-450m); // Sum of negative amounts
+
+        _mockCreditNoteRepository.Verify(r => r.AddAsync(It.IsAny<CreditNote>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateCreditNoteAsync_WithTax_CalculatesTaxProportionally()
+    {
+        // Arrange
+        var invoiceId = Guid.NewGuid();
+        var invoice = new Invoice
+        {
+            Id = invoiceId,
+            OrgId = Guid.NewGuid(),
+            LeaseId = Guid.NewGuid(),
+            Status = InvoiceStatus.Issued,
+            InvoiceNumber = "INV-003",
+            TotalAmount = 1100m,
+            Lines = new List<InvoiceLine>
+            {
+                new InvoiceLine
+                {
+                    Id = Guid.NewGuid(),
+                    InvoiceId = invoiceId,
+                    LineNumber = 1,
+                    Description = "Rent with Tax",
+                    Amount = 1000m,
+                    TaxAmount = 100m, // 10% tax
+                    TotalAmount = 1100m
+                }
+            },
+            RowVersion = new byte[8]
+        };
+
+        var lineItems = new List<CreditNoteLineRequest>
+        {
+            new CreditNoteLineRequest 
+            { 
+                InvoiceLineId = invoice.Lines.First().Id, 
+                Amount = 550m // Half credit
+            }
+        };
+
+        _mockInvoiceRepository
+            .Setup(r => r.GetByIdWithLinesAsync(invoiceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invoice);
+
+        _mockNumberGenerator
+            .Setup(g => g.GenerateNextAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("CN-202401-000003");
+
+        _mockCreditNoteRepository
+            .Setup(r => r.AddAsync(It.IsAny<CreditNote>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CreditNote cn, CancellationToken _) => cn);
+
+        _mockDbContext
+            .Setup(db => db.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _service.CreateCreditNoteAsync(
+            invoiceId,
+            CreditNoteReason.Discount,
+            lineItems);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.CreditNote.Should().NotBeNull();
+        
+        var creditLine = result.CreditNote!.Lines.First();
+        // Tax should be proportional: 550 * (100/1100) = 50
+        creditLine.TaxAmount.Should().BeApproximately(-50m, 0.01m);
+        // Base amount should be: 550 - 50 = 500
+        creditLine.Amount.Should().BeApproximately(-500m, 0.01m);
+        creditLine.TotalAmount.Should().Be(-550m);
 
         _mockCreditNoteRepository.Verify(r => r.AddAsync(It.IsAny<CreditNote>(), It.IsAny<CancellationToken>()), Times.Once);
     }
