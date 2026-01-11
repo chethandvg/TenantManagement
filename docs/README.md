@@ -50,13 +50,19 @@ Welcome to the TentMan documentation! This hub provides links to all documentati
    - Lease activation validation rules
    - **Blazor WASM Frontend screens** ✨ NEW!
 
-7. **[Billing Engine Guide](BILLING_ENGINE.md)** 💰 **NEW!**
+7. **[Billing Engine Guide](BILLING_ENGINE.md)** 💰 **COMPREHENSIVE!**
+   - Complete billing system documentation
+   - **[📚 Billing Documentation Index](BILLING_DOCUMENTATION_INDEX.md)** - Navigation hub for all billing docs
    - Flexible charge types and recurring charges
    - Utility billing (meter-based and amount-based)
    - Invoice generation and payment tracking
    - Credit notes and adjustments
    - Batch billing with invoice runs
-   - Complete database schema reference
+   - **[Business Rules](BILLING_BUSINESS_RULES.md)** - Timing, proration, immutability
+   - **[API Reference](BILLING_API_REFERENCE.md)** - Complete endpoint documentation
+   - **[UI Guide](BILLING_UI_GUIDE.md)** - User interface and workflows
+   - **[Background Jobs](BACKGROUND_JOBS.md)** - Automated billing with Hangfire
+   - Edge case handling and state transitions
 
 8. **[Tenant Invite System Guide](TENANT_INVITE_SYSTEM.md)** 🔐 **NEW!**
    - Secure invite-based tenant onboarding
