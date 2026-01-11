@@ -161,6 +161,78 @@ public class InvoiceGenerationServiceTests
         result.ErrorMessage.Should().Contain("not found");
     }
 
+    [Fact]
+    public async Task GenerateInvoiceAsync_ExistingIssuedInvoice_ReturnsError()
+    {
+        // Arrange
+        var leaseId = Guid.NewGuid();
+        var orgId = Guid.NewGuid();
+        var billingStart = new DateOnly(2024, 1, 1);
+        var billingEnd = new DateOnly(2024, 1, 31);
+
+        var lease = CreateActiveLease(leaseId, orgId);
+        var existingInvoice = CreateDraftInvoice(leaseId, orgId, billingStart, billingEnd);
+        existingInvoice.Status = InvoiceStatus.Issued; // Invoice is already issued
+
+        _mockLeaseRepository
+            .Setup(r => r.GetByIdWithDetailsAsync(leaseId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lease);
+
+        _mockInvoiceRepository
+            .Setup(r => r.GetDraftInvoiceForPeriodAsync(
+                leaseId, billingStart, billingEnd, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingInvoice);
+
+        // Act
+        var result = await _service.GenerateInvoiceAsync(
+            leaseId, billingStart, billingEnd, ProrationMethod.ActualDaysInMonth);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("An invoice already exists for this period");
+        result.ErrorMessage.Should().Contain("Issued");
+
+        _mockInvoiceRepository.Verify(r => r.UpdateAsync(It.IsAny<Invoice>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockInvoiceRepository.Verify(r => r.AddAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GenerateInvoiceAsync_ExistingVoidedInvoice_ReturnsError()
+    {
+        // Arrange
+        var leaseId = Guid.NewGuid();
+        var orgId = Guid.NewGuid();
+        var billingStart = new DateOnly(2024, 1, 1);
+        var billingEnd = new DateOnly(2024, 1, 31);
+
+        var lease = CreateActiveLease(leaseId, orgId);
+        var existingInvoice = CreateDraftInvoice(leaseId, orgId, billingStart, billingEnd);
+        existingInvoice.Status = InvoiceStatus.Voided; // Invoice is voided
+
+        _mockLeaseRepository
+            .Setup(r => r.GetByIdWithDetailsAsync(leaseId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lease);
+
+        _mockInvoiceRepository
+            .Setup(r => r.GetDraftInvoiceForPeriodAsync(
+                leaseId, billingStart, billingEnd, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingInvoice);
+
+        // Act
+        var result = await _service.GenerateInvoiceAsync(
+            leaseId, billingStart, billingEnd, ProrationMethod.ActualDaysInMonth);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("An invoice already exists for this period");
+        result.ErrorMessage.Should().Contain("Voided");
+
+        _mockInvoiceRepository.Verify(r => r.UpdateAsync(It.IsAny<Invoice>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockInvoiceRepository.Verify(r => r.AddAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     #endregion
 
     #region Helper Methods

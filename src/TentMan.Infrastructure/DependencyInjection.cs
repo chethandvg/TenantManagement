@@ -262,6 +262,7 @@ public static class DependencyInjection
         // Billing repositories
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
         services.AddScoped<IInvoiceRunRepository, InvoiceRunRepository>();
+        services.AddScoped<ICreditNoteRepository, CreditNoteRepository>();
         services.AddScoped<IChargeTypeRepository, ChargeTypeRepository>();
         services.AddScoped<ILeaseBillingSettingRepository, LeaseBillingSettingRepository>();
         services.AddScoped<ILeaseRecurringChargeRepository, LeaseRecurringChargeRepository>();
@@ -291,6 +292,8 @@ public static class DependencyInjection
         services.AddScoped<TentMan.Application.Abstractions.Billing.ICreditNoteNumberGenerator, TentMan.Application.Billing.Services.CreditNoteNumberGenerator>();
         services.AddScoped<TentMan.Application.Abstractions.Billing.IInvoiceGenerationService, TentMan.Application.Billing.Services.InvoiceGenerationService>();
         services.AddScoped<TentMan.Application.Abstractions.Billing.IInvoiceRunService, TentMan.Application.Billing.Services.InvoiceRunService>();
+        services.AddScoped<TentMan.Application.Abstractions.Billing.IInvoiceManagementService, TentMan.Application.Billing.Services.InvoiceManagementService>();
+        services.AddScoped<TentMan.Application.Abstractions.Billing.ICreditNoteService, TentMan.Application.Billing.Services.CreditNoteService>();
 
         return services;
     }

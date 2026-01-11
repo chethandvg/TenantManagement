@@ -85,6 +85,16 @@ public class InvoiceGenerationService : IInvoiceGenerationService
             var existingInvoice = await _invoiceRepository.GetDraftInvoiceForPeriodAsync(
                 leaseId, billingPeriodStart, billingPeriodEnd, cancellationToken);
 
+            // Prevent regeneration of issued or voided invoices
+            if (existingInvoice != null && existingInvoice.Status != InvoiceStatus.Draft)
+            {
+                return new InvoiceGenerationResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = $"Cannot generate invoice. An invoice already exists for this period with status: {existingInvoice.Status}. Only Draft invoices can be regenerated."
+                };
+            }
+
             bool isUpdate = existingInvoice != null;
             var invoice = existingInvoice ?? new Invoice
             {

@@ -77,6 +77,39 @@ The Contracts project:
 
 ---
 
+## 💳 Billing Enums
+
+### InvoiceStatus
+Represents the lifecycle status of an invoice.
+
+**Values**:
+- `Draft` (1): Invoice is being drafted and can be edited
+- `Issued` (2): Invoice is issued and awaiting payment (immutable)
+- `PartiallyPaid` (3): Invoice is partially paid
+- `Paid` (4): Invoice is fully paid
+- `Overdue` (5): Invoice is overdue
+- `Cancelled` (6): Invoice is cancelled
+- `WrittenOff` (7): Invoice is written off
+- `Voided` (8): Invoice is voided and cannot be modified
+
+**State Transitions**:
+- Draft → Issued (via IssueInvoice)
+- Issued → Voided (via VoidInvoice, only if unpaid)
+- Voided is a terminal state
+
+### CreditNoteReason
+Represents the reason for issuing a credit note.
+
+**Values**:
+- `InvoiceError` (1): Invoice error or overpayment
+- `Discount` (2): Discount applied
+- `Refund` (3): Refund for returned goods/services
+- `Goodwill` (4): Goodwill gesture
+- `Adjustment` (5): Adjustment for errors
+- `Other` (99): Other reason
+
+---
+
 ## 📋 Coding Guidelines
 
 ### DTO Pattern

@@ -35,10 +35,12 @@ public class Invoice : BaseEntity
     // Dates
     public DateTime? IssuedAtUtc { get; set; }
     public DateTime? PaidAtUtc { get; set; }
+    public DateTime? VoidedAtUtc { get; set; }
     
     // Additional info
     public string? Notes { get; set; }
     public string? PaymentInstructions { get; set; }
+    public string? VoidReason { get; set; }
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
