@@ -57,6 +57,8 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                 type: "uniqueidentifier",
                 nullable: true);
 
+            // Unique index to ensure only one final utility statement per lease/utility type/billing period
+            // Index name is descriptive but long - SQL Server supports up to 128 characters
             migrationBuilder.CreateIndex(
                 name: "IX_UtilityStatements_LeaseId_UtilityType_BillingPeriodStart_BillingPeriodEnd_IsFinal",
                 table: "UtilityStatements",

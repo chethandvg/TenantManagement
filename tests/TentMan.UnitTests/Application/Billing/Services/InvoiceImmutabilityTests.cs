@@ -85,6 +85,8 @@ public class InvoiceImmutabilityTests
             .Setup(r => r.GetByIdWithDetailsAsync(leaseId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(lease);
 
+        // Note: GetDraftInvoiceForPeriodAsync returns any existing invoice for the period,
+        // not just drafts. The service checks the status and prevents regeneration of non-draft invoices.
         _mockInvoiceRepository
             .Setup(r => r.GetDraftInvoiceForPeriodAsync(leaseId, billingPeriodStart, billingPeriodEnd, It.IsAny<CancellationToken>()))
             .ReturnsAsync(issuedInvoice);
