@@ -17,6 +17,9 @@ TentMan.Application/
 │   ├── Commands/             # Create, Update, Delete
 │   └── Queries/              # Read operations
 ├── Auth/                      # Authentication features
+├── BackgroundJobs/            # Background job definitions
+│   ├── MonthlyRentGenerationJob.cs
+│   └── UtilityBillingJob.cs
 ├── Billing/                   # Billing and calculation services
 │   └── Services/             # Proration, rent, utility calculators
 ├── Common/                    # Shared application services

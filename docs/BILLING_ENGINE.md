@@ -853,6 +853,65 @@ The billing engine includes a comprehensive Blazor-based frontend interface for 
 
 ---
 
+## Background Jobs & Automation
+
+TentMan uses **Hangfire** for automated background processing of billing tasks. This ensures reliable execution of recurring billing operations without manual intervention.
+
+### Automated Jobs
+
+#### Monthly Rent Generation
+- **Schedule**: Runs on the 26th of each month at 2:00 AM UTC
+- **Purpose**: Automatically generates rent invoices for all active leases for the upcoming month
+- **Lead Time**: 5 days before the billing period starts (allows time for review)
+- **Process**: 
+  - Calculates next month's billing period
+  - Generates invoices for all active leases
+  - Uses `ActualDaysInMonth` proration method
+  - Logs successes and failures
+  - Supports partial failures (continues if some leases fail)
+
+#### Utility Billing
+- **Schedule**: Runs every Monday at 3:00 AM UTC
+- **Purpose**: Generates utility invoices for leases with finalized utility statements
+- **Process**:
+  - Fetches finalized utility statements not yet billed
+  - Generates utility invoice lines
+  - Logs execution results
+  - **Note**: Full implementation pending UtilityStatementRepository
+
+### Monitoring & Management
+
+- **Dashboard**: Access at `/hangfire` (requires Admin role in production)
+- **Features**:
+  - View job execution history
+  - Monitor success/failure rates
+  - Manually trigger jobs
+  - View detailed logs and errors
+  - Retry failed jobs
+- **Idempotency**: Jobs are designed to be safely retried without creating duplicate invoices
+- **Error Handling**: Automatic retries with exponential backoff for transient failures
+
+### Configuration
+
+Jobs are configured in `Program.cs` using cron expressions:
+```csharp
+// Monthly rent: 26th at 2:00 AM UTC
+RecurringJob.AddOrUpdate<MonthlyRentGenerationJob>(
+    "monthly-rent-generation",
+    job => job.ExecuteForNextMonthAsync(...),
+    "0 2 26 * *");
+
+// Utility billing: Every Monday at 3:00 AM UTC
+RecurringJob.AddOrUpdate<UtilityBillingJob>(
+    "utility-billing",
+    job => job.ExecuteForCurrentPeriodAsync(...),
+    "0 3 * * 1");
+```
+
+For detailed information, see [Background Jobs Documentation](BACKGROUND_JOBS.md).
+
+---
+
 ## Future Enhancements
 
 - [ ] Payment transaction tracking
@@ -868,6 +927,7 @@ The billing engine includes a comprehensive Blazor-based frontend interface for 
 
 ## Related Documentation
 
+- [Background Jobs](BACKGROUND_JOBS.md) - Automated billing job processing with Hangfire
 - [Billing UI Guide](BILLING_UI_GUIDE.md) - Complete frontend component documentation
 - [Tenant & Lease Management](TENANT_LEASE_MANAGEMENT.md)
 - [Database Guide](DATABASE_GUIDE.md)

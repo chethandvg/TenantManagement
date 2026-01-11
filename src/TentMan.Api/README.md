@@ -215,10 +215,39 @@ See [AUTHORIZATION_GUIDE.md](../../docs/AUTHORIZATION_GUIDE.md) for complete det
 Interactive documentation available at:
 - **Scalar UI**: https://localhost:7123/scalar/v1
 - **OpenAPI spec**: https://localhost:7123/openapi/v1.json
+- **Hangfire Dashboard**: https://localhost:7123/hangfire (Admin only in production)
 
 ### HTTP Request Examples
 
 See `TentMan.Api.http` for ready-to-use examples.
+
+---
+
+## 🔄 Background Jobs
+
+The API includes automated background processing via Hangfire:
+
+### Dashboard Access
+- **URL**: `/hangfire`
+- **Development**: Open to all users for testing
+- **Production**: Requires Administrator role
+
+### Configured Jobs
+1. **Monthly Rent Generation**
+   - Schedule: 26th of month at 2:00 AM UTC
+   - Generates invoices for next month's billing period
+
+2. **Utility Billing**
+   - Schedule: Every Monday at 3:00 AM UTC
+   - Processes finalized utility statements
+
+### Monitoring
+- View job execution history
+- Monitor success/failure rates
+- Manually trigger jobs
+- Retry failed jobs
+
+See [Background Jobs Documentation](../../docs/BACKGROUND_JOBS.md) for complete details.
 
 ---
 
