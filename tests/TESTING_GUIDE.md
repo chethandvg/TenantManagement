@@ -93,10 +93,42 @@ dotnet test --filter "Category=ApiClient"
 
 # Run feature-specific tests
 dotnet test --filter "Feature=Products"
+dotnet test --filter "Feature=Billing"
+
+# Run billing tests (166 unit tests)
+dotnet test tests/TentMan.UnitTests/TentMan.UnitTests.csproj --filter "Category=Unit&Feature=Billing"
 
 # Run with code coverage
 dotnet test /p:CollectCoverage=true
 ```
+
+### Billing Engine Test Suite
+
+The billing engine has comprehensive test coverage:
+
+```bash
+# All billing unit tests (166 tests)
+dotnet test tests/TentMan.UnitTests/TentMan.UnitTests.csproj --filter "Category=Unit&Feature=Billing"
+
+# Billing integration tests (11 tests)
+dotnet test tests/TentMan.IntegrationTests/TentMan.IntegrationTests.csproj --filter "Category=Integration&Feature=Billing"
+
+# Edge case tests
+dotnet test tests/TentMan.UnitTests/TentMan.UnitTests.csproj --filter "TestType=EdgeCases"
+
+# Controller tests
+dotnet test tests/TentMan.UnitTests/TentMan.UnitTests.csproj --filter "Component=Controller"
+```
+
+**Coverage Summary:**
+- ✅ 166 unit tests (proration, calculations, services, controllers, edge cases)
+- ✅ 11 integration tests (E2E workflows, batch processing, concurrency)
+- ✅ 100% edge case coverage per requirements
+- ✅ Thread-safe concurrent operations validated
+- ✅ Performance tests with 50+ leases
+
+See `BILLING_TEST_SUITE_SUMMARY.md` for detailed coverage information.
+
 
 ### Coverage Reports
 
