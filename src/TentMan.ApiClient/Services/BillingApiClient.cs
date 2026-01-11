@@ -280,4 +280,16 @@ public sealed class BillingApiClient : ApiClientServiceBase, IBillingApiClient
             request,
             cancellationToken);
     }
+
+    // Charge Types Operations
+    /// <inheritdoc/>
+    public Task<ApiResponse<IEnumerable<ChargeTypeDto>>> GetChargeTypesAsync(
+        Guid? orgId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = orgId.HasValue ? $"?orgId={orgId}" : string.Empty;
+        return GetAsync<IEnumerable<ChargeTypeDto>>(
+            $"charge-types{query}",
+            cancellationToken);
+    }
 }

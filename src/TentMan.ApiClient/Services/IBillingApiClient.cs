@@ -111,4 +111,9 @@ public interface IBillingApiClient
         Guid leaseId,
         UpdateLeaseBillingSettingRequest request,
         CancellationToken cancellationToken = default);
+
+    // Charge Types Operations
+    Task<ApiResponse<IEnumerable<ChargeTypeDto>>> GetChargeTypesAsync(
+        Guid? orgId = null,
+        CancellationToken cancellationToken = default);
 }

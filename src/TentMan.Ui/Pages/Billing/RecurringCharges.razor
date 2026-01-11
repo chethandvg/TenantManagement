@@ -1,4 +1,5 @@
 @page "/billing/recurring-charges"
+@page "/billing/recurring-charges/{LeaseId:guid}"
 @attribute [Authorize]
 
 <PageTitle>Recurring Charges</PageTitle>
@@ -6,27 +7,142 @@
 <MudStack Spacing="4">
     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
         <MudText Typo="Typo.h4">Recurring Charges</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.Add"
-                   Disabled="true">
-            Add Recurring Charge
-        </MudButton>
+        @if (LeaseId.HasValue)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="ShowAddChargeDialog">
+                Add Recurring Charge
+            </MudButton>
+        }
     </MudStack>
 
-    <MudAlert Severity="Severity.Info">
-        Recurring Charges management is coming soon. This feature allows you to manage recurring charges for leases.
-    </MudAlert>
-
-    <MudPaper Elevation="2" Class="pa-4">
-        <MudText Typo="Typo.h6">Features (Coming Soon)</MudText>
-        <MudSimpleTable>
-            <tbody>
-                <tr><td>• View recurring charges by lease</td></tr>
-                <tr><td>• Add new recurring charges</td></tr>
-                <tr><td>• Edit existing charges</td></tr>
-                <tr><td>• Set effective dates</td></tr>
-                <tr><td>• Delete charges with confirmation</td></tr>
-            </tbody>
-        </MudSimpleTable>
-    </MudPaper>
+    @if (!LeaseId.HasValue)
+    {
+        <MudPaper Elevation="2" Class="pa-4">
+            <MudText Typo="Typo.body1">Please select a lease to manage recurring charges.</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
+                Navigate to a lease detail page or use the lease selection below to view and manage recurring charges.
+            </MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <BusyBoundary Retry="LoadRecurringChargesAsync">
+            @if (_charges == null || !_charges.Any())
+            {
+                <MudAlert Severity="Severity.Info">No recurring charges found for this lease.</MudAlert>
+            }
+            else
+            {
+                <MudDataGrid Items="@_charges" Hover="true" Dense="true" Striped="true">
+                    <Columns>
+                        <PropertyColumn Property="x => x.ChargeTypeName" Title="Charge Type" />
+                        <PropertyColumn Property="x => x.Description" Title="Description" />
+                        <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C" />
+                        <TemplateColumn Title="Frequency">
+                            <CellTemplate>
+                                @GetFrequencyText(context.Item.Frequency)
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.StartDate" Title="Start Date" Format="yyyy-MM-dd" />
+                        <PropertyColumn Property="x => x.EndDate" Title="End Date" Format="yyyy-MM-dd" />
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                @if (context.Item.IsActive)
+                                {
+                                    <MudChip Color="Color.Success" Size="Size.Small">Active</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip Color="Color.Default" Size="Size.Small">Inactive</MudChip>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions" Sortable="false">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="1">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" 
+                                                   OnClick="@(() => ShowEditChargeDialog(context.Item))" Color="Color.Primary" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" 
+                                                   OnClick="@(() => ShowDeleteConfirmDialog(context.Item))" Color="Color.Error" />
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager T="LeaseRecurringChargeDto" />
+                    </PagerContent>
+                </MudDataGrid>
+            }
+        </BusyBoundary>
+    }
 </MudStack>
+
+@* Add/Edit Charge Dialog *@
+<MudDialog @bind-IsVisible="_showChargeDialog" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_editingCharge == null ? "Add" : "Edit") Recurring Charge</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudSelect T="Guid?" Label="Charge Type" @bind-Value="_chargeForm.ChargeTypeId" Required="true" Disabled="@(_editingCharge != null)">
+                @if (_chargeTypes != null)
+                {
+                    @foreach (var chargeType in _chargeTypes)
+                    {
+                        <MudSelectItem Value="@((Guid?)chargeType.Id)">@chargeType.Name</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+            
+            <MudTextField @bind-Value="_chargeForm.Description" Label="Description" 
+                          Required="true" MaxLength="500" Lines="2" />
+            
+            <MudNumericField @bind-Value="_chargeForm.Amount" Label="Amount" 
+                             Required="true" Min="0.01m" Format="N2" />
+            
+            <MudSelect T="BillingFrequency" Label="Frequency" @bind-Value="_chargeForm.Frequency" Required="true">
+                <MudSelectItem Value="@BillingFrequency.OneTime">One Time</MudSelectItem>
+                <MudSelectItem Value="@BillingFrequency.Monthly">Monthly</MudSelectItem>
+                <MudSelectItem Value="@BillingFrequency.Quarterly">Quarterly</MudSelectItem>
+                <MudSelectItem Value="@BillingFrequency.Yearly">Yearly</MudSelectItem>
+            </MudSelect>
+            
+            <MudDatePicker Label="Start Date" @bind-Date="_chargeFormStartDate" 
+                           DateFormat="yyyy-MM-dd" Required="true" />
+            
+            <MudDatePicker Label="End Date (Optional)" @bind-Date="_chargeFormEndDate" 
+                           DateFormat="yyyy-MM-dd" Clearable="true" />
+            
+            <MudSwitch T="bool" @bind-Checked="_chargeForm.IsActive" Label="Active" Color="Color.Primary" />
+            
+            <MudTextField @bind-Value="_chargeForm.Notes" Label="Notes" 
+                          MaxLength="2000" Lines="3" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseChargeDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveChargeAsync">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* Delete Confirmation Dialog *@
+<MudDialog @bind-IsVisible="_showDeleteDialog" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Confirm Delete</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>Are you sure you want to delete this recurring charge?</MudText>
+        @if (_deleteTarget != null)
+        {
+            <MudText Typo="Typo.body2" Class="mt-2">
+                <strong>@_deleteTarget.ChargeTypeName</strong> - @_deleteTarget.Amount.ToString("C")
+            </MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDeleteDialog">Cancel</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteChargeAsync">Delete</MudButton>
+    </DialogActions>
+</MudDialog>
