@@ -12,7 +12,7 @@ using TentMan.Infrastructure.Persistence;
 namespace TentMan.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260112020003_AddUnifiedPaymentModel")]
+    [Migration("20260112021046_AddUnifiedPaymentModel")]
     partial class AddUnifiedPaymentModel
     {
         /// <inheritdoc />
@@ -2223,7 +2223,9 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("PaymentType")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("ReceivedBy")
                         .IsRequired()
@@ -2272,6 +2274,9 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_Payments_TransactionReference");
 
                     b.HasIndex("UtilityStatementId");
+
+                    b.HasIndex("OrgId", "PaymentDateUtc")
+                        .HasDatabaseName("IX_Payments_OrgId_PaymentDateUtc");
 
                     b.HasIndex("OrgId", "PaymentType", "PaymentDateUtc")
                         .HasDatabaseName("IX_Payments_OrgId_PaymentType_PaymentDateUtc");

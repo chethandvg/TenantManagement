@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TentMan.Domain.Entities;
+using TentMan.Contracts.Enums;
 
 namespace TentMan.Infrastructure.Persistence.Configurations;
 
@@ -25,7 +26,8 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .IsRequired();
 
         builder.Property(p => p.PaymentType)
-            .IsRequired();
+            .IsRequired()
+            .HasDefaultValue(PaymentType.Rent); // Default to Rent
 
         builder.Property(p => p.PaymentMode)
             .IsRequired();
@@ -105,6 +107,9 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasIndex(p => new { p.OrgId, p.PaymentType, p.PaymentDateUtc })
             .HasDatabaseName("IX_Payments_OrgId_PaymentType_PaymentDateUtc");
+
+        builder.HasIndex(p => new { p.OrgId, p.PaymentDateUtc })
+            .HasDatabaseName("IX_Payments_OrgId_PaymentDateUtc");
 
         // Relationships
         builder.HasOne(p => p.Organization)

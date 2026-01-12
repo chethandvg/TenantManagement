@@ -2220,7 +2220,9 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("PaymentType")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("ReceivedBy")
                         .IsRequired()
@@ -2269,6 +2271,9 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_Payments_TransactionReference");
 
                     b.HasIndex("UtilityStatementId");
+
+                    b.HasIndex("OrgId", "PaymentDateUtc")
+                        .HasDatabaseName("IX_Payments_OrgId_PaymentDateUtc");
 
                     b.HasIndex("OrgId", "PaymentType", "PaymentDateUtc")
                         .HasDatabaseName("IX_Payments_OrgId_PaymentType_PaymentDateUtc");

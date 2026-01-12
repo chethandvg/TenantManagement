@@ -63,7 +63,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                 table: "Payments",
                 type: "int",
                 nullable: false,
-                defaultValue: 0);
+                defaultValue: 1);
 
             migrationBuilder.AddColumn<Guid>(
                 name: "UtilityStatementId",
@@ -150,6 +150,11 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                 column: "GatewayTransactionId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Payments_OrgId_PaymentDateUtc",
+                table: "Payments",
+                columns: new[] { "OrgId", "PaymentDateUtc" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Payments_OrgId_PaymentType_PaymentDateUtc",
                 table: "Payments",
                 columns: new[] { "OrgId", "PaymentType", "PaymentDateUtc" });
@@ -234,6 +239,10 @@ namespace TentMan.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropIndex(
                 name: "IX_Payments_GatewayTransactionId",
+                table: "Payments");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Payments_OrgId_PaymentDateUtc",
                 table: "Payments");
 
             migrationBuilder.DropIndex(
