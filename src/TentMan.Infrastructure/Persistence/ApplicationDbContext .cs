@@ -66,6 +66,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<CreditNoteLine> CreditNoteLines => Set<CreditNoteLine>();
     public DbSet<InvoiceRun> InvoiceRuns => Set<InvoiceRun>();
     public DbSet<InvoiceRunItem> InvoiceRunItems => Set<InvoiceRunItem>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     // Identity DbSets
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
