@@ -47,4 +47,5 @@ public class Invoice : BaseEntity
     public Lease Lease { get; set; } = null!;
     public ICollection<InvoiceLine> Lines { get; set; } = new List<InvoiceLine>();
     public ICollection<CreditNote> CreditNotes { get; set; } = new List<CreditNote>();
+    public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

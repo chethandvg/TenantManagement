@@ -60,8 +60,13 @@
                         Issue Invoice
                     </MudButton>
                 }
-                @if (_invoice.Status == InvoiceStatus.Issued || _invoice.Status == InvoiceStatus.PartiallyPaid)
+                @if (_invoice.Status == InvoiceStatus.Issued || _invoice.Status == InvoiceStatus.PartiallyPaid || _invoice.Status == InvoiceStatus.Overdue)
                 {
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" 
+                               StartIcon="@Icons.Material.Filled.Payment"
+                               OnClick="ShowRecordPaymentDialogAsync">
+                        Record Payment
+                    </MudButton>
                     <MudButton Variant="Variant.Outlined" Color="Color.Error" 
                                StartIcon="@Icons.Material.Filled.Cancel"
                                OnClick="ShowVoidDialogAsync">
@@ -69,6 +74,41 @@
                     </MudButton>
                 }
             </MudStack>
+
+            <!-- Payments -->
+            @if (_payments != null && _payments.Any())
+            {
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6">Payment History</MudText>
+                        
+                        <MudTable Items="@_payments" Hover="true" Dense="true" Striped="true">
+                            <HeaderContent>
+                                <MudTh>Date</MudTh>
+                                <MudTh>Mode</MudTh>
+                                <MudTh>Amount</MudTh>
+                                <MudTh>Status</MudTh>
+                                <MudTh>Payer</MudTh>
+                                <MudTh>Reference</MudTh>
+                                <MudTh>Notes</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Date">@context.PaymentDateUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudTd>
+                                <MudTd DataLabel="Mode">
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Text="@context.PaymentMode.ToString()" />
+                                </MudTd>
+                                <MudTd DataLabel="Amount"><strong>@context.Amount.ToString("C")</strong></MudTd>
+                                <MudTd DataLabel="Status">
+                                    @GetPaymentStatusChip(context.Status)
+                                </MudTd>
+                                <MudTd DataLabel="Payer">@(context.PayerName ?? "N/A")</MudTd>
+                                <MudTd DataLabel="Reference">@(context.TransactionReference ?? "N/A")</MudTd>
+                                <MudTd DataLabel="Notes">@(context.Notes ?? "N/A")</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudStack>
+                </MudPaper>
+            }
 
             <!-- Line Items -->
             <MudPaper Elevation="2" Class="pa-4">
@@ -154,5 +194,54 @@
     <DialogActions>
         <MudButton OnClick="CloseVoidDialog">Cancel</MudButton>
         <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="VoidInvoiceAsync">Void Invoice</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* Record Payment Dialog *@
+<MudDialog @bind-IsVisible="_showPaymentDialog" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Record Payment</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText>Record a payment for this invoice.</MudText>
+            
+            <MudSelect @bind-Value="_paymentMode" Label="Payment Mode" Required="true" Variant="Variant.Outlined">
+                <MudSelectItem Value="@PaymentMode.Cash">Cash</MudSelectItem>
+                <MudSelectItem Value="@PaymentMode.Online">Online</MudSelectItem>
+                <MudSelectItem Value="@PaymentMode.BankTransfer">Bank Transfer</MudSelectItem>
+                <MudSelectItem Value="@PaymentMode.UPI">UPI</MudSelectItem>
+                <MudSelectItem Value="@PaymentMode.Cheque">Cheque</MudSelectItem>
+                <MudSelectItem Value="@PaymentMode.Other">Other</MudSelectItem>
+            </MudSelect>
+
+            <MudNumericField @bind-Value="_paymentAmount" Label="Amount" Required="true" 
+                            Variant="Variant.Outlined" Min="0.01M" 
+                            Adornment="Adornment.Start" AdornmentText="$" Format="N2" />
+
+            <MudDatePicker @bind-Date="_paymentDate" Label="Payment Date" Required="true" 
+                          Variant="Variant.Outlined" />
+
+            <MudTextField @bind-Value="_payerName" Label="Payer Name" Variant="Variant.Outlined" />
+
+            @if (_paymentMode != PaymentMode.Cash)
+            {
+                <MudTextField @bind-Value="_transactionReference" Label="Transaction Reference" 
+                             Required="true" Variant="Variant.Outlined" 
+                             HelperText="Bank reference, UPI ID, cheque number, etc." />
+            }
+            else
+            {
+                <MudTextField @bind-Value="_receiptNumber" Label="Receipt Number (Optional)" 
+                             Variant="Variant.Outlined" />
+            }
+
+            <MudTextField @bind-Value="_paymentNotes" Label="Notes (Optional)" 
+                         Lines="2" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="ClosePaymentDialog">Cancel</MudButton>
+        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="RecordPaymentAsync">Record Payment</MudButton>
     </DialogActions>
 </MudDialog>

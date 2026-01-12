@@ -2,6 +2,7 @@ using TentMan.Contracts.Billing;
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Enums;
 using TentMan.Contracts.Invoices;
+using TentMan.Contracts.Payments;
 using Microsoft.Extensions.Logging;
 
 namespace TentMan.ApiClient.Services;
@@ -94,6 +95,43 @@ public sealed class BillingApiClient : ApiClientServiceBase, IBillingApiClient
         return PostAsync<VoidInvoiceRequest, InvoiceDto>(
             $"invoices/{id}/void",
             request,
+            cancellationToken);
+    }
+
+    // Payment Operations
+    /// <inheritdoc/>
+    public Task<ApiResponse<Guid>> RecordCashPaymentAsync(
+        Guid invoiceId,
+        RecordCashPaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return PostAsync<RecordCashPaymentRequest, Guid>(
+            $"invoices/{invoiceId}/payments/cash",
+            request,
+            cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<ApiResponse<Guid>> RecordOnlinePaymentAsync(
+        Guid invoiceId,
+        RecordOnlinePaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return PostAsync<RecordOnlinePaymentRequest, Guid>(
+            $"invoices/{invoiceId}/payments/online",
+            request,
+            cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<ApiResponse<IEnumerable<PaymentDto>>> GetInvoicePaymentsAsync(
+        Guid invoiceId,
+        CancellationToken cancellationToken = default)
+    {
+        return GetAsync<IEnumerable<PaymentDto>>(
+            $"invoices/{invoiceId}/payments",
             cancellationToken);
     }
 
