@@ -197,7 +197,7 @@ public class PaymentConfirmationController : ControllerBase
         }
 
         return Ok(ApiResponse<object>.Ok(
-            null,
+            new { },
             "Payment request rejected successfully."));
     }
 }
