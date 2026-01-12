@@ -27,4 +27,10 @@ public class FileMetadataRepository : BaseRepository<FileMetadata>, IFileMetadat
     {
         return await DbSet.AnyAsync(f => f.Id == id && !f.IsDeleted, cancellationToken);
     }
+
+    public async Task<PaymentAttachment> SavePaymentAttachmentAsync(PaymentAttachment attachment, CancellationToken cancellationToken = default)
+    {
+        var entry = await Context.Set<PaymentAttachment>().AddAsync(attachment, cancellationToken);
+        return entry.Entity;
+    }
 }

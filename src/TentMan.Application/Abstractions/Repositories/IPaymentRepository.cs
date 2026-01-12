@@ -51,4 +51,32 @@ public interface IPaymentRepository
     /// Gets the total paid amount for an invoice.
     /// </summary>
     Task<decimal> GetTotalPaidAmountAsync(Guid invoiceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets payments with advanced filtering and pagination.
+    /// </summary>
+    Task<(IEnumerable<Payment> Payments, int TotalCount)> GetWithFiltersAsync(
+        Guid orgId,
+        Guid? leaseId = null,
+        Guid? invoiceId = null,
+        Contracts.Enums.PaymentStatus? status = null,
+        Contracts.Enums.PaymentMode? paymentMode = null,
+        Contracts.Enums.PaymentType? paymentType = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        string? payerName = null,
+        string? receivedBy = null,
+        int pageNumber = 1,
+        int pageSize = 50,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets payment status history for a specific payment.
+    /// </summary>
+    Task<IEnumerable<Domain.Entities.PaymentStatusHistory>> GetStatusHistoryAsync(Guid paymentId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds payment status history record.
+    /// </summary>
+    Task AddStatusHistoryAsync(Domain.Entities.PaymentStatusHistory history, CancellationToken cancellationToken = default);
 }
