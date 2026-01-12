@@ -1,116 +1,140 @@
-# Payment API Updates
+# API Layer Updates - Payment Recording and Workflow APIs
 
-## Overview
-Added REST API endpoints for recording and retrieving invoice payments with support for multiple payment modes.
+## Summary
+Added comprehensive payment management API endpoints to support:
+- Unified payment recording for all payment modes (cash, online, UPI, bank transfer, etc.)
+- Receipt/attachment uploads with Azure Blob storage
+- Owner approval workflow (confirm/reject payments)
+- Advanced payment filtering and querying
+- Lease-specific payment retrieval
+- Payment status history auditing
+- Webhook stubs for payment gateway integrations (Razorpay, Stripe, PayPal)
 
-**NEW (2026-01-12):** Added cash payment confirmation workflow API endpoints allowing tenants to submit payment proofs for owner review.
+## New Controllers
 
-## Changes Made
+### 1. UnifiedPaymentsController (`/api/payments`)
+Unified endpoint for all payment operations.
 
-### New Controllers
-- **PaymentsController**: Handles payment-related API requests
+**Endpoints:**
+- `POST /api/payments` - Record payment (manual entry, cash, or online)
   - Authorization: RequireManagerRole (Owner, Administrator, Manager)
-  - Base path: `/api/invoices/{invoiceId}/payments`
-- **PaymentConfirmationController**: Handles payment confirmation workflow
-  - Authorization: RequireTenantRole for creation, RequireManagerRole for review
-  - Base paths: Multiple paths for different operations
+  - Supports all payment modes and types
+  - Request body: RecordUnifiedPaymentRequest
 
-### API Endpoints
+- `POST /api/payments/{id}/attachments` - Upload receipt/proof
+  - Authorization: RequireManagerRole
+  - Multipart form-data (file upload)
+  - Uploads to Azure Blob Storage in "payment-receipts" container
+  - Max file size: 10 MB
 
-#### Record Cash Payment
-- **Endpoint**: `POST /api/invoices/{invoiceId}/payments/cash`
-- **Authorization**: RequireManagerRole
-- **Request**: RecordCashPaymentRequest
-  - Amount (decimal, required)
-  - PaymentDate (DateTime, required)
-  - PayerName (string, optional)
-  - ReceiptNumber (string, optional)
-  - Notes (string, optional)
-- **Response**: ApiResponse<Guid> (PaymentId)
-- **Behavior**: Cash payments are immediately marked as Completed
+- `PUT /api/payments/{id}/confirm` - Confirm pending payment
+  - Authorization: RequireManagerRole
+  - Updates payment status to Completed
+  - Auto-updates invoice amounts and status
+  - Creates status history record
 
-#### Record Online Payment
-- **Endpoint**: `POST /api/invoices/{invoiceId}/payments/online`
-- **Authorization**: RequireManagerRole
-- **Request**: RecordOnlinePaymentRequest
-  - PaymentMode (enum: Online, BankTransfer, UPI, etc.)
-  - Amount (decimal, required)
-  - PaymentDate (DateTime, required)
-  - TransactionReference (string, required)
-  - PayerName (string, optional)
-  - Notes (string, optional)
-  - PaymentMetadata (string/JSON, optional)
-- **Response**: ApiResponse<Guid> (PaymentId)
-- **Note**: This is a stub for future payment gateway integration
+- `PUT /api/payments/{id}/reject` - Reject pending payment
+  - Authorization: RequireManagerRole
+  - Requires rejection reason
+  - Updates payment status to Rejected
+  - Creates status history record
 
-#### Get Invoice Payments
-- **Endpoint**: `GET /api/invoices/{invoiceId}/payments`
-- **Authorization**: RequireManagerRole
-- **Response**: ApiResponse<IEnumerable<PaymentDto>>
-- **Returns**: List of all payments for the invoice, ordered by payment date (descending)
+- `GET /api/payments` - List payments with advanced filtering
+  - Authorization: RequireManagerRole
+  - Query parameters: orgId, leaseId, invoiceId, status, paymentMode, paymentType, fromDate, toDate, payerName, receivedBy, pageNumber, pageSize
+  - Returns paginated results with total count
 
-### Payment Confirmation Workflow Endpoints
+- `GET /api/payments/{id}/history` - Get payment status change history
+  - Authorization: RequireManagerRole
+  - Returns all status transitions with audit trail
 
-#### Create Payment Confirmation Request (Tenant)
-- **Endpoint**: `POST /api/invoices/{invoiceId}/payment-confirmation-requests`
-- **Authorization**: RequireTenantRole
-- **Content-Type**: multipart/form-data
-- **Request**: CreatePaymentConfirmationRequest + optional file upload
-  - Amount (decimal, required)
-  - PaymentDate (DateTime, required)
-  - ReceiptNumber (string, optional)
-  - Notes (string, optional)
-  - ProofFile (IFormFile, optional) - receipt photo, screenshot, etc.
-- **Response**: ApiResponse<Guid> (RequestId)
-- **Behavior**: Creates pending request awaiting owner review
+### 2. LeasePaymentsController (`/api/leases`)
+Lease-specific payment operations.
 
-#### Get Pending Confirmation Requests (Owner)
-- **Endpoint**: `GET /api/organizations/{orgId}/payment-confirmation-requests/pending`
-- **Authorization**: RequireManagerRole
-- **Response**: ApiResponse<IEnumerable<PaymentConfirmationRequestDto>>
-- **Returns**: List of pending payment confirmation requests for the organization
+**Endpoints:**
+- `GET /api/leases/{leaseId}/payments` - Get all payments for a lease
+  - Authorization: RequireManagerRole
+  - Returns payments ordered by date (most recent first)
 
-#### Get Invoice Confirmation Requests
-- **Endpoint**: `GET /api/invoices/{invoiceId}/payment-confirmation-requests`
-- **Authorization**: RequireManagerRole
-- **Response**: ApiResponse<IEnumerable<PaymentConfirmationRequestDto>>
-- **Returns**: All payment confirmation requests for the invoice (all statuses)
+### 3. PaymentWebhookController (`/api/webhooks/payments`)
+Webhook endpoints for payment gateway integrations (stub implementation).
 
-#### Confirm Payment Request (Owner)
-- **Endpoint**: `POST /api/payment-confirmation-requests/{requestId}/confirm`
-- **Authorization**: RequireManagerRole
-- **Request**: ConfirmPaymentRequest
-  - ReviewResponse (string, optional) - approval notes
-- **Response**: ApiResponse<Guid> (PaymentId)
-- **Behavior**: Creates payment record, updates invoice, marks request as confirmed
+**Endpoints:**
+- `POST /api/webhooks/payments/razorpay` - Razorpay webhook
+  - AllowAnonymous (webhooks use signature verification)
+  - Receives payment.authorized, payment.captured, payment.failed, refund.created events
+  - TODO: Implement signature verification and event processing
 
-#### Reject Payment Request (Owner)
-- **Endpoint**: `POST /api/payment-confirmation-requests/{requestId}/reject`
-- **Authorization**: RequireManagerRole
-- **Request**: RejectPaymentRequest
-  - ReviewResponse (string, required) - rejection reason
-- **Response**: ApiResponse<object>
-- **Behavior**: Marks request as rejected with response note
+- `POST /api/webhooks/payments/stripe` - Stripe webhook
+  - AllowAnonymous
+  - Receives payment_intent.succeeded, payment_intent.payment_failed events
+  - TODO: Implement signature verification using Stripe webhook secret
 
-### Validation
-- Payment amount must be > 0
-- Payment amount cannot exceed invoice remaining balance
+- `POST /api/webhooks/payments/paypal` - PayPal IPN webhook
+  - AllowAnonymous
+  - Receives payment completions, refunds, disputes
+  - TODO: Implement IPN validation by posting back to PayPal
+
+- `POST /api/webhooks/payments/generic` - Generic webhook for testing
+  - AllowAnonymous
+  - Logs all webhook calls for debugging
+
+## New Request/Response DTOs
+
+### Request DTOs
+- **RecordUnifiedPaymentRequest**: Record payment via unified endpoint
+  - InvoiceId, PaymentType, PaymentMode, Amount, PaymentDate
+  - TransactionReference, GatewayTransactionId, GatewayName
+  - PayerName, Notes, PaymentMetadata
+
+- **ConfirmPaymentDirectRequest**: Confirm pending payment
+  - Notes (optional)
+
+- **RejectPaymentDirectRequest**: Reject pending payment
+  - Reason (required)
+
+### Response DTOs
+- **PaymentDto**: Payment details (already exists)
+- **PaymentStatusHistoryDto**: Status change history
+  - FromStatus, ToStatus, ChangedAtUtc, ChangedBy, Reason, Metadata
+
+## Authorization
+All payment endpoints require authentication. Most require `RequireManagerRole` policy (Owner, Administrator, Manager). Webhooks are AllowAnonymous but should implement signature verification.
+
+## Validation
+- Payment amounts must be > 0 and ≤ remaining invoice balance
 - Transaction reference required for non-cash payments
-- Invoice must be in Issued, PartiallyPaid, or Overdue status
-- Cannot record payments for Draft, Voided, or Cancelled invoices
-- Confirmation requests can only be created by tenants
-- Confirmation/rejection can only be done by owners/managers
-- Requests can only be confirmed/rejected when in Pending status
+- File size limit: 10 MB for attachments
+- Only Pending/PendingConfirmation payments can be confirmed/rejected
+- Only Issued, PartiallyPaid, or Overdue invoices can receive payments
 
-### Status Codes
-- 200 OK: Successful operation
-- 400 Bad Request: Validation errors
-- 401 Unauthorized: Missing authentication
-- 403 Forbidden: Insufficient permissions
-- 404 Not Found: Invoice or request not found
+## Integration Notes
+- All endpoints use MediatR CQRS pattern for business logic separation
+- File uploads integrate with existing Azure Blob Storage via IFileStorageService
+- Payment status changes create audit history records via PaymentStatusHistory
+- Invoice amounts automatically updated when payments are completed
+- Webhook endpoints are stubs ready for gateway-specific implementation
 
-### File Upload Support
-- Proof files stored using IFileStorageService (Azure Blob Storage)
-- Supported file types: images, PDFs, documents
-- File metadata tracked in FileMetadata table
-- Signed URLs generated for secure file access (60-minute expiry)
+## Security Considerations
+- Webhook endpoints need signature verification before processing
+- File uploads validate file size and content type
+- Payment amounts validated against invoice balances
+- Optimistic concurrency control via RowVersion on updates
+- Audit trail tracks all status changes with user attribution
+
+## Testing
+- Unit tests: RecordUnifiedPaymentCommandHandlerTests (4 tests, 3 passing)
+- Integration tests: TODO (requires test database setup)
+- Manual testing: Use Swagger UI or Postman to test endpoints
+
+## Files Modified
+- Created: UnifiedPaymentsController.cs
+- Created: LeasePaymentsController.cs
+- Created: PaymentWebhookController.cs
+
+## Dependencies
+- Microsoft.AspNetCore.Mvc
+- MediatR
+- TentMan.Application (commands, queries)
+- TentMan.Contracts (DTOs, enums)
+- TentMan.Shared.Constants (authorization policies)
