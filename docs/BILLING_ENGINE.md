@@ -1005,8 +1005,12 @@ dotnet test --filter "TestType=EdgeCases|TestType=Versioning|TestType=Immutabili
 
 ## Related Documentation
 
+- **[Billing Deployment Guide](BILLING_DEPLOYMENT.md)** - ⭐ Production deployment, configuration, and operations
+- **[Billing Security Checklist](BILLING_SECURITY_CHECKLIST.md)** - Security review and compliance checklist
 - [Background Jobs](BACKGROUND_JOBS.md) - Automated billing job processing with Hangfire
 - [Billing UI Guide](BILLING_UI_GUIDE.md) - Complete frontend component documentation
+- [Billing API Reference](BILLING_API_REFERENCE.md) - API endpoints and authentication
+- [Billing Business Rules](BILLING_BUSINESS_RULES.md) - Business logic and validation rules
 - [Tenant & Lease Management](TENANT_LEASE_MANAGEMENT.md)
 - [Database Guide](DATABASE_GUIDE.md)
 - [Architecture Guide](ARCHITECTURE.md)
@@ -1015,12 +1019,14 @@ dotnet test --filter "TestType=EdgeCases|TestType=Versioning|TestType=Immutabili
 ## Support
 
 For questions or issues related to the billing engine:
+- Check the **[Billing Deployment Guide](BILLING_DEPLOYMENT.md)** for production deployment
+- See the **[Billing Security Checklist](BILLING_SECURITY_CHECKLIST.md)** for security review
 - Check the [Database Guide](DATABASE_GUIDE.md) for migration help
 - See [Getting Started](GETTING_STARTED.md) for setup instructions
 - Report issues on [GitHub Issues](https://github.com/chethandvg/TenantManagement/issues)
 
 ---
 
-**Last Updated**: 2026-01-11  
+**Last Updated**: 2026-01-12  
 **Part of**: TentMan Billing Engine Feature (#45, #51)  
-**Edge Cases Implemented**: 2026-01-11
+**Deployment Guide Added**: 2026-01-12
