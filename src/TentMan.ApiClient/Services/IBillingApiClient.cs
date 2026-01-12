@@ -2,6 +2,7 @@ using TentMan.Contracts.Billing;
 using TentMan.Contracts.Common;
 using TentMan.Contracts.Enums;
 using TentMan.Contracts.Invoices;
+using TentMan.Contracts.Payments;
 
 namespace TentMan.ApiClient.Services;
 
@@ -34,6 +35,21 @@ public interface IBillingApiClient
     Task<ApiResponse<InvoiceDto>> VoidInvoiceAsync(
         Guid id,
         VoidInvoiceRequest request,
+        CancellationToken cancellationToken = default);
+
+    // Payment Operations
+    Task<ApiResponse<Guid>> RecordCashPaymentAsync(
+        Guid invoiceId,
+        RecordCashPaymentRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiResponse<Guid>> RecordOnlinePaymentAsync(
+        Guid invoiceId,
+        RecordOnlinePaymentRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiResponse<IEnumerable<PaymentDto>>> GetInvoicePaymentsAsync(
+        Guid invoiceId,
         CancellationToken cancellationToken = default);
 
     // Invoice Run Operations
