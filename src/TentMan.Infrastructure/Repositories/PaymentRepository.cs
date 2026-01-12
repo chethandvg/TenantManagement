@@ -85,4 +85,72 @@ public class PaymentRepository : BaseRepository<Payment>, IPaymentRepository
                      && p.Status == PaymentStatus.Completed)
             .SumAsync(p => p.Amount, cancellationToken);
     }
+
+    public async Task<(IEnumerable<Payment> Payments, int TotalCount)> GetWithFiltersAsync(
+        Guid orgId,
+        Guid? leaseId = null,
+        Guid? invoiceId = null,
+        PaymentStatus? status = null,
+        PaymentMode? paymentMode = null,
+        PaymentType? paymentType = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        string? payerName = null,
+        string? receivedBy = null,
+        int pageNumber = 1,
+        int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var query = DbSet.Where(p => p.OrgId == orgId && !p.IsDeleted);
+
+        if (leaseId.HasValue)
+            query = query.Where(p => p.LeaseId == leaseId.Value);
+
+        if (invoiceId.HasValue)
+            query = query.Where(p => p.InvoiceId == invoiceId.Value);
+
+        if (status.HasValue)
+            query = query.Where(p => p.Status == status.Value);
+
+        if (paymentMode.HasValue)
+            query = query.Where(p => p.PaymentMode == paymentMode.Value);
+
+        if (paymentType.HasValue)
+            query = query.Where(p => p.PaymentType == paymentType.Value);
+
+        if (fromDate.HasValue)
+            query = query.Where(p => p.PaymentDateUtc >= fromDate.Value.ToUniversalTime());
+
+        if (toDate.HasValue)
+            query = query.Where(p => p.PaymentDateUtc <= toDate.Value.ToUniversalTime());
+
+        if (!string.IsNullOrWhiteSpace(payerName))
+            query = query.Where(p => p.PayerName != null && p.PayerName.Contains(payerName));
+
+        if (!string.IsNullOrWhiteSpace(receivedBy))
+            query = query.Where(p => p.ReceivedBy.Contains(receivedBy));
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var payments = await query
+            .OrderByDescending(p => p.PaymentDateUtc)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (payments, totalCount);
+    }
+
+    public async Task<IEnumerable<PaymentStatusHistory>> GetStatusHistoryAsync(Guid paymentId, CancellationToken cancellationToken = default)
+    {
+        return await Context.Set<PaymentStatusHistory>()
+            .Where(h => h.PaymentId == paymentId && !h.IsDeleted)
+            .OrderByDescending(h => h.ChangedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task AddStatusHistoryAsync(PaymentStatusHistory history, CancellationToken cancellationToken = default)
+    {
+        await Context.Set<PaymentStatusHistory>().AddAsync(history, cancellationToken);
+    }
 }
