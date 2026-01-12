@@ -190,6 +190,7 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
 - **Credit Notes**: Issue credits for refunds, adjustments, and corrections
 - **Batch Billing**: Invoice runs for generating invoices across multiple leases
 - **Payment Tracking**: Track paid, partially paid, and overdue invoices
+- **Background Jobs**: Automated monthly rent generation and utility billing with Hangfire
 - **Database Schema**: 12 new tables with foreign keys and indexes for optimal performance
 - **Billing & Invoicing UI** ✨: Complete admin billing dashboard and invoice management screens
   - Admin billing dashboard with invoice statistics and quick actions
@@ -200,8 +201,15 @@ TentMan is a **Tenant Management System** built following **Clean Architecture**
   - Detailed invoice view with line items and actions
   - Invoice runs for batch billing with execution history
   - Available for Owner, Administrator, and Manager roles
+- **Production Ready** ✨: Complete deployment and security documentation
+  - Zero-downtime deployment strategy
+  - Database migration scripts with rollback procedures
+  - Security review checklist
+  - Monitoring and logging configuration
+  - Hangfire dashboard for job management
 
-📚 **[Read the Billing Engine Guide →](docs/BILLING_ENGINE.md)** | **[Billing UI Guide →](docs/BILLING_UI_GUIDE.md)**
+📚 **[Read the Billing Engine Guide →](docs/BILLING_ENGINE.md)** | **[Billing UI Guide →](docs/BILLING_UI_GUIDE.md)**  
+🚀 **[Billing Deployment Guide →](docs/BILLING_DEPLOYMENT.md)** | **[Security Checklist →](docs/BILLING_SECURITY_CHECKLIST.md)**
 
 ### Lease Management 📝 NEW!
 - **7-Step Lease Creation Wizard**: Guided workflow for creating leases
@@ -301,6 +309,25 @@ Follow the guide: [src/README_NEW_ENTITY.md](src/README_NEW_ENTITY.md)
 ### Local Development
 Already covered in Quick Start above.
 
+### Production Deployment - Billing Engine
+
+For deploying the billing engine to production, comprehensive guides are available:
+
+📚 **[Billing Deployment Guide](docs/BILLING_DEPLOYMENT.md)** - Complete deployment procedures:
+- Database migration strategy with zero-downtime deployment
+- Configuration for production environment
+- Monitoring and logging setup
+- Security considerations
+- Rollback procedures
+- Post-deployment verification
+
+🔒 **[Billing Security Checklist](docs/BILLING_SECURITY_CHECKLIST.md)** - Security review:
+- Authentication and authorization policies
+- Data protection and encryption
+- SQL injection prevention
+- Audit logging requirements
+- Configuration security
+
 ### Azure (via Aspire)
 ```bash
 azd init
@@ -370,4 +397,4 @@ See [docs/README.md](docs/README.md) for documentation hub.
 **Project Type**: Tenant Management System for Multi-Tenant SaaS Applications  
 **Maintained by**: TentMan Development Team  
 **Repository**: https://github.com/chethandvg/TenantManagement  
-**Last Updated**: 2026-01-08
+**Last Updated**: 2026-01-12 (Billing Deployment Documentation Added)

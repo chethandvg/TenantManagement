@@ -255,6 +255,32 @@ dotnet ef migrations remove --startup-project ../TentMan.Api
 - Delete migrations that have been applied
 - Skip migration testing
 
+### Billing Engine Migrations
+
+The billing engine was added via the following migrations:
+
+1. **20260110095843_AddBillingEngineTables** - Creates all billing tables
+   - ChargeTypes, LeaseBillingSettings, LeaseRecurringCharges
+   - Invoices, InvoiceLines, InvoiceRuns, InvoiceRunItems
+   - CreditNotes, CreditNoteLines
+   - UtilityRatePlans, UtilityRateSlabs, UtilityStatements
+   - NumberSequences (for invoice numbering)
+
+2. **20260110095910_SeedChargeTypeSystemRecords** - Seeds system charge types
+   - RENT, MAINT, ELEC, WATER, GAS, LATE_FEE, ADJUSTMENT
+
+3. **20260111220043_AddBillingEdgeCaseFields** - Adds additional fields
+   - ProrationMethod to LeaseBillingSettings
+   - VoidReason to Invoices
+
+4. **20260112000928_AddDefaultLeaseBillingSettings** - Backward compatibility
+   - Creates default billing settings for existing leases
+   - Ensures all leases have billing configuration
+
+**For production deployment of billing engine, see:**
+- **[Billing Deployment Guide](BILLING_DEPLOYMENT.md)** - Complete deployment procedures
+- **[Billing Security Checklist](BILLING_SECURITY_CHECKLIST.md)** - Security review checklist
+
 ### Foreign Key Cascade Behavior
 
 SQL Server does not support multiple cascade paths or cycles in foreign key constraints. When configuring relationships, use `DeleteBehavior.NoAction` for optional foreign keys that could create cascade conflicts.
