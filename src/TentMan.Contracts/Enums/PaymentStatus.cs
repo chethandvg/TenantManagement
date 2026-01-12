@@ -33,5 +33,15 @@ public enum PaymentStatus
     /// <summary>
     /// Payment is refunded
     /// </summary>
-    Refunded = 6
+    Refunded = 6,
+
+    /// <summary>
+    /// Cash payment is awaiting owner confirmation
+    /// </summary>
+    PendingConfirmation = 7,
+
+    /// <summary>
+    /// Cash payment confirmation was rejected by owner
+    /// </summary>
+    Rejected = 8
 }

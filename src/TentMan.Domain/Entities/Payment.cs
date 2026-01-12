@@ -69,4 +69,5 @@ public class Payment : BaseEntity
     public Organization Organization { get; set; } = null!;
     public Invoice Invoice { get; set; } = null!;
     public Lease Lease { get; set; } = null!;
+    public PaymentConfirmationRequest? PaymentConfirmationRequest { get; set; }
 }
