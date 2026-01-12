@@ -46,7 +46,11 @@ TentMan.Domain/
 │   ├── CreditNote.cs              # Credit notes
 │   ├── CreditNoteLine.cs          # Credit note lines
 │   ├── InvoiceRun.cs              # Batch billing runs
-│   └── InvoiceRunItem.cs          # Invoice run items
+│   ├── InvoiceRunItem.cs          # Invoice run items
+│   ├── Payment.cs                 # Payments (Rent, Utility, Invoice, Deposit, etc.)
+│   ├── PaymentStatusHistory.cs    # Payment audit trail
+│   ├── PaymentAttachment.cs       # Payment proof/receipts
+│   └── PaymentConfirmationRequest.cs  # Tenant payment confirmation workflow
 ├── Enums/                  # Domain enumerations
 ├── Extensions/             # Domain extension methods
 └── ValueObjects/           # Value object types

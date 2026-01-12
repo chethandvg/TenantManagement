@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TentMan.Domain.Entities;
+using TentMan.Contracts.Enums;
 
 namespace TentMan.Infrastructure.Persistence.Configurations;
 
@@ -24,6 +25,10 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.LeaseId)
             .IsRequired();
 
+        builder.Property(p => p.PaymentType)
+            .IsRequired()
+            .HasDefaultValue(PaymentType.Rent); // Default to Rent
+
         builder.Property(p => p.PaymentMode)
             .IsRequired();
 
@@ -40,6 +45,15 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.TransactionReference)
             .HasMaxLength(200);
 
+        builder.Property(p => p.GatewayTransactionId)
+            .HasMaxLength(200);
+
+        builder.Property(p => p.GatewayName)
+            .HasMaxLength(100);
+
+        builder.Property(p => p.GatewayResponse)
+            .HasColumnType("nvarchar(max)");
+
         builder.Property(p => p.ReceivedBy)
             .IsRequired()
             .HasMaxLength(100);
@@ -52,6 +66,15 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.Property(p => p.PaymentMetadata)
             .HasColumnType("nvarchar(max)");
+
+        builder.Property(p => p.CountryCode)
+            .HasMaxLength(2);
+
+        builder.Property(p => p.BillerId)
+            .HasMaxLength(100);
+
+        builder.Property(p => p.ConsumerId)
+            .HasMaxLength(100);
 
         builder.Property(p => p.RowVersion)
             .IsRowVersion();
@@ -76,6 +99,18 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(p => p.TransactionReference)
             .HasDatabaseName("IX_Payments_TransactionReference");
 
+        builder.HasIndex(p => p.GatewayTransactionId)
+            .HasDatabaseName("IX_Payments_GatewayTransactionId");
+
+        builder.HasIndex(p => p.PaymentType)
+            .HasDatabaseName("IX_Payments_PaymentType");
+
+        builder.HasIndex(p => new { p.OrgId, p.PaymentType, p.PaymentDateUtc })
+            .HasDatabaseName("IX_Payments_OrgId_PaymentType_PaymentDateUtc");
+
+        builder.HasIndex(p => new { p.OrgId, p.PaymentDateUtc })
+            .HasDatabaseName("IX_Payments_OrgId_PaymentDateUtc");
+
         // Relationships
         builder.HasOne(p => p.Organization)
             .WithMany()
@@ -91,5 +126,15 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .WithMany()
             .HasForeignKey(p => p.LeaseId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.UtilityStatement)
+            .WithMany(u => u.Payments)
+            .HasForeignKey(p => p.UtilityStatementId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(p => p.DepositTransaction)
+            .WithMany(d => d.Payments)
+            .HasForeignKey(p => p.DepositTransactionId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

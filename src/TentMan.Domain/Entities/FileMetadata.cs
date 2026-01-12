@@ -29,4 +29,5 @@ public class FileMetadata : BaseEntity
     public ICollection<UnitFile> UnitFiles { get; set; } = new List<UnitFile>();
     public ICollection<TenantDocument> TenantDocuments { get; set; } = new List<TenantDocument>();
     public ICollection<PaymentConfirmationRequest> PaymentConfirmationRequests { get; set; } = new List<PaymentConfirmationRequest>();
+    public ICollection<PaymentAttachment> PaymentAttachments { get; set; } = new List<PaymentAttachment>();
 }
