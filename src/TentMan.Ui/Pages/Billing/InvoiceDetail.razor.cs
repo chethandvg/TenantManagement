@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using TentMan.ApiClient.Services;
 using TentMan.Contracts.Enums;
@@ -44,6 +45,9 @@ public partial class InvoiceDetail : ComponentBase
 
     [Inject]
     public NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    public ILogger<InvoiceDetail> Logger { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -94,8 +98,8 @@ public partial class InvoiceDetail : ComponentBase
         }
         catch (Exception ex)
         {
-            // Silently fail - payments list just won't show
-            Console.WriteLine($"Error loading payments: {ex.Message}");
+            // Silently fail - payments list just won't show, but log the error
+            Logger.LogWarning(ex, "Error loading payments for invoice {InvoiceId}", Id);
         }
     }
 
