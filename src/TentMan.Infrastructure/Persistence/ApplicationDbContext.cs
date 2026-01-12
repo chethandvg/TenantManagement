@@ -68,6 +68,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<InvoiceRunItem> InvoiceRunItems => Set<InvoiceRunItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<PaymentConfirmationRequest> PaymentConfirmationRequests => Set<PaymentConfirmationRequest>();
+    public DbSet<PaymentStatusHistory> PaymentStatusHistory => Set<PaymentStatusHistory>();
+    public DbSet<PaymentAttachment> PaymentAttachments => Set<PaymentAttachment>();
 
     // Identity DbSets
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();

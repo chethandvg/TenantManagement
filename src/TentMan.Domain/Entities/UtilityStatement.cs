@@ -48,4 +48,5 @@ public class UtilityStatement : BaseEntity
     public Lease Lease { get; set; } = null!;
     public UtilityRatePlan? UtilityRatePlan { get; set; }
     public InvoiceLine? InvoiceLine { get; set; }
+    public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

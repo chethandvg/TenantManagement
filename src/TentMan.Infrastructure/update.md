@@ -5,7 +5,33 @@ Added repository implementation and database configuration for the Payment entit
 
 **NEW (2026-01-12):** Added PaymentConfirmationRequest repository and database configuration to support tenant-initiated payment confirmation workflow.
 
+**LATEST (2026-01-12):** Implemented unified payment data model with support for rent, utility (BBPS), invoice, deposit, and other payment types. Added comprehensive audit trail and attachment support.
+
 ## Changes Made
+
+### New Entities (2026-01-12)
+- **PaymentStatusHistory**: Audit trail for payment status changes
+  - Tracks FromStatus, ToStatus, ChangedAtUtc, ChangedBy, Reason, Metadata
+  - Cascade delete with Payment
+  - Indexed on PaymentId and ChangedAtUtc
+- **PaymentAttachment**: Payment proof attachments (receipts, screenshots)
+  - Links FileMetadata to Payments
+  - Supports AttachmentType, Description, DisplayOrder
+  - Cascade delete with Payment, restrict delete with File
+
+### Enhanced Payment Entity
+- **PaymentType** enum field: Distinguishes Rent, Utility, Invoice, Deposit, Maintenance, LateFee payments
+- **Gateway fields**: GatewayTransactionId, GatewayName, GatewayResponse for payment gateway integration
+- **BBPS fields**: CountryCode, BillerId, ConsumerId for international utility billing systems
+- **Optional references**: UtilityStatementId, DepositTransactionId for specific payment types
+- **Navigation properties**: StatusHistory, Attachments collections
+
+### Updated Configurations
+- **PaymentConfiguration**: Extended with new fields, indexes, and relationships
+  - New indexes: GatewayTransactionId, PaymentType, composite (OrgId, PaymentType, PaymentDateUtc)
+  - New FKs: UtilityStatement, DepositTransaction (both ON DELETE SET NULL)
+- **PaymentStatusHistoryConfiguration**: Complete EF Core configuration
+- **PaymentAttachmentConfiguration**: Complete EF Core configuration
 
 ### Repositories
 - **PaymentRepository**: Implementation of IPaymentRepository
@@ -32,10 +58,25 @@ Added repository implementation and database configuration for the Payment entit
 ### Database Migrations
 - **20260112005443_AddPaymentTable**: Creates Payments table with all required fields and relationships
 - **20260112012710_AddPaymentConfirmationRequest**: Creates PaymentConfirmationRequests table with file upload support
+- **20260112020003_AddUnifiedPaymentModel**: Comprehensive payment model enhancement
+  - Adds PaymentType, gateway fields, BBPS fields to Payments table
+  - Creates PaymentStatusHistory table for audit trail
+  - Creates PaymentAttachments table for payment proof
+  - Adds foreign keys to UtilityStatements and DepositTransactions
+  - Multiple indexes for query optimization
 
 ### Dependency Injection
 - Registered PaymentRepository in DI container (DependencyInjection.cs)
 - Registered PaymentConfirmationRequestRepository in DI container (DependencyInjection.cs)
+
+### ApplicationDbContext Updates
+- Added DbSet<PaymentStatusHistory> PaymentStatusHistory
+- Added DbSet<PaymentAttachment> PaymentAttachments
+
+### Updated Entity Navigation Properties
+- **FileMetadata**: Added PaymentAttachments collection
+- **UtilityStatement**: Added Payments collection
+- **DepositTransaction**: Added Payments collection
 
 ## Database Schema
 ```sql

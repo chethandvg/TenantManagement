@@ -14,11 +14,17 @@ public class Payment : BaseEntity
         CreatedAtUtc = DateTime.UtcNow;
         CreatedBy = "System";
         Status = PaymentStatus.Pending;
+        PaymentType = PaymentType.Rent; // Default to Rent for backward compatibility
     }
 
     public Guid OrgId { get; set; }
     public Guid InvoiceId { get; set; }
     public Guid LeaseId { get; set; }
+    
+    /// <summary>
+    /// Type/category of payment (Rent, Utility, Invoice, Deposit, etc.)
+    /// </summary>
+    public PaymentType PaymentType { get; set; }
     
     /// <summary>
     /// Payment mode/method used
@@ -41,9 +47,24 @@ public class Payment : BaseEntity
     public DateTime PaymentDateUtc { get; set; }
     
     /// <summary>
-    /// Transaction reference number (bank ref, UPI ref, gateway transaction ID, etc.)
+    /// Transaction reference number (bank ref, UPI ref, check number, etc.)
     /// </summary>
     public string? TransactionReference { get; set; }
+    
+    /// <summary>
+    /// Payment gateway transaction ID (for online payments via gateway)
+    /// </summary>
+    public string? GatewayTransactionId { get; set; }
+    
+    /// <summary>
+    /// Name of payment gateway used (e.g., "Razorpay", "Stripe", "PayPal")
+    /// </summary>
+    public string? GatewayName { get; set; }
+    
+    /// <summary>
+    /// Full gateway response stored as JSON for reference and reconciliation
+    /// </summary>
+    public string? GatewayResponse { get; set; }
     
     /// <summary>
     /// Who received/recorded the payment (UserId or system identifier)
@@ -64,10 +85,39 @@ public class Payment : BaseEntity
     /// Metadata for online payments (gateway response, etc.) - stored as JSON
     /// </summary>
     public string? PaymentMetadata { get; set; }
+    
+    /// <summary>
+    /// Optional reference to utility statement/bill (for utility payments)
+    /// </summary>
+    public Guid? UtilityStatementId { get; set; }
+    
+    /// <summary>
+    /// Optional reference to deposit transaction (for deposit payments)
+    /// </summary>
+    public Guid? DepositTransactionId { get; set; }
+    
+    /// <summary>
+    /// Country/region code for BBPS or international billing systems (ISO 3166-1 alpha-2, e.g., "IN", "US")
+    /// </summary>
+    public string? CountryCode { get; set; }
+    
+    /// <summary>
+    /// Biller ID for BBPS or similar utility billing systems
+    /// </summary>
+    public string? BillerId { get; set; }
+    
+    /// <summary>
+    /// Customer/consumer ID for utility billing
+    /// </summary>
+    public string? ConsumerId { get; set; }
 
     // Navigation properties
     public Organization Organization { get; set; } = null!;
     public Invoice Invoice { get; set; } = null!;
     public Lease Lease { get; set; } = null!;
+    public UtilityStatement? UtilityStatement { get; set; }
+    public DepositTransaction? DepositTransaction { get; set; }
     public PaymentConfirmationRequest? PaymentConfirmationRequest { get; set; }
+    public ICollection<PaymentStatusHistory> StatusHistory { get; set; } = new List<PaymentStatusHistory>();
+    public ICollection<PaymentAttachment> Attachments { get; set; } = new List<PaymentAttachment>();
 }
