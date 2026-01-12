@@ -20,7 +20,7 @@ namespace TentMan.Infrastructure.Persistence.Migrations
                     1,                      -- BillingDay: 1st of month (default)
                     0,                      -- PaymentTermDays: Due on invoice date (default)
                     1,                      -- GenerateInvoiceAutomatically: true (default)
-                    1,                      -- ProrationMethod: ActualDaysInMonth (default, enum value 1)
+                    1,                      -- ProrationMethod: ActualDaysInMonth (default, enum value 1 = ProrationMethod.ActualDaysInMonth)
                     GETUTCDATE(),
                     'Migration',
                     0                       -- IsDeleted: false
