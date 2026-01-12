@@ -275,6 +275,7 @@ public static class DependencyInjection
         services.AddScoped<IUtilityRatePlanRepository, UtilityRatePlanRepository>();
         services.AddScoped<IUtilityStatementRepository, UtilityStatementRepository>();
         services.AddScoped<INumberSequenceRepository, NumberSequenceRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         return services;
     }
