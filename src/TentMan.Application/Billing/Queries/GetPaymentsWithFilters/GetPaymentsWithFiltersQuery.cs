@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Enums;
 using TentMan.Contracts.Payments;
@@ -30,16 +31,39 @@ public class GetPaymentsWithFiltersQuery : IRequest<GetPaymentsWithFiltersResult
 public class GetPaymentsWithFiltersQueryHandler : IRequestHandler<GetPaymentsWithFiltersQuery, GetPaymentsWithFiltersResult>
 {
     private readonly IPaymentRepository _paymentRepository;
+    private readonly ILogger<GetPaymentsWithFiltersQueryHandler> _logger;
 
-    public GetPaymentsWithFiltersQueryHandler(IPaymentRepository paymentRepository)
+    public GetPaymentsWithFiltersQueryHandler(
+        IPaymentRepository paymentRepository,
+        ILogger<GetPaymentsWithFiltersQueryHandler> logger)
     {
         _paymentRepository = paymentRepository;
+        _logger = logger;
     }
 
     public async Task<GetPaymentsWithFiltersResult> Handle(GetPaymentsWithFiltersQuery request, CancellationToken cancellationToken)
     {
         try
         {
+            // Validate pagination parameters
+            if (request.PageNumber < 1)
+            {
+                return new GetPaymentsWithFiltersResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Page number must be at least 1."
+                };
+            }
+
+            if (request.PageSize < 1 || request.PageSize > 100)
+            {
+                return new GetPaymentsWithFiltersResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Page size must be between 1 and 100."
+                };
+            }
+
             var (payments, totalCount) = await _paymentRepository.GetWithFiltersAsync(
                 request.OrgId,
                 request.LeaseId,
@@ -74,6 +98,10 @@ public class GetPaymentsWithFiltersQueryHandler : IRequestHandler<GetPaymentsWit
                 RowVersion = p.RowVersion
             }).ToList();
 
+            var totalPages = request.PageSize > 0 
+                ? (int)Math.Ceiling(totalCount / (double)request.PageSize) 
+                : 0;
+
             return new GetPaymentsWithFiltersResult
             {
                 IsSuccess = true,
@@ -81,15 +109,16 @@ public class GetPaymentsWithFiltersQueryHandler : IRequestHandler<GetPaymentsWit
                 TotalCount = totalCount,
                 PageNumber = request.PageNumber,
                 PageSize = request.PageSize,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize)
+                TotalPages = totalPages
             };
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to retrieve payments with filters for organization {OrgId}", request.OrgId);
             return new GetPaymentsWithFiltersResult
             {
                 IsSuccess = false,
-                ErrorMessage = $"Failed to retrieve payments: {ex.Message}"
+                ErrorMessage = "Failed to retrieve payments."
             };
         }
     }

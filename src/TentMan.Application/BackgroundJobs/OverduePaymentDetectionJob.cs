@@ -97,24 +97,17 @@ public class OverduePaymentDetectionJob
 
     /// <summary>
     /// Executes the overdue detection job for all organizations.
-    /// Should be called by a scheduled job runner (e.g., Hangfire, Quartz.NET).
+    /// This method is not yet implemented and requires organization enumeration logic.
     /// </summary>
-    public async Task ExecuteForAllOrganizationsAsync(CancellationToken cancellationToken = default)
+    /// <exception cref="NotImplementedException">This method is not yet implemented.</exception>
+    public Task ExecuteForAllOrganizationsAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Starting overdue payment detection job for all organizations");
+        _logger.LogWarning(
+            "ExecuteForAllOrganizationsAsync is not implemented. " +
+            "Use ExecuteAsync with a specific orgId when calling from a scheduler.");
 
-        try
-        {
-            // Note: In a real implementation, you would retrieve organization IDs
-            // This is a placeholder that would be implemented when integrated with a job scheduler
-            _logger.LogWarning(
-                "ExecuteForAllOrganizationsAsync requires organization enumeration. " +
-                "Use ExecuteAsync with specific orgId when calling from scheduler.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to execute overdue payment detection for all organizations");
-            throw;
-        }
+        throw new NotImplementedException(
+            "ExecuteForAllOrganizationsAsync is not implemented. " +
+            "Organization enumeration must be implemented before this method can be used.");
     }
 }

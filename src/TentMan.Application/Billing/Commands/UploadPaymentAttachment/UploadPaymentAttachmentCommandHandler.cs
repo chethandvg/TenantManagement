@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Application.Abstractions.Storage;
@@ -17,19 +18,22 @@ public class UploadPaymentAttachmentCommandHandler : IRequestHandler<UploadPayme
     private readonly IFileMetadataRepository _fileMetadataRepository;
     private readonly IApplicationDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly ILogger<UploadPaymentAttachmentCommandHandler> _logger;
 
     public UploadPaymentAttachmentCommandHandler(
         IPaymentRepository paymentRepository,
         IFileStorageService fileStorageService,
         IFileMetadataRepository fileMetadataRepository,
         IApplicationDbContext dbContext,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        ILogger<UploadPaymentAttachmentCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
         _fileStorageService = fileStorageService;
         _fileMetadataRepository = fileMetadataRepository;
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public async Task<UploadPaymentAttachmentResult> Handle(UploadPaymentAttachmentCommand request, CancellationToken cancellationToken)
@@ -91,7 +95,8 @@ public class UploadPaymentAttachmentCommandHandler : IRequestHandler<UploadPayme
 
             await _fileMetadataRepository.AddAsync(fileMetadata, cancellationToken);
 
-            // Create payment attachment record
+            // Calculate display order - Note: This has a potential race condition in concurrent uploads
+            // In production, consider using a database sequence or handling duplicates at the DB level
             var maxDisplayOrder = 0;
             if (payment.Attachments.Any())
             {
@@ -110,7 +115,6 @@ public class UploadPaymentAttachmentCommandHandler : IRequestHandler<UploadPayme
                 CreatedBy = _currentUser.UserId ?? "System"
             };
 
-            // Save attachment using repository (need to add this to repository interface)
             await _fileMetadataRepository.SavePaymentAttachmentAsync(paymentAttachment, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -126,10 +130,11 @@ public class UploadPaymentAttachmentCommandHandler : IRequestHandler<UploadPayme
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to upload attachment for payment {PaymentId}", request.PaymentId);
             return new UploadPaymentAttachmentResult
             {
                 IsSuccess = false,
-                ErrorMessage = $"Failed to upload attachment: {ex.Message}"
+                ErrorMessage = "Failed to upload attachment."
             };
         }
     }

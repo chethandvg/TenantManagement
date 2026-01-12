@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Payments;
 
@@ -18,10 +19,14 @@ public class GetLeasePaymentsQuery : IRequest<GetLeasePaymentsResult>
 public class GetLeasePaymentsQueryHandler : IRequestHandler<GetLeasePaymentsQuery, GetLeasePaymentsResult>
 {
     private readonly IPaymentRepository _paymentRepository;
+    private readonly ILogger<GetLeasePaymentsQueryHandler> _logger;
 
-    public GetLeasePaymentsQueryHandler(IPaymentRepository paymentRepository)
+    public GetLeasePaymentsQueryHandler(
+        IPaymentRepository paymentRepository,
+        ILogger<GetLeasePaymentsQueryHandler> logger)
     {
         _paymentRepository = paymentRepository;
+        _logger = logger;
     }
 
     public async Task<GetLeasePaymentsResult> Handle(GetLeasePaymentsQuery request, CancellationToken cancellationToken)
@@ -57,10 +62,11 @@ public class GetLeasePaymentsQueryHandler : IRequestHandler<GetLeasePaymentsQuer
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to retrieve lease payments for lease {LeaseId}", request.LeaseId);
             return new GetLeasePaymentsResult
             {
                 IsSuccess = false,
-                ErrorMessage = $"Failed to retrieve lease payments: {ex.Message}"
+                ErrorMessage = "Failed to retrieve lease payments."
             };
         }
     }

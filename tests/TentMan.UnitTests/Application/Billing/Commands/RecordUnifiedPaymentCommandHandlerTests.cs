@@ -1,4 +1,5 @@
 using Moq;
+using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Application.Billing.Commands.RecordPayment;
@@ -17,6 +18,7 @@ public class RecordUnifiedPaymentCommandHandlerTests
     private readonly Mock<IPaymentRepository> _mockPaymentRepo;
     private readonly Mock<IApplicationDbContext> _mockDbContext;
     private readonly Mock<ICurrentUser> _mockCurrentUser;
+    private readonly Mock<ILogger<RecordPaymentCommandHandler>> _mockLogger;
     private readonly RecordPaymentCommandHandler _handler;
 
     public RecordUnifiedPaymentCommandHandlerTests()
@@ -25,6 +27,7 @@ public class RecordUnifiedPaymentCommandHandlerTests
         _mockPaymentRepo = new Mock<IPaymentRepository>();
         _mockDbContext = new Mock<IApplicationDbContext>();
         _mockCurrentUser = new Mock<ICurrentUser>();
+        _mockLogger = new Mock<ILogger<RecordPaymentCommandHandler>>();
         
         _mockCurrentUser.Setup(u => u.UserId).Returns("test-user");
 
@@ -32,7 +35,8 @@ public class RecordUnifiedPaymentCommandHandlerTests
             _mockInvoiceRepo.Object,
             _mockPaymentRepo.Object,
             _mockDbContext.Object,
-            _mockCurrentUser.Object);
+            _mockCurrentUser.Object,
+            _mockLogger.Object);
     }
 
     [Fact]

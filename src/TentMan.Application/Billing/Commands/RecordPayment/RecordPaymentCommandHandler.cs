@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Enums;
@@ -16,17 +17,20 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordUnifiedPaymentC
     private readonly IPaymentRepository _paymentRepository;
     private readonly IApplicationDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly ILogger<RecordPaymentCommandHandler> _logger;
 
     public RecordPaymentCommandHandler(
         IInvoiceRepository invoiceRepository,
         IPaymentRepository paymentRepository,
         IApplicationDbContext dbContext,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        ILogger<RecordPaymentCommandHandler> logger)
     {
         _invoiceRepository = invoiceRepository;
         _paymentRepository = paymentRepository;
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public async Task<RecordPaymentResult> Handle(RecordUnifiedPaymentCommand request, CancellationToken cancellationToken)
@@ -88,10 +92,11 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordUnifiedPaymentC
             }
 
             // Determine initial payment status based on payment mode
+            // All online payments should start as Pending for proper review workflow
             var paymentStatus = request.PaymentMode switch
             {
                 PaymentMode.Cash => PaymentStatus.Completed,  // Cash payments are immediately completed
-                PaymentMode.Online when !string.IsNullOrEmpty(request.GatewayTransactionId) => PaymentStatus.Pending,  // Online via gateway starts pending
+                PaymentMode.Online => PaymentStatus.Pending,  // All online payments start pending for review
                 _ => PaymentStatus.Completed  // Other modes (UPI, BankTransfer, Cheque with ref) are marked completed
             };
 
@@ -152,20 +157,25 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordUnifiedPaymentC
                 InvoiceBalanceAmount = invoice.BalanceAmount
             };
         }
-        catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
-        {
-            return new RecordPaymentResult
-            {
-                IsSuccess = false,
-                ErrorMessage = "Invoice was modified by another process. Please retry."
-            };
-        }
         catch (Exception ex)
         {
+            // Check if this is a concurrency exception by checking the exception type name
+            // We can't reference EntityFrameworkCore in the Application layer
+            if (ex.GetType().Name.Contains("Concurrency", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(ex, "Concurrency conflict when recording payment for invoice {InvoiceId}", request.InvoiceId);
+                return new RecordPaymentResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Invoice was modified by another process. Please retry."
+                };
+            }
+
+            _logger.LogError(ex, "Failed to record payment for invoice {InvoiceId}", request.InvoiceId);
             return new RecordPaymentResult
             {
                 IsSuccess = false,
-                ErrorMessage = $"Failed to record payment: {ex.Message}"
+                ErrorMessage = "Failed to record payment."
             };
         }
     }

@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Enums;
@@ -24,15 +25,18 @@ public class RejectPaymentDirectCommandHandler : IRequestHandler<RejectPaymentDi
     private readonly IPaymentRepository _paymentRepository;
     private readonly IApplicationDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly ILogger<RejectPaymentDirectCommandHandler> _logger;
 
     public RejectPaymentDirectCommandHandler(
         IPaymentRepository paymentRepository,
         IApplicationDbContext dbContext,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        ILogger<RejectPaymentDirectCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public async Task<RejectPaymentResult> Handle(RejectPaymentDirectCommand request, CancellationToken cancellationToken)
@@ -103,10 +107,11 @@ public class RejectPaymentDirectCommandHandler : IRequestHandler<RejectPaymentDi
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to reject payment {PaymentId}", request.PaymentId);
             return new RejectPaymentResult
             {
                 IsSuccess = false,
-                ErrorMessage = $"Failed to reject payment: {ex.Message}"
+                ErrorMessage = "Failed to reject payment."
             };
         }
     }

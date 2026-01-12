@@ -100,10 +100,12 @@ public class UnifiedPaymentsController : ControllerBase
     {
         _logger.LogInformation("Uploading attachment for payment {PaymentId}", id);
 
+        using var fileStream = file.OpenReadStream();
+        
         var command = new UploadPaymentAttachmentCommand
         {
             PaymentId = id,
-            FileStream = file.OpenReadStream(),
+            FileStream = fileStream,
             FileName = file.FileName,
             ContentType = file.ContentType,
             FileSize = file.Length,

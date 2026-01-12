@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Payments;
 
@@ -18,10 +19,14 @@ public class GetPaymentHistoryQuery : IRequest<GetPaymentHistoryResult>
 public class GetPaymentHistoryQueryHandler : IRequestHandler<GetPaymentHistoryQuery, GetPaymentHistoryResult>
 {
     private readonly IPaymentRepository _paymentRepository;
+    private readonly ILogger<GetPaymentHistoryQueryHandler> _logger;
 
-    public GetPaymentHistoryQueryHandler(IPaymentRepository paymentRepository)
+    public GetPaymentHistoryQueryHandler(
+        IPaymentRepository paymentRepository,
+        ILogger<GetPaymentHistoryQueryHandler> logger)
     {
         _paymentRepository = paymentRepository;
+        _logger = logger;
     }
 
     public async Task<GetPaymentHistoryResult> Handle(GetPaymentHistoryQuery request, CancellationToken cancellationToken)
@@ -62,10 +67,11 @@ public class GetPaymentHistoryQueryHandler : IRequestHandler<GetPaymentHistoryQu
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to retrieve payment history for payment {PaymentId}", request.PaymentId);
             return new GetPaymentHistoryResult
             {
                 IsSuccess = false,
-                ErrorMessage = $"Failed to retrieve payment history: {ex.Message}"
+                ErrorMessage = "Failed to retrieve payment history."
             };
         }
     }

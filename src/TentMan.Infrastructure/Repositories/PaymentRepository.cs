@@ -125,10 +125,16 @@ public class PaymentRepository : BaseRepository<Payment>, IPaymentRepository
             query = query.Where(p => p.PaymentDateUtc <= toDate.Value.ToUniversalTime());
 
         if (!string.IsNullOrWhiteSpace(payerName))
-            query = query.Where(p => p.PayerName != null && p.PayerName.Contains(payerName));
+        {
+            var payerNameLower = payerName.ToLowerInvariant();
+            query = query.Where(p => p.PayerName != null && p.PayerName.ToLower().Contains(payerNameLower));
+        }
 
         if (!string.IsNullOrWhiteSpace(receivedBy))
-            query = query.Where(p => p.ReceivedBy.Contains(receivedBy));
+        {
+            var receivedByLower = receivedBy.ToLowerInvariant();
+            query = query.Where(p => p.ReceivedBy.ToLower().Contains(receivedByLower));
+        }
 
         var totalCount = await query.CountAsync(cancellationToken);
 

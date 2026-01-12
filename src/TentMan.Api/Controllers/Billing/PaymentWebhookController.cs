@@ -54,7 +54,7 @@ public class PaymentWebhookController : ControllerBase
     [HttpPost("razorpay")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RazorpayWebhook([FromBody] object payload)
+    public IActionResult RazorpayWebhook([FromBody] object payload)
     {
         try
         {
@@ -107,7 +107,7 @@ public class PaymentWebhookController : ControllerBase
     [HttpPost("stripe")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> StripeWebhook([FromBody] object payload)
+    public IActionResult StripeWebhook([FromBody] object payload)
     {
         try
         {
@@ -153,7 +153,7 @@ public class PaymentWebhookController : ControllerBase
     [Consumes("application/x-www-form-urlencoded")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> PayPalWebhook([FromForm] IFormCollection payload)
+    public IActionResult PayPalWebhook([FromForm] IFormCollection payload)
     {
         try
         {
@@ -184,7 +184,7 @@ public class PaymentWebhookController : ControllerBase
     /// </summary>
     [HttpPost("generic")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GenericWebhook([FromBody] object payload)
+    public IActionResult GenericWebhook([FromBody] object payload)
     {
         try
         {

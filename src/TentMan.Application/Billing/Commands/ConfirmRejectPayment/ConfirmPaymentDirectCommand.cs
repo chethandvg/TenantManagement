@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TentMan.Application.Abstractions;
 using TentMan.Application.Abstractions.Repositories;
 using TentMan.Contracts.Enums;
@@ -25,17 +26,20 @@ public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentComman
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IApplicationDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly ILogger<ConfirmPaymentCommandHandler> _logger;
 
     public ConfirmPaymentCommandHandler(
         IPaymentRepository paymentRepository,
         IInvoiceRepository invoiceRepository,
         IApplicationDbContext dbContext,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        ILogger<ConfirmPaymentCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
         _invoiceRepository = invoiceRepository;
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public async Task<ConfirmPaymentResult> Handle(ConfirmPaymentCommand request, CancellationToken cancellationToken)
@@ -97,7 +101,10 @@ public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentComman
 
             await _paymentRepository.UpdateAsync(payment, payment.RowVersion, cancellationToken);
 
-            // Update invoice
+            // Persist payment changes before calculating invoice totals
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // Update invoice - now includes the confirmed payment
             var totalPaid = await _paymentRepository.GetTotalPaidAmountAsync(invoice.Id, cancellationToken);
             invoice.PaidAmount = totalPaid;
             invoice.BalanceAmount = invoice.TotalAmount - totalPaid;
@@ -127,10 +134,11 @@ public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentComman
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to confirm payment {PaymentId}", request.PaymentId);
             return new ConfirmPaymentResult
             {
                 IsSuccess = false,
-                ErrorMessage = $"Failed to confirm payment: {ex.Message}"
+                ErrorMessage = "Failed to confirm payment."
             };
         }
     }
